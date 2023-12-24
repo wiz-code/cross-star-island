@@ -125,16 +125,23 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Container>
+      {/* <Container>
         <Grid container>
           <Grid item xs={12}>
-            <Box id="container" />
-            <Button variant="contained" onClick={start}>
-              {started ? '停止する' : '開始する'}
-            </Button>
+
           </Grid>
         </Grid>
-      </Container>
+      </Container>} */}
+      <Box
+        id="container"
+        sx={{ position: 'relative', overscrollBehavior: 'none' }}
+      >
+        <Box sx={{ position: 'absolute', right: 0 }}>
+          <Button variant="contained" onClick={start}>
+            {started ? '停止する' : '開始する'}
+          </Button>
+        </Box>
+      </Box>
     </ThemeProvider>
   );
 }

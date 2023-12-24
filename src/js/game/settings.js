@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+export const ResizeDelayTime = 200;
+
 export const Scene = {
   background: 0x000000,
   Fog: {
@@ -68,4 +70,10 @@ export const Grid = {
     height: 10,
     depth: 10,
   },
+};
+
+export const Ground = {
+  color: 0x005731,
+  wireframeColor: 0x19704a,
+  pointsColor: 0xffff00,
 };

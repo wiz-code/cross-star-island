@@ -5,9 +5,11 @@ import { Octree } from 'three/addons/math/Octree.js';
 import { OctreeHelper } from 'three/addons/helpers/OctreeHelper.js';
 import { Capsule } from 'three/addons/math/Capsule.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { debounce } from 'throttle-debounce';
 
-import { Scene, Camera, Renderer, Light } from './settings';
+import { Scene, Camera, Renderer, Light, ResizeDelayTime } from './settings';
 import { createGrid } from './grid';
+import { createGround } from './ground';
 
 const { floor } = Math;
 
@@ -69,6 +71,9 @@ const init = () => {
   const grid = createGrid();
   scene.add(grid);
 
+  const ground = createGround();
+  scene.add(ground);
+
   const container = document.getElementById('container');
 
   const renderer = new THREE.WebGLRenderer({ antialias: false });
@@ -106,8 +111,10 @@ const init = () => {
     pointer.y = event.clientY - windowHalfY;
   };
 
+  const onResize = debounce(ResizeDelayTime, onWindowResize);
+
   document.body.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('resize', onWindowResize);
+  window.addEventListener('resize', onResize);
 
   return {
     container,

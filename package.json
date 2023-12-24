@@ -46,6 +46,7 @@
     "react-redux": "^9.0.4",
     "redux": "^5.0.0",
     "regenerator-runtime": "^0.14.1",
-    "three": "^0.159.0"
+    "three": "^0.160.0",
+    "throttle-debounce": "^5.0.0"
   }
 }
