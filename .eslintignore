@@ -1,0 +1,9 @@
+node_modules/
+!.*.js
+.eslintrc.js
+*.html
+*.d.ts
+*.json
+*.scss
+*.css
+dist/
