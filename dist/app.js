@@ -9218,8 +9218,7 @@ function App() {
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     id: "container",
     sx: {
-      position: 'relative',
-      overscrollBehavior: 'none'
+      position: 'relative'
     }
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     sx: {
@@ -9354,7 +9353,7 @@ const generateHeight = (width, height) => {
       const y = floor(i / width);
       data[i] += abs(perlin.noise(x / quality, y / quality, z) * quality * 1.75);
     }
-    quality *= 2; // 5;
+    quality *= 2;
   }
   return data;
 };
@@ -9421,8 +9420,7 @@ const createGround = () => {
   texture.colorSpace = THREE.SRGBColorSpace; */
 
   const mat1 = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.color,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.AdditiveBlending
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.color
   });
   const mat2 = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.wireframeColor,
@@ -9533,7 +9531,7 @@ const init = () => {
   light.directional.shadow.radius = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.radius;
   light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.bias;
   light.directional.position.set(-5, 25, -1);
-  // scene.add(light.directional);
+  //scene.add(light.directional);
 
   const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_2__.createGrid)();
   scene.add(grid);
@@ -9722,8 +9720,8 @@ const Grid = {
   }
 };
 const Ground = {
-  color: 0x005731,
-  wireframeColor: 0x19704a,
+  color: 0x664000,
+  wireframeColor: 0x332000,
   pointsColor: 0xffff00
 };
 
