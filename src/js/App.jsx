@@ -134,7 +134,7 @@ function App() {
       </Container>} */}
       <Box
         id="container"
-        sx={{ position: 'relative', overscrollBehavior: 'none' }}
+        sx={{ position: 'relative' }}
       >
         <Box sx={{ position: 'absolute', right: 0 }}>
           <Button variant="contained" onClick={start}>

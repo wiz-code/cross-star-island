@@ -73,7 +73,7 @@ export const Grid = {
 };
 
 export const Ground = {
-  color: 0x005731,
-  wireframeColor: 0x19704a,
+  color: 0x664000,
+  wireframeColor: 0x332000,
   pointsColor: 0xffff00,
 };

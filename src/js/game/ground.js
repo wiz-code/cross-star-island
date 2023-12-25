@@ -30,7 +30,7 @@ const generateHeight = (width, height) => {
       );
     }
 
-    quality *= 2; // 5;
+    quality *= 2;
   }
 
   return data;
@@ -123,7 +123,6 @@ export const createGround = () => {
 
   const mat1 = new THREE.MeshBasicMaterial({
     color: Ground.color,
-    blending: THREE.AdditiveBlending,
   });
   const mat2 = new THREE.MeshBasicMaterial({
     color: Ground.wireframeColor,
