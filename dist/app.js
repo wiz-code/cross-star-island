@@ -9112,11 +9112,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/createTheme.js");
-/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
 /* harmony import */ var _game_init__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./game/init */ "./src/js/game/init.js");
 /* harmony import */ var _game_loop__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./game/loop */ "./src/js/game/loop.js");
 
@@ -9187,9 +9186,7 @@ const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_3__["default"])({
   }
 });
 const update = function () {
-  this.camera.position.x += (this.pointer.x - this.camera.position.x) * 0.05;
-  this.camera.position.y += (-this.pointer.y - this.camera.position.y) * 0.05;
-  this.camera.lookAt(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(10, 10, 0) /* this.scene.position */);
+  this.controls.update(this.clock.getDelta());
   this.renderer.render(this.scene, this.camera);
   this.stats.update();
 };
@@ -9213,19 +9210,19 @@ function App() {
       rendering.start();
     }
   }, [rendering]);
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_5__["default"], {
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"], {
     theme: theme
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_5__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], {
     id: "container",
     sx: {
       position: 'relative'
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], {
     sx: {
       position: 'absolute',
       right: 0
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     variant: "contained",
     onClick: start
   }, started ? '停止する' : '開始する'))));
@@ -9234,6 +9231,231 @@ App.propTypes = {
   //
 };
 /* harmony default export */ __webpack_exports__["default"] = (App);
+
+/***/ }),
+
+/***/ "./src/js/game/controls.js":
+/*!*********************************!*\
+  !*** ./src/js/game/controls.js ***!
+  \*********************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FirstPersonControls: function() { return /* binding */ FirstPersonControls; }
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+class FirstPersonControls {
+  #lookDirection = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+  #spherical = new three__WEBPACK_IMPORTED_MODULE_0__.Spherical();
+  #target = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+  #lat = 0;
+  #lon = 0;
+  #targetPosition = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+  #contextmenu(event) {
+    event.preventDefault();
+  }
+  constructor(camera, domElement) {
+    this.camera = camera;
+    this.domElement = domElement;
+
+    // API
+
+    this.enabled = true;
+    this.movementSpeed = 1.0;
+    this.lookSpeed = 0.005;
+    this.lookVertical = true;
+    this.autoForward = false;
+    this.activeLook = true;
+    this.heightSpeed = false;
+    this.heightCoef = 1.0;
+    this.heightMin = 0.0;
+    this.heightMax = 1.0;
+    this.constrainVertical = false;
+    this.verticalMin = 0;
+    this.verticalMax = Math.PI;
+    this.mouseDragOn = false;
+
+    // internals
+
+    this.autoSpeedFactor = 0.0;
+    this.pointerX = 0;
+    this.pointerY = 0;
+    this.moveForward = false;
+    this.moveBackward = false;
+    this.moveLeft = false;
+    this.moveRight = false;
+    this.viewHalfX = 0;
+    this.viewHalfY = 0;
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerDown = this.onPointerDown.bind(this);
+    this.onPointerUp = this.onPointerUp.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
+    this.domElement.addEventListener('contextmenu', this.#contextmenu);
+    this.domElement.addEventListener('pointerdown', this.onPointerDown);
+    this.domElement.addEventListener('pointermove', this.onPointerMove);
+    this.domElement.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
+    this.handleResize();
+    this.setOrientation(this);
+  }
+  setOrientation(controls) {
+    const {
+      quaternion
+    } = controls.camera;
+    this.#lookDirection.set(0, 0, -1).applyQuaternion(quaternion);
+    this.#spherical.setFromVector3(this.#lookDirection);
+    this.#lat = 90 - three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.radToDeg(this.#spherical.phi);
+    this.#lon = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.radToDeg(this.#spherical.theta);
+  }
+  handleResize() {
+    this.viewHalfX = this.domElement.offsetWidth / 2;
+    this.viewHalfY = this.domElement.offsetHeight / 2;
+  }
+  lookAt(x, y, z) {
+    if (x.isVector3) {
+      this.#target.copy(x);
+    } else {
+      this.#target.set(x, y, z);
+    }
+    this.camera.lookAt(this.#target);
+    this.setOrientation(this);
+    return this;
+  }
+  onPointerMove(event) {
+    this.pointerX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
+    this.pointerY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+  }
+  onPointerDown(event) {
+    if (this.activeLook) {
+      switch (event.button) {
+        case 0:
+          this.moveForward = true;
+          break;
+        case 2:
+          this.moveBackward = true;
+          break;
+      }
+    }
+    this.mouseDragOn = true;
+  }
+  onPointerUp(event) {
+    if (this.activeLook) {
+      switch (event.button) {
+        case 0:
+          this.moveForward = false;
+          break;
+        case 2:
+          this.moveBackward = false;
+          break;
+      }
+    }
+    this.mouseDragOn = false;
+  }
+  onKeyDown(event) {
+    switch (event.code) {
+      case 'ArrowUp':
+      case 'KeyW':
+        this.moveForward = true;
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        this.moveLeft = true;
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        this.moveBackward = true;
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        this.moveRight = true;
+        break;
+      case 'KeyR':
+        this.moveUp = true;
+        break;
+      case 'KeyF':
+        this.moveDown = true;
+        break;
+    }
+  }
+  onKeyUp(event) {
+    switch (event.code) {
+      case 'ArrowUp':
+      case 'KeyW':
+        this.moveForward = false;
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        this.moveLeft = false;
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        this.moveBackward = false;
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        this.moveRight = false;
+        break;
+      case 'KeyR':
+        this.moveUp = false;
+        break;
+      case 'KeyF':
+        this.moveDown = false;
+        break;
+    }
+  }
+  dispose() {
+    this.domElement.removeEventListener('contextmenu', this.#contextmenu);
+    this.domElement.removeEventListener('pointerdown', this.onPointerDown);
+    this.domElement.removeEventListener('pointermove', this.onPointerMove);
+    this.domElement.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+  }
+  update(delta) {
+    if (this.enabled === false) return;
+    if (this.heightSpeed) {
+      const y = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.clamp(this.camera.position.y, this.heightMin, this.heightMax);
+      const heightDelta = y - this.heightMin;
+      this.autoSpeedFactor = delta * (heightDelta * this.heightCoef);
+    } else {
+      this.autoSpeedFactor = 0.0;
+    }
+    const actualMoveSpeed = delta * this.movementSpeed;
+    if (this.moveForward || this.autoForward && !this.moveBackward) this.camera.translateZ(-(actualMoveSpeed + this.autoSpeedFactor));
+    if (this.moveBackward) this.camera.translateZ(actualMoveSpeed);
+    if (this.moveLeft) this.camera.translateX(-actualMoveSpeed);
+    if (this.moveRight) this.camera.translateX(actualMoveSpeed);
+    if (this.moveUp) this.camera.translateY(actualMoveSpeed);
+    if (this.moveDown) this.camera.translateY(-actualMoveSpeed);
+    let actualLookSpeed = delta * this.lookSpeed;
+    if (!this.activeLook) {
+      actualLookSpeed = 0;
+    }
+    let verticalLookRatio = 1;
+    if (this.constrainVertical) {
+      verticalLookRatio = Math.PI / (this.verticalMax - this.verticalMin);
+    }
+    this.#lon -= this.pointerX * actualLookSpeed;
+    if (this.lookVertical) this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
+    this.#lat = Math.max(-85, Math.min(85, this.#lat));
+    let phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(90 - this.#lat);
+    const theta = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(this.#lon);
+    if (this.constrainVertical) {
+      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
+    }
+    const {
+      position
+    } = this.camera;
+    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
+    this.camera.lookAt(this.#targetPosition);
+  }
+}
+
 
 /***/ }),
 
@@ -9479,12 +9701,14 @@ const createGround = () => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
-/* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
+/* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
+/* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
+
 
 
 
@@ -9500,55 +9724,54 @@ const {
   floor
 } = Math;
 const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_4__.Clock();
-  let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.Size.width / 2);
-  let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.Size.height / 2);
-  const pointer = {
-    x: 0,
-    y: 0
-  };
-  const scene = new three__WEBPACK_IMPORTED_MODULE_4__.Scene();
-  scene.background = new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.background);
-  scene.fog = new three__WEBPACK_IMPORTED_MODULE_4__.Fog(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.far);
-  const camera = new three__WEBPACK_IMPORTED_MODULE_4__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_1__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.far);
-  camera.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.order;
+  const clock = new three__WEBPACK_IMPORTED_MODULE_5__.Clock();
+  let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
+  let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
+  const scene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
+  scene.background = new three__WEBPACK_IMPORTED_MODULE_5__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
+  scene.fog = new three__WEBPACK_IMPORTED_MODULE_5__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
+  const camera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
+  camera.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
   camera.position.set(0, 0, 100);
   const light = {};
-  light.fill = new three__WEBPACK_IMPORTED_MODULE_4__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_1__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Hemisphere.intensity);
+  light.fill = new three__WEBPACK_IMPORTED_MODULE_5__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
   light.fill.position.set(2, 1, 1);
   // scene.add(light.fill);
 
-  light.directional = new three__WEBPACK_IMPORTED_MODULE_4__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.intensity);
-  light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.castShadow;
-  light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.near;
-  light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.far;
-  light.directional.shadow.camera.right = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.right;
-  light.directional.shadow.camera.left = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.left;
-  light.directional.shadow.camera.top = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.top;
-  light.directional.shadow.camera.bottom = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.bottom;
-  light.directional.shadow.mapSize.width = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.MapSize.width;
-  light.directional.shadow.mapSize.height = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.MapSize.height;
-  light.directional.shadow.radius = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.radius;
-  light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.bias;
-  light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.z);
-  //scene.add(light.directional);
+  light.directional = new three__WEBPACK_IMPORTED_MODULE_5__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
+  light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.castShadow;
+  light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.near;
+  light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.far;
+  light.directional.shadow.camera.right = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.right;
+  light.directional.shadow.camera.left = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.left;
+  light.directional.shadow.camera.top = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.top;
+  light.directional.shadow.camera.bottom = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.bottom;
+  light.directional.shadow.mapSize.width = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.MapSize.width;
+  light.directional.shadow.mapSize.height = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.MapSize.height;
+  light.directional.shadow.radius = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.radius;
+  light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.bias;
+  light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.z);
+  // scene.add(light.directional);
 
-  const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_2__.createGrid)();
+  const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
   scene.add(grid);
-  const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_3__.createGround)();
+  const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
   scene.add(ground);
   const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_4__.WebGLRenderer({
+  const renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
     antialias: false
   });
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_4__.Color(0x000000));
-  renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.pixelRatio);
-  renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.Size.height);
-  renderer.shadowMap.enabled = _settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.ShadowMap.enabled;
-  renderer.shadowMap.type = _settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.ShadowMap.type;
-  renderer.toneMapping = _settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.ShadowMap.toneMapping;
+  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_5__.Color(0x000000));
+  renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
+  renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
+  renderer.shadowMap.enabled = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.enabled;
+  renderer.shadowMap.type = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.type;
+  renderer.toneMapping = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_5__["default"]();
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera, renderer.domElement);
+  controls.movementSpeed = 100;
+  controls.lookSpeed = 0.2;
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_6__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
   container.appendChild(stats.domElement);
@@ -9560,16 +9783,9 @@ const init = () => {
     camera.aspect = iw / ih;
     camera.updateProjectionMatrix();
     renderer.setSize(iw, ih);
+    controls.handleResize();
   };
-  const onPointerMove = event => {
-    if (!event.isPrimary) {
-      return;
-    }
-    pointer.x = event.clientX - windowHalfX;
-    pointer.y = event.clientY - windowHalfY;
-  };
-  const onResize = (0,throttle_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(_settings__WEBPACK_IMPORTED_MODULE_1__.ResizeDelayTime, onWindowResize);
-  document.body.addEventListener('pointermove', onPointerMove);
+  const onResize = (0,throttle_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(_settings__WEBPACK_IMPORTED_MODULE_2__.ResizeDelayTime, onWindowResize);
   window.addEventListener('resize', onResize);
   return {
     container,
@@ -9577,7 +9793,8 @@ const init = () => {
     camera,
     light,
     renderer,
-    pointer,
+    clock,
+    controls,
     stats
   };
 };
@@ -9726,7 +9943,7 @@ const Grid = {
 };
 const Ground = {
   heightCoef: 12,
-  color: 0x4D4136,
+  color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00
 };
