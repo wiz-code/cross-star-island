@@ -65,7 +65,11 @@ const init = () => {
   light.directional.shadow.radius = Light.Directional.Shadow.radius;
   light.directional.shadow.bias = Light.Directional.Shadow.bias;
 
-  light.directional.position.set(-5, 25, -1);
+  light.directional.position.set(
+    Light.Directional.Position.x,
+    Light.Directional.Position.y,
+    Light.Directional.Position.z
+  );
   //scene.add(light.directional);
 
   const grid = createGrid();

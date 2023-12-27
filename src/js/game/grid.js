@@ -39,7 +39,7 @@ export const createGrid = () => {
 
   const material = new THREE.PointsMaterial({
     color: Grid.color,
-    size: Grid.Size,
+    size: Grid.size,
     map: texture,
     blending: THREE.NormalBlending,
     depthTest: true,

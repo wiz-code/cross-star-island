@@ -107,13 +107,15 @@ export const createGround = () => {
   geom1.rotateX(-PI / 2);
 
   const vertices = geom1.attributes.position.array;
+  const pointsVertices = vertices.slice(0);
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
-    vertices[j + 1] = data[i] * 10;
+    vertices[j + 1] = data[i] * Ground.heightCoef;
+    pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
   }
 
   const geom2 = new THREE.BufferGeometry();
-  geom2.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geom2.setAttribute('position', new THREE.Float32BufferAttribute(pointsVertices, 3));
   geom2.computeBoundingSphere();
 
   /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
@@ -140,11 +142,9 @@ export const createGround = () => {
 
   const mat3 = new THREE.PointsMaterial({
     color: Ground.pointsColor,
-    size: Grid.Size,
+    size: Grid.size,
     map: texture,
     blending: THREE.NormalBlending,
-    depthTest: false,
-    transparent: true,
     alphaTest: 0.5,
   });
   const ground = new THREE.Mesh(geom1, mat1);

@@ -37,6 +37,11 @@ export const Light = {
     intensity: 1.5,
   },
   Directional: {
+    Position: {
+      x: 100,
+      y: 1000,
+      z: 0,
+    },
     color: 0xffffff,
     intensity: 2.5,
     castShadow: true,
@@ -59,21 +64,22 @@ export const Light = {
 
 export const Grid = {
   color: 0x406080,
-  Size: 10,
+  size: 10,
   Spacing: {
     width: 70,
     height: 70,
     depth: 70,
   },
   Segments: {
-    width: 10,
-    height: 10,
-    depth: 10,
+    width: 20,
+    height: 20,
+    depth: 20,
   },
 };
 
 export const Ground = {
-  color: 0x664000,
+  heightCoef: 12,
+  color: 0x4D4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00,
 };
