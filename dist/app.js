@@ -9287,7 +9287,7 @@ const createGrid = () => {
   texture.needsUpdate = true;
   const material = new three__WEBPACK_IMPORTED_MODULE_3__.PointsMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.color,
-    size: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Size,
+    size: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.size,
     map: texture,
     blending: three__WEBPACK_IMPORTED_MODULE_3__.NormalBlending,
     depthTest: true,
@@ -9407,11 +9407,13 @@ const createGround = () => {
   const geom1 = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(width, depth, _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.depth - 1);
   geom1.rotateX(-PI / 2);
   const vertices = geom1.attributes.position.array;
+  const pointsVertices = vertices.slice(0);
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
-    vertices[j + 1] = data[i] * 10;
+    vertices[j + 1] = data[i] * _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.heightCoef;
+    pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size / 2;
   }
   const geom2 = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  geom2.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(vertices, 3));
+  geom2.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
   geom2.computeBoundingSphere();
 
   /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
@@ -9435,11 +9437,9 @@ const createGround = () => {
   texture.needsUpdate = true;
   const mat3 = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Size,
+    size: _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size,
     map: texture,
     blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
-    depthTest: false,
-    transparent: true,
     alphaTest: 0.5
   });
   const ground = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom1, mat1);
@@ -9530,7 +9530,7 @@ const init = () => {
   light.directional.shadow.mapSize.height = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.MapSize.height;
   light.directional.shadow.radius = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.radius;
   light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Shadow.bias;
-  light.directional.position.set(-5, 25, -1);
+  light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_1__.Light.Directional.Position.z);
   //scene.add(light.directional);
 
   const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_2__.createGrid)();
@@ -9686,6 +9686,11 @@ const Light = {
     intensity: 1.5
   },
   Directional: {
+    Position: {
+      x: 100,
+      y: 1000,
+      z: 0
+    },
     color: 0xffffff,
     intensity: 2.5,
     castShadow: true,
@@ -9707,20 +9712,21 @@ const Light = {
 };
 const Grid = {
   color: 0x406080,
-  Size: 10,
+  size: 10,
   Spacing: {
     width: 70,
     height: 70,
     depth: 70
   },
   Segments: {
-    width: 10,
-    height: 10,
-    depth: 10
+    width: 20,
+    height: 20,
+    depth: 20
   }
 };
 const Ground = {
-  color: 0x664000,
+  heightCoef: 12,
+  color: 0x4D4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00
 };
