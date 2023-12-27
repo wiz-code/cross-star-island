@@ -7,6 +7,7 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { debounce } from 'throttle-debounce';
 
+import { FirstPersonControls } from './controls';
 import { Scene, Camera, Renderer, Light, ResizeDelayTime } from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
@@ -18,10 +19,6 @@ const init = () => {
 
   let windowHalfX = floor(Renderer.Size.width / 2);
   let windowHalfY = floor(Renderer.Size.height / 2);
-  const pointer = {
-    x: 0,
-    y: 0,
-  };
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(Scene.background);
@@ -68,9 +65,9 @@ const init = () => {
   light.directional.position.set(
     Light.Directional.Position.x,
     Light.Directional.Position.y,
-    Light.Directional.Position.z
+    Light.Directional.Position.z,
   );
-  //scene.add(light.directional);
+  // scene.add(light.directional);
 
   const grid = createGrid();
   scene.add(grid);
@@ -89,6 +86,10 @@ const init = () => {
   renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
+  const controls = new FirstPersonControls(camera, renderer.domElement);
+  controls.movementSpeed = 100;
+  controls.lookSpeed = 0.2;
+
   const stats = new Stats();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
@@ -104,20 +105,11 @@ const init = () => {
     camera.updateProjectionMatrix();
 
     renderer.setSize(iw, ih);
-  };
-
-  const onPointerMove = (event) => {
-    if (!event.isPrimary) {
-      return;
-    }
-
-    pointer.x = event.clientX - windowHalfX;
-    pointer.y = event.clientY - windowHalfY;
+    controls.handleResize();
   };
 
   const onResize = debounce(ResizeDelayTime, onWindowResize);
 
-  document.body.addEventListener('pointermove', onPointerMove);
   window.addEventListener('resize', onResize);
 
   return {
@@ -126,7 +118,8 @@ const init = () => {
     camera,
     light,
     renderer,
-    pointer,
+    clock,
+    controls,
     stats,
   };
 };

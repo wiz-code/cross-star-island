@@ -88,12 +88,8 @@ const theme = createTheme({
 });
 
 const update = function () {
-  this.camera.position.x += (this.pointer.x - this.camera.position.x) * 0.05;
-  this.camera.position.y += (-this.pointer.y - this.camera.position.y) * 0.05;
-
-  this.camera.lookAt(new THREE.Vector3(10, 10, 0) /* this.scene.position */);
+  this.controls.update(this.clock.getDelta());
   this.renderer.render(this.scene, this.camera);
-
   this.stats.update();
 };
 
@@ -132,10 +128,7 @@ function App() {
           </Grid>
         </Grid>
       </Container>} */}
-      <Box
-        id="container"
-        sx={{ position: 'relative' }}
-      >
+      <Box id="container" sx={{ position: 'relative' }}>
         <Box sx={{ position: 'absolute', right: 0 }}>
           <Button variant="contained" onClick={start}>
             {started ? '停止する' : '開始する'}

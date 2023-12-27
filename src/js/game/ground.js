@@ -115,7 +115,10 @@ export const createGround = () => {
   }
 
   const geom2 = new THREE.BufferGeometry();
-  geom2.setAttribute('position', new THREE.Float32BufferAttribute(pointsVertices, 3));
+  geom2.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(pointsVertices, 3),
+  );
   geom2.computeBoundingSphere();
 
   /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));

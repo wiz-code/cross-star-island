@@ -16,6 +16,7 @@
     "SharedArrayBuffer": "readonly"
   },
   "parserOptions": {
+    "ecmaVersion": 2022,
     "ecmaFeatures": {
       "jsx": true
     },
