@@ -9186,7 +9186,9 @@ const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_3__["default"])({
   }
 });
 const update = function () {
-  this.controls.update(this.clock.getDelta());
+  const deltaTime = this.clock.getDelta();
+  this.controls.update(deltaTime);
+  this.player.update(deltaTime);
   this.renderer.render(this.scene, this.camera);
   this.stats.update();
 };
@@ -9247,6 +9249,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
+const {
+  max,
+  min,
+  PI
+} = Math;
 class FirstPersonControls {
   #lookDirection = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
   #spherical = new three__WEBPACK_IMPORTED_MODULE_0__.Spherical();
@@ -9275,7 +9282,7 @@ class FirstPersonControls {
     this.heightMax = 1.0;
     this.constrainVertical = false;
     this.verticalMin = 0;
-    this.verticalMax = Math.PI;
+    this.verticalMax = PI;
     this.mouseDragOn = false;
 
     // internals
@@ -9287,6 +9294,7 @@ class FirstPersonControls {
     this.moveBackward = false;
     this.moveLeft = false;
     this.moveRight = false;
+    this.isJumping = false;
     this.viewHalfX = 0;
     this.viewHalfY = 0;
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -9298,8 +9306,8 @@ class FirstPersonControls {
     this.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.domElement.addEventListener('pointermove', this.onPointerMove);
     this.domElement.addEventListener('pointerup', this.onPointerUp);
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
     this.handleResize();
     this.setOrientation(this);
   }
@@ -9380,6 +9388,15 @@ class FirstPersonControls {
       case 'KeyF':
         this.moveDown = true;
         break;
+      case 'Space':
+        {
+          if (this.isJumping) {
+            this.isJumping = false;
+          } else {
+            this.isJumping = true;
+          }
+          break;
+        }
     }
   }
   onKeyUp(event) {
@@ -9406,6 +9423,11 @@ class FirstPersonControls {
       case 'KeyF':
         this.moveDown = false;
         break;
+      case 'Space':
+        {
+          this.isJumping = false;
+          break;
+        }
     }
   }
   dispose() {
@@ -9413,10 +9435,33 @@ class FirstPersonControls {
     this.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
   }
-  update(delta) {
+  update(deltaTime) {
+    let actualLookSpeed = deltaTime * this.lookSpeed;
+    if (!this.activeLook) {
+      actualLookSpeed = 0;
+    }
+    let verticalLookRatio = 1;
+    if (this.constrainVertical) {
+      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
+    }
+    this.#lon -= this.pointerX * actualLookSpeed;
+    if (this.lookVertical) this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
+    this.#lat = max(-85, min(85, this.#lat));
+    let phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(90 - this.#lat);
+    const theta = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(this.#lon);
+    if (this.constrainVertical) {
+      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, PI, this.verticalMin, this.verticalMax);
+    }
+    const {
+      position
+    } = this.camera;
+    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
+    this.camera.lookAt(this.#targetPosition);
+  }
+  _update(delta) {
     if (this.enabled === false) return;
     if (this.heightSpeed) {
       const y = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.clamp(this.camera.position.y, this.heightMin, this.heightMax);
@@ -9438,15 +9483,15 @@ class FirstPersonControls {
     }
     let verticalLookRatio = 1;
     if (this.constrainVertical) {
-      verticalLookRatio = Math.PI / (this.verticalMax - this.verticalMin);
+      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
     }
     this.#lon -= this.pointerX * actualLookSpeed;
     if (this.lookVertical) this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
-    this.#lat = Math.max(-85, Math.min(85, this.#lat));
+    this.#lat = max(-85, min(85, this.#lat));
     let phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(90 - this.#lat);
     const theta = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(this.#lon);
     if (this.constrainVertical) {
-      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
+      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, PI, this.verticalMin, this.verticalMax);
     }
     const {
       position
@@ -9701,13 +9746,18 @@ const createGround = () => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
+/* harmony import */ var three_addons_libs_lil_gui_module_min_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/libs/lil-gui.module.min.js */ "./node_modules/three/examples/jsm/libs/lil-gui.module.min.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
 /* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
+/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+
 
 
 
@@ -9724,21 +9774,35 @@ const {
   floor
 } = Math;
 const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_5__.Clock();
+  const clock = new three__WEBPACK_IMPORTED_MODULE_6__.Clock();
   let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
   let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
-  const scene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-  scene.background = new three__WEBPACK_IMPORTED_MODULE_5__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
-  scene.fog = new three__WEBPACK_IMPORTED_MODULE_5__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
-  const camera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
+  const scene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
+  scene.background = new three__WEBPACK_IMPORTED_MODULE_6__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
+  scene.fog = new three__WEBPACK_IMPORTED_MODULE_6__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
+  const camera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
   camera.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
-  camera.position.set(0, 0, 100);
+  camera.position.set(0, 0, 0);
+  const container = document.getElementById('container');
+  const renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
+    antialias: false
+  });
+  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_6__.Color(0x000000));
+  renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
+  renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
+  //renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
+  //renderer.shadowMap.type = Renderer.ShadowMap.type;
+  //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
+  container.appendChild(renderer.domElement);
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera, renderer.domElement);
+  controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
+  controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
   const light = {};
-  light.fill = new three__WEBPACK_IMPORTED_MODULE_5__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
+  light.fill = new three__WEBPACK_IMPORTED_MODULE_6__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
   light.fill.position.set(2, 1, 1);
   // scene.add(light.fill);
 
-  light.directional = new three__WEBPACK_IMPORTED_MODULE_5__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
+  light.directional = new three__WEBPACK_IMPORTED_MODULE_6__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
   light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.castShadow;
   light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.near;
   light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.far;
@@ -9757,21 +9821,31 @@ const init = () => {
   scene.add(grid);
   const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
   scene.add(ground);
-  const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
-    antialias: false
+
+  //const worldBox = new THREE.Box3().expandByObject(ground);
+  //const worldOctree = new Octree(worldBox).build();
+  //worldOctree.fromGraphNode(grid);
+  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_7__.Octree();
+  worldOctree.fromGraphNode(ground);
+  const player = new _player__WEBPACK_IMPORTED_MODULE_5__["default"](camera, controls, worldOctree);
+
+  ////
+  //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  //scene.add(helper);
+  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_8__.OctreeHelper(worldOctree);
+  helper.visible = false;
+  scene.add(helper);
+  const gui = new three_addons_libs_lil_gui_module_min_js__WEBPACK_IMPORTED_MODULE_9__.GUI({
+    width: 200
   });
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_5__.Color(0x000000));
-  renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
-  renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
-  renderer.shadowMap.enabled = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.enabled;
-  renderer.shadowMap.type = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.type;
-  renderer.toneMapping = _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.ShadowMap.toneMapping;
-  container.appendChild(renderer.domElement);
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera, renderer.domElement);
-  controls.movementSpeed = 100;
-  controls.lookSpeed = 0.2;
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_6__["default"]();
+  gui.add({
+    debug: false
+  }, 'debug').onChange(value => {
+    helper.visible = value;
+  });
+  ////
+
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
   container.appendChild(stats.domElement);
@@ -9794,6 +9868,7 @@ const init = () => {
     light,
     renderer,
     clock,
+    player,
     controls,
     stats
   };
@@ -9849,6 +9924,96 @@ class Loop {
 
 /***/ }),
 
+/***/ "./src/js/game/player.js":
+/*!*******************************!*\
+  !*** ./src/js/game/player.js ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
+/* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+
+
+
+
+
+
+const {
+  exp
+} = Math;
+class Player {
+  constructor(camera, controls, worldOctree) {
+    this.camera = camera;
+    this.controls = controls;
+    this.worldOctree = worldOctree;
+    const start = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.y, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.z);
+    const end = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.y + _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.height, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.z);
+    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_3__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.radius);
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3();
+    this.direction = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3();
+    this.onFloor = false;
+  }
+  getForwardVector() {
+    this.camera.getWorldDirection(this.direction);
+    this.direction.y = 0;
+    this.direction.normalize();
+    return this.direction;
+  }
+  getSideVector() {
+    this.camera.getWorldDirection(this.direction);
+    this.direction.y = 0;
+    this.direction.normalize();
+    this.direction.cross(this.camera.up);
+    return this.direction;
+  }
+  collisions() {
+    const result = this.worldOctree.capsuleIntersect(this.collider);
+    this.onFloor = false;
+    if (result) {
+      this.onFloor = result.normal.y > 0;
+      if (!this.onFloor) {
+        this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
+      }
+      this.collider.translate(result.normal.multiplyScalar(result.depth));
+    }
+  }
+  update(deltaTime) {
+    // gives a bit of air control
+    const speedDelta = deltaTime * (this.onFloor ? _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.movementSpeed : _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.airSpeed);
+    if (this.controls.moveForward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+    }
+    if (this.controls.moveBackward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+    }
+    if (this.controls.moveLeft) {
+      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+    }
+    if (this.controls.moveRight) {
+      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+    }
+    if (this.onFloor && this.controls.isJumping) {
+      this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.jumpPower;
+    }
+    const resistance = this.onFloor ? _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.groundResistance : _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.airResistance;
+    let damping = exp(-resistance * deltaTime) - 1;
+    if (!this.onFloor) {
+      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime;
+    }
+    this.velocity.addScaledVector(this.velocity, damping);
+    this.collider.translate(this.velocity.clone());
+    this.collisions();
+    this.camera.position.copy(this.collider.end);
+  }
+}
+/* harmony default export */ __webpack_exports__["default"] = (Player);
+
+/***/ }),
+
 /***/ "./src/js/game/settings.js":
 /*!*********************************!*\
   !*** ./src/js/game/settings.js ***!
@@ -9859,16 +10024,29 @@ class Loop {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Camera: function() { return /* binding */ Camera; },
+/* harmony export */   Controls: function() { return /* binding */ Controls; },
 /* harmony export */   Grid: function() { return /* binding */ Grid; },
 /* harmony export */   Ground: function() { return /* binding */ Ground; },
 /* harmony export */   Light: function() { return /* binding */ Light; },
+/* harmony export */   PlayerSettings: function() { return /* binding */ PlayerSettings; },
 /* harmony export */   Renderer: function() { return /* binding */ Renderer; },
 /* harmony export */   ResizeDelayTime: function() { return /* binding */ ResizeDelayTime; },
-/* harmony export */   Scene: function() { return /* binding */ Scene; }
+/* harmony export */   Scene: function() { return /* binding */ Scene; },
+/* harmony export */   World: function() { return /* binding */ World; }
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const ResizeDelayTime = 200;
+const PlayerSettings = {
+  height: 20,
+  radius: 5,
+  Position: {
+    x: 0,
+    y: 500,
+    z: 100
+  },
+  jumpPower: 15
+};
 const Scene = {
   background: 0x000000,
   Fog: {
@@ -9879,8 +10057,8 @@ const Scene = {
 };
 const Camera = {
   FOV: 70,
-  ASPECT: window.innerWidth / window.innerHeight,
-  near: 30,
+  Aspect: window.innerWidth / window.innerHeight,
+  near: PlayerSettings.radius,
   far: 1000,
   order: 'YXZ'
 };
@@ -9946,6 +10124,16 @@ const Ground = {
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00
+};
+const Controls = {
+  movementSpeed: 18,
+  airSpeed: 6,
+  groundResistance: 10,
+  airResistance: 2,
+  lookSpeed: 0.2
+};
+const World = {
+  gravity: 8
 };
 
 /***/ }),
@@ -103909,6 +104097,120 @@ if ( typeof window !== 'undefined' ) {
 
 /***/ }),
 
+/***/ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js":
+/*!*****************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/helpers/OctreeHelper.js ***!
+  \*****************************************************************/
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   OctreeHelper: function() { return /* binding */ OctreeHelper; }
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+class OctreeHelper extends three__WEBPACK_IMPORTED_MODULE_0__.LineSegments {
+
+	constructor( octree, color = 0xffff00 ) {
+
+		super( new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry(), new three__WEBPACK_IMPORTED_MODULE_0__.LineBasicMaterial( { color: color, toneMapped: false } ) );
+
+		this.octree = octree;
+		this.color = color;
+
+		this.type = 'OctreeHelper';
+
+		this.update();
+
+	}
+
+	update() {
+
+		const vertices = [];
+
+		function traverse( tree ) {
+
+			for ( let i = 0; i < tree.length; i ++ ) {
+
+				const min = tree[ i ].box.min;
+				const max = tree[ i ].box.max;
+
+				vertices.push( max.x, max.y, max.z ); vertices.push( min.x, max.y, max.z ); // 0, 1
+				vertices.push( min.x, max.y, max.z ); vertices.push( min.x, min.y, max.z ); // 1, 2
+				vertices.push( min.x, min.y, max.z ); vertices.push( max.x, min.y, max.z ); // 2, 3
+				vertices.push( max.x, min.y, max.z ); vertices.push( max.x, max.y, max.z ); // 3, 0
+
+				vertices.push( max.x, max.y, min.z ); vertices.push( min.x, max.y, min.z ); // 4, 5
+				vertices.push( min.x, max.y, min.z ); vertices.push( min.x, min.y, min.z ); // 5, 6
+				vertices.push( min.x, min.y, min.z ); vertices.push( max.x, min.y, min.z ); // 6, 7
+				vertices.push( max.x, min.y, min.z ); vertices.push( max.x, max.y, min.z ); // 7, 4
+
+				vertices.push( max.x, max.y, max.z ); vertices.push( max.x, max.y, min.z ); // 0, 4
+				vertices.push( min.x, max.y, max.z ); vertices.push( min.x, max.y, min.z ); // 1, 5
+				vertices.push( min.x, min.y, max.z ); vertices.push( min.x, min.y, min.z ); // 2, 6
+				vertices.push( max.x, min.y, max.z ); vertices.push( max.x, min.y, min.z ); // 3, 7
+
+				traverse( tree[ i ].subTrees );
+
+			}
+
+		}
+
+		traverse( this.octree.subTrees );
+
+		this.geometry.dispose();
+
+		this.geometry = new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry();
+		this.geometry.setAttribute( 'position', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( vertices, 3 ) );
+
+	}
+
+	dispose() {
+
+		this.geometry.dispose();
+		this.material.dispose();
+
+	}
+
+}
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/three/examples/jsm/libs/lil-gui.module.min.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/libs/lil-gui.module.min.js ***!
+  \********************************************************************/
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BooleanController: function() { return /* binding */ i; },
+/* harmony export */   ColorController: function() { return /* binding */ a; },
+/* harmony export */   Controller: function() { return /* binding */ t; },
+/* harmony export */   FunctionController: function() { return /* binding */ h; },
+/* harmony export */   GUI: function() { return /* binding */ g; },
+/* harmony export */   NumberController: function() { return /* binding */ d; },
+/* harmony export */   OptionController: function() { return /* binding */ c; },
+/* harmony export */   StringController: function() { return /* binding */ u; }
+/* harmony export */ });
+/**
+ * lil-gui
+ * https://lil-gui.georgealways.com
+ * @version 0.17.0
+ * @author George Michael Brower
+ * @license MIT
+ */
+class t{constructor(i,e,s,n,l="div"){this.parent=i,this.object=e,this.property=s,this._disabled=!1,this._hidden=!1,this.initialValue=this.getValue(),this.domElement=document.createElement("div"),this.domElement.classList.add("controller"),this.domElement.classList.add(n),this.$name=document.createElement("div"),this.$name.classList.add("name"),t.nextNameID=t.nextNameID||0,this.$name.id="lil-gui-name-"+ ++t.nextNameID,this.$widget=document.createElement(l),this.$widget.classList.add("widget"),this.$disable=this.$widget,this.domElement.appendChild(this.$name),this.domElement.appendChild(this.$widget),this.parent.children.push(this),this.parent.controllers.push(this),this.parent.$children.appendChild(this.domElement),this._listenCallback=this._listenCallback.bind(this),this.name(s)}name(t){return this._name=t,this.$name.innerHTML=t,this}onChange(t){return this._onChange=t,this}_callOnChange(){this.parent._callOnChange(this),void 0!==this._onChange&&this._onChange.call(this,this.getValue()),this._changed=!0}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(){this._changed&&(this.parent._callOnFinishChange(this),void 0!==this._onFinishChange&&this._onFinishChange.call(this,this.getValue())),this._changed=!1}reset(){return this.setValue(this.initialValue),this._callOnFinishChange(),this}enable(t=!0){return this.disable(!t)}disable(t=!0){return t===this._disabled||(this._disabled=t,this.domElement.classList.toggle("disabled",t),this.$disable.toggleAttribute("disabled",t)),this}show(t=!0){return this._hidden=!t,this.domElement.style.display=this._hidden?"none":"",this}hide(){return this.show(!1)}options(t){const i=this.parent.add(this.object,this.property,t);return i.name(this._name),this.destroy(),i}min(t){return this}max(t){return this}step(t){return this}decimals(t){return this}listen(t=!0){return this._listening=t,void 0!==this._listenCallbackID&&(cancelAnimationFrame(this._listenCallbackID),this._listenCallbackID=void 0),this._listening&&this._listenCallback(),this}_listenCallback(){this._listenCallbackID=requestAnimationFrame(this._listenCallback);const t=this.save();t!==this._listenPrevValue&&this.updateDisplay(),this._listenPrevValue=t}getValue(){return this.object[this.property]}setValue(t){return this.object[this.property]=t,this._callOnChange(),this.updateDisplay(),this}updateDisplay(){return this}load(t){return this.setValue(t),this._callOnFinishChange(),this}save(){return this.getValue()}destroy(){this.listen(!1),this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.controllers.splice(this.parent.controllers.indexOf(this),1),this.parent.$children.removeChild(this.domElement)}}class i extends t{constructor(t,i,e){super(t,i,e,"boolean","label"),this.$input=document.createElement("input"),this.$input.setAttribute("type","checkbox"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$input.addEventListener("change",()=>{this.setValue(this.$input.checked),this._callOnFinishChange()}),this.$disable=this.$input,this.updateDisplay()}updateDisplay(){return this.$input.checked=this.getValue(),this}}function e(t){let i,e;return(i=t.match(/(#|0x)?([a-f0-9]{6})/i))?e=i[2]:(i=t.match(/rgb\(\s*(\d*)\s*,\s*(\d*)\s*,\s*(\d*)\s*\)/))?e=parseInt(i[1]).toString(16).padStart(2,0)+parseInt(i[2]).toString(16).padStart(2,0)+parseInt(i[3]).toString(16).padStart(2,0):(i=t.match(/^#?([a-f0-9])([a-f0-9])([a-f0-9])$/i))&&(e=i[1]+i[1]+i[2]+i[2]+i[3]+i[3]),!!e&&"#"+e}const s={isPrimitive:!0,match:t=>"string"==typeof t,fromHexString:e,toHexString:e},n={isPrimitive:!0,match:t=>"number"==typeof t,fromHexString:t=>parseInt(t.substring(1),16),toHexString:t=>"#"+t.toString(16).padStart(6,0)},l={isPrimitive:!1,match:Array.isArray,fromHexString(t,i,e=1){const s=n.fromHexString(t);i[0]=(s>>16&255)/255*e,i[1]=(s>>8&255)/255*e,i[2]=(255&s)/255*e},toHexString:([t,i,e],s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},r={isPrimitive:!1,match:t=>Object(t)===t,fromHexString(t,i,e=1){const s=n.fromHexString(t);i.r=(s>>16&255)/255*e,i.g=(s>>8&255)/255*e,i.b=(255&s)/255*e},toHexString:({r:t,g:i,b:e},s=1)=>n.toHexString(t*(s=255/s)<<16^i*s<<8^e*s<<0)},o=[s,n,l,r];class a extends t{constructor(t,i,s,n){var l;super(t,i,s,"color"),this.$input=document.createElement("input"),this.$input.setAttribute("type","color"),this.$input.setAttribute("tabindex",-1),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$text=document.createElement("input"),this.$text.setAttribute("type","text"),this.$text.setAttribute("spellcheck","false"),this.$text.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this.$display.appendChild(this.$input),this.$widget.appendChild(this.$display),this.$widget.appendChild(this.$text),this._format=(l=this.initialValue,o.find(t=>t.match(l))),this._rgbScale=n,this._initialValueHexString=this.save(),this._textFocused=!1,this.$input.addEventListener("input",()=>{this._setValueFromHexString(this.$input.value)}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange()}),this.$text.addEventListener("input",()=>{const t=e(this.$text.value);t&&this._setValueFromHexString(t)}),this.$text.addEventListener("focus",()=>{this._textFocused=!0,this.$text.select()}),this.$text.addEventListener("blur",()=>{this._textFocused=!1,this.updateDisplay(),this._callOnFinishChange()}),this.$disable=this.$text,this.updateDisplay()}reset(){return this._setValueFromHexString(this._initialValueHexString),this}_setValueFromHexString(t){if(this._format.isPrimitive){const i=this._format.fromHexString(t);this.setValue(i)}else this._format.fromHexString(t,this.getValue(),this._rgbScale),this._callOnChange(),this.updateDisplay()}save(){return this._format.toHexString(this.getValue(),this._rgbScale)}load(t){return this._setValueFromHexString(t),this._callOnFinishChange(),this}updateDisplay(){return this.$input.value=this._format.toHexString(this.getValue(),this._rgbScale),this._textFocused||(this.$text.value=this.$input.value.substring(1)),this.$display.style.backgroundColor=this.$input.value,this}}class h extends t{constructor(t,i,e){super(t,i,e,"function"),this.$button=document.createElement("button"),this.$button.appendChild(this.$name),this.$widget.appendChild(this.$button),this.$button.addEventListener("click",t=>{t.preventDefault(),this.getValue().call(this.object)}),this.$button.addEventListener("touchstart",()=>{},{passive:!0}),this.$disable=this.$button}}class d extends t{constructor(t,i,e,s,n,l){super(t,i,e,"number"),this._initInput(),this.min(s),this.max(n);const r=void 0!==l;this.step(r?l:this._getImplicitStep(),r),this.updateDisplay()}decimals(t){return this._decimals=t,this.updateDisplay(),this}min(t){return this._min=t,this._onUpdateMinMax(),this}max(t){return this._max=t,this._onUpdateMinMax(),this}step(t,i=!0){return this._step=t,this._stepExplicit=i,this}updateDisplay(){const t=this.getValue();if(this._hasSlider){let i=(t-this._min)/(this._max-this._min);i=Math.max(0,Math.min(i,1)),this.$fill.style.width=100*i+"%"}return this._inputFocused||(this.$input.value=void 0===this._decimals?t:t.toFixed(this._decimals)),this}_initInput(){this.$input=document.createElement("input"),this.$input.setAttribute("type","number"),this.$input.setAttribute("step","any"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$widget.appendChild(this.$input),this.$disable=this.$input;const t=t=>{const i=parseFloat(this.$input.value);isNaN(i)||(this._snapClampSetValue(i+t),this.$input.value=this.getValue())};let i,e,s,n,l,r=!1;const o=t=>{if(r){const s=t.clientX-i,n=t.clientY-e;Math.abs(n)>5?(t.preventDefault(),this.$input.blur(),r=!1,this._setDraggingStyle(!0,"vertical")):Math.abs(s)>5&&a()}if(!r){const i=t.clientY-s;l-=i*this._step*this._arrowKeyMultiplier(t),n+l>this._max?l=this._max-n:n+l<this._min&&(l=this._min-n),this._snapClampSetValue(n+l)}s=t.clientY},a=()=>{this._setDraggingStyle(!1,"vertical"),this._callOnFinishChange(),window.removeEventListener("mousemove",o),window.removeEventListener("mouseup",a)};this.$input.addEventListener("input",()=>{let t=parseFloat(this.$input.value);isNaN(t)||(this._stepExplicit&&(t=this._snap(t)),this.setValue(this._clamp(t)))}),this.$input.addEventListener("keydown",i=>{"Enter"===i.code&&this.$input.blur(),"ArrowUp"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i))),"ArrowDown"===i.code&&(i.preventDefault(),t(this._step*this._arrowKeyMultiplier(i)*-1))}),this.$input.addEventListener("wheel",i=>{this._inputFocused&&(i.preventDefault(),t(this._step*this._normalizeMouseWheel(i)))},{passive:!1}),this.$input.addEventListener("mousedown",t=>{i=t.clientX,e=s=t.clientY,r=!0,n=this.getValue(),l=0,window.addEventListener("mousemove",o),window.addEventListener("mouseup",a)}),this.$input.addEventListener("focus",()=>{this._inputFocused=!0}),this.$input.addEventListener("blur",()=>{this._inputFocused=!1,this.updateDisplay(),this._callOnFinishChange()})}_initSlider(){this._hasSlider=!0,this.$slider=document.createElement("div"),this.$slider.classList.add("slider"),this.$fill=document.createElement("div"),this.$fill.classList.add("fill"),this.$slider.appendChild(this.$fill),this.$widget.insertBefore(this.$slider,this.$input),this.domElement.classList.add("hasSlider");const t=t=>{const i=this.$slider.getBoundingClientRect();let e=(s=t,n=i.left,l=i.right,r=this._min,o=this._max,(s-n)/(l-n)*(o-r)+r);var s,n,l,r,o;this._snapClampSetValue(e)},i=i=>{t(i.clientX)},e=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("mousemove",i),window.removeEventListener("mouseup",e)};let s,n,l=!1;const r=i=>{i.preventDefault(),this._setDraggingStyle(!0),t(i.touches[0].clientX),l=!1},o=i=>{if(l){const t=i.touches[0].clientX-s,e=i.touches[0].clientY-n;Math.abs(t)>Math.abs(e)?r(i):(window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a))}else i.preventDefault(),t(i.touches[0].clientX)},a=()=>{this._callOnFinishChange(),this._setDraggingStyle(!1),window.removeEventListener("touchmove",o),window.removeEventListener("touchend",a)},h=this._callOnFinishChange.bind(this);let d;this.$slider.addEventListener("mousedown",s=>{this._setDraggingStyle(!0),t(s.clientX),window.addEventListener("mousemove",i),window.addEventListener("mouseup",e)}),this.$slider.addEventListener("touchstart",t=>{t.touches.length>1||(this._hasScrollBar?(s=t.touches[0].clientX,n=t.touches[0].clientY,l=!0):r(t),window.addEventListener("touchmove",o,{passive:!1}),window.addEventListener("touchend",a))},{passive:!1}),this.$slider.addEventListener("wheel",t=>{if(Math.abs(t.deltaX)<Math.abs(t.deltaY)&&this._hasScrollBar)return;t.preventDefault();const i=this._normalizeMouseWheel(t)*this._step;this._snapClampSetValue(this.getValue()+i),this.$input.value=this.getValue(),clearTimeout(d),d=setTimeout(h,400)},{passive:!1})}_setDraggingStyle(t,i="horizontal"){this.$slider&&this.$slider.classList.toggle("active",t),document.body.classList.toggle("lil-gui-dragging",t),document.body.classList.toggle("lil-gui-"+i,t)}_getImplicitStep(){return this._hasMin&&this._hasMax?(this._max-this._min)/1e3:.1}_onUpdateMinMax(){!this._hasSlider&&this._hasMin&&this._hasMax&&(this._stepExplicit||this.step(this._getImplicitStep(),!1),this._initSlider(),this.updateDisplay())}_normalizeMouseWheel(t){let{deltaX:i,deltaY:e}=t;Math.floor(t.deltaY)!==t.deltaY&&t.wheelDelta&&(i=0,e=-t.wheelDelta/120,e*=this._stepExplicit?1:10);return i+-e}_arrowKeyMultiplier(t){let i=this._stepExplicit?1:10;return t.shiftKey?i*=10:t.altKey&&(i/=10),i}_snap(t){const i=Math.round(t/this._step)*this._step;return parseFloat(i.toPrecision(15))}_clamp(t){return t<this._min&&(t=this._min),t>this._max&&(t=this._max),t}_snapClampSetValue(t){this.setValue(this._clamp(this._snap(t)))}get _hasScrollBar(){const t=this.parent.root.$children;return t.scrollHeight>t.clientHeight}get _hasMin(){return void 0!==this._min}get _hasMax(){return void 0!==this._max}}class c extends t{constructor(t,i,e,s){super(t,i,e,"option"),this.$select=document.createElement("select"),this.$select.setAttribute("aria-labelledby",this.$name.id),this.$display=document.createElement("div"),this.$display.classList.add("display"),this._values=Array.isArray(s)?s:Object.values(s),this._names=Array.isArray(s)?s:Object.keys(s),this._names.forEach(t=>{const i=document.createElement("option");i.innerHTML=t,this.$select.appendChild(i)}),this.$select.addEventListener("change",()=>{this.setValue(this._values[this.$select.selectedIndex]),this._callOnFinishChange()}),this.$select.addEventListener("focus",()=>{this.$display.classList.add("focus")}),this.$select.addEventListener("blur",()=>{this.$display.classList.remove("focus")}),this.$widget.appendChild(this.$select),this.$widget.appendChild(this.$display),this.$disable=this.$select,this.updateDisplay()}updateDisplay(){const t=this.getValue(),i=this._values.indexOf(t);return this.$select.selectedIndex=i,this.$display.innerHTML=-1===i?t:this._names[i],this}}class u extends t{constructor(t,i,e){super(t,i,e,"string"),this.$input=document.createElement("input"),this.$input.setAttribute("type","text"),this.$input.setAttribute("aria-labelledby",this.$name.id),this.$input.addEventListener("input",()=>{this.setValue(this.$input.value)}),this.$input.addEventListener("keydown",t=>{"Enter"===t.code&&this.$input.blur()}),this.$input.addEventListener("blur",()=>{this._callOnFinishChange()}),this.$widget.appendChild(this.$input),this.$disable=this.$input,this.updateDisplay()}updateDisplay(){return this.$input.value=this.getValue(),this}}let p=!1;class g{constructor({parent:t,autoPlace:i=void 0===t,container:e,width:s,title:n="Controls",injectStyles:l=!0,touchStyles:r=!0}={}){if(this.parent=t,this.root=t?t.root:this,this.children=[],this.controllers=[],this.folders=[],this._closed=!1,this._hidden=!1,this.domElement=document.createElement("div"),this.domElement.classList.add("lil-gui"),this.$title=document.createElement("div"),this.$title.classList.add("title"),this.$title.setAttribute("role","button"),this.$title.setAttribute("aria-expanded",!0),this.$title.setAttribute("tabindex",0),this.$title.addEventListener("click",()=>this.openAnimated(this._closed)),this.$title.addEventListener("keydown",t=>{"Enter"!==t.code&&"Space"!==t.code||(t.preventDefault(),this.$title.click())}),this.$title.addEventListener("touchstart",()=>{},{passive:!0}),this.$children=document.createElement("div"),this.$children.classList.add("children"),this.domElement.appendChild(this.$title),this.domElement.appendChild(this.$children),this.title(n),r&&this.domElement.classList.add("allow-touch-styles"),this.parent)return this.parent.children.push(this),this.parent.folders.push(this),void this.parent.$children.appendChild(this.domElement);this.domElement.classList.add("root"),!p&&l&&(!function(t){const i=document.createElement("style");i.innerHTML=t;const e=document.querySelector("head link[rel=stylesheet], head style");e?document.head.insertBefore(i,e):document.head.appendChild(i)}('.lil-gui{--background-color:#1f1f1f;--text-color:#ebebeb;--title-background-color:#111;--title-text-color:#ebebeb;--widget-color:#424242;--hover-color:#4f4f4f;--focus-color:#595959;--number-color:#2cc9ff;--string-color:#a2db3c;--font-size:11px;--input-font-size:11px;--font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--font-family-mono:Menlo,Monaco,Consolas,"Droid Sans Mono",monospace;--padding:4px;--spacing:4px;--widget-height:20px;--name-width:45%;--slider-knob-width:2px;--slider-input-width:27%;--color-input-width:27%;--slider-input-min-width:45px;--color-input-min-width:45px;--folder-indent:7px;--widget-padding:0 0 0 3px;--widget-border-radius:2px;--checkbox-size:calc(var(--widget-height)*0.75);--scrollbar-width:5px;background-color:var(--background-color);color:var(--text-color);font-family:var(--font-family);font-size:var(--font-size);font-style:normal;font-weight:400;line-height:1;text-align:left;touch-action:manipulation;user-select:none;-webkit-user-select:none}.lil-gui,.lil-gui *{box-sizing:border-box;margin:0;padding:0}.lil-gui.root{display:flex;flex-direction:column;width:var(--width,245px)}.lil-gui.root>.title{background:var(--title-background-color);color:var(--title-text-color)}.lil-gui.root>.children{overflow-x:hidden;overflow-y:auto}.lil-gui.root>.children::-webkit-scrollbar{background:var(--background-color);height:var(--scrollbar-width);width:var(--scrollbar-width)}.lil-gui.root>.children::-webkit-scrollbar-thumb{background:var(--focus-color);border-radius:var(--scrollbar-width)}.lil-gui.force-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}.lil-gui.autoPlace{max-height:100%;position:fixed;right:15px;top:0;z-index:1001}.lil-gui .controller{align-items:center;display:flex;margin:var(--spacing) 0;padding:0 var(--padding)}.lil-gui .controller.disabled{opacity:.5}.lil-gui .controller.disabled,.lil-gui .controller.disabled *{pointer-events:none!important}.lil-gui .controller>.name{flex-shrink:0;line-height:var(--widget-height);min-width:var(--name-width);padding-right:var(--spacing);white-space:pre}.lil-gui .controller .widget{align-items:center;display:flex;min-height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.string input{color:var(--string-color)}.lil-gui .controller.boolean .widget{cursor:pointer}.lil-gui .controller.color .display{border-radius:var(--widget-border-radius);height:var(--widget-height);position:relative;width:100%}.lil-gui .controller.color input[type=color]{cursor:pointer;height:100%;opacity:0;width:100%}.lil-gui .controller.color input[type=text]{flex-shrink:0;font-family:var(--font-family-mono);margin-left:var(--spacing);min-width:var(--color-input-min-width);width:var(--color-input-width)}.lil-gui .controller.option select{max-width:100%;opacity:0;position:absolute;width:100%}.lil-gui .controller.option .display{background:var(--widget-color);border-radius:var(--widget-border-radius);height:var(--widget-height);line-height:var(--widget-height);max-width:100%;overflow:hidden;padding-left:.55em;padding-right:1.75em;pointer-events:none;position:relative;word-break:break-all}.lil-gui .controller.option .display.active{background:var(--focus-color)}.lil-gui .controller.option .display:after{bottom:0;content:"↕";font-family:lil-gui;padding-right:.375em;position:absolute;right:0;top:0}.lil-gui .controller.option .widget,.lil-gui .controller.option select{cursor:pointer}.lil-gui .controller.number input{color:var(--number-color)}.lil-gui .controller.number.hasSlider input{flex-shrink:0;margin-left:var(--spacing);min-width:var(--slider-input-min-width);width:var(--slider-input-width)}.lil-gui .controller.number .slider{background-color:var(--widget-color);border-radius:var(--widget-border-radius);cursor:ew-resize;height:var(--widget-height);overflow:hidden;padding-right:var(--slider-knob-width);touch-action:pan-y;width:100%}.lil-gui .controller.number .slider.active{background-color:var(--focus-color)}.lil-gui .controller.number .slider.active .fill{opacity:.95}.lil-gui .controller.number .fill{border-right:var(--slider-knob-width) solid var(--number-color);box-sizing:content-box;height:100%}.lil-gui-dragging .lil-gui{--hover-color:var(--widget-color)}.lil-gui-dragging *{cursor:ew-resize!important}.lil-gui-dragging.lil-gui-vertical *{cursor:ns-resize!important}.lil-gui .title{--title-height:calc(var(--widget-height) + var(--spacing)*1.25);-webkit-tap-highlight-color:transparent;text-decoration-skip:objects;cursor:pointer;font-weight:600;height:var(--title-height);line-height:calc(var(--title-height) - 4px);outline:none;padding:0 var(--padding)}.lil-gui .title:before{content:"▾";display:inline-block;font-family:lil-gui;padding-right:2px}.lil-gui .title:active{background:var(--title-background-color);opacity:.75}.lil-gui.root>.title:focus{text-decoration:none!important}.lil-gui.closed>.title:before{content:"▸"}.lil-gui.closed>.children{opacity:0;transform:translateY(-7px)}.lil-gui.closed:not(.transition)>.children{display:none}.lil-gui.transition>.children{overflow:hidden;pointer-events:none;transition-duration:.3s;transition-property:height,opacity,transform;transition-timing-function:cubic-bezier(.2,.6,.35,1)}.lil-gui .children:empty:before{content:"Empty";display:block;font-style:italic;height:var(--widget-height);line-height:var(--widget-height);margin:var(--spacing) 0;opacity:.5;padding:0 var(--padding)}.lil-gui.root>.children>.lil-gui>.title{border-width:0;border-bottom:1px solid var(--widget-color);border-left:0 solid var(--widget-color);border-right:0 solid var(--widget-color);border-top:1px solid var(--widget-color);transition:border-color .3s}.lil-gui.root>.children>.lil-gui.closed>.title{border-bottom-color:transparent}.lil-gui+.controller{border-top:1px solid var(--widget-color);margin-top:0;padding-top:var(--spacing)}.lil-gui .lil-gui .lil-gui>.title{border:none}.lil-gui .lil-gui .lil-gui>.children{border:none;border-left:2px solid var(--widget-color);margin-left:var(--folder-indent)}.lil-gui .lil-gui .controller{border:none}.lil-gui input{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:0;border-radius:var(--widget-border-radius);color:var(--text-color);font-family:var(--font-family);font-size:var(--input-font-size);height:var(--widget-height);outline:none;width:100%}.lil-gui input:disabled{opacity:1}.lil-gui input[type=number],.lil-gui input[type=text]{padding:var(--widget-padding)}.lil-gui input[type=number]:focus,.lil-gui input[type=text]:focus{background:var(--focus-color)}.lil-gui input::-webkit-inner-spin-button,.lil-gui input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.lil-gui input[type=number]{-moz-appearance:textfield}.lil-gui input[type=checkbox]{appearance:none;-webkit-appearance:none;border-radius:var(--widget-border-radius);cursor:pointer;height:var(--checkbox-size);text-align:center;width:var(--checkbox-size)}.lil-gui input[type=checkbox]:checked:before{content:"✓";font-family:lil-gui;font-size:var(--checkbox-size);line-height:var(--checkbox-size)}.lil-gui button{-webkit-tap-highlight-color:transparent;background:var(--widget-color);border:1px solid var(--widget-color);border-radius:var(--widget-border-radius);color:var(--text-color);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size);height:var(--widget-height);line-height:calc(var(--widget-height) - 4px);outline:none;text-align:center;text-transform:none;width:100%}.lil-gui button:active{background:var(--focus-color)}@font-face{font-family:lil-gui;src:url("data:application/font-woff;charset=utf-8;base64,d09GRgABAAAAAAUsAAsAAAAACJwAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAABHU1VCAAABCAAAAH4AAADAImwmYE9TLzIAAAGIAAAAPwAAAGBKqH5SY21hcAAAAcgAAAD0AAACrukyyJBnbHlmAAACvAAAAF8AAACEIZpWH2hlYWQAAAMcAAAAJwAAADZfcj2zaGhlYQAAA0QAAAAYAAAAJAC5AHhobXR4AAADXAAAABAAAABMAZAAAGxvY2EAAANsAAAAFAAAACgCEgIybWF4cAAAA4AAAAAeAAAAIAEfABJuYW1lAAADoAAAASIAAAIK9SUU/XBvc3QAAATEAAAAZgAAAJCTcMc2eJxVjbEOgjAURU+hFRBK1dGRL+ALnAiToyMLEzFpnPz/eAshwSa97517c/MwwJmeB9kwPl+0cf5+uGPZXsqPu4nvZabcSZldZ6kfyWnomFY/eScKqZNWupKJO6kXN3K9uCVoL7iInPr1X5baXs3tjuMqCtzEuagm/AAlzQgPAAB4nGNgYRBlnMDAysDAYM/gBiT5oLQBAwuDJAMDEwMrMwNWEJDmmsJwgCFeXZghBcjlZMgFCzOiKOIFAB71Bb8AeJy1kjFuwkAQRZ+DwRAwBtNQRUGKQ8OdKCAWUhAgKLhIuAsVSpWz5Bbkj3dEgYiUIszqWdpZe+Z7/wB1oCYmIoboiwiLT2WjKl/jscrHfGg/pKdMkyklC5Zs2LEfHYpjcRoPzme9MWWmk3dWbK9ObkWkikOetJ554fWyoEsmdSlt+uR0pCJR34b6t/TVg1SY3sYvdf8vuiKrpyaDXDISiegp17p7579Gp3p++y7HPAiY9pmTibljrr85qSidtlg4+l25GLCaS8e6rRxNBmsnERunKbaOObRz7N72ju5vdAjYpBXHgJylOAVsMseDAPEP8LYoUHicY2BiAAEfhiAGJgZWBgZ7RnFRdnVJELCQlBSRlATJMoLV2DK4glSYs6ubq5vbKrJLSbGrgEmovDuDJVhe3VzcXFwNLCOILB/C4IuQ1xTn5FPilBTj5FPmBAB4WwoqAHicY2BkYGAA4sk1sR/j+W2+MnAzpDBgAyEMQUCSg4EJxAEAwUgFHgB4nGNgZGBgSGFggJMhDIwMqEAYAByHATJ4nGNgAIIUNEwmAABl3AGReJxjYAACIQYlBiMGJ3wQAEcQBEV4nGNgZGBgEGZgY2BiAAEQyQWEDAz/wXwGAAsPATIAAHicXdBNSsNAHAXwl35iA0UQXYnMShfS9GPZA7T7LgIu03SSpkwzYTIt1BN4Ak/gKTyAeCxfw39jZkjymzcvAwmAW/wgwHUEGDb36+jQQ3GXGot79L24jxCP4gHzF/EIr4jEIe7wxhOC3g2TMYy4Q7+Lu/SHuEd/ivt4wJd4wPxbPEKMX3GI5+DJFGaSn4qNzk8mcbKSR6xdXdhSzaOZJGtdapd4vVPbi6rP+cL7TGXOHtXKll4bY1Xl7EGnPtp7Xy2n00zyKLVHfkHBa4IcJ2oD3cgggWvt/V/FbDrUlEUJhTn/0azVWbNTNr0Ens8de1tceK9xZmfB1CPjOmPH4kitmvOubcNpmVTN3oFJyjzCvnmrwhJTzqzVj9jiSX911FjeAAB4nG3HMRKCMBBA0f0giiKi4DU8k0V2GWbIZDOh4PoWWvq6J5V8If9NVNQcaDhyouXMhY4rPTcG7jwYmXhKq8Wz+p762aNaeYXom2n3m2dLTVgsrCgFJ7OTmIkYbwIbC6vIB7WmFfAAAA==") format("woff")}@media (pointer:coarse){.lil-gui.allow-touch-styles{--widget-height:28px;--padding:6px;--spacing:6px;--font-size:13px;--input-font-size:16px;--folder-indent:10px;--scrollbar-width:7px;--slider-input-min-width:50px;--color-input-min-width:65px}}@media (hover:hover){.lil-gui .controller.color .display:hover:before{border:1px solid #fff9;border-radius:var(--widget-border-radius);bottom:0;content:" ";display:block;left:0;position:absolute;right:0;top:0}.lil-gui .controller.option .display.focus{background:var(--focus-color)}.lil-gui .controller.option .widget:hover .display{background:var(--hover-color)}.lil-gui .controller.number .slider:hover{background-color:var(--hover-color)}body:not(.lil-gui-dragging) .lil-gui .title:hover{background:var(--title-background-color);opacity:.85}.lil-gui .title:focus{text-decoration:underline var(--focus-color)}.lil-gui input:hover{background:var(--hover-color)}.lil-gui input:active{background:var(--focus-color)}.lil-gui input[type=checkbox]:focus{box-shadow:inset 0 0 0 1px var(--focus-color)}.lil-gui button:hover{background:var(--hover-color);border-color:var(--hover-color)}.lil-gui button:focus{border-color:var(--focus-color)}}'),p=!0),e?e.appendChild(this.domElement):i&&(this.domElement.classList.add("autoPlace"),document.body.appendChild(this.domElement)),s&&this.domElement.style.setProperty("--width",s+"px"),this.domElement.addEventListener("keydown",t=>t.stopPropagation()),this.domElement.addEventListener("keyup",t=>t.stopPropagation())}add(t,e,s,n,l){if(Object(s)===s)return new c(this,t,e,s);const r=t[e];switch(typeof r){case"number":return new d(this,t,e,s,n,l);case"boolean":return new i(this,t,e);case"string":return new u(this,t,e);case"function":return new h(this,t,e)}console.error("gui.add failed\n\tproperty:",e,"\n\tobject:",t,"\n\tvalue:",r)}addColor(t,i,e=1){return new a(this,t,i,e)}addFolder(t){return new g({parent:this,title:t})}load(t,i=!0){return t.controllers&&this.controllers.forEach(i=>{i instanceof h||i._name in t.controllers&&i.load(t.controllers[i._name])}),i&&t.folders&&this.folders.forEach(i=>{i._title in t.folders&&i.load(t.folders[i._title])}),this}save(t=!0){const i={controllers:{},folders:{}};return this.controllers.forEach(t=>{if(!(t instanceof h)){if(t._name in i.controllers)throw new Error(`Cannot save GUI with duplicate property "${t._name}"`);i.controllers[t._name]=t.save()}}),t&&this.folders.forEach(t=>{if(t._title in i.folders)throw new Error(`Cannot save GUI with duplicate folder "${t._title}"`);i.folders[t._title]=t.save()}),i}open(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),this.domElement.classList.toggle("closed",this._closed),this}close(){return this.open(!1)}show(t=!0){return this._hidden=!t,this.domElement.style.display=this._hidden?"none":"",this}hide(){return this.show(!1)}openAnimated(t=!0){return this._closed=!t,this.$title.setAttribute("aria-expanded",!this._closed),requestAnimationFrame(()=>{const i=this.$children.clientHeight;this.$children.style.height=i+"px",this.domElement.classList.add("transition");const e=t=>{t.target===this.$children&&(this.$children.style.height="",this.domElement.classList.remove("transition"),this.$children.removeEventListener("transitionend",e))};this.$children.addEventListener("transitionend",e);const s=t?this.$children.scrollHeight:0;this.domElement.classList.toggle("closed",!t),requestAnimationFrame(()=>{this.$children.style.height=s+"px"})}),this}title(t){return this._title=t,this.$title.innerHTML=t,this}reset(t=!0){return(t?this.controllersRecursive():this.controllers).forEach(t=>t.reset()),this}onChange(t){return this._onChange=t,this}_callOnChange(t){this.parent&&this.parent._callOnChange(t),void 0!==this._onChange&&this._onChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t})}onFinishChange(t){return this._onFinishChange=t,this}_callOnFinishChange(t){this.parent&&this.parent._callOnFinishChange(t),void 0!==this._onFinishChange&&this._onFinishChange.call(this,{object:t.object,property:t.property,value:t.getValue(),controller:t})}destroy(){this.parent&&(this.parent.children.splice(this.parent.children.indexOf(this),1),this.parent.folders.splice(this.parent.folders.indexOf(this),1)),this.domElement.parentElement&&this.domElement.parentElement.removeChild(this.domElement),Array.from(this.children).forEach(t=>t.destroy())}controllersRecursive(){let t=Array.from(this.controllers);return this.folders.forEach(i=>{t=t.concat(i.controllersRecursive())}),t}foldersRecursive(){let t=Array.from(this.folders);return this.folders.forEach(i=>{t=t.concat(i.foldersRecursive())}),t}}/* harmony default export */ __webpack_exports__["default"] = (g);
+
+
+/***/ }),
+
 /***/ "./node_modules/three/examples/jsm/libs/stats.module.js":
 /*!**************************************************************!*\
   !*** ./node_modules/three/examples/jsm/libs/stats.module.js ***!
@@ -104088,6 +104390,102 @@ Stats.Panel = function ( name, fg, bg ) {
 
 /***/ }),
 
+/***/ "./node_modules/three/examples/jsm/math/Capsule.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/three/examples/jsm/math/Capsule.js ***!
+  \*********************************************************/
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Capsule: function() { return /* binding */ Capsule; }
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+class Capsule {
+
+	constructor( start = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3( 0, 0, 0 ), end = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3( 0, 1, 0 ), radius = 1 ) {
+
+		this.start = start;
+		this.end = end;
+		this.radius = radius;
+
+	}
+
+	clone() {
+
+		return new Capsule( this.start.clone(), this.end.clone(), this.radius );
+
+	}
+
+	set( start, end, radius ) {
+
+		this.start.copy( start );
+		this.end.copy( end );
+		this.radius = radius;
+
+	}
+
+	copy( capsule ) {
+
+		this.start.copy( capsule.start );
+		this.end.copy( capsule.end );
+		this.radius = capsule.radius;
+
+	}
+
+	getCenter( target ) {
+
+		return target.copy( this.end ).add( this.start ).multiplyScalar( 0.5 );
+
+	}
+
+	translate( v ) {
+
+		this.start.add( v );
+		this.end.add( v );
+
+	}
+
+	checkAABBAxis( p1x, p1y, p2x, p2y, minx, maxx, miny, maxy, radius ) {
+
+		return (
+			( minx - p1x < radius || minx - p2x < radius ) &&
+			( p1x - maxx < radius || p2x - maxx < radius ) &&
+			( miny - p1y < radius || miny - p2y < radius ) &&
+			( p1y - maxy < radius || p2y - maxy < radius )
+		);
+
+	}
+
+	intersectsBox( box ) {
+
+		return (
+			this.checkAABBAxis(
+				this.start.x, this.start.y, this.end.x, this.end.y,
+				box.min.x, box.max.x, box.min.y, box.max.y,
+				this.radius ) &&
+			this.checkAABBAxis(
+				this.start.x, this.start.z, this.end.x, this.end.z,
+				box.min.x, box.max.x, box.min.z, box.max.z,
+				this.radius ) &&
+			this.checkAABBAxis(
+				this.start.y, this.start.z, this.end.y, this.end.z,
+				box.min.y, box.max.y, box.min.z, box.max.z,
+				this.radius )
+		);
+
+	}
+
+}
+
+
+
+
+/***/ }),
+
 /***/ "./node_modules/three/examples/jsm/math/ImprovedNoise.js":
 /*!***************************************************************!*\
   !*** ./node_modules/three/examples/jsm/math/ImprovedNoise.js ***!
@@ -104164,6 +104562,556 @@ class ImprovedNoise {
 			grad( _p[ BA + 1 ], xMinus1, y, zMinus1 ) ),
 		lerp( u, grad( _p[ AB + 1 ], x, yMinus1, zMinus1 ),
 			grad( _p[ BB + 1 ], xMinus1, yMinus1, zMinus1 ) ) ) );
+
+	}
+
+}
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/three/examples/jsm/math/Octree.js":
+/*!********************************************************!*\
+  !*** ./node_modules/three/examples/jsm/math/Octree.js ***!
+  \********************************************************/
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Octree: function() { return /* binding */ Octree; }
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _math_Capsule_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
+
+
+
+
+const _v1 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _v2 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _point1 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _point2 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _plane = new three__WEBPACK_IMPORTED_MODULE_0__.Plane();
+const _line1 = new three__WEBPACK_IMPORTED_MODULE_0__.Line3();
+const _line2 = new three__WEBPACK_IMPORTED_MODULE_0__.Line3();
+const _sphere = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
+const _capsule = new _math_Capsule_js__WEBPACK_IMPORTED_MODULE_1__.Capsule();
+
+const _temp1 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _temp2 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const _temp3 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+const EPS = 1e-10;
+
+function lineToLineClosestPoints( line1, line2, target1 = null, target2 = null ) {
+
+	const r = _temp1.copy( line1.end ).sub( line1.start );
+	const s = _temp2.copy( line2.end ).sub( line2.start );
+	const w = _temp3.copy( line2.start ).sub( line1.start );
+
+	const a = r.dot( s ),
+		b = r.dot( r ),
+		c = s.dot( s ),
+		d = s.dot( w ),
+		e = r.dot( w );
+
+	let t1, t2;
+	const divisor = b * c - a * a;
+
+	if ( Math.abs( divisor ) < EPS ) {
+
+		const d1 = - d / c;
+		const d2 = ( a - d ) / c;
+
+		if ( Math.abs( d1 - 0.5 ) < Math.abs( d2 - 0.5 ) ) {
+
+			t1 = 0;
+			t2 = d1;
+
+		} else {
+
+			t1 = 1;
+			t2 = d2;
+
+		}
+
+	} else {
+
+		t1 = ( d * a + e * c ) / divisor;
+		t2 = ( t1 * a - d ) / c;
+
+	}
+
+	t2 = Math.max( 0, Math.min( 1, t2 ) );
+	t1 = Math.max( 0, Math.min( 1, t1 ) );
+
+	if ( target1 ) {
+
+		target1.copy( r ).multiplyScalar( t1 ).add( line1.start );
+
+	}
+
+	if ( target2 ) {
+
+		target2.copy( s ).multiplyScalar( t2 ).add( line2.start );
+
+	}
+
+}
+
+class Octree {
+
+	constructor( box ) {
+
+		this.box = box;
+		this.bounds = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
+
+		this.subTrees = [];
+		this.triangles = [];
+
+	}
+
+	addTriangle( triangle ) {
+
+		this.bounds.min.x = Math.min( this.bounds.min.x, triangle.a.x, triangle.b.x, triangle.c.x );
+		this.bounds.min.y = Math.min( this.bounds.min.y, triangle.a.y, triangle.b.y, triangle.c.y );
+		this.bounds.min.z = Math.min( this.bounds.min.z, triangle.a.z, triangle.b.z, triangle.c.z );
+		this.bounds.max.x = Math.max( this.bounds.max.x, triangle.a.x, triangle.b.x, triangle.c.x );
+		this.bounds.max.y = Math.max( this.bounds.max.y, triangle.a.y, triangle.b.y, triangle.c.y );
+		this.bounds.max.z = Math.max( this.bounds.max.z, triangle.a.z, triangle.b.z, triangle.c.z );
+
+		this.triangles.push( triangle );
+
+		return this;
+
+	}
+
+	calcBox() {
+
+		this.box = this.bounds.clone();
+
+		// offset small amount to account for regular grid
+		this.box.min.x -= 0.01;
+		this.box.min.y -= 0.01;
+		this.box.min.z -= 0.01;
+
+		return this;
+
+	}
+
+	split( level ) {
+
+		if ( ! this.box ) return;
+
+		const subTrees = [];
+		const halfsize = _v2.copy( this.box.max ).sub( this.box.min ).multiplyScalar( 0.5 );
+
+		for ( let x = 0; x < 2; x ++ ) {
+
+			for ( let y = 0; y < 2; y ++ ) {
+
+				for ( let z = 0; z < 2; z ++ ) {
+
+					const box = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
+					const v = _v1.set( x, y, z );
+
+					box.min.copy( this.box.min ).add( v.multiply( halfsize ) );
+					box.max.copy( box.min ).add( halfsize );
+
+					subTrees.push( new Octree( box ) );
+
+				}
+
+			}
+
+		}
+
+		let triangle;
+
+		while ( triangle = this.triangles.pop() ) {
+
+			for ( let i = 0; i < subTrees.length; i ++ ) {
+
+				if ( subTrees[ i ].box.intersectsTriangle( triangle ) ) {
+
+					subTrees[ i ].triangles.push( triangle );
+
+				}
+
+			}
+
+		}
+
+		for ( let i = 0; i < subTrees.length; i ++ ) {
+
+			const len = subTrees[ i ].triangles.length;
+
+			if ( len > 8 && level < 16 ) {
+
+				subTrees[ i ].split( level + 1 );
+
+			}
+
+			if ( len !== 0 ) {
+
+				this.subTrees.push( subTrees[ i ] );
+
+			}
+
+		}
+
+		return this;
+
+	}
+
+	build() {
+
+		this.calcBox();
+		this.split( 0 );
+
+		return this;
+
+	}
+
+	getRayTriangles( ray, triangles ) {
+
+		for ( let i = 0; i < this.subTrees.length; i ++ ) {
+
+			const subTree = this.subTrees[ i ];
+			if ( ! ray.intersectsBox( subTree.box ) ) continue;
+
+			if ( subTree.triangles.length > 0 ) {
+
+				for ( let j = 0; j < subTree.triangles.length; j ++ ) {
+
+					if ( triangles.indexOf( subTree.triangles[ j ] ) === - 1 ) triangles.push( subTree.triangles[ j ] );
+
+				}
+
+			} else {
+
+				subTree.getRayTriangles( ray, triangles );
+
+			}
+
+		}
+
+		return triangles;
+
+	}
+
+	triangleCapsuleIntersect( capsule, triangle ) {
+
+		triangle.getPlane( _plane );
+
+		const d1 = _plane.distanceToPoint( capsule.start ) - capsule.radius;
+		const d2 = _plane.distanceToPoint( capsule.end ) - capsule.radius;
+
+		if ( ( d1 > 0 && d2 > 0 ) || ( d1 < - capsule.radius && d2 < - capsule.radius ) ) {
+
+			return false;
+
+		}
+
+		const delta = Math.abs( d1 / ( Math.abs( d1 ) + Math.abs( d2 ) ) );
+		const intersectPoint = _v1.copy( capsule.start ).lerp( capsule.end, delta );
+
+		if ( triangle.containsPoint( intersectPoint ) ) {
+
+			return { normal: _plane.normal.clone(), point: intersectPoint.clone(), depth: Math.abs( Math.min( d1, d2 ) ) };
+
+		}
+
+		const r2 = capsule.radius * capsule.radius;
+
+		const line1 = _line1.set( capsule.start, capsule.end );
+
+		const lines = [
+			[ triangle.a, triangle.b ],
+			[ triangle.b, triangle.c ],
+			[ triangle.c, triangle.a ]
+		];
+
+		for ( let i = 0; i < lines.length; i ++ ) {
+
+			const line2 = _line2.set( lines[ i ][ 0 ], lines[ i ][ 1 ] );
+
+			lineToLineClosestPoints( line1, line2, _point1, _point2 );
+
+			if ( _point1.distanceToSquared( _point2 ) < r2 ) {
+
+				return {
+					normal: _point1.clone().sub( _point2 ).normalize(),
+					point: _point2.clone(),
+					depth: capsule.radius - _point1.distanceTo( _point2 )
+				};
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+	triangleSphereIntersect( sphere, triangle ) {
+
+		triangle.getPlane( _plane );
+
+		if ( ! sphere.intersectsPlane( _plane ) ) return false;
+
+		const depth = Math.abs( _plane.distanceToSphere( sphere ) );
+		const r2 = sphere.radius * sphere.radius - depth * depth;
+
+		const plainPoint = _plane.projectPoint( sphere.center, _v1 );
+
+		if ( triangle.containsPoint( sphere.center ) ) {
+
+			return { normal: _plane.normal.clone(), point: plainPoint.clone(), depth: Math.abs( _plane.distanceToSphere( sphere ) ) };
+
+		}
+
+		const lines = [
+			[ triangle.a, triangle.b ],
+			[ triangle.b, triangle.c ],
+			[ triangle.c, triangle.a ]
+		];
+
+		for ( let i = 0; i < lines.length; i ++ ) {
+
+			_line1.set( lines[ i ][ 0 ], lines[ i ][ 1 ] );
+			_line1.closestPointToPoint( plainPoint, true, _v2 );
+
+			const d = _v2.distanceToSquared( sphere.center );
+
+			if ( d < r2 ) {
+
+				return { normal: sphere.center.clone().sub( _v2 ).normalize(), point: _v2.clone(), depth: sphere.radius - Math.sqrt( d ) };
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+	getSphereTriangles( sphere, triangles ) {
+
+		for ( let i = 0; i < this.subTrees.length; i ++ ) {
+
+			const subTree = this.subTrees[ i ];
+
+			if ( ! sphere.intersectsBox( subTree.box ) ) continue;
+
+			if ( subTree.triangles.length > 0 ) {
+
+				for ( let j = 0; j < subTree.triangles.length; j ++ ) {
+
+					if ( triangles.indexOf( subTree.triangles[ j ] ) === - 1 ) triangles.push( subTree.triangles[ j ] );
+
+				}
+
+			} else {
+
+				subTree.getSphereTriangles( sphere, triangles );
+
+			}
+
+		}
+
+	}
+
+	getCapsuleTriangles( capsule, triangles ) {
+
+		for ( let i = 0; i < this.subTrees.length; i ++ ) {
+
+			const subTree = this.subTrees[ i ];
+
+			if ( ! capsule.intersectsBox( subTree.box ) ) continue;
+
+			if ( subTree.triangles.length > 0 ) {
+
+				for ( let j = 0; j < subTree.triangles.length; j ++ ) {
+
+					if ( triangles.indexOf( subTree.triangles[ j ] ) === - 1 ) triangles.push( subTree.triangles[ j ] );
+
+				}
+
+			} else {
+
+				subTree.getCapsuleTriangles( capsule, triangles );
+
+			}
+
+		}
+
+	}
+
+	sphereIntersect( sphere ) {
+
+		_sphere.copy( sphere );
+
+		const triangles = [];
+		let result, hit = false;
+
+		this.getSphereTriangles( sphere, triangles );
+
+		for ( let i = 0; i < triangles.length; i ++ ) {
+
+			if ( result = this.triangleSphereIntersect( _sphere, triangles[ i ] ) ) {
+
+				hit = true;
+
+				_sphere.center.add( result.normal.multiplyScalar( result.depth ) );
+
+			}
+
+		}
+
+		if ( hit ) {
+
+			const collisionVector = _sphere.center.clone().sub( sphere.center );
+			const depth = collisionVector.length();
+
+			return { normal: collisionVector.normalize(), depth: depth };
+
+		}
+
+		return false;
+
+	}
+
+	capsuleIntersect( capsule ) {
+
+		_capsule.copy( capsule );
+
+		const triangles = [];
+		let result, hit = false;
+
+		this.getCapsuleTriangles( _capsule, triangles );
+
+		for ( let i = 0; i < triangles.length; i ++ ) {
+
+			if ( result = this.triangleCapsuleIntersect( _capsule, triangles[ i ] ) ) {
+
+				hit = true;
+
+				_capsule.translate( result.normal.multiplyScalar( result.depth ) );
+
+			}
+
+		}
+
+		if ( hit ) {
+
+			const collisionVector = _capsule.getCenter( new three__WEBPACK_IMPORTED_MODULE_0__.Vector3() ).sub( capsule.getCenter( _v1 ) );
+			const depth = collisionVector.length();
+
+			return { normal: collisionVector.normalize(), depth: depth };
+
+		}
+
+		return false;
+
+	}
+
+	rayIntersect( ray ) {
+
+		if ( ray.direction.length() === 0 ) return;
+
+		const triangles = [];
+		let triangle, position, distance = 1e100;
+
+		this.getRayTriangles( ray, triangles );
+
+		for ( let i = 0; i < triangles.length; i ++ ) {
+
+			const result = ray.intersectTriangle( triangles[ i ].a, triangles[ i ].b, triangles[ i ].c, true, _v1 );
+
+			if ( result ) {
+
+				const newdistance = result.sub( ray.origin ).length();
+
+				if ( distance > newdistance ) {
+
+					position = result.clone().add( ray.origin );
+					distance = newdistance;
+					triangle = triangles[ i ];
+
+				}
+
+			}
+
+		}
+
+		return distance < 1e100 ? { distance: distance, triangle: triangle, position: position } : false;
+
+	}
+
+	fromGraphNode( group ) {
+
+		group.updateWorldMatrix( true, true );
+
+		group.traverse( ( obj ) => {
+
+			if ( obj.isMesh === true ) {
+
+				let geometry, isTemp = false;
+
+				if ( obj.geometry.index !== null ) {
+
+					isTemp = true;
+					geometry = obj.geometry.toNonIndexed();
+
+				} else {
+
+					geometry = obj.geometry;
+
+				}
+
+				const positionAttribute = geometry.getAttribute( 'position' );
+
+				for ( let i = 0; i < positionAttribute.count; i += 3 ) {
+
+					const v1 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().fromBufferAttribute( positionAttribute, i );
+					const v2 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().fromBufferAttribute( positionAttribute, i + 1 );
+					const v3 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().fromBufferAttribute( positionAttribute, i + 2 );
+
+					v1.applyMatrix4( obj.matrixWorld );
+					v2.applyMatrix4( obj.matrixWorld );
+					v3.applyMatrix4( obj.matrixWorld );
+
+					this.addTriangle( new three__WEBPACK_IMPORTED_MODULE_0__.Triangle( v1, v2, v3 ) );
+
+				}
+
+				if ( isTemp ) {
+
+					geometry.dispose();
+
+				}
+
+			}
+
+		} );
+
+		this.build();
+
+		return this;
+
+	}
+
+	clear() {
+
+		this.box = null;
+		this.bounds.makeEmpty();
+
+		this.subTrees.length = 0;
+		this.triangles.length = 0;
+
+		return this;
 
 	}
 
