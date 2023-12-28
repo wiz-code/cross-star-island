@@ -88,7 +88,9 @@ const theme = createTheme({
 });
 
 const update = function () {
-  this.controls.update(this.clock.getDelta());
+  const deltaTime = this.clock.getDelta();
+  this.controls.update(deltaTime);
+  this.player.update(deltaTime);
   this.renderer.render(this.scene, this.camera);
   this.stats.update();
 };

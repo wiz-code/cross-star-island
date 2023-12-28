@@ -1,5 +1,7 @@
 import { MathUtils, Spherical, Vector3 } from 'three';
 
+const { max, min, PI } = Math;
+
 class FirstPersonControls {
   #lookDirection = new Vector3();
 
@@ -40,7 +42,7 @@ class FirstPersonControls {
 
     this.constrainVertical = false;
     this.verticalMin = 0;
-    this.verticalMax = Math.PI;
+    this.verticalMax = PI;
 
     this.mouseDragOn = false;
 
@@ -56,6 +58,8 @@ class FirstPersonControls {
     this.moveLeft = false;
     this.moveRight = false;
 
+    this.isJumping = false;
+
     this.viewHalfX = 0;
     this.viewHalfY = 0;
 
@@ -70,8 +74,8 @@ class FirstPersonControls {
     this.domElement.addEventListener('pointermove', this.onPointerMove);
     this.domElement.addEventListener('pointerup', this.onPointerUp);
 
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
 
     this.handleResize();
     this.setOrientation(this);
@@ -168,6 +172,16 @@ class FirstPersonControls {
       case 'KeyF':
         this.moveDown = true;
         break;
+
+      case 'Space': {
+        if (this.isJumping) {
+          this.isJumping = false;
+        } else {
+          this.isJumping = true;
+        }
+        break;
+      }
+
     }
   }
 
@@ -199,6 +213,11 @@ class FirstPersonControls {
       case 'KeyF':
         this.moveDown = false;
         break;
+
+      case 'Space': {
+        this.isJumping = false;
+        break;
+      }
     }
   }
 
@@ -208,11 +227,50 @@ class FirstPersonControls {
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
 
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
   }
 
-  update(delta) {
+  update(deltaTime) {
+    let actualLookSpeed = deltaTime * this.lookSpeed;
+
+    if (!this.activeLook) {
+      actualLookSpeed = 0;
+    }
+
+    let verticalLookRatio = 1;
+
+    if (this.constrainVertical) {
+      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
+    }
+
+    this.#lon -= this.pointerX * actualLookSpeed;
+    if (this.lookVertical)
+      this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
+
+    this.#lat = max(-85, min(85, this.#lat));
+
+    let phi = MathUtils.degToRad(90 - this.#lat);
+    const theta = MathUtils.degToRad(this.#lon);
+
+    if (this.constrainVertical) {
+      phi = MathUtils.mapLinear(
+        phi,
+        0,
+        PI,
+        this.verticalMin,
+        this.verticalMax,
+      );
+    }
+
+    const { position } = this.camera;
+
+    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
+
+    this.camera.lookAt(this.#targetPosition);
+  }
+
+  _update(delta) {
     if (this.enabled === false) return;
     if (this.heightSpeed) {
       const y = MathUtils.clamp(
@@ -248,14 +306,14 @@ class FirstPersonControls {
     let verticalLookRatio = 1;
 
     if (this.constrainVertical) {
-      verticalLookRatio = Math.PI / (this.verticalMax - this.verticalMin);
+      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
     }
 
     this.#lon -= this.pointerX * actualLookSpeed;
     if (this.lookVertical)
       this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
 
-    this.#lat = Math.max(-85, Math.min(85, this.#lat));
+    this.#lat = max(-85, min(85, this.#lat));
 
     let phi = MathUtils.degToRad(90 - this.#lat);
     const theta = MathUtils.degToRad(this.#lon);
@@ -264,7 +322,7 @@ class FirstPersonControls {
       phi = MathUtils.mapLinear(
         phi,
         0,
-        Math.PI,
+        PI,
         this.verticalMin,
         this.verticalMax,
       );

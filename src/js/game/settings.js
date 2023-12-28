@@ -2,6 +2,17 @@ import * as THREE from 'three';
 
 export const ResizeDelayTime = 200;
 
+export const PlayerSettings = {
+  height: 20,
+  radius: 5,
+  Position: {
+    x: 0,
+    y: 500,
+    z: 100,
+  },
+  jumpPower: 15,
+};
+
 export const Scene = {
   background: 0x000000,
   Fog: {
@@ -12,8 +23,8 @@ export const Scene = {
 };
 export const Camera = {
   FOV: 70,
-  ASPECT: window.innerWidth / window.innerHeight,
-  near: 30,
+  Aspect: window.innerWidth / window.innerHeight,
+  near: PlayerSettings.radius,
   far: 1000,
   order: 'YXZ',
 };
@@ -82,4 +93,16 @@ export const Ground = {
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00,
+};
+
+export const Controls = {
+  movementSpeed: 18,
+  airSpeed: 6,
+  groundResistance: 10,
+  airResistance: 2,
+  lookSpeed: 0.2,
+};
+
+export const World = {
+  gravity: 8,
 };

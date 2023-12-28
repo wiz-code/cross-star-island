@@ -8,9 +8,10 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { debounce } from 'throttle-debounce';
 
 import { FirstPersonControls } from './controls';
-import { Scene, Camera, Renderer, Light, ResizeDelayTime } from './settings';
+import { Scene, Camera, Renderer, Light, Controls, PlayerSettings, ResizeDelayTime } from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
+import Player from './player';
 
 const { floor } = Math;
 
@@ -31,7 +32,22 @@ const init = () => {
     Camera.far,
   );
   camera.rotation.order = Camera.order;
-  camera.position.set(0, 0, 100);
+  camera.position.set(0, 0, 0);
+
+  const container = document.getElementById('container');
+
+  const renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.setClearColor(new THREE.Color(0x000000));
+  renderer.setPixelRatio(Renderer.pixelRatio);
+  renderer.setSize(Renderer.Size.width, Renderer.Size.height);
+  //renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
+  //renderer.shadowMap.type = Renderer.ShadowMap.type;
+  //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
+  container.appendChild(renderer.domElement);
+
+  const controls = new FirstPersonControls(camera, renderer.domElement);
+  controls.movementSpeed = Controls.movementSpeed;
+  controls.lookSpeed = Controls.lookSpeed;
 
   const light = {};
 
@@ -75,20 +91,34 @@ const init = () => {
   const ground = createGround();
   scene.add(ground);
 
-  const container = document.getElementById('container');
+  //const worldBox = new THREE.Box3().expandByObject(ground);
+  //const worldOctree = new Octree(worldBox).build();
+  //worldOctree.fromGraphNode(grid);
+  const worldOctree = new Octree();
+  worldOctree.fromGraphNode(ground);
+  const player = new Player(camera, controls, worldOctree);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: false });
-  renderer.setClearColor(new THREE.Color(0x000000));
-  renderer.setPixelRatio(Renderer.pixelRatio);
-  renderer.setSize(Renderer.Size.width, Renderer.Size.height);
-  renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
-  renderer.shadowMap.type = Renderer.ShadowMap.type;
-  renderer.toneMapping = Renderer.ShadowMap.toneMapping;
-  container.appendChild(renderer.domElement);
+  ////
+  //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  //scene.add(helper);
+  const helper = new OctreeHelper(worldOctree);
+	helper.visible = false;
+	scene.add( helper );
 
-  const controls = new FirstPersonControls(camera, renderer.domElement);
-  controls.movementSpeed = 100;
-  controls.lookSpeed = 0.2;
+	const gui = new GUI( { width: 200 } );
+	gui.add( { debug: false }, 'debug').onChange(( value ) => {
+		helper.visible = value;
+	});
+  ////
+
+
+
+
+
+
+
+
+
 
   const stats = new Stats();
   stats.domElement.style.position = 'absolute';
@@ -119,6 +149,7 @@ const init = () => {
     light,
     renderer,
     clock,
+    player,
     controls,
     stats,
   };
