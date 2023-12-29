@@ -10000,6 +10000,7 @@ class Player {
 
   collisions() {
     const result = this.worldOctree.capsuleIntersect(this.collider);
+    this.controls.setOnGround(false);
     if (result) {
       const onGround = result.normal.y > 0;
       this.controls.setOnGround(onGround);
@@ -10139,8 +10140,8 @@ const Controls = {
   airSpeed: 6,
   resistance: 10,
   airResistance: 2,
-  jumpPower: 4,
-  lookSpeed: 1
+  jumpPower: 10,
+  lookSpeed: 3
 };
 const World = {
   gravity: 8

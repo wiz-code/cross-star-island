@@ -49,6 +49,7 @@ class Player {
 
   collisions() {
 		const result = this.worldOctree.capsuleIntersect(this.collider);
+    this.controls.setOnGround(false);
 
 		if (result) {
 			const onGround = result.normal.y > 0;

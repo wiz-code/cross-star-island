@@ -99,8 +99,8 @@ export const Controls = {
   airSpeed: 6,
   resistance: 10,
   airResistance: 2,
-  jumpPower: 4,
-  lookSpeed: 1,
+  jumpPower: 10,
+  lookSpeed: 3,
 };
 
 export const World = {
