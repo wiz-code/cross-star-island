@@ -9247,20 +9247,30 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   FirstPersonControls: function() { return /* binding */ FirstPersonControls; }
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 
+
+const {
+  radToDeg,
+  degToRad,
+  clamp,
+  mapLinear
+} = three__WEBPACK_IMPORTED_MODULE_1__.MathUtils;
 const {
   max,
   min,
+  exp,
   PI
 } = Math;
+const halfPI = PI / 2;
 class FirstPersonControls {
-  #lookDirection = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-  #spherical = new three__WEBPACK_IMPORTED_MODULE_0__.Spherical();
-  #target = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+  #lookDirection = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+  #spherical = new three__WEBPACK_IMPORTED_MODULE_1__.Spherical();
+  #target = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
   #lat = 0;
   #lon = 0;
-  #targetPosition = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+  #targetPosition = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
   #contextmenu(event) {
     event.preventDefault();
   }
@@ -9271,7 +9281,8 @@ class FirstPersonControls {
     // API
 
     this.enabled = true;
-    this.movementSpeed = 1.0;
+
+    //this.movementSpeed = 1.0;
     this.lookSpeed = 0.005;
     this.lookVertical = true;
     this.autoForward = false;
@@ -9284,17 +9295,24 @@ class FirstPersonControls {
     this.verticalMin = 0;
     this.verticalMax = PI;
     this.mouseDragOn = false;
+    this.minPolarAngle = 0;
+    this.maxPolarAngle = PI;
 
     // internals
 
+    this.ownDirection = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
     this.autoSpeedFactor = 0.0;
-    this.pointerX = 0;
-    this.pointerY = 0;
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+    this.direction = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+    this.onGround = false;
+    this.euler = new three__WEBPACK_IMPORTED_MODULE_1__.Euler(0, 0, 0, 'YXZ');
+    this.dx = 0;
+    this.dy = 0;
     this.moveForward = false;
     this.moveBackward = false;
     this.moveLeft = false;
     this.moveRight = false;
-    this.isJumping = false;
+    this.jumped = false;
     this.viewHalfX = 0;
     this.viewHalfY = 0;
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -9309,16 +9327,13 @@ class FirstPersonControls {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     this.handleResize();
-    this.setOrientation(this);
+    this.setOrientation();
   }
-  setOrientation(controls) {
+  setOrientation() {
     const {
       quaternion
-    } = controls.camera;
-    this.#lookDirection.set(0, 0, -1).applyQuaternion(quaternion);
-    this.#spherical.setFromVector3(this.#lookDirection);
-    this.#lat = 90 - three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.radToDeg(this.#spherical.phi);
-    this.#lon = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.radToDeg(this.#spherical.theta);
+    } = this.camera;
+    this.euler.setFromQuaternion(quaternion);
   }
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
@@ -9331,14 +9346,27 @@ class FirstPersonControls {
       this.#target.set(x, y, z);
     }
     this.camera.lookAt(this.#target);
-    this.setOrientation(this);
+    this.setOrientation();
     return this;
   }
+  async lock() {
+    if (this.domElement.ownerDocument.pointerLockElement == null) {
+      await this.domElement.requestPointerLock();
+    }
+  }
+  unlock() {
+    this.domElement.ownerDocument.exitPointerLock();
+  }
+  setOnGround() {
+    let bool = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    this.onGround = bool;
+  }
   onPointerMove(event) {
-    this.pointerX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-    this.pointerY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+    this.dx = event.movementX;
+    this.dy = event.movementY;
   }
   onPointerDown(event) {
+    this.lock();
     if (this.activeLook) {
       switch (event.button) {
         case 0:
@@ -9390,10 +9418,8 @@ class FirstPersonControls {
         break;
       case 'Space':
         {
-          if (this.isJumping) {
-            this.isJumping = false;
-          } else {
-            this.isJumping = true;
+          if (this.onGround) {
+            this.jumped = true;
           }
           break;
         }
@@ -9425,7 +9451,7 @@ class FirstPersonControls {
         break;
       case 'Space':
         {
-          this.isJumping = false;
+          this.jumped = false;
           break;
         }
     }
@@ -9438,66 +9464,64 @@ class FirstPersonControls {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
   }
-  update(deltaTime) {
-    let actualLookSpeed = deltaTime * this.lookSpeed;
-    if (!this.activeLook) {
-      actualLookSpeed = 0;
-    }
-    let verticalLookRatio = 1;
-    if (this.constrainVertical) {
-      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
-    }
-    this.#lon -= this.pointerX * actualLookSpeed;
-    if (this.lookVertical) this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
-    this.#lat = max(-85, min(85, this.#lat));
-    let phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(90 - this.#lat);
-    const theta = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(this.#lon);
-    if (this.constrainVertical) {
-      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, PI, this.verticalMin, this.verticalMax);
-    }
-    const {
-      position
-    } = this.camera;
-    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
-    this.camera.lookAt(this.#targetPosition);
+  getForwardVector() {
+    this.camera.getWorldDirection(this.direction);
+    this.direction.y = 0;
+    this.direction.normalize();
+    return this.direction;
   }
-  _update(delta) {
-    if (this.enabled === false) return;
-    if (this.heightSpeed) {
-      const y = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.clamp(this.camera.position.y, this.heightMin, this.heightMax);
-      const heightDelta = y - this.heightMin;
-      this.autoSpeedFactor = delta * (heightDelta * this.heightCoef);
-    } else {
-      this.autoSpeedFactor = 0.0;
+  getSideVector() {
+    this.camera.getWorldDirection(this.direction);
+    this.direction.y = 0;
+    this.direction.normalize();
+    this.direction.cross(this.camera.up);
+    return this.direction;
+  }
+  update(deltaTime) {
+    // 自機の動き制御
+    const speedDelta = deltaTime * (this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airSpeed);
+    if (this.moveForward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
     }
-    const actualMoveSpeed = delta * this.movementSpeed;
-    if (this.moveForward || this.autoForward && !this.moveBackward) this.camera.translateZ(-(actualMoveSpeed + this.autoSpeedFactor));
-    if (this.moveBackward) this.camera.translateZ(actualMoveSpeed);
-    if (this.moveLeft) this.camera.translateX(-actualMoveSpeed);
-    if (this.moveRight) this.camera.translateX(actualMoveSpeed);
-    if (this.moveUp) this.camera.translateY(actualMoveSpeed);
-    if (this.moveDown) this.camera.translateY(-actualMoveSpeed);
-    let actualLookSpeed = delta * this.lookSpeed;
+    if (this.moveBackward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+    }
+    if (this.moveLeft) {
+      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+    }
+    if (this.moveRight) {
+      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+    }
+    if (this.onGround && this.jumped) {
+      this.onGround = false;
+      this.jumped = false;
+      this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.jumpPower * deltaTime * 50;
+    }
+    const resistance = this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.resistance : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airResistance;
+    let damping = exp(-resistance * deltaTime) - 1;
+    if (!this.onGround) {
+      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_0__.World.gravity * deltaTime;
+    }
+    this.velocity.addScaledVector(this.velocity, damping);
+
+    // 自機の視点制御
+    let actualLookSpeed = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.lookSpeed * 0.02;
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
     let verticalLookRatio = 1;
-    if (this.constrainVertical) {
-      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
-    }
-    this.#lon -= this.pointerX * actualLookSpeed;
-    if (this.lookVertical) this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
-    this.#lat = max(-85, min(85, this.#lat));
-    let phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(90 - this.#lat);
-    const theta = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.degToRad(this.#lon);
-    if (this.constrainVertical) {
-      phi = three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.mapLinear(phi, 0, PI, this.verticalMin, this.verticalMax);
-    }
     const {
-      position
+      quaternion
     } = this.camera;
-    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
-    this.camera.lookAt(this.#targetPosition);
+    this.euler.setFromQuaternion(quaternion);
+    this.euler.y -= this.dx * actualLookSpeed;
+    this.euler.x -= this.dy * actualLookSpeed;
+    this.euler.x = max(halfPI - this.maxPolarAngle, min(halfPI - this.minPolarAngle, this.euler.x));
+
+    //this.camera.quaternion.setFromEuler(this.euler);
+
+    this.dx = 0;
+    this.dy = 0;
   }
 }
 
@@ -9797,6 +9821,8 @@ const init = () => {
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera, renderer.domElement);
   controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
   controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
+  //controls.lookVertical = false;//////
+
   const light = {};
   light.fill = new three__WEBPACK_IMPORTED_MODULE_6__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
   light.fill.position.set(2, 1, 1);
@@ -9845,6 +9871,9 @@ const init = () => {
   });
   ////
 
+  // helpers
+  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_6__.AxesHelper(180);
+  scene.add(axesHelper);
   const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
@@ -9953,59 +9982,40 @@ class Player {
     const start = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.y, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.z);
     const end = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.y + _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.height, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.z);
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_3__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.radius);
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3();
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3();
-    this.onFloor = false;
   }
-  getForwardVector() {
-    this.camera.getWorldDirection(this.direction);
-    this.direction.y = 0;
-    this.direction.normalize();
-    return this.direction;
+
+  /*getForwardVector() {
+  this.camera.getWorldDirection(this.direction);
+  this.direction.y = 0;
+  this.direction.normalize();
+  	return this.direction;
   }
-  getSideVector() {
-    this.camera.getWorldDirection(this.direction);
-    this.direction.y = 0;
-    this.direction.normalize();
-    this.direction.cross(this.camera.up);
-    return this.direction;
-  }
+   getSideVector() {
+  this.camera.getWorldDirection(this.direction);
+  this.direction.y = 0;
+  this.direction.normalize();
+  this.direction.cross(this.camera.up);
+  	return this.direction;
+  }*/
+
   collisions() {
     const result = this.worldOctree.capsuleIntersect(this.collider);
-    this.onFloor = false;
     if (result) {
-      this.onFloor = result.normal.y > 0;
-      if (!this.onFloor) {
-        this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
+      const onGround = result.normal.y > 0;
+      this.controls.setOnGround(onGround);
+      if (!onGround) {
+        this.controls.velocity.addScaledVector(result.normal, -result.normal.dot(this.controls.velocity));
       }
       this.collider.translate(result.normal.multiplyScalar(result.depth));
     }
   }
   update(deltaTime) {
-    // gives a bit of air control
-    const speedDelta = deltaTime * (this.onFloor ? _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.movementSpeed : _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.airSpeed);
-    if (this.controls.moveForward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-    }
-    if (this.controls.moveBackward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-    }
-    if (this.controls.moveLeft) {
-      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
-    }
-    if (this.controls.moveRight) {
-      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
-    }
-    if (this.onFloor && this.controls.isJumping) {
-      this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.jumpPower;
-    }
-    const resistance = this.onFloor ? _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.groundResistance : _settings__WEBPACK_IMPORTED_MODULE_1__.Controls.airResistance;
-    let damping = exp(-resistance * deltaTime) - 1;
-    if (!this.onFloor) {
-      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime;
-    }
-    this.velocity.addScaledVector(this.velocity, damping);
-    this.collider.translate(this.velocity.clone());
+    const {
+      euler,
+      velocity
+    } = this.controls;
+    this.camera.quaternion.setFromEuler(euler);
+    this.collider.translate(velocity);
     this.collisions();
     this.camera.position.copy(this.collider.end);
   }
@@ -10044,8 +10054,7 @@ const PlayerSettings = {
     x: 0,
     y: 500,
     z: 100
-  },
-  jumpPower: 15
+  }
 };
 const Scene = {
   background: 0x000000,
@@ -10126,11 +10135,12 @@ const Ground = {
   pointsColor: 0xffff00
 };
 const Controls = {
-  movementSpeed: 18,
+  speed: 18,
   airSpeed: 6,
-  groundResistance: 10,
+  resistance: 10,
   airResistance: 2,
-  lookSpeed: 0.2
+  jumpPower: 4,
+  lookSpeed: 1
 };
 const World = {
   gravity: 8
@@ -10170,6 +10180,32 @@ const textures = {
     context.lineTo(0, 72);
     context.lineTo(0, 56);
     context.lineTo(56, 56);
+    context.closePath();
+    context.fill();
+    return context;
+  },
+  crossStarThick(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(48, 0);
+    context.lineTo(80, 0);
+    context.lineTo(80, 48);
+    context.lineTo(128, 48);
+    context.lineTo(128, 80);
+    context.lineTo(80, 80);
+    context.lineTo(80, 128);
+    context.lineTo(48, 128);
+    context.lineTo(48, 80);
+    context.lineTo(0, 80);
+    context.lineTo(0, 48);
+    context.lineTo(48, 48);
     context.closePath();
     context.fill();
     return context;
