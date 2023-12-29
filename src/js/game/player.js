@@ -28,13 +28,9 @@ class Player {
       end,
       PlayerSettings.radius
     );
-    this.velocity = new THREE.Vector3();
-		this.direction = new THREE.Vector3();
-
-		this.onFloor = false;
   }
 
-  getForwardVector() {
+  /*getForwardVector() {
 		this.camera.getWorldDirection(this.direction);
 		this.direction.y = 0;
 		this.direction.normalize();
@@ -49,19 +45,19 @@ class Player {
 		this.direction.cross(this.camera.up);
 
 		return this.direction;
-	}
+	}*/
 
   collisions() {
 		const result = this.worldOctree.capsuleIntersect(this.collider);
-    this.onFloor = false;
 
 		if (result) {
-			this.onFloor = result.normal.y > 0;
+			const onGround = result.normal.y > 0;
+      this.controls.setOnGround(onGround);
 
-			if (!this.onFloor) {
-				this.velocity.addScaledVector(
+			if (!onGround) {
+				this.controls.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(this.velocity)
+          -result.normal.dot(this.controls.velocity)
         );
 			}
 
@@ -70,39 +66,9 @@ class Player {
   }
 
   update(deltaTime) {
-    // gives a bit of air control
-    const speedDelta = deltaTime * (this.onFloor ? Controls.movementSpeed : Controls.airSpeed);
-
-    if (this.controls.moveForward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-    }
-
-    if (this.controls.moveBackward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-    }
-
-    if (this.controls.moveLeft) {
-      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
-    }
-
-    if (this.controls.moveRight) {
-      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
-    }
-
-    if (this.onFloor && this.controls.isJumping) {
-      this.velocity.y = PlayerSettings.jumpPower;
-    }
-
-    const resistance = this.onFloor ? Controls.groundResistance : Controls.airResistance;
-    let damping = exp(-resistance * deltaTime) - 1;
-
-		if (!this.onFloor) {
-			this.velocity.y -= World.gravity * deltaTime;
-		}
-
-		this.velocity.addScaledVector(this.velocity, damping);
-
-		this.collider.translate(this.velocity.clone());
+    const { euler, velocity } = this.controls;
+    this.camera.quaternion.setFromEuler(euler);
+		this.collider.translate(velocity);
 		this.collisions();
 		this.camera.position.copy(this.collider.end);
 	}

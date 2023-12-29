@@ -10,7 +10,6 @@ export const PlayerSettings = {
     y: 500,
     z: 100,
   },
-  jumpPower: 15,
 };
 
 export const Scene = {
@@ -96,11 +95,12 @@ export const Ground = {
 };
 
 export const Controls = {
-  movementSpeed: 18,
+  speed: 18,
   airSpeed: 6,
-  groundResistance: 10,
+  resistance: 10,
   airResistance: 2,
-  lookSpeed: 0.2,
+  jumpPower: 4,
+  lookSpeed: 1,
 };
 
 export const World = {

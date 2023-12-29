@@ -1,6 +1,10 @@
-import { MathUtils, Spherical, Vector3 } from 'three';
+import { MathUtils, Spherical, Vector3, Euler } from 'three';
 
-const { max, min, PI } = Math;
+import { World, Controls } from './settings';
+
+const { radToDeg, degToRad, clamp, mapLinear } = MathUtils;
+const { max, min, exp, PI } = Math;
+const halfPI = PI / 2;
 
 class FirstPersonControls {
   #lookDirection = new Vector3();
@@ -27,7 +31,7 @@ class FirstPersonControls {
 
     this.enabled = true;
 
-    this.movementSpeed = 1.0;
+    //this.movementSpeed = 1.0;
     this.lookSpeed = 0.005;
 
     this.lookVertical = true;
@@ -46,19 +50,30 @@ class FirstPersonControls {
 
     this.mouseDragOn = false;
 
+    this.minPolarAngle = 0;
+		this.maxPolarAngle = PI;
+
     // internals
+
+    this.ownDirection = new Vector3();
 
     this.autoSpeedFactor = 0.0;
 
-    this.pointerX = 0;
-    this.pointerY = 0;
+    this.velocity = new Vector3();
+		this.direction = new Vector3();
+    this.onGround = false;
+
+    this.euler = new Euler(0, 0, 0, 'YXZ');
+
+    this.dx = 0;
+    this.dy = 0;
 
     this.moveForward = false;
     this.moveBackward = false;
     this.moveLeft = false;
     this.moveRight = false;
 
-    this.isJumping = false;
+    this.jumped = false;
 
     this.viewHalfX = 0;
     this.viewHalfY = 0;
@@ -78,17 +93,12 @@ class FirstPersonControls {
     document.addEventListener('keyup', this.onKeyUp);
 
     this.handleResize();
-    this.setOrientation(this);
+    this.setOrientation();
   }
 
-  setOrientation(controls) {
-    const { quaternion } = controls.camera;
-
-    this.#lookDirection.set(0, 0, -1).applyQuaternion(quaternion);
-    this.#spherical.setFromVector3(this.#lookDirection);
-
-    this.#lat = 90 - MathUtils.radToDeg(this.#spherical.phi);
-    this.#lon = MathUtils.radToDeg(this.#spherical.theta);
+  setOrientation() {
+    const { quaternion } = this.camera;
+    this.euler.setFromQuaternion(quaternion);
   }
 
   handleResize() {
@@ -104,17 +114,33 @@ class FirstPersonControls {
     }
 
     this.camera.lookAt(this.#target);
-    this.setOrientation(this);
+    this.setOrientation();
 
     return this;
   }
 
+  async lock() {
+    if (this.domElement.ownerDocument.pointerLockElement == null) {
+      await this.domElement.requestPointerLock();
+    }
+  }
+
+  unlock() {
+		this.domElement.ownerDocument.exitPointerLock();
+	}
+
+  setOnGround(bool = true) {
+    this.onGround = bool;
+  }
+
   onPointerMove(event) {
-    this.pointerX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-    this.pointerY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+    this.dx = event.movementX;
+    this.dy = event.movementY;
   }
 
   onPointerDown(event) {
+    this.lock();
+
     if (this.activeLook) {
       switch (event.button) {
         case 0:
@@ -174,10 +200,8 @@ class FirstPersonControls {
         break;
 
       case 'Space': {
-        if (this.isJumping) {
-          this.isJumping = false;
-        } else {
-          this.isJumping = true;
+        if (this.onGround) {
+          this.jumped = true;
         }
         break;
       }
@@ -215,7 +239,7 @@ class FirstPersonControls {
         break;
 
       case 'Space': {
-        this.isJumping = false;
+        this.jumped = false;
         break;
       }
     }
@@ -231,8 +255,60 @@ class FirstPersonControls {
     document.removeEventListener('keyup', this.onKeyUp);
   }
 
+  getForwardVector() {
+		this.camera.getWorldDirection(this.direction);
+		this.direction.y = 0;
+		this.direction.normalize();
+
+		return this.direction;
+	}
+
+  getSideVector() {
+		this.camera.getWorldDirection(this.direction);
+		this.direction.y = 0;
+		this.direction.normalize();
+		this.direction.cross(this.camera.up);
+
+		return this.direction;
+	}
+
   update(deltaTime) {
-    let actualLookSpeed = deltaTime * this.lookSpeed;
+    // 自機の動き制御
+    const speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
+
+    if (this.moveForward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
+    }
+
+    if (this.moveBackward) {
+      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
+    }
+
+    if (this.moveLeft) {
+      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
+    }
+
+    if (this.moveRight) {
+      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+    }
+
+    if (this.onGround && this.jumped) {
+      this.onGround = false;
+      this.jumped = false;
+      this.velocity.y = Controls.jumpPower * deltaTime * 50;
+    }
+
+    const resistance = this.onGround ? Controls.resistance : Controls.airResistance;
+    let damping = exp(-resistance * deltaTime) - 1;
+
+		if (!this.onGround) {
+			this.velocity.y -= World.gravity * deltaTime;
+		}
+
+		this.velocity.addScaledVector(this.velocity, damping);
+
+    // 自機の視点制御
+    let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
 
     if (!this.activeLook) {
       actualLookSpeed = 0;
@@ -240,99 +316,21 @@ class FirstPersonControls {
 
     let verticalLookRatio = 1;
 
-    if (this.constrainVertical) {
-      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
-    }
+    const { quaternion } = this.camera;
+    this.euler.setFromQuaternion(quaternion);
 
-    this.#lon -= this.pointerX * actualLookSpeed;
-    if (this.lookVertical)
-      this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
+	  this.euler.y -= this.dx * actualLookSpeed;
+    this.euler.x -= this.dy * actualLookSpeed;
 
-    this.#lat = max(-85, min(85, this.#lat));
+    this.euler.x = max(
+      halfPI - this.maxPolarAngle,
+      min(halfPI - this.minPolarAngle, this.euler.x)
+    );
 
-    let phi = MathUtils.degToRad(90 - this.#lat);
-    const theta = MathUtils.degToRad(this.#lon);
+    //this.camera.quaternion.setFromEuler(this.euler);
 
-    if (this.constrainVertical) {
-      phi = MathUtils.mapLinear(
-        phi,
-        0,
-        PI,
-        this.verticalMin,
-        this.verticalMax,
-      );
-    }
-
-    const { position } = this.camera;
-
-    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
-
-    this.camera.lookAt(this.#targetPosition);
-  }
-
-  _update(delta) {
-    if (this.enabled === false) return;
-    if (this.heightSpeed) {
-      const y = MathUtils.clamp(
-        this.camera.position.y,
-        this.heightMin,
-        this.heightMax,
-      );
-      const heightDelta = y - this.heightMin;
-
-      this.autoSpeedFactor = delta * (heightDelta * this.heightCoef);
-    } else {
-      this.autoSpeedFactor = 0.0;
-    }
-
-    const actualMoveSpeed = delta * this.movementSpeed;
-
-    if (this.moveForward || (this.autoForward && !this.moveBackward))
-      this.camera.translateZ(-(actualMoveSpeed + this.autoSpeedFactor));
-    if (this.moveBackward) this.camera.translateZ(actualMoveSpeed);
-
-    if (this.moveLeft) this.camera.translateX(-actualMoveSpeed);
-    if (this.moveRight) this.camera.translateX(actualMoveSpeed);
-
-    if (this.moveUp) this.camera.translateY(actualMoveSpeed);
-    if (this.moveDown) this.camera.translateY(-actualMoveSpeed);
-
-    let actualLookSpeed = delta * this.lookSpeed;
-
-    if (!this.activeLook) {
-      actualLookSpeed = 0;
-    }
-
-    let verticalLookRatio = 1;
-
-    if (this.constrainVertical) {
-      verticalLookRatio = PI / (this.verticalMax - this.verticalMin);
-    }
-
-    this.#lon -= this.pointerX * actualLookSpeed;
-    if (this.lookVertical)
-      this.#lat -= this.pointerY * actualLookSpeed * verticalLookRatio;
-
-    this.#lat = max(-85, min(85, this.#lat));
-
-    let phi = MathUtils.degToRad(90 - this.#lat);
-    const theta = MathUtils.degToRad(this.#lon);
-
-    if (this.constrainVertical) {
-      phi = MathUtils.mapLinear(
-        phi,
-        0,
-        PI,
-        this.verticalMin,
-        this.verticalMax,
-      );
-    }
-
-    const { position } = this.camera;
-
-    this.#targetPosition.setFromSphericalCoords(1, phi, theta).add(position);
-
-    this.camera.lookAt(this.#targetPosition);
+    this.dx = 0;
+    this.dy = 0;
   }
 }
 

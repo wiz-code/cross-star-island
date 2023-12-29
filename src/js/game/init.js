@@ -48,6 +48,7 @@ const init = () => {
   const controls = new FirstPersonControls(camera, renderer.domElement);
   controls.movementSpeed = Controls.movementSpeed;
   controls.lookSpeed = Controls.lookSpeed;
+  //controls.lookVertical = false;//////
 
   const light = {};
 
@@ -117,8 +118,9 @@ const init = () => {
 
 
 
-
-
+  // helpers
+  const axesHelper = new THREE.AxesHelper(180);
+  scene.add(axesHelper);
 
   const stats = new Stats();
   stats.domElement.style.position = 'absolute';
