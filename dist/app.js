@@ -10049,7 +10049,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const ResizeDelayTime = 200;
-const StepsPerFrame = 2;
+const StepsPerFrame = 3;
 const PlayerSettings = {
   height: 20,
   radius: 5,
@@ -10138,16 +10138,16 @@ const Ground = {
   pointsColor: 0xffff00
 };
 const Controls = {
-  speed: 18,
-  airSpeed: 6,
+  speed: 12,
+  airSpeed: 4,
   resistance: 10,
   airResistance: 2,
-  rotateSpeed: 3,
-  jumpPower: 10,
-  lookSpeed: 6
+  rotateSpeed: 2,
+  jumpPower: 16,
+  lookSpeed: 4
 };
 const World = {
-  gravity: 8
+  gravity: 6
 };
 
 /***/ }),
