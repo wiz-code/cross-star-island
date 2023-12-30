@@ -9111,13 +9111,14 @@ function useIsFocusVisible() {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/createTheme.js");
-/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
+/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/createTheme.js");
+/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
 /* harmony import */ var _game_init__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./game/init */ "./src/js/game/init.js");
 /* harmony import */ var _game_loop__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./game/loop */ "./src/js/game/loop.js");
+/* harmony import */ var _game_settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./game/settings */ "./src/js/game/settings.js");
 
 // import propTypes from 'prop-types';
 
@@ -9126,7 +9127,8 @@ __webpack_require__.r(__webpack_exports__);
  /// //////////////
 
 
-const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_3__["default"])({
+
+const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"])({
   typography: {
     fontFamily: ['"Helvetica Neue"', 'Arial', '"メイリオ"', 'Meiryo', '"ヒラギノ角ゴ ProN W3"', '"Hiragino Kaku Gothic ProN"', '"ヒラギノ角ゴシック"', '"Hiragino Sans"', '"Roboto"', 'sans-serif'].join(','),
     h1: {
@@ -9187,10 +9189,12 @@ const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_3__["default"])({
 });
 const update = function () {
   const deltaTime = this.clock.getDelta();
-  this.controls.update(deltaTime);
-  this.player.update(deltaTime);
-  this.renderer.render(this.scene, this.camera);
-  this.stats.update();
+  for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
+    this.controls.update(deltaTime);
+    this.player.update(deltaTime);
+    this.renderer.render(this.scene, this.camera);
+    this.stats.update();
+  }
 };
 function App() {
   console.log('App::rendered');
@@ -9212,19 +9216,19 @@ function App() {
       rendering.start();
     }
   }, [rendering]);
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"], {
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_5__["default"], {
     theme: theme
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_5__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     id: "container",
     sx: {
       position: 'relative'
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     sx: {
       position: 'absolute',
       right: 0
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
     variant: "contained",
     onClick: start
   }, started ? '停止する' : '開始する'))));
@@ -9495,19 +9499,19 @@ class FirstPersonControls {
     if (this.rotateLeft && this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
     } else if (this.rotateLeft && this.moveBackward) {
-      this.forward(-speedDelta);
       this.rotate(-speedDelta);
-    } else if (this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
+    } else if (this.rotateRight && this.moveBackward) {
       this.rotate(speedDelta);
+      this.forward(-speedDelta);
     } else if (this.rotateLeft && this.rotateRight) {
       this.forward(speedDelta);
     } else if (this.rotateLeft) {
-      this.forward(speedDelta);
       this.rotate(speedDelta);
-    } else if (this.rotateRight) {
       this.forward(speedDelta);
+    } else if (this.rotateRight) {
       this.rotate(-speedDelta);
+      this.forward(speedDelta);
     }
     if (this.onGround && this.jumped) {
       this.jumped = false;
@@ -9527,7 +9531,6 @@ class FirstPersonControls {
     }
     let verticalLookRatio = 1;
     if (this.timeout) {
-      console.log(111);
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x -= this.dy * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle, min(halfPI - this.minPolarAngle, this.rotation.x));
@@ -10013,8 +10016,8 @@ class Player {
       velocity
     } = this.controls;
     this.camera.rotation.copy(rotation);
-    this.camera.position.copy(this.collider.end);
     this.collider.translate(velocity.clone());
+    this.camera.position.copy(this.collider.end);
     this.collisions();
   }
 }
@@ -10040,11 +10043,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Renderer: function() { return /* binding */ Renderer; },
 /* harmony export */   ResizeDelayTime: function() { return /* binding */ ResizeDelayTime; },
 /* harmony export */   Scene: function() { return /* binding */ Scene; },
+/* harmony export */   StepsPerFrame: function() { return /* binding */ StepsPerFrame; },
 /* harmony export */   World: function() { return /* binding */ World; }
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const ResizeDelayTime = 200;
+const StepsPerFrame = 2;
 const PlayerSettings = {
   height: 20,
   radius: 5,
@@ -10139,7 +10144,7 @@ const Controls = {
   airResistance: 2,
   rotateSpeed: 3,
   jumpPower: 10,
-  lookSpeed: 3
+  lookSpeed: 6
 };
 const World = {
   gravity: 8
