@@ -13,6 +13,7 @@ class Player {
     this.camera = camera;
     this.controls = controls;
     this.worldOctree = worldOctree;
+
     const start = new THREE.Vector3(
       PlayerSettings.Position.x,
       PlayerSettings.Position.y,
@@ -29,23 +30,6 @@ class Player {
       PlayerSettings.radius
     );
   }
-
-  /*getForwardVector() {
-		this.camera.getWorldDirection(this.direction);
-		this.direction.y = 0;
-		this.direction.normalize();
-
-		return this.direction;
-	}
-
-  getSideVector() {
-		this.camera.getWorldDirection(this.direction);
-		this.direction.y = 0;
-		this.direction.normalize();
-		this.direction.cross(this.camera.up);
-
-		return this.direction;
-	}*/
 
   collisions() {
 		const result = this.worldOctree.capsuleIntersect(this.collider);
@@ -67,11 +51,13 @@ class Player {
   }
 
   update(deltaTime) {
-    const { euler, velocity } = this.controls;
-    this.camera.quaternion.setFromEuler(euler);
-		this.collider.translate(velocity);
+    const { rotation, velocity } = this.controls;
+
+    this.camera.rotation.copy(rotation);
+    this.camera.position.copy(this.collider.end);
+
+		this.collider.translate(velocity.clone());
 		this.collisions();
-		this.camera.position.copy(this.collider.end);
 	}
 }
 

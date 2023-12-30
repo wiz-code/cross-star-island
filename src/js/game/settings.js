@@ -7,7 +7,7 @@ export const PlayerSettings = {
   radius: 5,
   Position: {
     x: 0,
-    y: 500,
+    y: 300,
     z: 100,
   },
 };
@@ -88,7 +88,7 @@ export const Grid = {
 };
 
 export const Ground = {
-  heightCoef: 12,
+  heightCoef: 8,
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00,
@@ -99,6 +99,7 @@ export const Controls = {
   airSpeed: 6,
   resistance: 10,
   airResistance: 2,
+  rotateSpeed: 3,
   jumpPower: 10,
   lookSpeed: 3,
 };

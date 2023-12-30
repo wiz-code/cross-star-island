@@ -1,4 +1,4 @@
-import { MathUtils, Spherical, Vector3, Euler } from 'three';
+import { MathUtils, Spherical, Vector3, Euler, Quaternion } from 'three';
 
 import { World, Controls } from './settings';
 
@@ -7,17 +7,10 @@ const { max, min, exp, PI } = Math;
 const halfPI = PI / 2;
 
 class FirstPersonControls {
-  #lookDirection = new Vector3();
-
-  #spherical = new Spherical();
-
+  #vec3 = new Vector3();
   #target = new Vector3();
 
-  #lat = 0;
-
-  #lon = 0;
-
-  #targetPosition = new Vector3();
+  #virticalVector = new Vector3(0, 1, 0);
 
   #contextmenu(event) {
     event.preventDefault();
@@ -54,24 +47,26 @@ class FirstPersonControls {
 		this.maxPolarAngle = PI;
 
     // internals
-
-    this.ownDirection = new Vector3();
-
     this.autoSpeedFactor = 0.0;
 
     this.velocity = new Vector3();
+    this.quaternion = new Quaternion();
 		this.direction = new Vector3();
+    this.rotation = new Euler(0, 0, 0, 'YXZ');
     this.onGround = false;
 
-    this.euler = new Euler(0, 0, 0, 'YXZ');
 
+
+    this.timeout = false;
+    this.moved = false;
+    this.st = 0;
     this.dx = 0;
     this.dy = 0;
 
     this.moveForward = false;
     this.moveBackward = false;
-    this.moveLeft = false;
-    this.moveRight = false;
+    this.rotateLeft = false;
+    this.rotateRight = false;
 
     this.jumped = false;
 
@@ -97,8 +92,10 @@ class FirstPersonControls {
   }
 
   setOrientation() {
-    const { quaternion } = this.camera;
-    this.euler.setFromQuaternion(quaternion);
+    const { quaternion, rotation } = this.camera;
+    this.rotation.copy(rotation);
+    this.quaternion.copy(quaternion);
+    this.camera.getWorldDirection(this.direction);
   }
 
   handleResize() {
@@ -134,6 +131,7 @@ class FirstPersonControls {
   }
 
   onPointerMove(event) {
+    this.moved = true;
     this.dx = event.movementX;
     this.dy = event.movementY;
   }
@@ -179,7 +177,7 @@ class FirstPersonControls {
 
       case 'ArrowLeft':
       case 'KeyA':
-        this.moveLeft = true;
+        this.rotateLeft = true;
         break;
 
       case 'ArrowDown':
@@ -189,7 +187,7 @@ class FirstPersonControls {
 
       case 'ArrowRight':
       case 'KeyD':
-        this.moveRight = true;
+        this.rotateRight = true;
         break;
 
       case 'KeyR':
@@ -218,7 +216,7 @@ class FirstPersonControls {
 
       case 'ArrowLeft':
       case 'KeyA':
-        this.moveLeft = false;
+        this.rotateLeft = false;
         break;
 
       case 'ArrowDown':
@@ -228,7 +226,7 @@ class FirstPersonControls {
 
       case 'ArrowRight':
       case 'KeyD':
-        this.moveRight = false;
+        this.rotateRight = false;
         break;
 
       case 'KeyR':
@@ -255,45 +253,56 @@ class FirstPersonControls {
     document.removeEventListener('keyup', this.onKeyUp);
   }
 
-  getForwardVector() {
-		this.camera.getWorldDirection(this.direction);
-		this.direction.y = 0;
-		this.direction.normalize();
-
-		return this.direction;
+  forward(delta) {
+    this.velocity.add(this.direction.clone().multiplyScalar(delta));
 	}
 
-  getSideVector() {
-		this.camera.getWorldDirection(this.direction);
-		this.direction.y = 0;
-		this.direction.normalize();
-		this.direction.cross(this.camera.up);
-
-		return this.direction;
+  rotate(delta) {
+    const rotation = delta * Controls.rotateSpeed * 0.02;
+    this.rotation.y += rotation;
+    this.direction.applyAxisAngle(this.#virticalVector, rotation);
+    this.direction.normalize();
 	}
 
   update(deltaTime) {
+    if (this.moved) {
+      this.moved = false;
+      this.timeout = true;
+      this.st = performance.now();
+    } else if (this.timeout) {
+      const now = performance.now();
+
+      if (now - this.st > 300) {
+        this.st = 0;
+        this.moved = false;
+        this.timeout = false;
+      }
+    }
+
+
+
     // 自機の動き制御
     const speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
 
-    if (this.moveForward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-    }
-
-    if (this.moveBackward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-    }
-
-    if (this.moveLeft) {
-      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
-    }
-
-    if (this.moveRight) {
-      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+    if (this.rotateLeft && this.rotateRight && this.moveBackward) {
+      this.forward(-speedDelta);
+    } else if (this.rotateLeft && this.moveBackward) {
+      this.forward(-speedDelta);
+      this.rotate(-speedDelta);
+    } else if (this.rotateRight && this.moveBackward) {
+      this.forward(-speedDelta);
+      this.rotate(speedDelta);
+    } else if (this.rotateLeft && this.rotateRight) {
+      this.forward(speedDelta);
+    } else if (this.rotateLeft) {
+      this.forward(speedDelta);
+      this.rotate(speedDelta);
+    } else if (this.rotateRight) {
+      this.forward(speedDelta);
+      this.rotate(-speedDelta);
     }
 
     if (this.onGround && this.jumped) {
-      this.onGround = false;
       this.jumped = false;
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
     }
@@ -307,6 +316,7 @@ class FirstPersonControls {
 
 		this.velocity.addScaledVector(this.velocity, damping);
 
+
     // 自機の視点制御
     let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
 
@@ -316,18 +326,15 @@ class FirstPersonControls {
 
     let verticalLookRatio = 1;
 
-    const { quaternion } = this.camera;
-    this.euler.setFromQuaternion(quaternion);
+    if (this.timeout) {console.log(111)
+      this.rotation.y -= this.dx * actualLookSpeed;
+      this.rotation.x -= this.dy * actualLookSpeed;
 
-	  this.euler.y -= this.dx * actualLookSpeed;
-    this.euler.x -= this.dy * actualLookSpeed;
-
-    this.euler.x = max(
-      halfPI - this.maxPolarAngle,
-      min(halfPI - this.minPolarAngle, this.euler.x)
-    );
-
-    //this.camera.quaternion.setFromEuler(this.euler);
+      this.rotation.x = max(
+        halfPI - this.maxPolarAngle,
+        min(halfPI - this.minPolarAngle, this.rotation.x)
+      );
+    }
 
     this.dx = 0;
     this.dy = 0;
