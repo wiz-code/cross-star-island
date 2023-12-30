@@ -9192,9 +9192,9 @@ const update = function () {
   for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
     this.player.update(deltaTime);
-    this.renderer.render(this.scene, this.camera);
-    this.stats.update();
   }
+  this.renderer.render(this.scene, this.camera);
+  this.stats.update();
 };
 function App() {
   console.log('App::rendered');

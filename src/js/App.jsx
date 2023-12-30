@@ -94,10 +94,10 @@ const update = function () {
   for (let i = 0; i < StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
     this.player.update(deltaTime);
-    this.renderer.render(this.scene, this.camera);
-    this.stats.update();
   }
 
+  this.renderer.render(this.scene, this.camera);
+  this.stats.update();
 };
 
 function App() {
