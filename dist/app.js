@@ -9265,12 +9265,9 @@ const {
 } = Math;
 const halfPI = PI / 2;
 class FirstPersonControls {
-  #lookDirection = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
-  #spherical = new three__WEBPACK_IMPORTED_MODULE_1__.Spherical();
+  #vec3 = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
   #target = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
-  #lat = 0;
-  #lon = 0;
-  #targetPosition = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+  #virticalVector = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 1, 0);
   #contextmenu(event) {
     event.preventDefault();
   }
@@ -9299,19 +9296,21 @@ class FirstPersonControls {
     this.maxPolarAngle = PI;
 
     // internals
-
-    this.ownDirection = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
     this.autoSpeedFactor = 0.0;
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+    this.quaternion = new three__WEBPACK_IMPORTED_MODULE_1__.Quaternion();
     this.direction = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_1__.Euler(0, 0, 0, 'YXZ');
     this.onGround = false;
-    this.euler = new three__WEBPACK_IMPORTED_MODULE_1__.Euler(0, 0, 0, 'YXZ');
+    this.timeout = false;
+    this.moved = false;
+    this.st = 0;
     this.dx = 0;
     this.dy = 0;
     this.moveForward = false;
     this.moveBackward = false;
-    this.moveLeft = false;
-    this.moveRight = false;
+    this.rotateLeft = false;
+    this.rotateRight = false;
     this.jumped = false;
     this.viewHalfX = 0;
     this.viewHalfY = 0;
@@ -9331,9 +9330,12 @@ class FirstPersonControls {
   }
   setOrientation() {
     const {
-      quaternion
+      quaternion,
+      rotation
     } = this.camera;
-    this.euler.setFromQuaternion(quaternion);
+    this.rotation.copy(rotation);
+    this.quaternion.copy(quaternion);
+    this.camera.getWorldDirection(this.direction);
   }
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
@@ -9362,6 +9364,7 @@ class FirstPersonControls {
     this.onGround = bool;
   }
   onPointerMove(event) {
+    this.moved = true;
     this.dx = event.movementX;
     this.dy = event.movementY;
   }
@@ -9400,7 +9403,7 @@ class FirstPersonControls {
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.moveLeft = true;
+        this.rotateLeft = true;
         break;
       case 'ArrowDown':
       case 'KeyS':
@@ -9408,7 +9411,7 @@ class FirstPersonControls {
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.moveRight = true;
+        this.rotateRight = true;
         break;
       case 'KeyR':
         this.moveUp = true;
@@ -9433,7 +9436,7 @@ class FirstPersonControls {
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.moveLeft = false;
+        this.rotateLeft = false;
         break;
       case 'ArrowDown':
       case 'KeyS':
@@ -9441,7 +9444,7 @@ class FirstPersonControls {
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.moveRight = false;
+        this.rotateRight = false;
         break;
       case 'KeyR':
         this.moveUp = false;
@@ -9464,36 +9467,49 @@ class FirstPersonControls {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
   }
-  getForwardVector() {
-    this.camera.getWorldDirection(this.direction);
-    this.direction.y = 0;
-    this.direction.normalize();
-    return this.direction;
+  forward(delta) {
+    this.velocity.add(this.direction.clone().multiplyScalar(delta));
   }
-  getSideVector() {
-    this.camera.getWorldDirection(this.direction);
-    this.direction.y = 0;
+  rotate(delta) {
+    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.rotateSpeed * 0.02;
+    this.rotation.y += rotation;
+    this.direction.applyAxisAngle(this.#virticalVector, rotation);
     this.direction.normalize();
-    this.direction.cross(this.camera.up);
-    return this.direction;
   }
   update(deltaTime) {
+    if (this.moved) {
+      this.moved = false;
+      this.timeout = true;
+      this.st = performance.now();
+    } else if (this.timeout) {
+      const now = performance.now();
+      if (now - this.st > 300) {
+        this.st = 0;
+        this.moved = false;
+        this.timeout = false;
+      }
+    }
+
     // 自機の動き制御
     const speedDelta = deltaTime * (this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airSpeed);
-    if (this.moveForward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(speedDelta));
-    }
-    if (this.moveBackward) {
-      this.velocity.add(this.getForwardVector().multiplyScalar(-speedDelta));
-    }
-    if (this.moveLeft) {
-      this.velocity.add(this.getSideVector().multiplyScalar(-speedDelta));
-    }
-    if (this.moveRight) {
-      this.velocity.add(this.getSideVector().multiplyScalar(speedDelta));
+    if (this.rotateLeft && this.rotateRight && this.moveBackward) {
+      this.forward(-speedDelta);
+    } else if (this.rotateLeft && this.moveBackward) {
+      this.forward(-speedDelta);
+      this.rotate(-speedDelta);
+    } else if (this.rotateRight && this.moveBackward) {
+      this.forward(-speedDelta);
+      this.rotate(speedDelta);
+    } else if (this.rotateLeft && this.rotateRight) {
+      this.forward(speedDelta);
+    } else if (this.rotateLeft) {
+      this.forward(speedDelta);
+      this.rotate(speedDelta);
+    } else if (this.rotateRight) {
+      this.forward(speedDelta);
+      this.rotate(-speedDelta);
     }
     if (this.onGround && this.jumped) {
-      this.onGround = false;
       this.jumped = false;
       this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.jumpPower * deltaTime * 50;
     }
@@ -9510,16 +9526,12 @@ class FirstPersonControls {
       actualLookSpeed = 0;
     }
     let verticalLookRatio = 1;
-    const {
-      quaternion
-    } = this.camera;
-    this.euler.setFromQuaternion(quaternion);
-    this.euler.y -= this.dx * actualLookSpeed;
-    this.euler.x -= this.dy * actualLookSpeed;
-    this.euler.x = max(halfPI - this.maxPolarAngle, min(halfPI - this.minPolarAngle, this.euler.x));
-
-    //this.camera.quaternion.setFromEuler(this.euler);
-
+    if (this.timeout) {
+      console.log(111);
+      this.rotation.y -= this.dx * actualLookSpeed;
+      this.rotation.x -= this.dy * actualLookSpeed;
+      this.rotation.x = max(halfPI - this.maxPolarAngle, min(halfPI - this.minPolarAngle, this.rotation.x));
+    }
     this.dx = 0;
     this.dy = 0;
   }
@@ -9983,21 +9995,6 @@ class Player {
     const end = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.y + _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.height, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.Position.z);
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_3__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_1__.PlayerSettings.radius);
   }
-
-  /*getForwardVector() {
-  this.camera.getWorldDirection(this.direction);
-  this.direction.y = 0;
-  this.direction.normalize();
-  	return this.direction;
-  }
-   getSideVector() {
-  this.camera.getWorldDirection(this.direction);
-  this.direction.y = 0;
-  this.direction.normalize();
-  this.direction.cross(this.camera.up);
-  	return this.direction;
-  }*/
-
   collisions() {
     const result = this.worldOctree.capsuleIntersect(this.collider);
     this.controls.setOnGround(false);
@@ -10012,13 +10009,13 @@ class Player {
   }
   update(deltaTime) {
     const {
-      euler,
+      rotation,
       velocity
     } = this.controls;
-    this.camera.quaternion.setFromEuler(euler);
-    this.collider.translate(velocity);
-    this.collisions();
+    this.camera.rotation.copy(rotation);
     this.camera.position.copy(this.collider.end);
+    this.collider.translate(velocity.clone());
+    this.collisions();
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Player);
@@ -10053,7 +10050,7 @@ const PlayerSettings = {
   radius: 5,
   Position: {
     x: 0,
-    y: 500,
+    y: 300,
     z: 100
   }
 };
@@ -10130,7 +10127,7 @@ const Grid = {
   }
 };
 const Ground = {
-  heightCoef: 12,
+  heightCoef: 8,
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xffff00
@@ -10140,6 +10137,7 @@ const Controls = {
   airSpeed: 6,
   resistance: 10,
   airResistance: 2,
+  rotateSpeed: 3,
   jumpPower: 10,
   lookSpeed: 3
 };
