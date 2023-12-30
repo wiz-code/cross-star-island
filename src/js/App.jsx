@@ -15,6 +15,7 @@ import {
 import * as THREE from 'three'; /// //////////////
 import init from './game/init';
 import Loop from './game/loop';
+import { StepsPerFrame } from './game/settings';
 
 const theme = createTheme({
   typography: {
@@ -89,10 +90,14 @@ const theme = createTheme({
 
 const update = function () {
   const deltaTime = this.clock.getDelta();
-  this.controls.update(deltaTime);
-  this.player.update(deltaTime);
-  this.renderer.render(this.scene, this.camera);
-  this.stats.update();
+
+  for (let i = 0; i < StepsPerFrame; i += 1) {
+    this.controls.update(deltaTime);
+    this.player.update(deltaTime);
+    this.renderer.render(this.scene, this.camera);
+    this.stats.update();
+  }
+
 };
 
 function App() {

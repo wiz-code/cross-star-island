@@ -279,27 +279,25 @@ class FirstPersonControls {
       }
     }
 
-
-
     // 自機の動き制御
     const speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
 
     if (this.rotateLeft && this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
     } else if (this.rotateLeft && this.moveBackward) {
-      this.forward(-speedDelta);
       this.rotate(-speedDelta);
-    } else if (this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
+    } else if (this.rotateRight && this.moveBackward) {
       this.rotate(speedDelta);
+      this.forward(-speedDelta);
     } else if (this.rotateLeft && this.rotateRight) {
       this.forward(speedDelta);
     } else if (this.rotateLeft) {
-      this.forward(speedDelta);
       this.rotate(speedDelta);
-    } else if (this.rotateRight) {
       this.forward(speedDelta);
+    } else if (this.rotateRight) {
       this.rotate(-speedDelta);
+      this.forward(speedDelta);
     }
 
     if (this.onGround && this.jumped) {
@@ -316,7 +314,6 @@ class FirstPersonControls {
 
 		this.velocity.addScaledVector(this.velocity, damping);
 
-
     // 自機の視点制御
     let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
 
@@ -326,7 +323,7 @@ class FirstPersonControls {
 
     let verticalLookRatio = 1;
 
-    if (this.timeout) {console.log(111)
+    if (this.timeout) {
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x -= this.dy * actualLookSpeed;
 

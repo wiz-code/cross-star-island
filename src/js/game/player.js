@@ -54,9 +54,9 @@ class Player {
     const { rotation, velocity } = this.controls;
 
     this.camera.rotation.copy(rotation);
-    this.camera.position.copy(this.collider.end);
 
 		this.collider.translate(velocity.clone());
+    this.camera.position.copy(this.collider.end);
 		this.collisions();
 	}
 }

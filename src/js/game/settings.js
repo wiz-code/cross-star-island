@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 export const ResizeDelayTime = 200;
+export const StepsPerFrame = 2;
 
 export const PlayerSettings = {
   height: 20,
@@ -101,7 +102,7 @@ export const Controls = {
   airResistance: 2,
   rotateSpeed: 3,
   jumpPower: 10,
-  lookSpeed: 3,
+  lookSpeed: 6,
 };
 
 export const World = {
