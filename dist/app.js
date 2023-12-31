@@ -9188,7 +9188,7 @@ const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"])({
   }
 });
 const update = function () {
-  const deltaTime = this.clock.getDelta();
+  const deltaTime = this.clock.getDelta() / _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame;
   for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
     this.player.update(deltaTime);
@@ -9311,7 +9311,7 @@ class FirstPersonControls {
     this.st = 0;
     this.dx = 0;
     this.dy = 0;
-    this.moveForward = false;
+    this.sprint = false;
     this.moveBackward = false;
     this.rotateLeft = false;
     this.rotateRight = false;
@@ -9403,7 +9403,7 @@ class FirstPersonControls {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.moveForward = true;
+        this.sprint = true;
         break;
       case 'ArrowLeft':
       case 'KeyA':
@@ -9436,7 +9436,7 @@ class FirstPersonControls {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.moveForward = false;
+        this.sprint = false;
         break;
       case 'ArrowLeft':
       case 'KeyA':
@@ -9472,7 +9472,8 @@ class FirstPersonControls {
     document.removeEventListener('keyup', this.onKeyUp);
   }
   forward(delta) {
-    this.velocity.add(this.direction.clone().multiplyScalar(delta));
+    const direction = this.direction.clone();
+    this.velocity.add(direction.multiplyScalar(delta));
   }
   rotate(delta) {
     const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.rotateSpeed * 0.02;
@@ -9495,7 +9496,10 @@ class FirstPersonControls {
     }
 
     // 自機の動き制御
-    const speedDelta = deltaTime * (this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airSpeed);
+    let speedDelta = deltaTime * (this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airSpeed);
+    if (this.sprint && !this.moveBackward) {
+      speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.sprint;
+    }
     if (this.rotateLeft && this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
     } else if (this.rotateLeft && this.moveBackward) {
@@ -10051,8 +10055,8 @@ __webpack_require__.r(__webpack_exports__);
 const ResizeDelayTime = 200;
 const StepsPerFrame = 3;
 const PlayerSettings = {
-  height: 20,
-  radius: 5,
+  height: 24,
+  radius: 8,
   Position: {
     x: 0,
     y: 300,
@@ -10138,16 +10142,17 @@ const Ground = {
   pointsColor: 0xffff00
 };
 const Controls = {
-  speed: 12,
-  airSpeed: 4,
+  speed: 18,
+  sprint: 2,
+  airSpeed: 6,
   resistance: 10,
   airResistance: 2,
-  rotateSpeed: 2,
-  jumpPower: 16,
-  lookSpeed: 4
+  rotateSpeed: 3,
+  jumpPower: 10,
+  lookSpeed: 10
 };
 const World = {
-  gravity: 6
+  gravity: 8
 };
 
 /***/ }),

@@ -89,7 +89,7 @@ const theme = createTheme({
 });
 
 const update = function () {
-  const deltaTime = this.clock.getDelta();
+  const deltaTime = this.clock.getDelta() / StepsPerFrame;
 
   for (let i = 0; i < StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);

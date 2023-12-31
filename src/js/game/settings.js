@@ -4,8 +4,8 @@ export const ResizeDelayTime = 200;
 export const StepsPerFrame = 3;
 
 export const PlayerSettings = {
-  height: 20,
-  radius: 5,
+  height: 24,
+  radius: 8,
   Position: {
     x: 0,
     y: 300,
@@ -96,15 +96,16 @@ export const Ground = {
 };
 
 export const Controls = {
-  speed: 12,
-  airSpeed: 4,
+  speed: 18,
+  sprint: 2,
+  airSpeed: 6,
   resistance: 10,
   airResistance: 2,
-  rotateSpeed: 2,
-  jumpPower: 16,
-  lookSpeed: 4,
+  rotateSpeed: 3,
+  jumpPower: 10,
+  lookSpeed: 10,
 };
 
 export const World = {
-  gravity: 6,
+  gravity: 8,
 };

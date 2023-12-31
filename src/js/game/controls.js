@@ -63,7 +63,7 @@ class FirstPersonControls {
     this.dx = 0;
     this.dy = 0;
 
-    this.moveForward = false;
+    this.sprint = false;
     this.moveBackward = false;
     this.rotateLeft = false;
     this.rotateRight = false;
@@ -172,7 +172,7 @@ class FirstPersonControls {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.moveForward = true;
+        this.sprint = true;
         break;
 
       case 'ArrowLeft':
@@ -211,7 +211,7 @@ class FirstPersonControls {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.moveForward = false;
+        this.sprint = false;
         break;
 
       case 'ArrowLeft':
@@ -254,7 +254,8 @@ class FirstPersonControls {
   }
 
   forward(delta) {
-    this.velocity.add(this.direction.clone().multiplyScalar(delta));
+    const direction = this.direction.clone();
+    this.velocity.add(direction.multiplyScalar(delta));
 	}
 
   rotate(delta) {
@@ -280,7 +281,11 @@ class FirstPersonControls {
     }
 
     // 自機の動き制御
-    const speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
+    let speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
+
+    if (this.sprint && !this.moveBackward) {
+      speedDelta *= Controls.sprint;
+    }
 
     if (this.rotateLeft && this.rotateRight && this.moveBackward) {
       this.forward(-speedDelta);
