@@ -9562,21 +9562,20 @@ class FirstPersonControls {
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
     } else {
-      const rad = PI * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed * deltaTime;
       if (this.rotation.x !== 0) {
-        if (abs(this.rotation.x) < rad) {
+        if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min) {
           this.rotation.x = 0;
         } else {
-          const rx = sign(-this.rotation.x) * rad;
+          const rx = -this.rotation.x * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.rotation.x) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min;
           this.rotation.x += rx;
         }
       }
       if (this.rotation.y !== this.rotY) {
         let ry = this.rotY - this.rotation.y;
-        if (abs(ry) < rad) {
+        if (abs(ry) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min) {
           this.rotation.y = this.rotY;
         } else {
-          ry = sign(ry) * rad;
+          ry = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min;
           this.rotation.y += ry;
         }
       }
@@ -10102,6 +10101,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
+const {
+  PI
+} = Math;
 const ResizeDelayTime = 200;
 const StepsPerFrame = 3;
 const PlayerSettings = {
@@ -10201,7 +10203,8 @@ const Controls = {
   jumpPower: 15,
   lookSpeed: 18,
   idleTime: 0.5,
-  restoreSpeed: 2
+  restoreSpeed: 2,
+  min: PI * 2 * (5 / 360)
 };
 const World = {
   gravity: 6
