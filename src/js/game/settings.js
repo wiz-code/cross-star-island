@@ -108,8 +108,8 @@ export const Controls = {
   lookSpeed: 18,
 
   idleTime: 0.5,
-  restoreSpeed: 2,
-  min: PI * 2 * (5 / 360),
+  restoreSpeed: 0.5,
+  min: PI * 2 * (0.2 / 360),
 };
 
 export const World = {
