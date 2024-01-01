@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+const { PI } = Math;
+
 export const ResizeDelayTime = 200;
 export const StepsPerFrame = 3;
 
@@ -107,6 +109,7 @@ export const Controls = {
 
   idleTime: 0.5,
   restoreSpeed: 2,
+  min: PI * 2 * (5 / 360),
 };
 
 export const World = {

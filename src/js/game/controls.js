@@ -357,13 +357,11 @@ class FirstPersonControls {
         min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
       );
     } else {
-      const rad = PI * Controls.restoreSpeed * deltaTime;
-
       if (this.rotation.x !== 0) {
-        if (abs(this.rotation.x) < rad) {
+        if (abs(this.rotation.x) < Controls.min) {
           this.rotation.x = 0;
         } else {
-          const rx = sign(-this.rotation.x) * rad;
+          const rx = -this.rotation.x * deltaTime * Controls.restoreSpeed + sign(-this.rotation.x) * Controls.min;
           this.rotation.x += rx;
         }
       }
@@ -371,10 +369,10 @@ class FirstPersonControls {
       if (this.rotation.y !== this.rotY) {
         let ry = this.rotY - this.rotation.y
 
-        if (abs(ry) < rad) {
+        if (abs(ry) < Controls.min) {
           this.rotation.y = this.rotY;
         } else {
-          ry = sign(ry) * rad;
+          ry = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.min;
           this.rotation.y += ry;
         }
       }
