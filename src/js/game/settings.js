@@ -91,15 +91,16 @@ export const Grid = {
 };
 
 export const Ground = {
-  heightCoef: 8,
+  heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
-  pointsColor: 0xffff00,
+  pointsColor: 0xF4E511,//0xffff00,
 };
 
 export const Controls = {
   speed: 9,
-  sprint: 2,
+  sprint: 2.5,
+  urgency: 6,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
@@ -107,11 +108,16 @@ export const Controls = {
   jumpPower: 15,
   lookSpeed: 18,
 
-  idleTime: 0.5,
-  restoreSpeed: 1,
+  idleTime: 0.3,
+  restoreSpeed: 1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
-  pointerMaxMove: 50,
+  pointerMaxMove: 80,
+
+  urgencyDuration: 0.2,
+  stunningDuration: 0.5,
+  stunResistance: 80,
+  stunRecovery: 50,
 };
 
 export const World = {

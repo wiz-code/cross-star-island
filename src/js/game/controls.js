@@ -6,6 +6,34 @@ const { radToDeg, degToRad, clamp, mapLinear } = MathUtils;
 const { abs, sign, floor, max, min, exp, PI } = Math;
 const halfPI = PI / 2;
 
+const Keys = {
+  w: 0,
+  a: 1,
+  s: 2,
+  d: 3,
+  q: 4,
+  e: 5,
+
+  sp: 10,
+  shift: 11,
+  ctrl: 12,
+};
+
+const Actions = {
+  moveForward: 0,
+  moveBackward: 1,
+  moveLeft: 2,
+  moveRight: 3,
+  rotateLeft: 4,
+  rotateRight: 5,
+  jump: 6,
+
+
+  splint: 10,
+  urgency: 11,
+
+};
+
 class FirstPersonControls {
   #vec3 = new Vector3();
 
@@ -14,6 +42,10 @@ class FirstPersonControls {
   #contextmenu(event) {
     event.preventDefault();
   }
+
+  #keys = new Set();
+
+  #actions = new Set();
 
   constructor(camera, domElement) {
     this.camera = camera;
@@ -63,7 +95,11 @@ class FirstPersonControls {
     this.dx = 0;
     this.dy = 0;
 
+    this.urgencyRemainingTime = 0;
+    this.stunningRemainingTime = 0;
+
     this.sprint = false;
+    this.urgency = false;
     this.moveLeft = false;
     this.moveRight = false;
     this.moveBackward = false;
@@ -147,48 +183,50 @@ class FirstPersonControls {
   }
 
   onKeyDown(event) {
+    if (event.shiftKey) {
+      this.urgency = true;
+      this.#keys.add(Keys.shift);
+    }
+
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
         this.sprint = true;
+        this.#keys.add(Keys.w);
         break;
 
       case 'ArrowLeft':
       case 'KeyA':
         this.rotateLeft = true;
+        this.#keys.add(Keys.a);
         break;
 
       case 'ArrowDown':
       case 'KeyS':
         this.moveBackward = true;
+        this.#keys.add(Keys.s);
         break;
 
       case 'ArrowRight':
       case 'KeyD':
         this.rotateRight = true;
-        break;
-
-      case 'KeyR':
-        this.moveUp = true;
-        break;
-      case 'KeyF':
-        this.moveDown = true;
+        this.#keys.add(Keys.d);
         break;
 
       case 'Space': {
-        if (this.onGround) {
-          this.jumped = true;
-        }
+        this.#keys.add(Keys.sp);
         break;
       }
 
       case 'KeyQ': {
         this.moveLeft = true;
+        this.#keys.add(Keys.q);
         break;
       }
 
       case 'KeyE': {
         this.moveRight = true;
+        this.#keys.add(Keys.e);
         break;
       }
 
@@ -199,46 +237,51 @@ class FirstPersonControls {
   }
 
   onKeyUp(event) {
+    if (!event.shiftkey) {
+      this.urgency = false;
+      this.#keys.delete(Keys.shift);
+    }
+
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
         this.sprint = false;
+        this.#keys.delete(Keys.w);
         break;
 
       case 'ArrowLeft':
       case 'KeyA':
         this.rotateLeft = false;
+        this.#keys.delete(Keys.a);
         break;
 
       case 'ArrowDown':
       case 'KeyS':
         this.moveBackward = false;
+        this.#keys.delete(Keys.s);
         break;
 
       case 'ArrowRight':
       case 'KeyD':
         this.rotateRight = false;
-        break;
-
-      case 'KeyR':
-        this.moveUp = false;
-        break;
-      case 'KeyF':
-        this.moveDown = false;
+        this.#keys.delete(Keys.d);
         break;
 
       case 'Space': {
         this.jumped = false;
+        this.#keys.delete(Keys.sp);
         break;
       }
 
       case 'KeyQ': {
         this.moveLeft = false;
+        this.#keys.delete(Keys.q);
         break;
       }
 
       case 'KeyE': {
         this.moveRight = false;
+        this.#keys.delete(Keys.e);
         break;
       }
 
@@ -292,37 +335,182 @@ class FirstPersonControls {
       }
     }
 
+    // 入力操作の処理
+    this.#actions.clear();
+
+    if (this.#keys.has(Keys.shift)) {
+      this.#actions.add(Actions.urgency);
+    }
+
+    if (this.onGround && this.#keys.has(Keys.sp)) {
+      this.jumped = true;
+      this.#actions.add(Actions.jump);
+    }
+
+    if (this.#keys.has(Keys.w)) {
+      this.#actions.add(Actions.sprint);
+    }
+
+    if (!this.#keys.has(Keys.s)) {
+      if (
+        this.#keys.has(Keys.a) &&
+        this.#keys.has(Keys.d)
+      ) {
+        this.#actions.add(Actions.moveForward);
+      } else if (this.#keys.has(Keys.a)) {
+        this.#actions.add(Actions.moveForward);
+        this.#actions.add(Actions.rotateLeft);
+      } else if (this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveForward);
+        this.#actions.add(Actions.rotateRight);
+      } else if (
+        this.#keys.has(Keys.q) &&
+        !this.#keys.has(Keys.e)
+      ) {
+        this.#actions.add(Actions.moveLeft);
+      } else if (
+        this.#keys.has(Keys.e) &&
+        !this.#keys.has(Keys.q)
+      ) {
+        this.#actions.add(Actions.moveRight);
+      }
+    } else {
+      if (
+        this.#keys.has(Keys.a) &&
+        this.#keys.has(Keys.d)
+      ) {
+        this.#actions.add(Actions.moveBackward);
+      } else if (this.#keys.has(Keys.a)) {
+        this.#actions.add(Actions.moveBackward);
+        this.#actions.add(Actions.rotateLeft);
+      } else if (this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveBackward);
+        this.#actions.add(Actions.rotateRight);
+      } else if (
+        this.#keys.has(Keys.q) &&
+        !this.#keys.has(Keys.e)
+      ) {
+        this.#actions.add(Actions.moveLeft);
+      } else if (
+        this.#keys.has(Keys.e) &&
+        !this.#keys.has(Keys.q)
+      ) {
+        this.#actions.add(Actions.moveRight);
+      }
+    }
+
+    if (
+      this.#actions.has(Actions.urgency) &&
+      this.urgencyRemainingTime === 0 &&
+      this.onGround &&
+      (
+        this.#actions.has(Actions.rotateLeft) ||
+        this.#actions.has(Actions.rotateRight)
+      )
+    ) {
+      this.urgencyRemainingTime = Controls.urgencyDuration;
+    }
+
     // 自機の動き制御
-    let speedDelta = deltaTime * (this.onGround ? Controls.speed : Controls.airSpeed);
+    if (this.stunningRemainingTime > 0) {
+      this.stunningRemainingTime -= deltaTime;
 
-    if (this.sprint && !this.moveBackward) {
-      speedDelta *= Controls.sprint;
+      if (this.stunningRemainingTime <= 0) {
+        this.stunningRemainingTime = 0;
+      }
+    } else if (this.urgencyRemainingTime > 0) {
+      this.urgencyRemainingTime -= deltaTime;
+
+      if (this.urgencyRemainingTime <= 0) {
+        this.urgencyRemainingTime = 0;
+        this.stunningRemainingTime = Controls.stunningDuration;
+      } else {
+        if (this.onGround) {
+          const speedDelta = deltaTime * Controls.speed * Controls.urgency;
+
+          if (
+            this.#actions.has(Actions.rotateLeft) &&
+            !this.#actions.has(Actions.rotateRight)
+          ) {
+            this.rotate(speedDelta);
+          } else if (
+            this.#actions.has(Actions.rotateRight) &&
+            !this.#actions.has(Actions.rotateLeft)
+          ) {
+            this.rotate(-speedDelta);
+          }
+        }
+      }
+    } else {
+      let speedDelta = 0;
+
+      if (this.onGround) {
+        speedDelta = deltaTime * Controls.speed;
+
+        if (
+          this.#actions.has(Actions.sprint) &&
+          (
+            this.#actions.has(Actions.moveForward) ||
+            this.#actions.has(Actions.rotateLeft) ||
+            this.#actions.has(Actions.rotateRight)
+          )
+        ) {
+          speedDelta *= Controls.sprint;
+        }
+      } else {
+        speedDelta = deltaTime * Controls.airSpeed;
+      }
+
+      if (
+        this.#actions.has(Actions.moveBackward) &&
+        !this.#actions.has(Actions.rotateLeft) &&
+        !this.#actions.has(Actions.rotateRight)
+      ) {
+        this.forward(-speedDelta);
+      } else if (
+        this.#actions.has(Actions.moveBackward) &&
+        this.#actions.has(Actions.rotateLeft)
+      ) {
+        this.rotate(-speedDelta);
+        this.forward(-speedDelta);
+      } else if (
+        this.#actions.has(Actions.moveBackward) &&
+        this.#actions.has(Actions.rotateRight)
+      ) {
+        this.rotate(speedDelta);
+        this.forward(-speedDelta);
+      } else if (
+        this.#actions.has(Actions.moveForward) &&
+        !this.#actions.has(Actions.rotateLeft) &&
+        !this.#actions.has(Actions.rotateRight)
+      ) {
+        this.forward(speedDelta);
+      } else if (
+        this.#actions.has(Actions.moveForward) &&
+        this.#actions.has(Actions.rotateLeft)
+      ) {
+        this.rotate(speedDelta);
+        this.forward(speedDelta);
+      } else if (
+        this.#actions.has(Actions.moveForward) &&
+        this.#actions.has(Actions.rotateRight)
+      ) {
+        this.rotate(-speedDelta);
+        this.forward(speedDelta);
+      } if (
+        this.#actions.has(Actions.moveLeft) &&
+        !this.#actions.has(Actions.moveRight)
+      ) {
+        this.moveSide(-speedDelta * 0.5);
+      } else if (
+        this.#actions.has(Actions.moveRight) &&
+        !this.#actions.has(Actions.moveLeft)
+      ) {
+        this.moveSide(speedDelta * 0.5);
+      }
     }
 
-    if (this.rotateLeft && this.rotateRight && this.moveBackward) {
-      this.forward(-speedDelta);
-    } else if (this.rotateLeft && this.moveBackward) {
-      this.rotate(-speedDelta);
-      this.forward(-speedDelta);
-    } else if (this.rotateRight && this.moveBackward) {
-      this.rotate(speedDelta);
-      this.forward(-speedDelta);
-    } else if (this.rotateLeft && this.rotateRight) {
-      this.forward(speedDelta);
-    } else if (this.rotateLeft) {
-      this.rotate(speedDelta);
-      this.forward(speedDelta);
-    } else if (this.rotateRight) {
-      this.rotate(-speedDelta);
-      this.forward(speedDelta);
-    } if (this.moveLeft && !this.moveRight) {
-			this.moveSide(-speedDelta * 0.5);
-    } else if (this.moveRight && !this.moveLeft) {
-      this.moveSide(speedDelta * 0.5);
-    }
-
-    if (this.onGround && this.jumped) {
-      this.jumped = false;
+    if (this.onGround && this.#actions.has(Actions.jump)) {
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
     }
 
