@@ -101,7 +101,7 @@ export const Controls = {
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
-  rotateSpeed: 3,
+  rotateSpeed: 6,
   jumpPower: 15,
   lookSpeed: 18,
 

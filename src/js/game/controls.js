@@ -345,16 +345,16 @@ class FirstPersonControls {
     let verticalLookRatio = 1;
 
     if (this.timeout) {
-      this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x -= this.dy * actualLookSpeed;
+      this.rotation.y -= this.dx * actualLookSpeed;
 
       this.rotation.x = max(
         halfPI - this.maxPolarAngle.virtical,
         min(halfPI - this.minPolarAngle.virtical, this.rotation.x)
       );
       this.rotation.y = max(
-        PI - this.maxPolarAngle.horizontal,
-        min(PI - this.minPolarAngle.horizontal, this.rotation.y)
+        PI - this.maxPolarAngle.horizontal + this.rotY,
+        min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
       );
     } else {
       const rad = PI * Controls.restoreSpeed * deltaTime;

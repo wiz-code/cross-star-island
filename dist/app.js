@@ -9557,10 +9557,10 @@ class FirstPersonControls {
     }
     let verticalLookRatio = 1;
     if (this.timeout) {
-      this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x -= this.dy * actualLookSpeed;
+      this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
-      this.rotation.y = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.rotation.y));
+      this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
     } else {
       const rad = PI * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed * deltaTime;
       if (this.rotation.x !== 0) {
@@ -10197,7 +10197,7 @@ const Controls = {
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
-  rotateSpeed: 3,
+  rotateSpeed: 6,
   jumpPower: 15,
   lookSpeed: 18,
   idleTime: 0.5,
