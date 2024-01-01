@@ -134,8 +134,8 @@ class FirstPersonControls {
 
   onPointerMove(event) {
     this.moved = true;
-    this.dx = event.movementX;
-    this.dy = event.movementY;
+    this.dx = max(-Controls.pointerMaxMove, min(event.movementX, Controls.pointerMaxMove));
+    this.dy = max(-Controls.pointerMaxMove, min(event.movementY, Controls.pointerMaxMove));
   }
 
   onPointerDown(event) {
@@ -316,9 +316,9 @@ class FirstPersonControls {
       this.rotate(-speedDelta);
       this.forward(speedDelta);
     } if (this.moveLeft && !this.moveRight) {
-			this.moveSide(-speedDelta);
+			this.moveSide(-speedDelta * 0.5);
     } else if (this.moveRight && !this.moveLeft) {
-      this.moveSide(speedDelta);
+      this.moveSide(speedDelta * 0.5);
     }
 
     if (this.onGround && this.jumped) {
@@ -358,10 +358,10 @@ class FirstPersonControls {
       );
     } else {
       if (this.rotation.x !== 0) {
-        if (abs(this.rotation.x) < Controls.min) {
+        if (abs(this.rotation.x) < Controls.restoreMinAngle) {
           this.rotation.x = 0;
         } else {
-          const rx = -this.rotation.x * deltaTime * Controls.restoreSpeed + sign(-this.rotation.x) * Controls.min;
+          const rx = -this.rotation.x * deltaTime * Controls.restoreSpeed + sign(-this.rotation.x) * Controls.restoreMinAngle;
           this.rotation.x += rx;
         }
       }
@@ -369,10 +369,10 @@ class FirstPersonControls {
       if (this.rotation.y !== this.rotY) {
         let ry = this.rotY - this.rotation.y
 
-        if (abs(ry) < Controls.min) {
+        if (abs(ry) < Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
-          ry = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.min;
+          ry = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.restoreMinAngle;
           this.rotation.y += ry;
         }
       }

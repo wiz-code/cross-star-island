@@ -9374,8 +9374,8 @@ class FirstPersonControls {
   }
   onPointerMove(event) {
     this.moved = true;
-    this.dx = event.movementX;
-    this.dy = event.movementY;
+    this.dx = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementX, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
+    this.dy = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementY, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
   }
   onPointerDown(event) {
     this.lock();
@@ -9535,9 +9535,9 @@ class FirstPersonControls {
       this.forward(speedDelta);
     }
     if (this.moveLeft && !this.moveRight) {
-      this.moveSide(-speedDelta);
+      this.moveSide(-speedDelta * 0.5);
     } else if (this.moveRight && !this.moveLeft) {
-      this.moveSide(speedDelta);
+      this.moveSide(speedDelta * 0.5);
     }
     if (this.onGround && this.jumped) {
       this.jumped = false;
@@ -9563,19 +9563,19 @@ class FirstPersonControls {
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
     } else {
       if (this.rotation.x !== 0) {
-        if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min) {
+        if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.x = 0;
         } else {
-          const rx = -this.rotation.x * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.rotation.x) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min;
+          const rx = -this.rotation.x * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.rotation.x) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
           this.rotation.x += rx;
         }
       }
       if (this.rotation.y !== this.rotY) {
         let ry = this.rotY - this.rotation.y;
-        if (abs(ry) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min) {
+        if (abs(ry) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
-          ry = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.min;
+          ry = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
           this.rotation.y += ry;
         }
       }
@@ -10203,8 +10203,9 @@ const Controls = {
   jumpPower: 15,
   lookSpeed: 18,
   idleTime: 0.5,
-  restoreSpeed: 0.5,
-  min: PI * 2 * (0.2 / 360)
+  restoreSpeed: 1,
+  restoreMinAngle: PI * 2 * (0.2 / 360),
+  pointerMaxMove: 50
 };
 const World = {
   gravity: 6
