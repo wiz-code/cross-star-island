@@ -3,12 +3,11 @@ import { MathUtils, Spherical, Vector3, Euler, Quaternion } from 'three';
 import { World, Controls } from './settings';
 
 const { radToDeg, degToRad, clamp, mapLinear } = MathUtils;
-const { max, min, exp, PI } = Math;
+const { abs, sign, floor, max, min, exp, PI } = Math;
 const halfPI = PI / 2;
 
 class FirstPersonControls {
   #vec3 = new Vector3();
-  #target = new Vector3();
 
   #virticalVector = new Vector3(0, 1, 0);
 
@@ -24,9 +23,6 @@ class FirstPersonControls {
 
     this.enabled = true;
 
-    //this.movementSpeed = 1.0;
-    this.lookSpeed = 0.005;
-
     this.lookVertical = true;
     this.autoForward = false;
 
@@ -41,18 +37,22 @@ class FirstPersonControls {
     this.verticalMin = 0;
     this.verticalMax = PI;
 
-    this.mouseDragOn = false;
-
-    this.minPolarAngle = 0;
-		this.maxPolarAngle = PI;
+    this.minPolarAngle = {
+      virtical: 0,
+      horizontal: 0,
+    };
+		this.maxPolarAngle = {
+      virtical: PI,
+      horizontal: PI * 2,
+    };
 
     // internals
     this.autoSpeedFactor = 0.0;
 
     this.velocity = new Vector3();
-    this.quaternion = new Quaternion();
 		this.direction = new Vector3();
     this.rotation = new Euler(0, 0, 0, 'YXZ');
+    this.rotY = 0;
     this.onGround = false;
 
 
@@ -64,6 +64,8 @@ class FirstPersonControls {
     this.dy = 0;
 
     this.sprint = false;
+    this.moveLeft = false;
+    this.moveRight = false;
     this.moveBackward = false;
     this.rotateLeft = false;
     this.rotateRight = false;
@@ -92,9 +94,9 @@ class FirstPersonControls {
   }
 
   setOrientation() {
-    const { quaternion, rotation } = this.camera;
+    const { rotation } = this.camera;
     this.rotation.copy(rotation);
-    this.quaternion.copy(quaternion);
+    this.rx = this.rotation.x;
     this.camera.getWorldDirection(this.direction);
   }
 
@@ -105,12 +107,12 @@ class FirstPersonControls {
 
   lookAt(x, y, z) {
     if (x.isVector3) {
-      this.#target.copy(x);
+      this.#vec3.copy(x);
     } else {
-      this.#target.set(x, y, z);
+      this.#vec3.set(x, y, z);
     }
 
-    this.camera.lookAt(this.#target);
+    this.camera.lookAt(this.#vec3);
     this.setOrientation();
 
     return this;
@@ -138,34 +140,10 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.lock();
-
-    if (this.activeLook) {
-      switch (event.button) {
-        case 0:
-          this.moveForward = true;
-          break;
-        case 2:
-          this.moveBackward = true;
-          break;
-      }
-    }
-
-    this.mouseDragOn = true;
   }
 
   onPointerUp(event) {
-    if (this.activeLook) {
-      switch (event.button) {
-        case 0:
-          this.moveForward = false;
-          break;
-        case 2:
-          this.moveBackward = false;
-          break;
-      }
-    }
-
-    this.mouseDragOn = false;
+    //
   }
 
   onKeyDown(event) {
@@ -204,6 +182,19 @@ class FirstPersonControls {
         break;
       }
 
+      case 'KeyQ': {
+        this.moveLeft = true;
+        break;
+      }
+
+      case 'KeyE': {
+        this.moveRight = true;
+        break;
+      }
+
+      default: {
+        //
+      }
     }
   }
 
@@ -240,6 +231,20 @@ class FirstPersonControls {
         this.jumped = false;
         break;
       }
+
+      case 'KeyQ': {
+        this.moveLeft = false;
+        break;
+      }
+
+      case 'KeyE': {
+        this.moveRight = false;
+        break;
+      }
+
+      default: {
+        //
+      }
     }
   }
 
@@ -254,28 +259,35 @@ class FirstPersonControls {
   }
 
   forward(delta) {
-    const direction = this.direction.clone();
-    this.velocity.add(direction.multiplyScalar(delta));
+    const direction = this.direction.clone().multiplyScalar(delta);
+    this.velocity.add(direction);
 	}
 
   rotate(delta) {
     const rotation = delta * Controls.rotateSpeed * 0.02;
+    this.rotY += rotation;
     this.rotation.y += rotation;
+
     this.direction.applyAxisAngle(this.#virticalVector, rotation);
     this.direction.normalize();
 	}
+
+  moveSide(delta) {
+    const direction = this.#vec3.crossVectors(this.direction, this.#virticalVector);
+    direction.normalize();
+    this.velocity.add(direction.multiplyScalar(delta));
+  }
 
   update(deltaTime) {
     if (this.moved) {
       this.moved = false;
       this.timeout = true;
       this.st = performance.now();
-    } else if (this.timeout) {
+    } else {
       const now = performance.now();
 
-      if (now - this.st > 300) {
+      if (now - this.st > Controls.idleTime * 1000) {
         this.st = 0;
-        this.moved = false;
         this.timeout = false;
       }
     }
@@ -303,6 +315,10 @@ class FirstPersonControls {
     } else if (this.rotateRight) {
       this.rotate(-speedDelta);
       this.forward(speedDelta);
+    } if (this.moveLeft && !this.moveRight) {
+			this.moveSide(-speedDelta);
+    } else if (this.moveRight && !this.moveLeft) {
+      this.moveSide(speedDelta);
     }
 
     if (this.onGround && this.jumped) {
@@ -333,9 +349,35 @@ class FirstPersonControls {
       this.rotation.x -= this.dy * actualLookSpeed;
 
       this.rotation.x = max(
-        halfPI - this.maxPolarAngle,
-        min(halfPI - this.minPolarAngle, this.rotation.x)
+        halfPI - this.maxPolarAngle.virtical,
+        min(halfPI - this.minPolarAngle.virtical, this.rotation.x)
       );
+      this.rotation.y = max(
+        PI - this.maxPolarAngle.horizontal,
+        min(PI - this.minPolarAngle.horizontal, this.rotation.y)
+      );
+    } else {
+      const rad = PI * Controls.restoreSpeed * deltaTime;
+
+      if (this.rotation.x !== 0) {
+        if (abs(this.rotation.x) < rad) {
+          this.rotation.x = 0;
+        } else {
+          const rx = sign(-this.rotation.x) * rad;
+          this.rotation.x += rx;
+        }
+      }
+
+      if (this.rotation.y !== this.rotY) {
+        let ry = this.rotY - this.rotation.y
+
+        if (abs(ry) < rad) {
+          this.rotation.y = this.rotY;
+        } else {
+          ry = sign(ry) * rad;
+          this.rotation.y += ry;
+        }
+      }
     }
 
     this.dx = 0;

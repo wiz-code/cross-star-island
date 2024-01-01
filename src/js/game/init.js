@@ -92,6 +92,14 @@ const init = () => {
   const ground = createGround();
   scene.add(ground);
 
+  const direction = new THREE.Vector3();
+  direction.normalize();
+  const origin = new THREE.Vector3();
+  const length = 100;
+  const hex = 0xffffff;
+  const arrow = new THREE.ArrowHelper(direction, origin, length, hex);
+  scene.add(arrow);
+
   //const worldBox = new THREE.Box3().expandByObject(ground);
   //const worldOctree = new Octree(worldBox).build();
   //worldOctree.fromGraphNode(grid);
@@ -152,6 +160,7 @@ const init = () => {
     renderer,
     clock,
     player,
+    arrow,
     controls,
     stats,
   };

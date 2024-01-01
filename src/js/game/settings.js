@@ -96,16 +96,19 @@ export const Ground = {
 };
 
 export const Controls = {
-  speed: 18,
+  speed: 9,
   sprint: 2,
-  airSpeed: 6,
+  airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 3,
-  jumpPower: 10,
-  lookSpeed: 10,
+  jumpPower: 15,
+  lookSpeed: 18,
+
+  idleTime: 0.5,
+  restoreSpeed: 2,
 };
 
 export const World = {
-  gravity: 8,
+  gravity: 6,
 };
