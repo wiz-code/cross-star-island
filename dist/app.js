@@ -9291,7 +9291,13 @@ const Actions = {
   rotateRight: 5,
   jump: 6,
   splint: 10,
-  urgency: 11
+  urgency: 11,
+  quickMoveForward: 20,
+  quickMoveBackward: 21,
+  quickTurnLeft: 22,
+  quickTurnRight: 23,
+  quickMoveLeft: 24,
+  quickMoveRight: 25
 };
 class FirstPersonControls {
   #vec3 = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
@@ -9412,28 +9418,23 @@ class FirstPersonControls {
   }
   onKeyDown(event) {
     if (event.shiftKey) {
-      this.urgency = true;
       this.#keys.add(Keys.shift);
     }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.sprint = true;
         this.#keys.add(Keys.w);
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.rotateLeft = true;
         this.#keys.add(Keys.a);
         break;
       case 'ArrowDown':
       case 'KeyS':
-        this.moveBackward = true;
         this.#keys.add(Keys.s);
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.rotateRight = true;
         this.#keys.add(Keys.d);
         break;
       case 'Space':
@@ -9443,13 +9444,11 @@ class FirstPersonControls {
         }
       case 'KeyQ':
         {
-          this.moveLeft = true;
           this.#keys.add(Keys.q);
           break;
         }
       case 'KeyE':
         {
-          this.moveRight = true;
           this.#keys.add(Keys.e);
           break;
         }
@@ -9461,18 +9460,15 @@ class FirstPersonControls {
   }
   onKeyUp(event) {
     if (!event.shiftkey) {
-      this.urgency = false;
       this.#keys.delete(Keys.shift);
     }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.sprint = false;
         this.#keys.delete(Keys.w);
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.rotateLeft = false;
         this.#keys.delete(Keys.a);
         break;
       case 'ArrowDown':
@@ -9482,7 +9478,6 @@ class FirstPersonControls {
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.rotateRight = false;
         this.#keys.delete(Keys.d);
         break;
       case 'Space':
@@ -9493,13 +9488,11 @@ class FirstPersonControls {
         }
       case 'KeyQ':
         {
-          this.moveLeft = false;
           this.#keys.delete(Keys.q);
           break;
         }
       case 'KeyE':
         {
-          this.moveRight = false;
           this.#keys.delete(Keys.e);
           break;
         }
@@ -9517,7 +9510,7 @@ class FirstPersonControls {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
   }
-  forward(delta) {
+  moveForward(delta) {
     const direction = this.direction.clone().multiplyScalar(delta);
     this.velocity.add(direction);
   }
@@ -9533,6 +9526,72 @@ class FirstPersonControls {
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(delta));
   }
+  input() {
+    // 入力操作の処理
+    if (!this.#actions.has(Actions.urgency)) {
+      if (this.#keys.has(Keys.shift)) {
+        this.#actions.clear();
+        this.#actions.add(Actions.urgency);
+        if (this.#keys.has(Keys.w)) {
+          this.#actions.add(Actions.quickMoveForward);
+        } else if (this.#keys.has(Keys.a)) {
+          this.#actions.add(Actions.quickTurnLeft);
+        } else if (this.#keys.has(Keys.s)) {
+          this.#actions.add(Actions.quickMoveBackward);
+        } else if (this.#keys.has(Keys.d)) {
+          this.#actions.add(Actions.quickTurnRight);
+        } else if (this.#keys.has(Keys.q)) {
+          this.#actions.add(Actions.quickMoveLeft);
+        } else if (this.#keys.has(Keys.e)) {
+          this.#actions.add(Actions.quickMoveRight);
+        } else {
+          // 方向キーが押されてない場合はモードを解除
+          this.#actions.delete(Actions.urgency);
+        }
+        return;
+      }
+    } else {
+      return;
+    }
+    this.#actions.clear();
+
+    // update()で一度だけアクションを発動する
+    if (this.onGround && this.#keys.has(Keys.sp)) {
+      this.#keys.delete(Keys.sp);
+      this.#actions.add(Actions.jump);
+    }
+    if (this.#keys.has(Keys.w)) {
+      this.#actions.add(Actions.sprint);
+    }
+    if (!this.#keys.has(Keys.s)) {
+      if (this.#keys.has(Keys.a) && this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveForward);
+      }
+      if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveForward);
+        this.#actions.add(Actions.rotateLeft);
+      } else if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+        this.#actions.add(Actions.moveForward);
+        this.#actions.add(Actions.rotateRight);
+      }
+    } else {
+      if (this.#keys.has(Keys.a) && this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveBackward);
+      }
+      if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.moveBackward);
+        this.#actions.add(Actions.rotateLeft);
+      } else if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+        this.#actions.add(Actions.moveBackward);
+        this.#actions.add(Actions.rotateRight);
+      }
+    }
+    if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+      this.#actions.add(Actions.moveLeft);
+    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+      this.#actions.add(Actions.moveRight);
+    }
+  }
   update(deltaTime) {
     if (this.moved) {
       this.moved = false;
@@ -9545,49 +9604,8 @@ class FirstPersonControls {
         this.timeout = false;
       }
     }
-
-    // 入力操作の処理
-    this.#actions.clear();
-    if (this.#keys.has(Keys.shift)) {
-      this.#actions.add(Actions.urgency);
-    }
-    if (this.onGround && this.#keys.has(Keys.sp)) {
-      this.jumped = true;
-      this.#actions.add(Actions.jump);
-    }
-    if (this.#keys.has(Keys.w)) {
-      this.#actions.add(Actions.sprint);
-    }
-    if (!this.#keys.has(Keys.s)) {
-      if (this.#keys.has(Keys.a) && this.#keys.has(Keys.d)) {
-        this.#actions.add(Actions.moveForward);
-      } else if (this.#keys.has(Keys.a)) {
-        this.#actions.add(Actions.moveForward);
-        this.#actions.add(Actions.rotateLeft);
-      } else if (this.#keys.has(Keys.d)) {
-        this.#actions.add(Actions.moveForward);
-        this.#actions.add(Actions.rotateRight);
-      } else if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
-        this.#actions.add(Actions.moveLeft);
-      } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
-        this.#actions.add(Actions.moveRight);
-      }
-    } else {
-      if (this.#keys.has(Keys.a) && this.#keys.has(Keys.d)) {
-        this.#actions.add(Actions.moveBackward);
-      } else if (this.#keys.has(Keys.a)) {
-        this.#actions.add(Actions.moveBackward);
-        this.#actions.add(Actions.rotateLeft);
-      } else if (this.#keys.has(Keys.d)) {
-        this.#actions.add(Actions.moveBackward);
-        this.#actions.add(Actions.rotateRight);
-      } else if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
-        this.#actions.add(Actions.moveLeft);
-      } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
-        this.#actions.add(Actions.moveRight);
-      }
-    }
-    if (this.#actions.has(Actions.urgency) && this.urgencyRemainingTime === 0 && this.onGround && (this.#actions.has(Actions.rotateLeft) || this.#actions.has(Actions.rotateRight))) {
+    this.input();
+    if (this.#actions.has(Actions.urgency) && this.urgencyRemainingTime === 0 && this.onGround) {
       this.urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyDuration;
     }
 
@@ -9600,16 +9618,24 @@ class FirstPersonControls {
     } else if (this.urgencyRemainingTime > 0) {
       this.urgencyRemainingTime -= deltaTime;
       if (this.urgencyRemainingTime <= 0) {
+        this.#actions.clear();
         this.urgencyRemainingTime = 0;
         this.stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.stunningDuration;
-      } else {
-        if (this.onGround) {
-          const speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgency;
-          if (this.#actions.has(Actions.rotateLeft) && !this.#actions.has(Actions.rotateRight)) {
-            this.rotate(speedDelta);
-          } else if (this.#actions.has(Actions.rotateRight) && !this.#actions.has(Actions.rotateLeft)) {
-            this.rotate(-speedDelta);
-          }
+      }
+      if (this.onGround) {
+        const speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgency;
+        if (this.#actions.has(Actions.quickMoveForward)) {
+          this.moveForward(speedDelta);
+        } else if (this.#actions.has(Actions.quickMoveBackward)) {
+          this.moveForward(-speedDelta);
+        } else if (this.#actions.has(Actions.quickTurnLeft)) {
+          this.rotate(speedDelta);
+        } else if (this.#actions.has(Actions.quickTurnRight)) {
+          this.rotate(-speedDelta);
+        } else if (this.#actions.has(Actions.quickMoveLeft)) {
+          this.moveSide(-speedDelta);
+        } else if (this.#actions.has(Actions.quickMoveRight)) {
+          this.moveSide(speedDelta);
         }
       }
     } else {
@@ -9623,21 +9649,21 @@ class FirstPersonControls {
         speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airSpeed;
       }
       if (this.#actions.has(Actions.moveBackward) && !this.#actions.has(Actions.rotateLeft) && !this.#actions.has(Actions.rotateRight)) {
-        this.forward(-speedDelta);
+        this.moveForward(-speedDelta);
       } else if (this.#actions.has(Actions.moveBackward) && this.#actions.has(Actions.rotateLeft)) {
         this.rotate(-speedDelta);
-        this.forward(-speedDelta);
+        this.moveForward(-speedDelta);
       } else if (this.#actions.has(Actions.moveBackward) && this.#actions.has(Actions.rotateRight)) {
         this.rotate(speedDelta);
-        this.forward(-speedDelta);
+        this.moveForward(-speedDelta);
       } else if (this.#actions.has(Actions.moveForward) && !this.#actions.has(Actions.rotateLeft) && !this.#actions.has(Actions.rotateRight)) {
-        this.forward(speedDelta);
+        this.moveForward(speedDelta);
       } else if (this.#actions.has(Actions.moveForward) && this.#actions.has(Actions.rotateLeft)) {
         this.rotate(speedDelta);
-        this.forward(speedDelta);
+        this.moveForward(speedDelta);
       } else if (this.#actions.has(Actions.moveForward) && this.#actions.has(Actions.rotateRight)) {
         this.rotate(-speedDelta);
-        this.forward(speedDelta);
+        this.moveForward(speedDelta);
       }
       if (this.#actions.has(Actions.moveLeft) && !this.#actions.has(Actions.moveRight)) {
         this.moveSide(-speedDelta * 0.5);
@@ -10288,8 +10314,8 @@ const Ground = {
 };
 const Controls = {
   speed: 9,
-  sprint: 2.5,
-  urgency: 6,
+  sprint: 2.8,
+  urgency: 7,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
