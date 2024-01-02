@@ -99,8 +99,8 @@ export const Ground = {
 
 export const Controls = {
   speed: 9,
-  sprint: 2.5,
-  urgency: 6,
+  sprint: 2.8,
+  urgency: 7,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
