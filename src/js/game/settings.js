@@ -115,7 +115,7 @@ export const Controls = {
   pointerMaxMove: 80,
 
   urgencyDuration: 0.2,
-  stunningDuration: 0.5,
+  stunningDuration: 0.4,
   stunResistance: 80,
   stunRecovery: 50,
 };
