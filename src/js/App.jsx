@@ -96,7 +96,10 @@ const update = function () {
     this.player.update(deltaTime);
   }
 
-  this.renderer.render(this.scene, this.camera);
+  this.renderer.clear();
+  this.renderer.render(this.scene.field, this.camera.field);
+  this.renderer.render(this.scene.screen, this.camera.screen);
+
   this.stats.update();
 };
 

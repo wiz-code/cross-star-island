@@ -70,6 +70,7 @@ class FirstPersonControls {
     this.autoForward = false;
 
     this.activeLook = true;
+    this.povLock = false;
 
     this.heightSpeed = false;
     this.heightCoef = 1.0;
@@ -177,22 +178,28 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.lock();
+
+    if (this.activeLook) {
+			if (event.button === 0) {
+        //
+      } else if (event.button === 2) {
+        this.povLock = true;
+			}
+		}
   }
 
   onPointerUp(event) {
-    //
+    if (this.activeLook) {
+      if (event.button === 0) {
+        //
+      } else if (event.button === 2) {
+        this.povLock = false;
+			}
+		}
   }
 
   onKeyDown(event) {
     event.preventDefault();
-
-    if (event.shiftKey) {
-      this.#keys.add(Keys.shift);
-    }
-
-    if (event.altKey) {
-      this.#keys.add(Keys.alt);
-    }
 
     switch (event.code) {
       case 'ArrowUp':
@@ -231,21 +238,19 @@ class FirstPersonControls {
       }
 
       default: {
-        //
+        if (event.shiftKey) {
+          this.#keys.add(Keys.shift);
+        }
+
+        if (event.altKey) {
+          this.#keys.add(Keys.alt);
+        }
       }
     }
   }
 
   onKeyUp(event) {
     event.preventDefault();
-
-    if (!event.shiftkey) {
-      this.#keys.delete(Keys.shift);
-    }
-
-    if (!event.altKey) {
-      this.#keys.delete(Keys.alt);
-    }
 
     switch (event.code) {
       case 'ArrowUp':
@@ -285,7 +290,13 @@ class FirstPersonControls {
       }
 
       default: {
-        //
+        if (!event.shiftkey) {
+          this.#keys.delete(Keys.shift);
+        }
+
+        if (!event.altKey) {
+          this.#keys.delete(Keys.alt);
+        }
       }
     }
   }
@@ -537,7 +548,7 @@ class FirstPersonControls {
         PI - this.maxPolarAngle.horizontal + this.rotY,
         min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
       );
-    } else {
+    } else if (!this.povLock) {
       if (this.rotation.x !== 0) {
         if (abs(this.rotation.x) < Controls.restoreMinAngle) {
           this.rotation.x = 0;

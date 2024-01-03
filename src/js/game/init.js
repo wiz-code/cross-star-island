@@ -11,6 +11,7 @@ import { FirstPersonControls } from './controls';
 import { Scene, Camera, Renderer, Light, Controls, PlayerSettings, ResizeDelayTime } from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
+import { createSight } from './screen';
 import Player from './player';
 
 const { floor } = Math;
@@ -21,22 +22,39 @@ const init = () => {
   let windowHalfX = floor(Renderer.Size.width / 2);
   let windowHalfY = floor(Renderer.Size.height / 2);
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(Scene.background);
-  scene.fog = new THREE.Fog(Scene.Fog.color, Scene.Fog.near, Scene.Fog.far);
+  const scene = {};
 
-  const camera = new THREE.PerspectiveCamera(
+  scene.field = new THREE.Scene();
+  scene.field.background = new THREE.Color(Scene.background);
+  scene.field.fog = new THREE.Fog(Scene.Fog.color, Scene.Fog.near, Scene.Fog.far);
+
+  scene.screen = new THREE.Scene();
+
+  const camera = {};
+
+  camera.field = new THREE.PerspectiveCamera(
     Camera.FOV,
     Camera.Aspect,
     Camera.near,
     Camera.far,
   );
-  camera.rotation.order = Camera.order;
-  camera.position.set(0, 0, 0);
+  camera.field.rotation.order = Camera.order;
+  camera.field.position.set(0, 0, 0);
+
+  camera.screen = new THREE.OrthographicCamera(
+    -windowHalfX,
+    windowHalfX,
+    windowHalfY,
+    -windowHalfY,
+    0.1,
+    1000
+  );
+
 
   const container = document.getElementById('container');
 
   const renderer = new THREE.WebGLRenderer({ antialias: false });
+  renderer.autoClear = false;
   renderer.setClearColor(new THREE.Color(0x000000));
   renderer.setPixelRatio(Renderer.pixelRatio);
   renderer.setSize(Renderer.Size.width, Renderer.Size.height);
@@ -45,7 +63,7 @@ const init = () => {
   //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
-  const controls = new FirstPersonControls(camera, renderer.domElement);
+  const controls = new FirstPersonControls(camera.field, renderer.domElement);
   controls.movementSpeed = Controls.movementSpeed;
   controls.lookSpeed = Controls.lookSpeed;
   //controls.lookVertical = false;//////
@@ -87,10 +105,14 @@ const init = () => {
   // scene.add(light.directional);
 
   const grid = createGrid();
-  scene.add(grid);
+  scene.field.add(grid);
 
   const ground = createGround();
-  scene.add(ground);
+  scene.field.add(ground);
+
+  const sight = createSight();
+  scene.screen.add(sight);
+  camera.screen.position.set(0, 0, 0);
 
   /*const direction = new THREE.Vector3();
   direction.normalize();
@@ -103,19 +125,19 @@ const init = () => {
   //worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
   worldOctree.fromGraphNode(ground);
-  const player = new Player(camera, controls, worldOctree);
+  const player = new Player(camera.field, controls, worldOctree);
 
   ////
   //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
   //scene.add(helper);
   const helper = new OctreeHelper(worldOctree);
 	helper.visible = false;
-	scene.add( helper );
+	scene.field.add( helper );
 
 
   // helpers
   const axesHelper = new THREE.AxesHelper(180);
-  scene.add(axesHelper);
+  scene.field.add(axesHelper);
 
   const stats = new Stats();
   stats.domElement.style.position = 'absolute';
@@ -128,8 +150,14 @@ const init = () => {
     windowHalfX = floor(iw / 2);
     windowHalfY = floor(ih / 2);
 
-    camera.aspect = iw / ih;
-    camera.updateProjectionMatrix();
+    camera.field.aspect = iw / ih;
+    camera.field.updateProjectionMatrix();
+
+    camera.screen.left = -windowHalfX;
+    camera.screen.right = windowHalfX;
+    camera.screen.top = windowHalfY;
+    camera.screen.bottom = -windowHalfY;
+    camera.screen.updateProjectionMatrix();
 
     renderer.setSize(iw, ih);
     controls.handleResize();

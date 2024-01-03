@@ -98,15 +98,21 @@ export const createGround = () => {
   const depth = Grid.Segments.depth * Grid.Spacing.depth;
 
   const data = generateHeight(width, depth);
-  const geom1 = new THREE.PlaneGeometry(
+
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+  const group = {};
+
+  geom.ground = new THREE.PlaneGeometry(
     width,
     depth,
     Grid.Segments.width - 1,
     Grid.Segments.depth - 1,
   );
-  geom1.rotateX(-PI / 2);
+  geom.ground.rotateX(-PI / 2);
 
-  const vertices = geom1.attributes.position.array;
+  const vertices = geom.ground.attributes.position.array;
   const pointsVertices = vertices.slice(0);
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
@@ -114,67 +120,102 @@ export const createGround = () => {
     pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
   }
 
-  const geom2 = new THREE.BufferGeometry();
-  geom2.setAttribute(
+  geom.groundPoints = new THREE.BufferGeometry();
+  geom.groundPoints.setAttribute(
     'position',
     new THREE.Float32BufferAttribute(pointsVertices, 3),
   );
-  geom2.computeBoundingSphere();
+  geom.groundPoints.computeBoundingSphere();
 
-  /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
+  /*const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
 	texture.wrapS = THREE.ClampToEdgeWrapping;
 	texture.wrapT = THREE.ClampToEdgeWrapping;
 	texture.colorSpace = THREE.SRGBColorSpace; */
 
-  const mat1 = new THREE.MeshBasicMaterial({
+  mat.ground = new THREE.MeshBasicMaterial({
     color: Ground.color,
   });
-  const mat2 = new THREE.MeshBasicMaterial({
+  mat.groundWire = new THREE.MeshBasicMaterial({
     color: Ground.wireframeColor,
     wireframe: true,
-    // blending: THREE.AdditiveBlending,
-    // transparent: true,
   });
 
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  textures.crossStar(context);
+  const canvas = {};
+  const context = {};
+  const texture = {};
 
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
+  canvas.ground = document.createElement('canvas');
+  context.ground = canvas.ground.getContext('2d');
+  textures.crossStar(context.ground);
 
-  const mat3 = new THREE.PointsMaterial({
+  texture.ground = new THREE.Texture(canvas.ground);
+  texture.ground.needsUpdate = true;
+
+  mat.groundPoints = new THREE.PointsMaterial({
     color: Ground.pointsColor,
     size: Grid.size,
-    map: texture,
+    map: texture.ground,
     blending: THREE.NormalBlending,
     alphaTest: 0.5,
   });
-  const ground = new THREE.Mesh(geom1, mat1);
-  const wireframe = new THREE.Mesh(geom1, mat2);
-  const points = new THREE.Points(geom2, mat3);
 
-  const group = new THREE.Group();
-  group.add(ground);
-  group.add(wireframe);
-  group.add(points);
+  mesh.ground = new THREE.Mesh(geom.ground, mat.ground);
+  mesh.wireframe = new THREE.Mesh(geom.ground, mat.groundWire);
+  mesh.points = new THREE.Points(geom.groundPoints, mat.groundPoints);
 
-  /* const geometry = new THREE.PlaneGeometry(width, depth, Grid.Segments.width, Grid.Segments.depth);
-  const mat1 = new THREE.MeshBasicMaterial({
-    color: 0x003823,
+  group.ground = new THREE.Group();
+  group.ground.add(mesh.ground);
+  group.ground.add(mesh.wireframe);
+  group.ground.add(mesh.points);
+
+  geom.stones = [];
+  const stoneGeom = new THREE.OctahedronGeometry(60);
+
+  const stonePointsGeom = new THREE.OctahedronGeometry(64);
+  const stonePointsVertices = stonePointsGeom.attributes.position.array.slice(0);
+
+  geom.stonePoints = new THREE.BufferGeometry();
+  geom.stonePoints.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(stonePointsVertices, 3),
+  );
+  geom.stonePoints.computeBoundingSphere();
+
+  const stoneMat = new THREE.MeshBasicMaterial({
+    color: Ground.Object.color,
+  });
+  const stoneWireMat = new THREE.MeshBasicMaterial({
+    color: Ground.wireframeColor,
     wireframe: true,
-    blending: THREE.AdditiveBlending,
-    transparent: true,
-  });
-  const mat2 = new THREE.MeshBasicMaterial({
-    color: Ground.color,
-    blending: THREE.AdditiveBlending,
-    transparent: true,
   });
 
-  const ground = new THREE.Mesh(geometry, mat1);
+  canvas.stone = document.createElement('canvas');
+  context.stone = canvas.stone.getContext('2d');
+  textures.crossStar(context.stone);
+
+  texture.stone = new THREE.Texture(canvas.stone);
+  texture.stone.needsUpdate = true;
+
+  const stonePointsMat = new THREE.PointsMaterial({
+    color: Ground.Object.pointsColor,
+    size: Grid.size,
+    map: texture.stone,
+    blending: THREE.NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  geom.stones.push(new THREE.Mesh(stoneGeom, stoneMat));
+  geom.stones.push(new THREE.Mesh(stoneGeom, stoneWireMat));
+  geom.stones.push(new THREE.Points(geom.stonePoints, stonePointsMat));
+
+  geom.stones.forEach((ms) => {
+    ms.position.setX(10);
+    ms.position.setY(40);
+    ms.position.setZ(-400);
+    group.ground.add(ms);
+  });
   //ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
-  ground.rotation.x = -PI / 2 */
+  //ground.rotation.x = -PI / 2
 
-  return group;
+  return group.ground;
 };
