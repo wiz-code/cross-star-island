@@ -9193,7 +9193,9 @@ const update = function () {
     this.controls.update(deltaTime);
     this.player.update(deltaTime);
   }
-  this.renderer.render(this.scene, this.camera);
+  this.renderer.clear();
+  this.renderer.render(this.scene.field, this.camera.field);
+  this.renderer.render(this.scene.screen, this.camera.screen);
   this.stats.update();
 };
 function App() {
@@ -9321,6 +9323,7 @@ class FirstPersonControls {
     this.lookVertical = true;
     this.autoForward = false;
     this.activeLook = true;
+    this.povLock = false;
     this.heightSpeed = false;
     this.heightCoef = 1.0;
     this.heightMin = 0.0;
@@ -9408,18 +9411,25 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.lock();
+    if (this.activeLook) {
+      if (event.button === 0) {
+        //
+      } else if (event.button === 2) {
+        this.povLock = true;
+      }
+    }
   }
   onPointerUp(event) {
-    //
+    if (this.activeLook) {
+      if (event.button === 0) {
+        //
+      } else if (event.button === 2) {
+        this.povLock = false;
+      }
+    }
   }
   onKeyDown(event) {
     event.preventDefault();
-    if (event.shiftKey) {
-      this.#keys.add(Keys.shift);
-    }
-    if (event.altKey) {
-      this.#keys.add(Keys.alt);
-    }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
@@ -9454,18 +9464,17 @@ class FirstPersonControls {
         }
       default:
         {
-          //
+          if (event.shiftKey) {
+            this.#keys.add(Keys.shift);
+          }
+          if (event.altKey) {
+            this.#keys.add(Keys.alt);
+          }
         }
     }
   }
   onKeyUp(event) {
     event.preventDefault();
-    if (!event.shiftkey) {
-      this.#keys.delete(Keys.shift);
-    }
-    if (!event.altKey) {
-      this.#keys.delete(Keys.alt);
-    }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
@@ -9501,7 +9510,12 @@ class FirstPersonControls {
         }
       default:
         {
-          //
+          if (!event.shiftkey) {
+            this.#keys.delete(Keys.shift);
+          }
+          if (!event.altKey) {
+            this.#keys.delete(Keys.alt);
+          }
         }
     }
   }
@@ -9682,7 +9696,7 @@ class FirstPersonControls {
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
-    } else {
+    } else if (!this.povLock) {
       if (this.rotation.x !== 0) {
         if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.x = 0;
@@ -9789,10 +9803,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_modules_es_typed_array_to_sorted_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_to_sorted_js__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/es.typed-array.with.js */ "./node_modules/core-js/modules/es.typed-array.with.js");
 /* harmony import */ var core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/addons/math/ImprovedNoise.js */ "./node_modules/three/examples/jsm/math/ImprovedNoise.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
+/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/addons/math/ImprovedNoise.js */ "./node_modules/three/examples/jsm/math/ImprovedNoise.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+
 
 
 
@@ -9816,7 +9833,7 @@ const customRandom = () => {
 const generateHeight = (width, height) => {
   const size = width * height;
   const data = new Uint8Array(size);
-  const perlin = new three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_5__.ImprovedNoise();
+  const perlin = new three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_6__.ImprovedNoise();
   const z = customRandom() * 100;
   let quality = 1;
   for (let j = 0; j < 4; j += 1) {
@@ -9830,8 +9847,8 @@ const generateHeight = (width, height) => {
   return data;
 };
 const generateTexture = (data, width, height) => {
-  const vector3 = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0);
-  const sun = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(1, 1, 1);
+  const vector3 = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
+  const sun = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
   sun.normalize();
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -9873,72 +9890,98 @@ const generateTexture = (data, width, height) => {
   return canvasScaled;
 };
 const createGround = () => {
-  const width = _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Spacing.width;
-  const depth = _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Spacing.depth;
+  const width = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.width;
+  const depth = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.depth;
   const data = generateHeight(width, depth);
-  const geom1 = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(width, depth, _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.Segments.depth - 1);
-  geom1.rotateX(-PI / 2);
-  const vertices = geom1.attributes.position.array;
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+  const group = {};
+  geom.ground = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, depth, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 1);
+  geom.ground.rotateX(-PI / 2);
+  const vertices = geom.ground.attributes.position.array;
   const pointsVertices = vertices.slice(0);
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
-    vertices[j + 1] = data[i] * _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.heightCoef;
-    pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size / 2;
+    vertices[j + 1] = data[i] * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.heightCoef;
+    pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
   }
-  const geom2 = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  geom2.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
-  geom2.computeBoundingSphere();
+  geom.groundPoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  geom.groundPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+  geom.groundPoints.computeBoundingSphere();
 
-  /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
+  /*const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.colorSpace = THREE.SRGBColorSpace; */
 
-  const mat1 = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.color
+  mat.ground = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
   });
-  const mat2 = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.wireframeColor,
+  mat.groundWire = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
     wireframe: true
-    // blending: THREE.AdditiveBlending,
-    // transparent: true,
   });
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_4__["default"].crossStar(context);
-  const texture = new three__WEBPACK_IMPORTED_MODULE_6__.Texture(canvas);
-  texture.needsUpdate = true;
-  const mat3 = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size,
-    map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
+  const canvas = {};
+  const context = {};
+  const texture = {};
+  canvas.ground = document.createElement('canvas');
+  context.ground = canvas.ground.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context.ground);
+  texture.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas.ground);
+  texture.ground.needsUpdate = true;
+  mat.groundPoints = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+    map: texture.ground,
+    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
     alphaTest: 0.5
   });
-  const ground = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom1, mat1);
-  const wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom1, mat2);
-  const points = new three__WEBPACK_IMPORTED_MODULE_6__.Points(geom2, mat3);
-  const group = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
-  group.add(ground);
-  group.add(wireframe);
-  group.add(points);
-
-  /* const geometry = new THREE.PlaneGeometry(width, depth, Grid.Segments.width, Grid.Segments.depth);
-  const mat1 = new THREE.MeshBasicMaterial({
-    color: 0x003823,
-    wireframe: true,
-    blending: THREE.AdditiveBlending,
-    transparent: true,
+  mesh.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.ground);
+  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.groundWire);
+  mesh.points = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.groundPoints, mat.groundPoints);
+  group.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  group.ground.add(mesh.ground);
+  group.ground.add(mesh.wireframe);
+  group.ground.add(mesh.points);
+  geom.stones = [];
+  const stoneGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(60);
+  const stonePointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(64);
+  const stonePointsVertices = stonePointsGeom.attributes.position.array.slice(0);
+  geom.stonePoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  geom.stonePoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(stonePointsVertices, 3));
+  geom.stonePoints.computeBoundingSphere();
+  const stoneMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
   });
-  const mat2 = new THREE.MeshBasicMaterial({
-    color: Ground.color,
-    blending: THREE.AdditiveBlending,
-    transparent: true,
+  const stoneWireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
+    wireframe: true
   });
-   const ground = new THREE.Mesh(geometry, mat1);
+  canvas.stone = document.createElement('canvas');
+  context.stone = canvas.stone.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context.stone);
+  texture.stone = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas.stone);
+  texture.stone.needsUpdate = true;
+  const stonePointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+    map: texture.stone,
+    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+    alphaTest: 0.5
+  });
+  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(stoneGeom, stoneMat));
+  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(stoneGeom, stoneWireMat));
+  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.stonePoints, stonePointsMat));
+  geom.stones.forEach(ms => {
+    ms.position.setX(10);
+    ms.position.setY(40);
+    ms.position.setZ(-400);
+    group.ground.add(ms);
+  });
   //ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
-  ground.rotation.x = -PI / 2 */
+  //ground.rotation.x = -PI / 2
 
-  return group;
+  return group.ground;
 };
 
 /***/ }),
@@ -9951,16 +9994,18 @@ const createGround = () => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
-/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
 /* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
-/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+/* harmony import */ var _screen__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./screen */ "./src/js/game/screen.js");
+/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+
 
 
 
@@ -9978,37 +10023,42 @@ const {
   floor
 } = Math;
 const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_6__.Clock();
+  const clock = new three__WEBPACK_IMPORTED_MODULE_7__.Clock();
   let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
   let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
-  const scene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
-  scene.background = new three__WEBPACK_IMPORTED_MODULE_6__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
-  scene.fog = new three__WEBPACK_IMPORTED_MODULE_6__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
-  const camera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
-  camera.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
-  camera.position.set(0, 0, 0);
+  const scene = {};
+  scene.field = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_7__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
+  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_7__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
+  scene.screen = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+  const camera = {};
+  camera.field = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
+  camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
+  camera.field.position.set(0, 0, 0);
+  camera.screen = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
   const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
+  const renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
     antialias: false
   });
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_6__.Color(0x000000));
+  renderer.autoClear = false;
+  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_7__.Color(0x000000));
   renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
   renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
   //renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
   //renderer.shadowMap.type = Renderer.ShadowMap.type;
   //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera, renderer.domElement);
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement);
   controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
   controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
   //controls.lookVertical = false;//////
 
   const light = {};
-  light.fill = new three__WEBPACK_IMPORTED_MODULE_6__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
+  light.fill = new three__WEBPACK_IMPORTED_MODULE_7__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
   light.fill.position.set(2, 1, 1);
   // scene.add(light.fill);
 
-  light.directional = new three__WEBPACK_IMPORTED_MODULE_6__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
+  light.directional = new three__WEBPACK_IMPORTED_MODULE_7__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
   light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.castShadow;
   light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.near;
   light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.far;
@@ -10024,9 +10074,12 @@ const init = () => {
   // scene.add(light.directional);
 
   const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
-  scene.add(grid);
+  scene.field.add(grid);
   const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
-  scene.add(ground);
+  scene.field.add(ground);
+  const sight = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createSight)();
+  scene.screen.add(sight);
+  camera.screen.position.set(0, 0, 0);
 
   /*const direction = new THREE.Vector3();
   direction.normalize();
@@ -10037,21 +10090,21 @@ const init = () => {
   scene.add(arrow);*/
 
   //worldOctree.fromGraphNode(grid);
-  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_7__.Octree();
+  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_8__.Octree();
   worldOctree.fromGraphNode(ground);
-  const player = new _player__WEBPACK_IMPORTED_MODULE_5__["default"](camera, controls, worldOctree);
+  const player = new _player__WEBPACK_IMPORTED_MODULE_6__["default"](camera.field, controls, worldOctree);
 
   ////
   //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
   //scene.add(helper);
-  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_8__.OctreeHelper(worldOctree);
+  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_9__.OctreeHelper(worldOctree);
   helper.visible = false;
-  scene.add(helper);
+  scene.field.add(helper);
 
   // helpers
-  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_6__.AxesHelper(180);
-  scene.add(axesHelper);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_9__["default"]();
+  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_7__.AxesHelper(180);
+  scene.field.add(axesHelper);
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
   container.appendChild(stats.domElement);
@@ -10060,8 +10113,13 @@ const init = () => {
     const ih = window.innerHeight;
     windowHalfX = floor(iw / 2);
     windowHalfY = floor(ih / 2);
-    camera.aspect = iw / ih;
-    camera.updateProjectionMatrix();
+    camera.field.aspect = iw / ih;
+    camera.field.updateProjectionMatrix();
+    camera.screen.left = -windowHalfX;
+    camera.screen.right = windowHalfX;
+    camera.screen.top = windowHalfY;
+    camera.screen.bottom = -windowHalfY;
+    camera.screen.updateProjectionMatrix();
     renderer.setSize(iw, ih);
     controls.handleResize();
   };
@@ -10187,6 +10245,44 @@ class Player {
 
 /***/ }),
 
+/***/ "./src/js/game/screen.js":
+/*!*******************************!*\
+  !*** ./src/js/game/screen.js ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createSight: function() { return /* binding */ createSight; }
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+
+
+
+const {
+  floor
+} = Math;
+const createSight = scene => {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].sight(context);
+  const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
+  texture.needsUpdate = true;
+  const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: 0xffffff,
+    map: texture
+  });
+  const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
+  sprite.scale.set(64, 64, 0);
+  sprite.position.set(0, 0, -10);
+  return sprite;
+};
+
+/***/ }),
+
 /***/ "./src/js/game/settings.js":
 /*!*********************************!*\
   !*** ./src/js/game/settings.js ***!
@@ -10297,6 +10393,11 @@ const Grid = {
   }
 };
 const Ground = {
+  Object: {
+    color: 0x776D3A,
+    size: 5,
+    pointsColor: 0x776D3A
+  },
   heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
@@ -10336,6 +10437,9 @@ const World = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 
+const {
+  PI
+} = Math;
 const textures = {
   crossStar(context) {
     const {
@@ -10385,6 +10489,56 @@ const textures = {
     context.lineTo(0, 80);
     context.lineTo(0, 48);
     context.lineTo(48, 48);
+    context.closePath();
+    context.fill();
+    return context;
+  },
+  crossStarThin(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(60, 0);
+    context.lineTo(68, 0);
+    context.lineTo(68, 60);
+    context.lineTo(128, 60);
+    context.lineTo(128, 68);
+    context.lineTo(68, 68);
+    context.lineTo(68, 128);
+    context.lineTo(60, 128);
+    context.lineTo(60, 68);
+    context.lineTo(0, 68);
+    context.lineTo(0, 60);
+    context.lineTo(60, 60);
+    context.closePath();
+    context.fill();
+    return context;
+  },
+  sight(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.translate(64, 64);
+    context.rotate(PI * 0.25);
+    context.beginPath();
+    for (let i = 0; i < 4; i += 1) {
+      context.moveTo(-2, -62);
+      context.arc(0, -62, 2, PI, 0, false);
+      context.lineTo(2, -24);
+      context.arc(0, -24, 2, 0, PI, false);
+      context.lineTo(-2, -62);
+      context.rotate(PI * 0.5);
+    }
     context.closePath();
     context.fill();
     return context;
