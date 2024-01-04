@@ -9304,6 +9304,10 @@ const States = {
   urgency: 2,
   stunning: 3
 };
+const sightColor = {
+  normal: new three__WEBPACK_IMPORTED_MODULE_1__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightColor),
+  pov: new three__WEBPACK_IMPORTED_MODULE_1__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovColor)
+};
 class FirstPersonControls {
   #vec3 = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
   #virticalVector = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 1, 0);
@@ -9313,9 +9317,10 @@ class FirstPersonControls {
   #keys = new Set();
   #actions = new Set();
   #states = new Set();
-  constructor(camera, domElement) {
+  constructor(camera, domElement, sight) {
     this.camera = camera;
     this.domElement = domElement;
+    this.sight = sight;
 
     // API
 
@@ -9692,11 +9697,15 @@ class FirstPersonControls {
     }
     let verticalLookRatio = 1;
     if (this.timeout) {
+      this.sight.material.color = sightColor.pov;
       this.rotation.x -= this.dy * actualLookSpeed;
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
     } else if (!this.povLock) {
+      if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
+        this.sight.material.color = sightColor.normal;
+      }
       if (this.rotation.x !== 0) {
         if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.x = 0;
@@ -9944,44 +9953,54 @@ const createGround = () => {
   group.ground.add(mesh.wireframe);
   group.ground.add(mesh.points);
   geom.stones = [];
-  const stoneGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(60);
-  const stonePointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(64);
-  const stonePointsVertices = stonePointsGeom.attributes.position.array.slice(0);
-  geom.stonePoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
-  geom.stonePoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(stonePointsVertices, 3));
-  geom.stonePoints.computeBoundingSphere();
-  const stoneMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
-  });
-  const stoneWireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-    wireframe: true
-  });
-  canvas.stone = document.createElement('canvas');
-  context.stone = canvas.stone.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context.stone);
-  texture.stone = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas.stone);
-  texture.stone.needsUpdate = true;
-  const stonePointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
-    map: texture.stone,
-    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
-    alphaTest: 0.5
-  });
-  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(stoneGeom, stoneMat));
-  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(stoneGeom, stoneWireMat));
-  geom.stones.push(new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.stonePoints, stonePointsMat));
+  const stone = createStone(60);
+  geom.stones.push(stone);
   geom.stones.forEach(ms => {
-    ms.position.setX(10);
-    ms.position.setY(40);
-    ms.position.setZ(-400);
+    ms.rotation.y = PI / 10;
+    ms.position.set(80, 50, -300);
     group.ground.add(ms);
   });
   //ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
   //ground.rotation.x = -PI / 2
 
   return group.ground;
+};
+const createStone = function () {
+  let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+  let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  const geom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size, detail);
+  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size + 4, detail);
+  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+  bufferGeom.computeBoundingSphere();
+  const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
+  });
+  const wireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
+    wireframe: true
+  });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
+  const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
+  texture.needsUpdate = true;
+  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+    map: texture,
+    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+    alphaTest: 0.5
+  });
+  const mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, mat);
+  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, wireMat);
+  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Points(bufferGeom, pointsMat);
+  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  group.add(mesh);
+  group.add(wireMesh);
+  group.add(pointsMesh);
+  return group;
 };
 
 /***/ }),
@@ -10048,7 +10067,13 @@ const init = () => {
   //renderer.shadowMap.type = Renderer.ShadowMap.type;
   //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement);
+  const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
+  scene.field.add(grid);
+  const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
+  scene.field.add(ground);
+  const sight = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createSight)();
+  scene.screen.add(sight);
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement, sight);
   controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
   controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
   //controls.lookVertical = false;//////
@@ -10072,14 +10097,6 @@ const init = () => {
   light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.bias;
   light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.z);
   // scene.add(light.directional);
-
-  const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
-  scene.field.add(grid);
-  const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
-  scene.field.add(ground);
-  const sight = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createSight)();
-  scene.screen.add(sight);
-  camera.screen.position.set(0, 0, 0);
 
   /*const direction = new THREE.Vector3();
   direction.normalize();
@@ -10301,6 +10318,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Renderer: function() { return /* binding */ Renderer; },
 /* harmony export */   ResizeDelayTime: function() { return /* binding */ ResizeDelayTime; },
 /* harmony export */   Scene: function() { return /* binding */ Scene; },
+/* harmony export */   Screen: function() { return /* binding */ Screen; },
 /* harmony export */   StepsPerFrame: function() { return /* binding */ StepsPerFrame; },
 /* harmony export */   World: function() { return /* binding */ World; }
 /* harmony export */ });
@@ -10394,9 +10412,9 @@ const Grid = {
 };
 const Ground = {
   Object: {
-    color: 0x776D3A,
+    color: 0x1955A6,
     size: 5,
-    pointsColor: 0x776D3A
+    pointsColor: 0xA3D8F6
   },
   heightCoef: 6,
   color: 0x4d4136,
@@ -10424,6 +10442,10 @@ const Controls = {
 };
 const World = {
   gravity: 6
+};
+const Screen = {
+  sightColor: 0xffffff,
+  sightPovColor: 0x5AFF19
 };
 
 /***/ }),
