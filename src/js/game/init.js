@@ -63,7 +63,16 @@ const init = () => {
   //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
-  const controls = new FirstPersonControls(camera.field, renderer.domElement);
+  const grid = createGrid();
+  scene.field.add(grid);
+
+  const ground = createGround();
+  scene.field.add(ground);
+
+  const sight = createSight();
+  scene.screen.add(sight);
+
+  const controls = new FirstPersonControls(camera.field, renderer.domElement, sight);
   controls.movementSpeed = Controls.movementSpeed;
   controls.lookSpeed = Controls.lookSpeed;
   //controls.lookVertical = false;//////
@@ -104,15 +113,7 @@ const init = () => {
   );
   // scene.add(light.directional);
 
-  const grid = createGrid();
-  scene.field.add(grid);
 
-  const ground = createGround();
-  scene.field.add(ground);
-
-  const sight = createSight();
-  scene.screen.add(sight);
-  camera.screen.position.set(0, 0, 0);
 
   /*const direction = new THREE.Vector3();
   direction.normalize();

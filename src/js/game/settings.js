@@ -92,9 +92,9 @@ export const Grid = {
 
 export const Ground = {
   Object: {
-    color: 0x776D3A,
+    color: 0x1955A6,
     size: 5,
-    pointsColor: 0x776D3A,
+    pointsColor: 0xA3D8F6,
   },
   heightCoef: 6,
   color: 0x4d4136,
@@ -127,4 +127,9 @@ export const Controls = {
 
 export const World = {
   gravity: 6,
+};
+
+export const Screen = {
+  sightColor: 0xffffff,
+  sightPovColor: 0x5AFF19,
 };

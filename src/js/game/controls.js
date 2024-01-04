@@ -1,6 +1,6 @@
-import { MathUtils, Spherical, Vector3, Euler, Quaternion } from 'three';
+import { MathUtils, Spherical, Vector3, Euler, Quaternion, Color } from 'three';
 
-import { World, Controls } from './settings';
+import { World, Controls, Screen } from './settings';
 
 const { radToDeg, degToRad, clamp, mapLinear } = MathUtils;
 const { abs, sign, floor, max, min, exp, PI } = Math;
@@ -43,6 +43,11 @@ const States = {
   stunning: 3,
 };
 
+const sightColor = {
+  normal: new Color(Screen.sightColor),
+  pov: new Color(Screen.sightPovColor),
+};
+
 class FirstPersonControls {
   #vec3 = new Vector3();
 
@@ -58,9 +63,10 @@ class FirstPersonControls {
 
   #states = new Set();
 
-  constructor(camera, domElement) {
+  constructor(camera, domElement, sight) {
     this.camera = camera;
     this.domElement = domElement;
+    this.sight = sight;
 
     // API
 
@@ -537,6 +543,8 @@ class FirstPersonControls {
     let verticalLookRatio = 1;
 
     if (this.timeout) {
+      this.sight.material.color = sightColor.pov;
+
       this.rotation.x -= this.dy * actualLookSpeed;
       this.rotation.y -= this.dx * actualLookSpeed;
 
@@ -549,6 +557,10 @@ class FirstPersonControls {
         min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
       );
     } else if (!this.povLock) {
+      if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
+        this.sight.material.color = sightColor.normal;
+      }
+
       if (this.rotation.x !== 0) {
         if (abs(this.rotation.x) < Controls.restoreMinAngle) {
           this.rotation.x = 0;
