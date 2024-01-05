@@ -9305,7 +9305,7 @@ const States = {
   stunning: 3
 };
 const sightColor = {
-  normal: new three__WEBPACK_IMPORTED_MODULE_1__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightColor),
+  front: new three__WEBPACK_IMPORTED_MODULE_1__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightColor),
   pov: new three__WEBPACK_IMPORTED_MODULE_1__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovColor)
 };
 class FirstPersonControls {
@@ -9317,10 +9317,11 @@ class FirstPersonControls {
   #keys = new Set();
   #actions = new Set();
   #states = new Set();
-  constructor(camera, domElement, sight) {
+  constructor(camera, domElement, povSight, povIndicator) {
     this.camera = camera;
     this.domElement = domElement;
-    this.sight = sight;
+    this.povSight = povSight;
+    this.povIndicator = povIndicator;
 
     // API
 
@@ -9697,14 +9698,26 @@ class FirstPersonControls {
     }
     let verticalLookRatio = 1;
     if (this.timeout) {
-      this.sight.material.color = sightColor.pov;
+      if (this.povSight.material.color !== sightColor.pov) {
+        this.povSight.material.color = sightColor.pov;
+      }
+      if (!this.povIndicator.visible) {
+        this.povIndicator.visible = true;
+      }
       this.rotation.x -= this.dy * actualLookSpeed;
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
+      const halfWidth = window.innerWidth / 2;
+      this.povIndicator.position.x = -halfWidth * (this.rotY - this.rotation.y) / PI;
     } else if (!this.povLock) {
       if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
-        this.sight.material.color = sightColor.normal;
+        if (this.povSight.material.color !== sightColor.front) {
+          this.povSight.material.color = sightColor.front;
+        }
+        if (this.povIndicator.visible) {
+          this.povIndicator.visible = false;
+        }
       }
       if (this.rotation.x !== 0) {
         if (abs(this.rotation.x) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
@@ -9719,9 +9732,11 @@ class FirstPersonControls {
         if (abs(ry) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
-          ry = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
-          this.rotation.y += ry;
+          const dr = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
+          this.rotation.y += dr;
         }
+        const halfWidth = window.innerWidth / 2;
+        this.povIndicator.position.x = -halfWidth * ry / PI;
       }
     }
     this.dx = 0;
@@ -9983,7 +9998,7 @@ const createStone = function () {
   });
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].triangle(context);
   const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
   texture.needsUpdate = true;
   const pointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
@@ -10071,9 +10086,11 @@ const init = () => {
   scene.field.add(grid);
   const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
   scene.field.add(ground);
-  const sight = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createSight)();
-  scene.screen.add(sight);
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement, sight);
+  const povSight = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createSight)();
+  scene.screen.add(povSight);
+  const povIndicator = (0,_screen__WEBPACK_IMPORTED_MODULE_5__.createPovIndicator)();
+  scene.screen.add(povIndicator);
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement, povSight, povIndicator);
   controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
   controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
   //controls.lookVertical = false;//////
@@ -10271,6 +10288,7 @@ class Player {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createPovIndicator: function() { return /* binding */ createPovIndicator; },
 /* harmony export */   createSight: function() { return /* binding */ createSight; }
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
@@ -10282,7 +10300,7 @@ __webpack_require__.r(__webpack_exports__);
 const {
   floor
 } = Math;
-const createSight = scene => {
+const createSight = () => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   _textures__WEBPACK_IMPORTED_MODULE_1__["default"].sight(context);
@@ -10295,6 +10313,23 @@ const createSight = scene => {
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
   sprite.scale.set(64, 64, 0);
   sprite.position.set(0, 0, -10);
+  return sprite;
+};
+const createPovIndicator = () => {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].triangle(context);
+  const halfHeight = window.innerHeight / 2;
+  const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
+  texture.needsUpdate = true;
+  const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: 0xffffff,
+    map: texture
+  });
+  const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
+  sprite.visible = false;
+  sprite.scale.set(64, 24, 0);
+  sprite.position.set(0, -halfHeight + 16, -10);
   return sprite;
 };
 
@@ -10563,6 +10598,26 @@ const textures = {
     }
     context.closePath();
     context.fill();
+    return context;
+  },
+  triangle(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 12;
+    context.miterLimit = 20;
+    context.strokeStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(64, 16);
+    context.lineTo(119, 112);
+    context.lineTo(9, 112);
+    context.lineTo(64, 16);
+    context.closePath();
+    context.stroke();
     return context;
   }
 };
