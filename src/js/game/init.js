@@ -11,7 +11,7 @@ import { FirstPersonControls } from './controls';
 import { Scene, Camera, Renderer, Light, Controls, PlayerSettings, ResizeDelayTime } from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
-import { createSight } from './screen';
+import { createSight, createPovIndicator } from './screen';
 import Player from './player';
 
 const { floor } = Math;
@@ -69,10 +69,13 @@ const init = () => {
   const ground = createGround();
   scene.field.add(ground);
 
-  const sight = createSight();
-  scene.screen.add(sight);
+  const povSight = createSight();
+  scene.screen.add(povSight);
 
-  const controls = new FirstPersonControls(camera.field, renderer.domElement, sight);
+  const povIndicator = createPovIndicator();
+  scene.screen.add(povIndicator);
+
+  const controls = new FirstPersonControls(camera.field, renderer.domElement, povSight, povIndicator);
   controls.movementSpeed = Controls.movementSpeed;
   controls.lookSpeed = Controls.lookSpeed;
   //controls.lookVertical = false;//////

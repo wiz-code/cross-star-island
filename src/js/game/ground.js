@@ -206,7 +206,7 @@ const createStone = (size = 1, detail = 0) => {
 
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  textures.crossStar(context);
+  textures.triangle(context);
 
   const texture = new THREE.Texture(canvas);
   texture.needsUpdate = true;

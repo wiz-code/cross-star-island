@@ -44,7 +44,7 @@ const States = {
 };
 
 const sightColor = {
-  normal: new Color(Screen.sightColor),
+  front: new Color(Screen.sightColor),
   pov: new Color(Screen.sightPovColor),
 };
 
@@ -63,10 +63,11 @@ class FirstPersonControls {
 
   #states = new Set();
 
-  constructor(camera, domElement, sight) {
+  constructor(camera, domElement, povSight, povIndicator) {
     this.camera = camera;
     this.domElement = domElement;
-    this.sight = sight;
+    this.povSight = povSight;
+    this.povIndicator = povIndicator;
 
     // API
 
@@ -543,7 +544,13 @@ class FirstPersonControls {
     let verticalLookRatio = 1;
 
     if (this.timeout) {
-      this.sight.material.color = sightColor.pov;
+      if (this.povSight.material.color !== sightColor.pov) {
+        this.povSight.material.color = sightColor.pov;
+      }
+
+      if (!this.povIndicator.visible) {
+        this.povIndicator.visible = true;
+      }
 
       this.rotation.x -= this.dy * actualLookSpeed;
       this.rotation.y -= this.dx * actualLookSpeed;
@@ -556,9 +563,18 @@ class FirstPersonControls {
         PI - this.maxPolarAngle.horizontal + this.rotY,
         min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
       );
+
+      const halfWidth = window.innerWidth / 2;
+      this.povIndicator.position.x = -halfWidth * (this.rotY - this.rotation.y) / PI;
     } else if (!this.povLock) {
       if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
-        this.sight.material.color = sightColor.normal;
+        if (this.povSight.material.color !== sightColor.front) {
+          this.povSight.material.color = sightColor.front;
+        }
+
+        if (this.povIndicator.visible) {
+          this.povIndicator.visible = false;
+        }
       }
 
       if (this.rotation.x !== 0) {
@@ -576,9 +592,12 @@ class FirstPersonControls {
         if (abs(ry) < Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
-          ry = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.restoreMinAngle;
-          this.rotation.y += ry;
+          const dr = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.restoreMinAngle;
+          this.rotation.y += dr;
         }
+
+        const halfWidth = window.innerWidth / 2;
+        this.povIndicator.position.x = -halfWidth * ry / PI;
       }
     }
 

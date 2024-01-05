@@ -110,6 +110,28 @@ const textures = {
 
     return context;
   },
+
+  triangle(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 12;
+    context.miterLimit = 20
+    context.strokeStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(64, 16);
+    context.lineTo(119, 112);
+    context.lineTo(9, 112);
+    context.lineTo(64, 16);
+    context.closePath();
+
+    context.stroke();
+
+    return context;
+  },
 };
 
 export default textures;
