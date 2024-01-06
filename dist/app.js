@@ -9387,6 +9387,7 @@ class FirstPersonControls {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
+    this.povIndicator.position.setY(-this.viewHalfY + _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
   }
   lookAt(x, y, z) {
     if (x.isVector3) {
@@ -9639,18 +9640,24 @@ class FirstPersonControls {
         this.stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.stunningDuration;
       }
       if (this.onGround) {
-        const speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgency;
+        let speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed;
         if (this.#actions.has(Actions.quickMoveForward)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyMove;
           this.moveForward(speedDelta);
         } else if (this.#actions.has(Actions.quickMoveBackward)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyMove;
           this.moveForward(-speedDelta);
         } else if (this.#actions.has(Actions.quickTurnLeft)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyTurn;
           this.rotate(speedDelta);
         } else if (this.#actions.has(Actions.quickTurnRight)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyTurn;
           this.rotate(-speedDelta);
         } else if (this.#actions.has(Actions.quickMoveLeft)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyMove;
           this.moveSide(-speedDelta);
         } else if (this.#actions.has(Actions.quickMoveRight)) {
+          speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyMove;
           this.moveSide(speedDelta);
         }
       }
@@ -9658,7 +9665,7 @@ class FirstPersonControls {
       let speedDelta = 0;
       if (this.onGround) {
         speedDelta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.speed;
-        if (this.#states.has(States.sprint) && (this.#actions.has(Actions.moveForward) || this.#actions.has(Actions.rotateLeft) || this.#actions.has(Actions.rotateRight))) {
+        if (this.#states.has(States.sprint) && this.#actions.has(Actions.moveForward)) {
           speedDelta *= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.sprint;
         }
       } else {
@@ -9685,7 +9692,7 @@ class FirstPersonControls {
       this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.jumpPower * deltaTime * 50;
     }
     const resistance = this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.resistance : _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.airResistance;
-    let damping = exp(-resistance * deltaTime) - 1;
+    const damping = exp(-resistance * deltaTime) - 1;
     if (!this.onGround) {
       this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_0__.World.gravity * deltaTime;
     }
@@ -9696,7 +9703,7 @@ class FirstPersonControls {
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
-    let verticalLookRatio = 1;
+    const verticalLookRatio = 1;
     if (this.timeout) {
       if (this.povSight.material.color !== sightColor.pov) {
         this.povSight.material.color = sightColor.pov;
@@ -9708,8 +9715,7 @@ class FirstPersonControls {
       this.rotation.y -= this.dx * actualLookSpeed;
       this.rotation.x = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.rotation.x));
       this.rotation.y = max(PI - this.maxPolarAngle.horizontal + this.rotY, min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y));
-      const halfWidth = window.innerWidth / 2;
-      this.povIndicator.position.x = -halfWidth * (this.rotY - this.rotation.y) / PI;
+      this.povIndicator.position.x = -this.viewHalfX * (this.rotY - this.rotation.y) / PI;
     } else if (!this.povLock) {
       if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
         if (this.povSight.material.color !== sightColor.front) {
@@ -9728,15 +9734,14 @@ class FirstPersonControls {
         }
       }
       if (this.rotation.y !== this.rotY) {
-        let ry = this.rotY - this.rotation.y;
+        const ry = this.rotY - this.rotation.y;
         if (abs(ry) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
           const dr = ry * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(ry) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
           this.rotation.y += dr;
         }
-        const halfWidth = window.innerWidth / 2;
-        this.povIndicator.position.x = -halfWidth * ry / PI;
+        this.povIndicator.position.x = -this.viewHalfX * ry / PI;
       }
     }
     this.dx = 0;
@@ -9819,7 +9824,8 @@ const createGrid = () => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   createGround: function() { return /* binding */ createGround; }
+/* harmony export */   createGround: function() { return /* binding */ createGround; },
+/* harmony export */   createWalls: function() { return /* binding */ createWalls; }
 /* harmony export */ });
 /* harmony import */ var core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.typed-array.to-reversed.js */ "./node_modules/core-js/modules/es.typed-array.to-reversed.js");
 /* harmony import */ var core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0__);
@@ -9913,6 +9919,112 @@ const generateTexture = (data, width, height) => {
   context.putImageData(image, 0, 0);
   return canvasScaled;
 };
+const createStone = function () {
+  let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+  let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  const geom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size, detail);
+  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size + 4, detail);
+  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+  bufferGeom.computeBoundingSphere();
+  const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
+  });
+  const wireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
+    wireframe: true
+  });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
+  const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
+  texture.needsUpdate = true;
+  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+    map: texture,
+    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+    alphaTest: 0.5
+  });
+  const mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, mat);
+  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, wireMat);
+  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Points(bufferGeom, pointsMat);
+  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  group.add(mesh);
+  group.add(wireMesh);
+  group.add(pointsMesh);
+  return group;
+};
+const createWalls = () => {
+  const width = (_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 2) * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.width;
+  const depth = (_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 2) * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.depth;
+  const height = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.height * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize + 1;
+  const walls = [];
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
+  const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
+  texture.needsUpdate = true;
+  for (let i = 0; i < 4; i += 1) {
+    let geom;
+    let data;
+    if (i % 2 === 0) {
+      data = generateHeight(width, height);
+      geom = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, height, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize);
+    } else {
+      data = generateHeight(depth, height);
+      geom = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(depth, height, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize);
+    }
+    const vertices = geom.attributes.position.array;
+    const pointsVertices = vertices.slice(0);
+    for (let j = 0, k = 0, l = vertices.length; j < l; j += 1, k += 3) {
+      vertices[k + 2] = data[j] * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.heightCoef / 2;
+      pointsVertices[k + 2] = vertices[k + 2] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
+    }
+    const geomPoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+    geomPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+    geomPoints.computeBoundingSphere();
+    const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
+    });
+    const matWire = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
+      wireframe: true
+    });
+    const matPoints = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.pointsColor,
+      size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+      map: texture,
+      blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+      alphaTest: 0.5
+    });
+    const mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, mat);
+    const meshWire = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, matWire);
+    const meshPoints = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geomPoints, matPoints);
+    const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+    group.add(mesh);
+    group.add(meshWire);
+    group.add(meshPoints);
+    group.position.setY(_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.height * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize / 2);
+    if (i % 2 === 0) {
+      if (i === 0) {
+        group.position.setZ(-depth / 2 + 50);
+      } else {
+        group.rotation.y = PI;
+        group.position.setZ(depth / 2 - 50);
+      }
+    } else if (i === 1) {
+      group.rotation.y = PI / 2;
+      group.position.setX(-width / 2 + 50);
+    } else {
+      group.rotation.y = -PI / 2;
+      group.position.setX(width / 2 - 50);
+    }
+    walls.push(group);
+  }
+  return walls;
+};
 const createGround = () => {
   const width = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.width;
   const depth = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.depth;
@@ -9933,7 +10045,7 @@ const createGround = () => {
   geom.groundPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
   geom.groundPoints.computeBoundingSphere();
 
-  /*const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
+  /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.colorSpace = THREE.SRGBColorSpace; */
@@ -9975,47 +10087,12 @@ const createGround = () => {
     ms.position.set(80, 50, -300);
     group.ground.add(ms);
   });
-  //ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
-  //ground.rotation.x = -PI / 2
+  const walls = createWalls();
+  walls.forEach(wall => group.ground.add(wall));
+  // ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
+  // ground.rotation.x = -PI / 2
 
   return group.ground;
-};
-const createStone = function () {
-  let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-  let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-  const geom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size, detail);
-  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.OctahedronGeometry(size + 4, detail);
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
-  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
-  bufferGeom.computeBoundingSphere();
-  const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
-  });
-  const wireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-    wireframe: true
-  });
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].triangle(context);
-  const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
-  texture.needsUpdate = true;
-  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
-    map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
-    alphaTest: 0.5
-  });
-  const mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, mat);
-  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, wireMat);
-  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Points(bufferGeom, pointsMat);
-  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
-  return group;
 };
 
 /***/ }),
@@ -10078,9 +10155,9 @@ const init = () => {
   renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_7__.Color(0x000000));
   renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
   renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
-  //renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
-  //renderer.shadowMap.type = Renderer.ShadowMap.type;
-  //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
+  // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
+  // renderer.shadowMap.type = Renderer.ShadowMap.type;
+  // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
   const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
   scene.field.add(grid);
@@ -10093,7 +10170,7 @@ const init = () => {
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(camera.field, renderer.domElement, povSight, povIndicator);
   controls.movementSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.movementSpeed;
   controls.lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.lookSpeed;
-  //controls.lookVertical = false;//////
+  // controls.lookVertical = false;//////
 
   const light = {};
   light.fill = new three__WEBPACK_IMPORTED_MODULE_7__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
@@ -10115,22 +10192,22 @@ const init = () => {
   light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.z);
   // scene.add(light.directional);
 
-  /*const direction = new THREE.Vector3();
+  /* const direction = new THREE.Vector3();
   direction.normalize();
   const origin = new THREE.Vector3();
   const length = 100;
   const hex = 0xffffff;
   const arrow = new THREE.ArrowHelper(direction, origin, length, hex);
-  scene.add(arrow);*/
+  scene.add(arrow); */
 
-  //worldOctree.fromGraphNode(grid);
+  // worldOctree.fromGraphNode(grid);
   const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_8__.Octree();
   worldOctree.fromGraphNode(ground);
   const player = new _player__WEBPACK_IMPORTED_MODULE_6__["default"](camera.field, controls, worldOctree);
 
-  ////
-  //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
-  //scene.add(helper);
+  /// /
+  // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  // scene.add(helper);
   const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_9__.OctreeHelper(worldOctree);
   helper.visible = false;
   scene.field.add(helper);
@@ -10311,14 +10388,14 @@ const createSight = () => {
     map: texture
   });
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
-  sprite.scale.set(64, 64, 0);
+  sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, 0);
   sprite.position.set(0, 0, -10);
   return sprite;
 };
 const createPovIndicator = () => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].triangle(context);
+  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context);
   const halfHeight = window.innerHeight / 2;
   const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
   texture.needsUpdate = true;
@@ -10328,8 +10405,8 @@ const createPovIndicator = () => {
   });
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
   sprite.visible = false;
-  sprite.scale.set(64, 24, 0);
-  sprite.position.set(0, -halfHeight + 16, -10);
+  sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, 0);
+  sprite.position.setZ(-10);
   return sprite;
 };
 
@@ -10384,7 +10461,7 @@ const Scene = {
 const Camera = {
   FOV: 70,
   Aspect: window.innerWidth / window.innerHeight,
-  near: PlayerSettings.radius,
+  near: PlayerSettings.radius / 2,
   far: 1000,
   order: 'YXZ'
 };
@@ -10440,47 +10517,54 @@ const Grid = {
     depth: 70
   },
   Segments: {
-    width: 20,
-    height: 20,
-    depth: 20
+    width: 40,
+    // dev 20, prod 40
+    height: 40,
+    // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Ground = {
   Object: {
-    color: 0x1955A6,
+    color: 0x1955a6,
     size: 5,
-    pointsColor: 0xA3D8F6
+    pointsColor: 0xa3d8f6
   },
   heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
-  pointsColor: 0xF4E511 //0xffff00,
+  pointsColor: 0xf4e511,
+  // 0xffff00,
+  wallHeightSize: 4
 };
 const Controls = {
-  speed: 9,
+  speed: 6,
+  // 9
   sprint: 2.8,
-  urgency: 7,
+  urgencyMove: 5.5,
+  // 7
+  urgencyTurn: 7,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 6,
   jumpPower: 15,
-  lookSpeed: 18,
+  lookSpeed: 20,
   idleTime: 0.3,
   restoreSpeed: 1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
-  stunningDuration: 0.4,
-  stunResistance: 80,
-  stunRecovery: 50
+  stunningDuration: 0.5 // 0.4
 };
 const World = {
   gravity: 6
 };
 const Screen = {
   sightColor: 0xffffff,
-  sightPovColor: 0x5AFF19
+  sightPovColor: 0x5aff19,
+  sightSize: 48,
+  sightPovSize: 48
 };
 
 /***/ }),
@@ -10600,6 +10684,30 @@ const textures = {
     context.fill();
     return context;
   },
+  rectangle(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 10;
+    context.miterLimit = 20;
+    context.strokeStyle = '#FFF';
+    context.moveTo(64, 8);
+    // context.lineTo(120, 64);
+    context.quadraticCurveTo(84, 44, 120, 64);
+    context.quadraticCurveTo(84, 84, 64, 120);
+    context.quadraticCurveTo(44, 84, 8, 64);
+    context.quadraticCurveTo(44, 44, 64, 8);
+    // context.lineTo(64, 120);
+    // context.lineTo(8, 64);
+
+    context.closePath();
+    context.stroke();
+    return context;
+  },
   triangle(context) {
     const {
       canvas
@@ -10608,7 +10716,7 @@ const textures = {
     canvas.height = 128;
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
-    context.lineWidth = 12;
+    context.lineWidth = 8;
     context.miterLimit = 20;
     context.strokeStyle = '#FFF';
     context.beginPath();
@@ -10616,6 +10724,26 @@ const textures = {
     context.lineTo(119, 112);
     context.lineTo(9, 112);
     context.lineTo(64, 16);
+    context.closePath();
+    context.stroke();
+    return context;
+  },
+  isoscelesTriangle(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 5;
+    context.miterLimit = 20;
+    context.strokeStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(64, 64);
+    context.lineTo(119, 112);
+    context.lineTo(9, 112);
+    context.lineTo(64, 64);
     context.closePath();
     context.stroke();
     return context;
