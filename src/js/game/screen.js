@@ -18,7 +18,7 @@ export const createSight = () => {
   });
 
   const sprite = new Sprite(material);
-  sprite.scale.set(64, 64, 0);
+  sprite.scale.set(Screen.sightSize, Screen.sightSize, 0);
   sprite.position.set(0, 0, -10);
 
   return sprite;
@@ -27,7 +27,7 @@ export const createSight = () => {
 export const createPovIndicator = () => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  textures.triangle(context);
+  textures.isoscelesTriangle(context);
 
   const halfHeight = window.innerHeight / 2;
 
@@ -41,8 +41,8 @@ export const createPovIndicator = () => {
 
   const sprite = new Sprite(material);
   sprite.visible = false;
-  sprite.scale.set(64, 24, 0);
-  sprite.position.set(0, -halfHeight + 16, -10);
+  sprite.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
+  sprite.position.setZ(-10);
 
   return sprite;
 };

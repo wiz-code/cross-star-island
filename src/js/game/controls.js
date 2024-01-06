@@ -92,7 +92,7 @@ class FirstPersonControls {
       virtical: 0,
       horizontal: 0,
     };
-		this.maxPolarAngle = {
+    this.maxPolarAngle = {
       virtical: PI,
       horizontal: PI * 2,
     };
@@ -101,12 +101,10 @@ class FirstPersonControls {
     this.autoSpeedFactor = 0.0;
 
     this.velocity = new Vector3();
-		this.direction = new Vector3();
+    this.direction = new Vector3();
     this.rotation = new Euler(0, 0, 0, 'YXZ');
     this.rotY = 0;
     this.onGround = false;
-
-
 
     this.timeout = false;
     this.moved = false;
@@ -148,6 +146,8 @@ class FirstPersonControls {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
+
+    this.povIndicator.position.setY(-this.viewHalfY + Screen.sightPovSize / 2);
   }
 
   lookAt(x, y, z) {
@@ -170,8 +170,8 @@ class FirstPersonControls {
   }
 
   unlock() {
-		this.domElement.ownerDocument.exitPointerLock();
-	}
+    this.domElement.ownerDocument.exitPointerLock();
+  }
 
   setOnGround(bool = true) {
     this.onGround = bool;
@@ -179,20 +179,26 @@ class FirstPersonControls {
 
   onPointerMove(event) {
     this.moved = true;
-    this.dx = max(-Controls.pointerMaxMove, min(event.movementX, Controls.pointerMaxMove));
-    this.dy = max(-Controls.pointerMaxMove, min(event.movementY, Controls.pointerMaxMove));
+    this.dx = max(
+      -Controls.pointerMaxMove,
+      min(event.movementX, Controls.pointerMaxMove),
+    );
+    this.dy = max(
+      -Controls.pointerMaxMove,
+      min(event.movementY, Controls.pointerMaxMove),
+    );
   }
 
   onPointerDown(event) {
     this.lock();
 
     if (this.activeLook) {
-			if (event.button === 0) {
+      if (event.button === 0) {
         //
       } else if (event.button === 2) {
         this.povLock = true;
-			}
-		}
+      }
+    }
   }
 
   onPointerUp(event) {
@@ -201,8 +207,8 @@ class FirstPersonControls {
         //
       } else if (event.button === 2) {
         this.povLock = false;
-			}
-		}
+      }
+    }
   }
 
   onKeyDown(event) {
@@ -321,7 +327,7 @@ class FirstPersonControls {
   moveForward(delta) {
     const direction = this.direction.clone().multiplyScalar(delta);
     this.velocity.add(direction);
-	}
+  }
 
   rotate(delta) {
     const rotation = delta * Controls.rotateSpeed * 0.02;
@@ -330,10 +336,13 @@ class FirstPersonControls {
 
     this.direction.applyAxisAngle(this.#virticalVector, rotation);
     this.direction.normalize();
-	}
+  }
 
   moveSide(delta) {
-    const direction = this.#vec3.crossVectors(this.direction, this.#virticalVector);
+    const direction = this.#vec3.crossVectors(
+      this.direction,
+      this.#virticalVector,
+    );
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(delta));
   }
@@ -393,29 +402,17 @@ class FirstPersonControls {
       this.#actions.add(Actions.moveBackward);
     }
 
-    if (
-      this.#keys.has(Keys.a) &&
-      !this.#keys.has(Keys.d)
-    ) {
+    if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
       this.#actions.add(Actions.rotateLeft);
     }
 
-    if (
-      this.#keys.has(Keys.d) &&
-      !this.#keys.has(Keys.a)
-    ) {
+    if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
       this.#actions.add(Actions.rotateRight);
     }
 
-    if (
-      this.#keys.has(Keys.q) &&
-      !this.#keys.has(Keys.e)
-    ) {
+    if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
       this.#actions.add(Actions.moveLeft);
-    } else if (
-      this.#keys.has(Keys.e) &&
-      !this.#keys.has(Keys.q)
-    ) {
+    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
       this.#actions.add(Actions.moveRight);
     }
   }
@@ -463,19 +460,25 @@ class FirstPersonControls {
       }
 
       if (this.onGround) {
-        const speedDelta = deltaTime * Controls.speed * Controls.urgency;
+        let speedDelta = deltaTime * Controls.speed;
 
         if (this.#actions.has(Actions.quickMoveForward)) {
+          speedDelta *= Controls.urgencyMove;
           this.moveForward(speedDelta);
         } else if (this.#actions.has(Actions.quickMoveBackward)) {
+          speedDelta *= Controls.urgencyMove;
           this.moveForward(-speedDelta);
         } else if (this.#actions.has(Actions.quickTurnLeft)) {
+          speedDelta *= Controls.urgencyTurn;
           this.rotate(speedDelta);
         } else if (this.#actions.has(Actions.quickTurnRight)) {
+          speedDelta *= Controls.urgencyTurn;
           this.rotate(-speedDelta);
         } else if (this.#actions.has(Actions.quickMoveLeft)) {
+          speedDelta *= Controls.urgencyMove;
           this.moveSide(-speedDelta);
         } else if (this.#actions.has(Actions.quickMoveRight)) {
+          speedDelta *= Controls.urgencyMove;
           this.moveSide(speedDelta);
         }
       }
@@ -487,11 +490,7 @@ class FirstPersonControls {
 
         if (
           this.#states.has(States.sprint) &&
-          (
-            this.#actions.has(Actions.moveForward) ||
-            this.#actions.has(Actions.rotateLeft) ||
-            this.#actions.has(Actions.rotateRight)
-          )
+          this.#actions.has(Actions.moveForward)
         ) {
           speedDelta *= Controls.sprint;
         }
@@ -505,13 +504,11 @@ class FirstPersonControls {
         this.rotate(-speedDelta);
       }
 
-      if (this.#actions.has(Actions.moveForward)
-      ) {
+      if (this.#actions.has(Actions.moveForward)) {
         this.moveForward(speedDelta);
       } else if (this.#actions.has(Actions.moveBackward)) {
         this.moveForward(-speedDelta);
       }
-
 
       if (this.#actions.has(Actions.moveLeft)) {
         this.moveSide(-speedDelta * 0.5);
@@ -525,14 +522,16 @@ class FirstPersonControls {
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
     }
 
-    const resistance = this.onGround ? Controls.resistance : Controls.airResistance;
-    let damping = exp(-resistance * deltaTime) - 1;
+    const resistance = this.onGround
+      ? Controls.resistance
+      : Controls.airResistance;
+    const damping = exp(-resistance * deltaTime) - 1;
 
-		if (!this.onGround) {
-			this.velocity.y -= World.gravity * deltaTime;
-		}
+    if (!this.onGround) {
+      this.velocity.y -= World.gravity * deltaTime;
+    }
 
-		this.velocity.addScaledVector(this.velocity, damping);
+    this.velocity.addScaledVector(this.velocity, damping);
 
     // 自機の視点制御
     let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
@@ -541,7 +540,7 @@ class FirstPersonControls {
       actualLookSpeed = 0;
     }
 
-    let verticalLookRatio = 1;
+    const verticalLookRatio = 1;
 
     if (this.timeout) {
       if (this.povSight.material.color !== sightColor.pov) {
@@ -557,15 +556,15 @@ class FirstPersonControls {
 
       this.rotation.x = max(
         halfPI - this.maxPolarAngle.virtical,
-        min(halfPI - this.minPolarAngle.virtical, this.rotation.x)
+        min(halfPI - this.minPolarAngle.virtical, this.rotation.x),
       );
       this.rotation.y = max(
         PI - this.maxPolarAngle.horizontal + this.rotY,
-        min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y)
+        min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y),
       );
 
-      const halfWidth = window.innerWidth / 2;
-      this.povIndicator.position.x = -halfWidth * (this.rotY - this.rotation.y) / PI;
+      this.povIndicator.position.x =
+        (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
     } else if (!this.povLock) {
       if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
         if (this.povSight.material.color !== sightColor.front) {
@@ -581,23 +580,26 @@ class FirstPersonControls {
         if (abs(this.rotation.x) < Controls.restoreMinAngle) {
           this.rotation.x = 0;
         } else {
-          const rx = -this.rotation.x * deltaTime * Controls.restoreSpeed + sign(-this.rotation.x) * Controls.restoreMinAngle;
+          const rx =
+            -this.rotation.x * deltaTime * Controls.restoreSpeed +
+            sign(-this.rotation.x) * Controls.restoreMinAngle;
           this.rotation.x += rx;
         }
       }
 
       if (this.rotation.y !== this.rotY) {
-        let ry = this.rotY - this.rotation.y
+        const ry = this.rotY - this.rotation.y;
 
         if (abs(ry) < Controls.restoreMinAngle) {
           this.rotation.y = this.rotY;
         } else {
-          const dr = ry * deltaTime * Controls.restoreSpeed + sign(ry) * Controls.restoreMinAngle;
+          const dr =
+            ry * deltaTime * Controls.restoreSpeed +
+            sign(ry) * Controls.restoreMinAngle;
           this.rotation.y += dr;
         }
 
-        const halfWidth = window.innerWidth / 2;
-        this.povIndicator.position.x = -halfWidth * ry / PI;
+        this.povIndicator.position.x = (-this.viewHalfX * ry) / PI;
       }
     }
 

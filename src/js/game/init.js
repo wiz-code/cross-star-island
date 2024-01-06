@@ -8,7 +8,15 @@ import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { debounce } from 'throttle-debounce';
 
 import { FirstPersonControls } from './controls';
-import { Scene, Camera, Renderer, Light, Controls, PlayerSettings, ResizeDelayTime } from './settings';
+import {
+  Scene,
+  Camera,
+  Renderer,
+  Light,
+  Controls,
+  PlayerSettings,
+  ResizeDelayTime,
+} from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
 import { createSight, createPovIndicator } from './screen';
@@ -26,7 +34,11 @@ const init = () => {
 
   scene.field = new THREE.Scene();
   scene.field.background = new THREE.Color(Scene.background);
-  scene.field.fog = new THREE.Fog(Scene.Fog.color, Scene.Fog.near, Scene.Fog.far);
+  scene.field.fog = new THREE.Fog(
+    Scene.Fog.color,
+    Scene.Fog.near,
+    Scene.Fog.far,
+  );
 
   scene.screen = new THREE.Scene();
 
@@ -47,9 +59,8 @@ const init = () => {
     windowHalfY,
     -windowHalfY,
     0.1,
-    1000
+    1000,
   );
-
 
   const container = document.getElementById('container');
 
@@ -58,9 +69,9 @@ const init = () => {
   renderer.setClearColor(new THREE.Color(0x000000));
   renderer.setPixelRatio(Renderer.pixelRatio);
   renderer.setSize(Renderer.Size.width, Renderer.Size.height);
-  //renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
-  //renderer.shadowMap.type = Renderer.ShadowMap.type;
-  //renderer.toneMapping = Renderer.ShadowMap.toneMapping;
+  // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
+  // renderer.shadowMap.type = Renderer.ShadowMap.type;
+  // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
   const grid = createGrid();
@@ -75,10 +86,15 @@ const init = () => {
   const povIndicator = createPovIndicator();
   scene.screen.add(povIndicator);
 
-  const controls = new FirstPersonControls(camera.field, renderer.domElement, povSight, povIndicator);
+  const controls = new FirstPersonControls(
+    camera.field,
+    renderer.domElement,
+    povSight,
+    povIndicator,
+  );
   controls.movementSpeed = Controls.movementSpeed;
   controls.lookSpeed = Controls.lookSpeed;
-  //controls.lookVertical = false;//////
+  // controls.lookVertical = false;//////
 
   const light = {};
 
@@ -116,28 +132,25 @@ const init = () => {
   );
   // scene.add(light.directional);
 
-
-
-  /*const direction = new THREE.Vector3();
+  /* const direction = new THREE.Vector3();
   direction.normalize();
   const origin = new THREE.Vector3();
   const length = 100;
   const hex = 0xffffff;
   const arrow = new THREE.ArrowHelper(direction, origin, length, hex);
-  scene.add(arrow);*/
+  scene.add(arrow); */
 
-  //worldOctree.fromGraphNode(grid);
+  // worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
   worldOctree.fromGraphNode(ground);
   const player = new Player(camera.field, controls, worldOctree);
 
-  ////
-  //let helper = new THREE.Box3Helper(worldBox, 0xffff00);
-  //scene.add(helper);
+  /// /
+  // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  // scene.add(helper);
   const helper = new OctreeHelper(worldOctree);
-	helper.visible = false;
-	scene.field.add( helper );
-
+  helper.visible = false;
+  scene.field.add(helper);
 
   // helpers
   const axesHelper = new THREE.AxesHelper(180);

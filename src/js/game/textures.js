@@ -111,6 +111,32 @@ const textures = {
     return context;
   },
 
+  rectangle(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+
+    context.lineWidth = 10;
+    context.miterLimit = 20;
+    context.strokeStyle = '#FFF';
+    context.moveTo(64, 8);
+    // context.lineTo(120, 64);
+    context.quadraticCurveTo(84, 44, 120, 64);
+    context.quadraticCurveTo(84, 84, 64, 120);
+    context.quadraticCurveTo(44, 84, 8, 64);
+    context.quadraticCurveTo(44, 44, 64, 8);
+    // context.lineTo(64, 120);
+    // context.lineTo(8, 64);
+
+    context.closePath();
+    context.stroke();
+
+    return context;
+  },
+
   triangle(context) {
     const { canvas } = context;
     canvas.width = 128;
@@ -118,14 +144,36 @@ const textures = {
 
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
-    context.lineWidth = 12;
-    context.miterLimit = 20
+    context.lineWidth = 8;
+    context.miterLimit = 20;
     context.strokeStyle = '#FFF';
     context.beginPath();
     context.moveTo(64, 16);
     context.lineTo(119, 112);
     context.lineTo(9, 112);
     context.lineTo(64, 16);
+    context.closePath();
+
+    context.stroke();
+
+    return context;
+  },
+
+  isoscelesTriangle(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 5;
+    context.miterLimit = 20;
+    context.strokeStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(64, 64);
+    context.lineTo(119, 112);
+    context.lineTo(9, 112);
+    context.lineTo(64, 64);
     context.closePath();
 
     context.stroke();

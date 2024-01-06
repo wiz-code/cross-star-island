@@ -26,7 +26,7 @@ export const Scene = {
 export const Camera = {
   FOV: 70,
   Aspect: window.innerWidth / window.innerHeight,
-  near: PlayerSettings.radius,
+  near: PlayerSettings.radius / 2,
   far: 1000,
   order: 'YXZ',
 };
@@ -84,34 +84,36 @@ export const Grid = {
     depth: 70,
   },
   Segments: {
-    width: 20,
-    height: 20,
-    depth: 20,
+    width: 40, // dev 20, prod 40
+    height: 40, // dev 20, prod 40
+    depth: 40, // dev 20, prod 40
   },
 };
 
 export const Ground = {
   Object: {
-    color: 0x1955A6,
+    color: 0x1955a6,
     size: 5,
-    pointsColor: 0xA3D8F6,
+    pointsColor: 0xa3d8f6,
   },
   heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
-  pointsColor: 0xF4E511,//0xffff00,
+  pointsColor: 0xf4e511, // 0xffff00,
+  wallHeightSize: 4,
 };
 
 export const Controls = {
-  speed: 9,
+  speed: 6, // 9
   sprint: 2.8,
-  urgency: 7,
+  urgencyMove: 5.5, // 7
+  urgencyTurn: 7,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 6,
   jumpPower: 15,
-  lookSpeed: 18,
+  lookSpeed: 20,
 
   idleTime: 0.3,
   restoreSpeed: 1.2,
@@ -120,9 +122,7 @@ export const Controls = {
   pointerMaxMove: 80,
 
   urgencyDuration: 0.2,
-  stunningDuration: 0.4,
-  stunResistance: 80,
-  stunRecovery: 50,
+  stunningDuration: 0.5, // 0.4
 };
 
 export const World = {
@@ -131,5 +131,7 @@ export const World = {
 
 export const Screen = {
   sightColor: 0xffffff,
-  sightPovColor: 0x5AFF19,
+  sightPovColor: 0x5aff19,
+  sightSize: 48,
+  sightPovSize: 48,
 };

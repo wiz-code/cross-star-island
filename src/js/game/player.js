@@ -24,40 +24,36 @@ class Player {
       PlayerSettings.Position.y + PlayerSettings.height,
       PlayerSettings.Position.z,
     );
-    this.collider = new Capsule(
-      start,
-      end,
-      PlayerSettings.radius
-    );
+    this.collider = new Capsule(start, end, PlayerSettings.radius);
   }
 
   collisions() {
-		const result = this.worldOctree.capsuleIntersect(this.collider);
+    const result = this.worldOctree.capsuleIntersect(this.collider);
     this.controls.setOnGround(false);
 
-		if (result) {
-			const onGround = result.normal.y > 0;
+    if (result) {
+      const onGround = result.normal.y > 0;
       this.controls.setOnGround(onGround);
 
-			if (!onGround) {
-				this.controls.velocity.addScaledVector(
+      if (!onGround) {
+        this.controls.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(this.controls.velocity)
+          -result.normal.dot(this.controls.velocity),
         );
-			}
+      }
 
-			this.collider.translate(result.normal.multiplyScalar(result.depth));
-		}
+      this.collider.translate(result.normal.multiplyScalar(result.depth));
+    }
   }
 
   update(deltaTime) {
     const { rotation, velocity } = this.controls;
 
     this.camera.rotation.copy(rotation);
-		this.collider.translate(velocity.clone());
+    this.collider.translate(velocity.clone());
     this.camera.position.copy(this.collider.end);
-		this.collisions();
-	}
+    this.collisions();
+  }
 }
 
 export default Player;
