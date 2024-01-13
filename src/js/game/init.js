@@ -13,13 +13,13 @@ import {
   Camera,
   Renderer,
   Light,
-  Controls,
   PlayerSettings,
   ResizeDelayTime,
 } from './settings';
 import { createGrid } from './grid';
 import { createGround } from './ground';
-import { createSight, createPovIndicator } from './screen';
+
+import Ammo from './ammo';
 import Player from './player';
 
 const { floor } = Math;
@@ -80,22 +80,6 @@ const init = () => {
   const ground = createGround();
   scene.field.add(ground);
 
-  const povSight = createSight();
-  scene.screen.add(povSight);
-
-  const povIndicator = createPovIndicator();
-  scene.screen.add(povIndicator);
-
-  const controls = new FirstPersonControls(
-    camera.field,
-    renderer.domElement,
-    povSight,
-    povIndicator,
-  );
-  controls.movementSpeed = Controls.movementSpeed;
-  controls.lookSpeed = Controls.lookSpeed;
-  // controls.lookVertical = false;//////
-
   const light = {};
 
   light.fill = new THREE.HemisphereLight(
@@ -143,7 +127,15 @@ const init = () => {
   // worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
   worldOctree.fromGraphNode(ground);
-  const player = new Player(camera.field, controls, worldOctree);
+  const ammo = new Ammo(scene.field, camera.field, worldOctree);
+  const player = new Player(camera.field, ammo, worldOctree);
+
+  const controls = new FirstPersonControls(
+    scene.screen,
+    camera.field,
+    player,
+    renderer.domElement
+  );
 
   /// /
   // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
@@ -188,11 +180,12 @@ const init = () => {
     container,
     scene,
     camera,
+    controls,
     light,
     renderer,
     clock,
+    ammo,
     player,
-    controls,
     stats,
   };
 };

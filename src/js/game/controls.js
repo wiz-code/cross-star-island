@@ -1,57 +1,29 @@
 import { MathUtils, Spherical, Vector3, Euler, Quaternion, Color } from 'three';
 
-import { World, Controls, Screen } from './settings';
+import { Camera, World, Controls, Screen } from './settings';
+import { Keys, Actions, States } from './data';
+import Publisher from './publisher';
+import { createSight, createPovIndicator } from './screen';
 
 const { radToDeg, degToRad, clamp, mapLinear } = MathUtils;
 const { abs, sign, floor, max, min, exp, PI } = Math;
 const halfPI = PI / 2;
+const quarterPI = PI / 4;
+const degToRadCoef = PI / 180;
 
-const Keys = {
-  w: 0,
-  a: 1,
-  s: 2,
-  d: 3,
-  q: 4,
-  e: 5,
-
-  sp: 10,
-  shift: 11,
-  alt: 12,
-};
-
-const Actions = {
-  moveForward: 0,
-  moveBackward: 1,
-  moveLeft: 2,
-  moveRight: 3,
-  rotateLeft: 4,
-  rotateRight: 5,
-
-  jump: 10,
-
-  quickMoveForward: 20,
-  quickMoveBackward: 21,
-  quickTurnLeft: 22,
-  quickTurnRight: 23,
-  quickMoveLeft: 24,
-  quickMoveRight: 25,
-};
-
-const States = {
-  sprint: 1,
-  urgency: 2,
-  stunning: 3,
-};
+const lerp = (x, y, p) => x + (y - x) * p;
 
 const sightColor = {
   front: new Color(Screen.sightColor),
   pov: new Color(Screen.sightPovColor),
 };
 
-class FirstPersonControls {
-  #vec3 = new Vector3();
+class FirstPersonControls extends Publisher {
+  #vectorA = new Vector3();/////
 
-  #virticalVector = new Vector3(0, 1, 0);
+  #vectorB = new Vector3();////////
+
+  #virticalVector = new Vector3(0, 1, 0);//////////
 
   #contextmenu(event) {
     event.preventDefault();
@@ -63,30 +35,26 @@ class FirstPersonControls {
 
   #states = new Set();
 
-  constructor(camera, domElement, povSight, povIndicator) {
+  constructor(screen, camera, player, domElement) {
+    super();
+
+    this.screen = screen;
     this.camera = camera;
+    this.player = player;
     this.domElement = domElement;
-    this.povSight = povSight;
-    this.povIndicator = povIndicator;
+
+    this.povSight = createSight();
+    this.screen.add(this.povSight);
+
+    this.povIndicator = createPovIndicator();
+    this.screen.add(this.povIndicator);
 
     // API
 
     this.enabled = true;
 
-    this.lookVertical = true;
-    this.autoForward = false;
-
     this.activeLook = true;
     this.povLock = false;
-
-    this.heightSpeed = false;
-    this.heightCoef = 1.0;
-    this.heightMin = 0.0;
-    this.heightMax = 1.0;
-
-    this.constrainVertical = false;
-    this.verticalMin = 0;
-    this.verticalMax = PI;
 
     this.minPolarAngle = {
       virtical: 0,
@@ -98,13 +66,13 @@ class FirstPersonControls {
     };
 
     // internals
-    this.autoSpeedFactor = 0.0;
-
-    this.velocity = new Vector3();
-    this.direction = new Vector3();
-    this.rotation = new Euler(0, 0, 0, 'YXZ');
+    this.velocity = new Vector3();//////////
+    this.direction = new Vector3();/////////
+    this.rotation = new Euler(0, 0, 0, 'YXZ');////////
     this.rotY = 0;
-    this.onGround = false;
+    this.onGround = false;///////////
+
+    this.povCoords = new Spherical();
 
     this.timeout = false;
     this.moved = false;
@@ -138,8 +106,9 @@ class FirstPersonControls {
 
   setOrientation() {
     const { rotation } = this.camera;
-    this.rotation.copy(rotation);
-    this.rx = this.rotation.x;
+    //this.rotation.copy(rotation);
+    this.povCoords.phi = rotation.y;
+    this.povCoords.theta = rotation.x;
     this.camera.getWorldDirection(this.direction);
   }
 
@@ -152,12 +121,12 @@ class FirstPersonControls {
 
   lookAt(x, y, z) {
     if (x.isVector3) {
-      this.#vec3.copy(x);
+      this.#vectorA.copy(x);
     } else {
-      this.#vec3.set(x, y, z);
+      this.#vectorA.set(x, y, z);
     }
 
-    this.camera.lookAt(this.#vec3);
+    this.camera.lookAt(this.#vectorA);
     this.setOrientation();
 
     return this;
@@ -173,7 +142,7 @@ class FirstPersonControls {
     this.domElement.ownerDocument.exitPointerLock();
   }
 
-  setOnGround(bool = true) {
+  setOnGround(bool = true) {///////////
     this.onGround = bool;
   }
 
@@ -190,12 +159,14 @@ class FirstPersonControls {
   }
 
   onPointerDown(event) {
-    this.lock();
+    // this.lock();
 
     if (this.activeLook) {
       if (event.button === 0) {
-        //
-      } else if (event.button === 2) {
+        this.player.fire();
+      }
+
+      if (event.button === 2) {
         this.povLock = true;
       }
     }
@@ -205,7 +176,9 @@ class FirstPersonControls {
     if (this.activeLook) {
       if (event.button === 0) {
         //
-      } else if (event.button === 2) {
+      }
+
+      if (event.button === 2) {
         this.povLock = false;
       }
     }
@@ -339,7 +312,7 @@ class FirstPersonControls {
   }
 
   moveSide(delta) {
-    const direction = this.#vec3.crossVectors(
+    const direction = this.#vectorB.crossVectors(
       this.direction,
       this.#virticalVector,
     );
@@ -349,7 +322,6 @@ class FirstPersonControls {
 
   input() {
     // 入力操作の処理
-
     // 緊急回避中とスタン中はアクションを更新しない
     if (
       !this.#states.has(States.urgency) &&
@@ -386,7 +358,7 @@ class FirstPersonControls {
     this.#actions.clear();
 
     // update()で一度だけアクションを発動する
-    if (this.onGround && this.#keys.has(Keys.sp)) {
+    if (this.player.onGround && this.#keys.has(Keys.sp)) {
       this.#actions.add(Actions.jump);
     }
 
@@ -444,7 +416,7 @@ class FirstPersonControls {
     } else if (
       this.#states.has(States.urgency) &&
       this.urgencyRemainingTime === 0 &&
-      this.onGround
+      this.player.onGround
     ) {
       this.urgencyRemainingTime = Controls.urgencyDuration;
     }
@@ -459,14 +431,14 @@ class FirstPersonControls {
         this.stunningRemainingTime = Controls.stunningDuration;
       }
 
-      if (this.onGround) {
+      /*if (this.player.onGround) {
         let speedDelta = deltaTime * Controls.speed;
 
         if (this.#actions.has(Actions.quickMoveForward)) {
-          speedDelta *= Controls.urgencyMove;
-          this.moveForward(speedDelta);
+          //speedDelta *= Controls.urgencyMove;
+          this.moveForward(speedDelta, States.urgency);
         } else if (this.#actions.has(Actions.quickMoveBackward)) {
-          speedDelta *= Controls.urgencyMove;
+          //speedDelta *= Controls.urgencyMove;
           this.moveForward(-speedDelta);
         } else if (this.#actions.has(Actions.quickTurnLeft)) {
           speedDelta *= Controls.urgencyTurn;
@@ -481,11 +453,24 @@ class FirstPersonControls {
           speedDelta *= Controls.urgencyMove;
           this.moveSide(speedDelta);
         }
+      }*/
+      if (this.#actions.has(Actions.quickMoveForward)) {
+        this.player.moveForward(deltaTime, States.urgency);
+      } else if (this.#actions.has(Actions.quickMoveBackward)) {
+        this.player.moveForward(-deltaTime, States.urgency);
+      } else if (this.#actions.has(Actions.quickTurnLeft)) {
+        this.player.rotate(deltaTime, States.urgency);
+      } else if (this.#actions.has(Actions.quickTurnRight)) {
+        this.player.rotate(-deltaTime, States.urgency);
+      } else if (this.#actions.has(Actions.quickMoveLeft)) {
+        this.player.moveSide(-deltaTime, States.urgency);
+      } else if (this.#actions.has(Actions.quickMoveRight)) {
+        this.player.moveSide(deltaTime, States.urgency);
       }
     } else {
       let speedDelta = 0;
 
-      if (this.onGround) {
+      /*if (this.onGround) {
         speedDelta = deltaTime * Controls.speed;
 
         if (
@@ -496,33 +481,61 @@ class FirstPersonControls {
         }
       } else {
         speedDelta = deltaTime * Controls.airSpeed;
-      }
+      }*/
 
-      if (this.#actions.has(Actions.rotateLeft)) {
+      /*if (this.#actions.has(Actions.rotateLeft)) {
         this.rotate(speedDelta);
       } else if (this.#actions.has(Actions.rotateRight)) {
         this.rotate(-speedDelta);
       }
 
       if (this.#actions.has(Actions.moveForward)) {
-        this.moveForward(speedDelta);
+        this.player.moveForward(deltaTime);
+        //this.moveForward(speedDelta);
       } else if (this.#actions.has(Actions.moveBackward)) {
-        this.moveForward(-speedDelta);
+        this.player.moveForward(-deltaTime);
+        //this.moveForward(-speedDelta);
       }
 
       if (this.#actions.has(Actions.moveLeft)) {
         this.moveSide(-speedDelta * 0.5);
       } else if (this.#actions.has(Actions.moveRight)) {
         this.moveSide(speedDelta * 0.5);
+      }*/
+      if (this.#actions.has(Actions.rotateLeft)) {
+        this.player.rotate(deltaTime);
+      } else if (this.#actions.has(Actions.rotateRight)) {
+        this.player.rotate(-deltaTime);
+      }
+
+      if (this.#actions.has(Actions.moveForward)) {
+        if (this.#states.has(States.sprint)) {
+          this.player.moveForward(deltaTime, States.sprint);
+        } else {
+          this.player.moveForward(deltaTime);
+        }
+      } else if (this.#actions.has(Actions.moveBackward)) {
+        this.player.moveForward(-deltaTime);
+      }
+
+      if (this.#actions.has(Actions.moveLeft)) {
+        this.player.moveSide(-deltaTime);
+      } else if (this.#actions.has(Actions.moveRight)) {
+        this.player.moveSide(deltaTime);
       }
     }
 
-    if (this.onGround && this.#actions.has(Actions.jump)) {
+    /*if (this.onGround && this.#actions.has(Actions.jump)) {
       this.#actions.delete(Actions.jump);
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
+    }*/
+    if (this.#actions.has(Actions.jump)) {
+      this.#actions.delete(Actions.jump);
+      //this.velocity.y = Controls.jumpPower * deltaTime * 50;
+      this.player.jump(deltaTime);
     }
 
-    const resistance = this.onGround
+    /*const resistance = this.onGround
       ? Controls.resistance
       : Controls.airResistance;
     const damping = exp(-resistance * deltaTime) - 1;
@@ -531,16 +544,16 @@ class FirstPersonControls {
       this.velocity.y -= World.gravity * deltaTime;
     }
 
-    this.velocity.addScaledVector(this.velocity, damping);
+    this.velocity.addScaledVector(this.velocity, damping);*/
 
     // 自機の視点制御
-    let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
+    let actualLookSpeed = Controls.lookSpeed;
+    const { spherical } = this.player;
+    // let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
 
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
-
-    const verticalLookRatio = 1;
 
     if (this.timeout) {
       if (this.povSight.material.color !== sightColor.pov) {
@@ -551,22 +564,33 @@ class FirstPersonControls {
         this.povIndicator.visible = true;
       }
 
-      this.rotation.x -= this.dy * actualLookSpeed;
-      this.rotation.y -= this.dx * actualLookSpeed;
+      // this.rotation.x -= this.dy * actualLookSpeed;
+      // this.rotation.y -= this.dx * actualLookSpeed;
 
-      this.rotation.x = max(
+      const degX = (Camera.FOV * this.dy) / (this.viewHalfY * 2);
+      const radX = degX * degToRadCoef;
+      this.povCoords.theta -= radX * actualLookSpeed;
+
+      const degY = (Camera.FOV * this.dx) / (this.viewHalfX * 2);
+      const radY = degY * degToRadCoef;
+      this.povCoords.phi -= radY * actualLookSpeed;
+
+      this.povCoords.theta = max(
         halfPI - this.maxPolarAngle.virtical,
-        min(halfPI - this.minPolarAngle.virtical, this.rotation.x),
+        min(halfPI - this.minPolarAngle.virtical, this.povCoords.theta),
       );
-      this.rotation.y = max(
-        PI - this.maxPolarAngle.horizontal + this.rotY,
-        min(PI - this.minPolarAngle.horizontal + this.rotY, this.rotation.y),
+      this.povCoords.phi = max(
+        PI - this.maxPolarAngle.horizontal,
+        min(PI - this.minPolarAngle.horizontal, this.povCoords.phi),
       );
 
-      this.povIndicator.position.x =
-        (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
+      // this.povIndicator.position.x =
+      // (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
+      let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
+      posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+      this.povIndicator.position.x = posX;
     } else if (!this.povLock) {
-      if (this.rotation.x === 0 && this.rotation.y === this.rotY) {
+      if (this.povCoords.theta === 0 && this.povCoords.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
         }
@@ -576,32 +600,34 @@ class FirstPersonControls {
         }
       }
 
-      if (this.rotation.x !== 0) {
-        if (abs(this.rotation.x) < Controls.restoreMinAngle) {
-          this.rotation.x = 0;
+      if (this.povCoords.theta !== 0) {
+        if (abs(this.povCoords.theta) < Controls.restoreMinAngle) {
+          this.povCoords.theta = 0;
         } else {
           const rx =
-            -this.rotation.x * deltaTime * Controls.restoreSpeed +
-            sign(-this.rotation.x) * Controls.restoreMinAngle;
-          this.rotation.x += rx;
+            -this.povCoords.theta * deltaTime * Controls.restoreSpeed +
+            sign(-this.povCoords.theta) * Controls.restoreMinAngle;
+          this.povCoords.theta += rx;
         }
       }
 
-      if (this.rotation.y !== this.rotY) {
-        const ry = this.rotY - this.rotation.y;
-
-        if (abs(ry) < Controls.restoreMinAngle) {
-          this.rotation.y = this.rotY;
+      if (this.povCoords.phi !== 0) {
+        if (abs(this.povCoords.phi) < Controls.restoreMinAngle) {
+          this.povCoords.phi = 0;
         } else {
           const dr =
-            ry * deltaTime * Controls.restoreSpeed +
-            sign(ry) * Controls.restoreMinAngle;
-          this.rotation.y += dr;
+            this.povCoords.phi * deltaTime * Controls.restoreSpeed +
+            sign(this.povCoords.phi) * Controls.restoreMinAngle;
+          this.povCoords.phi -= dr;
         }
 
-        this.povIndicator.position.x = (-this.viewHalfX * ry) / PI;
+        let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
+        posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+        this.povIndicator.position.x = posX;
       }
     }
+
+    this.player.setPovCoords(this.povCoords);
 
     this.dx = 0;
     this.dy = 0;

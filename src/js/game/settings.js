@@ -6,13 +6,22 @@ export const ResizeDelayTime = 200;
 export const StepsPerFrame = 3;
 
 export const PlayerSettings = {
-  height: 24,
-  radius: 8,
+  height: 30,
+  radius: 5,
   Position: {
     x: 0,
     y: 300,
     z: 100,
   },
+
+  speed: 6, // 9
+  rotateSpeed: 6,
+  sprint: 2.5, // 2.8
+  urgencyMove: 6, // 7
+  urgencyTurn: 9, // 7
+  airSpeed: 3,
+  jumpPower: 15,
+  lookSpeed: 2, // 20
 };
 
 export const Scene = {
@@ -20,14 +29,14 @@ export const Scene = {
   Fog: {
     color: 0x000000,
     near: 30,
-    far: 1000,
+    far: 1600,
   },
 };
 export const Camera = {
   FOV: 70,
   Aspect: window.innerWidth / window.innerHeight,
   near: PlayerSettings.radius / 2,
-  far: 1000,
+  far: 2000, // メートル換算470m
   order: 'YXZ',
 };
 
@@ -79,14 +88,14 @@ export const Grid = {
   color: 0x406080,
   size: 10,
   Spacing: {
-    width: 70,
-    height: 70,
-    depth: 70,
+    width: 80,
+    height: 80,
+    depth: 80,
   },
   Segments: {
-    width: 40, // dev 20, prod 40
-    height: 40, // dev 20, prod 40
-    depth: 40, // dev 20, prod 40
+    width: 20, // dev 20, prod 40
+    height: 20, // dev 20, prod 40
+    depth: 20, // dev 20, prod 40
   },
 };
 
@@ -104,16 +113,16 @@ export const Ground = {
 };
 
 export const Controls = {
-  speed: 6, // 9
-  sprint: 2.8,
-  urgencyMove: 5.5, // 7
-  urgencyTurn: 7,
+  speed: 3, // 9
+  sprint: 2.5, // 2.8
+  urgencyMove: 6, // 7
+  urgencyTurn: 9, // 7
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 6,
   jumpPower: 15,
-  lookSpeed: 20,
+  lookSpeed: 2, // 20
 
   idleTime: 0.3,
   restoreSpeed: 1.2,
@@ -127,6 +136,8 @@ export const Controls = {
 
 export const World = {
   gravity: 6,
+  resistance: 10,
+  airResistance: 2,
 };
 
 export const Screen = {
@@ -134,4 +145,16 @@ export const Screen = {
   sightPovColor: 0x5aff19,
   sightSize: 48,
   sightPovSize: 48,
+};
+
+export const AmmoSettings = {
+  color: 0xff0000,
+  wireColor: 0x332000,
+  pointColor: 0xa3d8f6,
+  pointSize: 10,
+  radius: 5,
+  numAmmo: 2, // 100
+  lifetime: 5000,
+  speed: 1600,
+  rotateSpeed: PI * 2 * (4 / 360),
 };
