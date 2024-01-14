@@ -14,8 +14,12 @@ const degToRadCoef = PI / 180;
 const lerp = (x, y, p) => x + (y - x) * p;
 
 const sightColor = {
-  front: new Color(Screen.sightColor),
+  front: new Color(Screen.normalColor),
   pov: new Color(Screen.sightPovColor),
+};
+const indicatorColor = {
+  normal: new Color(Screen.normalColor),
+  beyondFov: new Color(Screen.warnColor),
 };
 
 class FirstPersonControls extends Publisher {
@@ -183,7 +187,7 @@ class FirstPersonControls extends Publisher {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    //this.lock();
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -687,7 +691,18 @@ class FirstPersonControls extends Publisher {
       // this.povIndicator.position.x =
       // (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
       let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
-      posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+      //posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+
+      if (posX < -this.viewHalfX) {
+        posX = -this.viewHalfX;
+        this.povIndicator.material.color = indicatorColor.beyondFov;
+      } else if (posX > this.viewHalfX) {
+        posX = this.viewHalfX;
+        this.povIndicator.material.color = indicatorColor.beyondFov;
+      } else if (this.povIndicator.material.color !== indicatorColor.normal) {
+        this.povIndicator.material.color = indicatorColor.normal;
+      }
+
       this.povIndicator.position.x = posX;
     } else if (!this.povLock) {
       if (this.povCoords.theta === 0 && this.povCoords.phi === 0) {
@@ -721,8 +736,13 @@ class FirstPersonControls extends Publisher {
           this.povCoords.phi -= dr;
         }
 
+
+        if (this.povIndicator.material.color !== indicatorColor.normal) {
+          this.povIndicator.material.color = indicatorColor.normal;
+        }
+
         let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
-        posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+        /*posX = max(-this.viewHalfX, min(this.viewHalfX, posX));*/
         this.povIndicator.position.x = posX;
       }
     }

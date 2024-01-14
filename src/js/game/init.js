@@ -16,7 +16,7 @@ import {
   PlayerSettings,
   ResizeDelayTime,
 } from './settings';
-import { createGrid } from './grid';
+import { createGrid, createFineGrid } from './grid';
 import { createGround } from './ground';
 
 import Ammo from './ammo';
@@ -75,7 +75,9 @@ const init = () => {
   container.appendChild(renderer.domElement);
 
   const grid = createGrid();
+  //const fineGrid = createFineGrid();
   scene.field.add(grid);
+  //scene.field.add(fineGrid);
 
   const ground = createGround();
   scene.field.add(ground);

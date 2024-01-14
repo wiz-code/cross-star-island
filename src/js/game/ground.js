@@ -95,8 +95,10 @@ const generateTexture = (data, width, height) => {
 
 const createStone = (size = 1, detail = 0) => {
   const geom = new THREE.OctahedronGeometry(size, detail);
+  geom.scale(0.2, 1, 0.2);
 
   const pointsGeom = new THREE.OctahedronGeometry(size + 4, detail);
+  pointsGeom.scale(0.26, 1, 0.26);
   const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
   const bufferGeom = new THREE.BufferGeometry();
@@ -321,7 +323,7 @@ export const createGround = () => {
 
   geom.stones.forEach((ms) => {
     ms.rotation.y = PI / 10;
-    ms.position.set(80, 50, -300);
+    ms.position.set(80, 100, -300);
     group.ground.add(ms);
   });
 

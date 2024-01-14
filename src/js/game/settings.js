@@ -93,17 +93,21 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 40, // dev 20, prod 40
-    height: 40, // dev 20, prod 40
-    depth: 40, // dev 20, prod 40
+    width: 20, // dev 20, prod 40
+    height: 20, // dev 20, prod 40
+    depth: 20, // dev 20, prod 40
   },
+};
+
+export const Entity = {
+  //
 };
 
 export const Ground = {
   Object: {
     color: 0x1955a6,
     size: 5,
-    pointsColor: 0xa3d8f6,
+    pointsColor: 0xdc3545,//0xa3d8f6,
   },
   heightCoef: 6,
   color: 0x4d4136,
@@ -141,8 +145,9 @@ export const World = {
 };
 
 export const Screen = {
-  sightColor: 0xffffff,
+  normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
+  warnColor: 0xffc107,
   sightSize: 48,
   sightPovSize: 48,
 };
