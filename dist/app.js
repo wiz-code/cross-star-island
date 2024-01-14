@@ -9203,9 +9203,18 @@ function App() {
   console.log('App::rendered');
   const [objects, setObjects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [rendering, setRendering] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [started, setStarted] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const [isFullscreen, setIsFullscreen] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const data = (0,_game_init__WEBPACK_IMPORTED_MODULE_1__["default"])();
     setObjects(data);
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement != null);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+    };
   }, []);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (objects != null) {
@@ -9213,12 +9222,24 @@ function App() {
       setRendering(loop);
     }
   }, [objects]);
-  const started = rendering != null && rendering.isActive();
-  const start = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+  const togglePlay = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     if (rendering != null) {
-      rendering.start();
+      if (!started) {
+        rendering.start();
+        setStarted(true);
+      } else {
+        rendering.stop();
+        setStarted(false);
+      }
     }
-  }, [rendering]);
+  }, [rendering, started]);
+  const toggleFullScreen = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
+    if (document.fullscreenElement == null) {
+      document.documentElement.requestFullscreen();
+    } else if (typeof document.exitFullscreen == 'function') {
+      document.exitFullscreen();
+    }
+  }, [document.fullscreenElement]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_5__["default"], {
     theme: theme
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
@@ -9228,13 +9249,19 @@ function App() {
     }
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     sx: {
+      display: 'flex',
+      gap: theme.spacing(1),
       position: 'absolute',
-      right: 0
+      top: theme.spacing(2),
+      right: theme.spacing(2)
     }
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
     variant: "contained",
-    onClick: start
-  }, started ? '停止する' : '開始する'))));
+    onClick: togglePlay
+  }, started ? '停止する' : '開始する'), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
+    variant: "contained",
+    onClick: toggleFullScreen
+  }, !isFullscreen ? '全画面にする' : '全画面を解除'))));
 }
 App.propTypes = {
   //
@@ -9326,7 +9353,6 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         const r = a1.collider.radius + a2.collider.radius;
         const r2 = r * r;
         if (d2 < r2) {
-          console.log(1);
           const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
           const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
           const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
@@ -9358,7 +9384,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.collisions();
     for (let i = 0; i < len; i += 1) {
       const ammo = this.list[i];
-      ammo.mesh.rotation.z += _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.rotateSpeed;
+      ammo.mesh.rotation.z -= deltaTime * _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.rotateSpeed;
       ammo.mesh.position.copy(ammo.collider.center);
     }
   }
@@ -9422,8 +9448,10 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     event.preventDefault();
   }
   #keys = new Set();
+  #pointers = new Set();
   #actions = new Set();
   #states = new Set();
+  #count = 0;
   constructor(screen, camera, player, domElement) {
     super();
     this.screen = screen;
@@ -9436,7 +9464,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     this.screen.add(this.povIndicator);
 
     // API
-
     this.enabled = true;
     this.activeLook = true;
     this.povLock = false;
@@ -9517,24 +9544,36 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     ///////////
     this.onGround = bool;
   }
+  dispatchAction(button) {
+    if (button === 0) {
+      this.player.fire();
+    }
+    if (button === 2) {
+      this.povLock = true;
+    }
+  }
   onPointerMove(event) {
+    if (this.#pointers.has(_data__WEBPACK_IMPORTED_MODULE_1__.Pointers.right)) {
+      if (event.button === _data__WEBPACK_IMPORTED_MODULE_1__.Pointers.left) {
+        if (this.#count % 2 === 0) {
+          this.dispatchAction(event.button);
+        }
+        this.#count += 1;
+      }
+    }
     this.moved = true;
     this.dx = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementX, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
     this.dy = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementY, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
   }
   onPointerDown(event) {
-    // this.lock();
-
+    this.#pointers.add(event.button);
+    this.lock();
     if (this.activeLook) {
-      if (event.button === 0) {
-        this.player.fire();
-      }
-      if (event.button === 2) {
-        this.povLock = true;
-      }
+      this.dispatchAction(event.button);
     }
   }
   onPointerUp(event) {
+    this.#pointers.delete(event.button);
     if (this.activeLook) {
       if (event.button === 0) {
         //
@@ -9576,6 +9615,11 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       case 'KeyE':
         {
           this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e);
+          break;
+        }
+      case 'KeyC':
+        {
+          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.c);
           break;
         }
       default:
@@ -9624,6 +9668,11 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e);
           break;
         }
+      case 'KeyC':
+        {
+          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.c);
+          break;
+        }
       default:
         {
           if (!event.shiftkey) {
@@ -9661,59 +9710,142 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   input() {
     // 入力操作の処理
+
+    // update()で一度だけアクションを発動する
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.sp)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
+    }
+
     // 緊急回避中とスタン中はアクションを更新しない
-    if (!this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency) && !this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning)) {
+    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency) || this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning)) {
+      return;
+    }
+
+    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
+    // ジャンプ中は緊急行動のコマンド受け付けは停止
+    if (this.player.onGround && this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.c)) {
+      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
+      if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
+      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft);
+      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward);
+      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight);
+      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft);
+      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
+      } else {
+        // 方向キーが押されてない場合はモードを解除
+        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
+      }
+      return;
+    }
+
+    /*
+    if (
+      !this.#states.has(States.urgency) &&
+      !this.#states.has(States.stunning)
+    ) {
       this.#actions.clear();
-      if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.alt)) {
-        this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-        if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
-        } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft);
-        } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward);
-        } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight);
-        } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft);
-        } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
-          this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
+       if (this.#keys.has(Keys.c)) {
+        this.#states.add(States.urgency);
+         if (this.#keys.has(Keys.w)) {
+          this.#actions.add(Actions.quickMoveForward);
+        } else if (this.#keys.has(Keys.a)) {
+          this.#actions.add(Actions.quickTurnLeft);
+        } else if (this.#keys.has(Keys.s)) {
+          this.#actions.add(Actions.quickMoveBackward);
+        } else if (this.#keys.has(Keys.d)) {
+          this.#actions.add(Actions.quickTurnRight);
+        } else if (this.#keys.has(Keys.q)) {
+          this.#actions.add(Actions.quickMoveLeft);
+        } else if (this.#keys.has(Keys.e)) {
+          this.#actions.add(Actions.quickMoveRight);
         } else {
           // 方向キーが押されてない場合はモードを解除
-          this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
+          this.#states.delete(States.urgency);
         }
-        return;
+         return;
       }
     } else {
       return;
-    }
-    this.#actions.clear();
+    }*/
 
-    // update()で一度だけアクションを発動する
-    if (this.player.onGround && this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.sp)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
-    }
     if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.shift)) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
     } else {
       this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
     }
+
+    // 前進と後退
     if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
     } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
     }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
+    }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
+    }
+
+    // 左右回転
     if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
-    }
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
     }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
+    }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
+    }
+
+    // 左右平行移動
     if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
     } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
     }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
+    }
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
+    }
+
+    //////////////////
+    /*this.#actions.clear();
+     // update()で一度だけアクションを発動する
+    if (this.#keys.has(Keys.sp)) {
+      this.#actions.add(Actions.jump);
+    }
+     if (this.#keys.has(Keys.shift)) {
+      this.#states.add(States.sprint);
+    } else {
+      this.#states.delete(States.sprint);
+    }
+     if (this.#keys.has(Keys.w) && !this.#keys.has(Keys.s)) {
+      this.#actions.add(Actions.moveForward);
+    } else if (this.#keys.has(Keys.s) && !this.#keys.has(Keys.w)) {
+      this.#actions.add(Actions.moveBackward);
+    }
+     if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+      this.#actions.add(Actions.rotateLeft);
+    }
+     if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+      this.#actions.add(Actions.rotateRight);
+    }
+     if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+      this.#actions.add(Actions.moveLeft);
+    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+      this.#actions.add(Actions.moveRight);
+    }*/
   }
   update(deltaTime) {
     if (this.moved) {
@@ -9739,37 +9871,19 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency) && this.urgencyRemainingTime === 0 && this.player.onGround) {
       this.urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyDuration;
     }
+    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
+      this.player.jump(deltaTime);
+    }
     if (this.urgencyRemainingTime > 0) {
       this.urgencyRemainingTime -= deltaTime;
       if (this.urgencyRemainingTime <= 0) {
+        this.#actions.clear();
         this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
         this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning);
         this.urgencyRemainingTime = 0;
         this.stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.stunningDuration;
       }
-
-      /*if (this.player.onGround) {
-        let speedDelta = deltaTime * Controls.speed;
-         if (this.#actions.has(Actions.quickMoveForward)) {
-          //speedDelta *= Controls.urgencyMove;
-          this.moveForward(speedDelta, States.urgency);
-        } else if (this.#actions.has(Actions.quickMoveBackward)) {
-          //speedDelta *= Controls.urgencyMove;
-          this.moveForward(-speedDelta);
-        } else if (this.#actions.has(Actions.quickTurnLeft)) {
-          speedDelta *= Controls.urgencyTurn;
-          this.rotate(speedDelta);
-        } else if (this.#actions.has(Actions.quickTurnRight)) {
-          speedDelta *= Controls.urgencyTurn;
-          this.rotate(-speedDelta);
-        } else if (this.#actions.has(Actions.quickMoveLeft)) {
-          speedDelta *= Controls.urgencyMove;
-          this.moveSide(-speedDelta);
-        } else if (this.#actions.has(Actions.quickMoveRight)) {
-          speedDelta *= Controls.urgencyMove;
-          this.moveSide(speedDelta);
-        }
-      }*/
       if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward)) {
         this.player.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
       } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward)) {
@@ -9840,11 +9954,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       this.#actions.delete(Actions.jump);
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
     }*/
-    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
-      //this.velocity.y = Controls.jumpPower * deltaTime * 50;
-      this.player.jump(deltaTime);
-    }
 
     /*const resistance = this.onGround
       ? Controls.resistance
@@ -9939,6 +10048,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Actions: function() { return /* binding */ Actions; },
 /* harmony export */   Keys: function() { return /* binding */ Keys; },
+/* harmony export */   Pointers: function() { return /* binding */ Pointers; },
 /* harmony export */   States: function() { return /* binding */ States; }
 /* harmony export */ });
 const Keys = {
@@ -9948,9 +10058,19 @@ const Keys = {
   d: 3,
   q: 4,
   e: 5,
-  sp: 10,
-  shift: 11,
-  alt: 12
+  r: 6,
+  f: 7,
+  z: 8,
+  x: 9,
+  c: 10,
+  sp: 20,
+  shift: 21,
+  alt: 22
+};
+const Pointers = {
+  left: 0,
+  center: 1,
+  right: 2
 };
 const Actions = {
   moveForward: 0,
@@ -10508,7 +10628,7 @@ class Loop {
   }
   stop() {
     if (this.id !== 0) {
-      clearTimeout(this.id);
+      cancelAnimationFrame(this.id);
       this.id = 0;
     }
   }
@@ -10641,9 +10761,9 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       const d2 = point.distanceToSquared(ammoCenter);
       if (d2 < r2) {
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
-        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(velocity));
+        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity));
-        velocity.add(v2).sub(v1);
+        this.velocity.add(v2).sub(v1);
         ammo.velocity.add(v1).sub(v2);
         const d = (r - sqrt(d2)) / 2;
         ammoCenter.addScaledVector(normal, -d);
@@ -10814,10 +10934,10 @@ const PlayerSettings = {
   },
   speed: 6,
   // 9
-  rotateSpeed: 6,
+  rotateSpeed: 8,
   sprint: 2.5,
   // 2.8
-  urgencyMove: 6,
+  urgencyMove: 10,
   // 7
   urgencyTurn: 9,
   // 7
@@ -10893,11 +11013,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 20,
+    width: 40,
     // dev 20, prod 40
-    height: 20,
+    height: 40,
     // dev 20, prod 40
-    depth: 20 // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Ground = {
@@ -10915,27 +11035,22 @@ const Ground = {
 };
 const Controls = {
   speed: 3,
-  // 9
   sprint: 2.5,
-  // 2.8
-  urgencyMove: 6,
-  // 7
+  urgencyMove: 7,
   urgencyTurn: 9,
-  // 7
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 6,
   jumpPower: 15,
   lookSpeed: 2,
-  // 20
-
   idleTime: 0.3,
-  restoreSpeed: 1.2,
+  restoreSpeed: 3,
+  //1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
-  stunningDuration: 0.5 // 0.4
+  stunningDuration: 0.4
 };
 const World = {
   gravity: 6,
@@ -10958,7 +11073,7 @@ const AmmoSettings = {
   // 100
   lifetime: 5000,
   speed: 1600,
-  rotateSpeed: PI * 2 * (4 / 360)
+  rotateSpeed: 8
 };
 
 /***/ }),
