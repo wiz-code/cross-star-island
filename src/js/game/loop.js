@@ -33,7 +33,7 @@ class Loop {
 
   stop() {
     if (this.id !== 0) {
-      clearTimeout(this.id);
+      cancelAnimationFrame(this.id);
       this.id = 0;
     }
   }

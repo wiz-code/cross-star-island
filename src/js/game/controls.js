@@ -1,7 +1,7 @@
 import { MathUtils, Spherical, Vector3, Euler, Quaternion, Color } from 'three';
 
 import { Camera, World, Controls, Screen } from './settings';
-import { Keys, Actions, States } from './data';
+import { Keys, Pointers, Actions, States } from './data';
 import Publisher from './publisher';
 import { createSight, createPovIndicator } from './screen';
 
@@ -31,9 +31,13 @@ class FirstPersonControls extends Publisher {
 
   #keys = new Set();
 
+  #pointers = new Set();
+
   #actions = new Set();
 
   #states = new Set();
+
+  #count = 0;
 
   constructor(screen, camera, player, domElement) {
     super();
@@ -50,7 +54,6 @@ class FirstPersonControls extends Publisher {
     this.screen.add(this.povIndicator);
 
     // API
-
     this.enabled = true;
 
     this.activeLook = true;
@@ -146,7 +149,27 @@ class FirstPersonControls extends Publisher {
     this.onGround = bool;
   }
 
+  dispatchAction(button) {
+    if (button === 0) {
+      this.player.fire();
+    }
+
+    if (button === 2) {
+      this.povLock = true;
+    }
+  }
+
   onPointerMove(event) {
+    if (this.#pointers.has(Pointers.right)) {
+      if (event.button === Pointers.left) {
+        if (this.#count % 2 === 0) {
+          this.dispatchAction(event.button);
+        }
+
+        this.#count += 1;
+      }
+    }
+
     this.moved = true;
     this.dx = max(
       -Controls.pointerMaxMove,
@@ -159,20 +182,17 @@ class FirstPersonControls extends Publisher {
   }
 
   onPointerDown(event) {
-    // this.lock();
+    this.#pointers.add(event.button);
+    this.lock();
 
     if (this.activeLook) {
-      if (event.button === 0) {
-        this.player.fire();
-      }
-
-      if (event.button === 2) {
-        this.povLock = true;
-      }
+      this.dispatchAction(event.button);
     }
   }
 
   onPointerUp(event) {
+    this.#pointers.delete(event.button);
+
     if (this.activeLook) {
       if (event.button === 0) {
         //
@@ -220,6 +240,11 @@ class FirstPersonControls extends Publisher {
 
       case 'KeyE': {
         this.#keys.add(Keys.e);
+        break;
+      }
+
+      case 'KeyC': {
+        this.#keys.add(Keys.c);
         break;
       }
 
@@ -275,6 +300,11 @@ class FirstPersonControls extends Publisher {
         break;
       }
 
+      case 'KeyC': {
+        this.#keys.delete(Keys.c);
+        break;
+      }
+
       default: {
         if (!event.shiftkey) {
           this.#keys.delete(Keys.shift);
@@ -322,14 +352,53 @@ class FirstPersonControls extends Publisher {
 
   input() {
     // 入力操作の処理
+
+    // update()で一度だけアクションを発動する
+    if (this.#keys.has(Keys.sp)) {
+      this.#actions.add(Actions.jump);
+    }
+
     // 緊急回避中とスタン中はアクションを更新しない
+    if (
+      this.#states.has(States.urgency) ||
+      this.#states.has(States.stunning)
+    ) {
+      return;
+    }
+
+    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
+    // ジャンプ中は緊急行動のコマンド受け付けは停止
+    if (this.player.onGround && this.#keys.has(Keys.c)) {
+      this.#states.add(States.urgency);
+
+      if (this.#keys.has(Keys.w)) {
+        this.#actions.add(Actions.quickMoveForward);
+      } else if (this.#keys.has(Keys.a)) {
+        this.#actions.add(Actions.quickTurnLeft);
+      } else if (this.#keys.has(Keys.s)) {
+        this.#actions.add(Actions.quickMoveBackward);
+      } else if (this.#keys.has(Keys.d)) {
+        this.#actions.add(Actions.quickTurnRight);
+      } else if (this.#keys.has(Keys.q)) {
+        this.#actions.add(Actions.quickMoveLeft);
+      } else if (this.#keys.has(Keys.e)) {
+        this.#actions.add(Actions.quickMoveRight);
+      } else {
+        // 方向キーが押されてない場合はモードを解除
+        this.#states.delete(States.urgency);
+      }
+
+      return;
+    }
+
+    /*
     if (
       !this.#states.has(States.urgency) &&
       !this.#states.has(States.stunning)
     ) {
       this.#actions.clear();
 
-      if (this.#keys.has(Keys.alt)) {
+      if (this.#keys.has(Keys.c)) {
         this.#states.add(States.urgency);
 
         if (this.#keys.has(Keys.w)) {
@@ -353,12 +422,64 @@ class FirstPersonControls extends Publisher {
       }
     } else {
       return;
+    }*/
+
+    if (this.#keys.has(Keys.shift)) {
+      this.#states.add(States.sprint);
+    } else {
+      this.#states.delete(States.sprint);
     }
 
-    this.#actions.clear();
+    // 前進と後退
+    if (this.#keys.has(Keys.w) && !this.#keys.has(Keys.s)) {
+      this.#actions.add(Actions.moveForward);
+    } else if (this.#keys.has(Keys.s) && !this.#keys.has(Keys.w)) {
+      this.#actions.add(Actions.moveBackward);
+    }
+
+    if (!this.#keys.has(Keys.w)) {
+      this.#actions.delete(Actions.moveForward);
+    }
+
+    if (!this.#keys.has(Keys.s)) {
+      this.#actions.delete(Actions.moveBackward);
+    }
+
+    // 左右回転
+    if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+      this.#actions.add(Actions.rotateLeft);
+    } else if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+      this.#actions.add(Actions.rotateRight);
+    }
+
+    if (!this.#keys.has(Keys.a)) {
+      this.#actions.delete(Actions.rotateLeft);
+    }
+
+    if (!this.#keys.has(Keys.d)) {
+      this.#actions.delete(Actions.rotateRight);
+    }
+
+    // 左右平行移動
+    if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+      this.#actions.add(Actions.moveLeft);
+    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+      this.#actions.add(Actions.moveRight);
+    }
+
+    if (!this.#keys.has(Keys.q)) {
+      this.#actions.delete(Actions.moveLeft);
+    }
+
+    if (!this.#keys.has(Keys.e)) {
+      this.#actions.delete(Actions.moveRight);
+    }
+
+    //////////////////
+    /*this.#actions.clear();
 
     // update()で一度だけアクションを発動する
-    if (this.player.onGround && this.#keys.has(Keys.sp)) {
+    if (this.#keys.has(Keys.sp)) {
       this.#actions.add(Actions.jump);
     }
 
@@ -386,7 +507,7 @@ class FirstPersonControls extends Publisher {
       this.#actions.add(Actions.moveLeft);
     } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
       this.#actions.add(Actions.moveRight);
-    }
+    }*/
   }
 
   update(deltaTime) {
@@ -421,39 +542,22 @@ class FirstPersonControls extends Publisher {
       this.urgencyRemainingTime = Controls.urgencyDuration;
     }
 
+    if (this.#actions.has(Actions.jump)) {
+      this.#actions.delete(Actions.jump);
+      this.player.jump(deltaTime);
+    }
+
     if (this.urgencyRemainingTime > 0) {
       this.urgencyRemainingTime -= deltaTime;
 
       if (this.urgencyRemainingTime <= 0) {
+        this.#actions.clear();
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);
         this.urgencyRemainingTime = 0;
         this.stunningRemainingTime = Controls.stunningDuration;
       }
 
-      /*if (this.player.onGround) {
-        let speedDelta = deltaTime * Controls.speed;
-
-        if (this.#actions.has(Actions.quickMoveForward)) {
-          //speedDelta *= Controls.urgencyMove;
-          this.moveForward(speedDelta, States.urgency);
-        } else if (this.#actions.has(Actions.quickMoveBackward)) {
-          //speedDelta *= Controls.urgencyMove;
-          this.moveForward(-speedDelta);
-        } else if (this.#actions.has(Actions.quickTurnLeft)) {
-          speedDelta *= Controls.urgencyTurn;
-          this.rotate(speedDelta);
-        } else if (this.#actions.has(Actions.quickTurnRight)) {
-          speedDelta *= Controls.urgencyTurn;
-          this.rotate(-speedDelta);
-        } else if (this.#actions.has(Actions.quickMoveLeft)) {
-          speedDelta *= Controls.urgencyMove;
-          this.moveSide(-speedDelta);
-        } else if (this.#actions.has(Actions.quickMoveRight)) {
-          speedDelta *= Controls.urgencyMove;
-          this.moveSide(speedDelta);
-        }
-      }*/
       if (this.#actions.has(Actions.quickMoveForward)) {
         this.player.moveForward(deltaTime, States.urgency);
       } else if (this.#actions.has(Actions.quickMoveBackward)) {
@@ -529,11 +633,7 @@ class FirstPersonControls extends Publisher {
       this.#actions.delete(Actions.jump);
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
     }*/
-    if (this.#actions.has(Actions.jump)) {
-      this.#actions.delete(Actions.jump);
-      //this.velocity.y = Controls.jumpPower * deltaTime * 50;
-      this.player.jump(deltaTime);
-    }
+
 
     /*const resistance = this.onGround
       ? Controls.resistance

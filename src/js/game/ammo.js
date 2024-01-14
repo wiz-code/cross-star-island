@@ -104,7 +104,7 @@ class Ammo extends Publisher {
         const r = a1.collider.radius + a2.collider.radius;
         const r2 = r * r;
 
-        if (d2 < r2) {console.log(1)
+        if (d2 < r2) {
           const normal = this.#vecA
             .subVectors(a1.collider.center, a2.collider.center)
             .normalize();
@@ -154,7 +154,7 @@ class Ammo extends Publisher {
 
     for (let i = 0; i < len; i += 1) {
       const ammo = this.list[i];
-      ammo.mesh.rotation.z += AmmoSettings.rotateSpeed;
+      ammo.mesh.rotation.z -= deltaTime * AmmoSettings.rotateSpeed;
       ammo.mesh.position.copy(ammo.collider.center);
     }
   }

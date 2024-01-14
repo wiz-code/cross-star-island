@@ -6,9 +6,21 @@ export const Keys = {
   q: 4,
   e: 5,
 
-  sp: 10,
-  shift: 11,
-  alt: 12,
+  r: 6,
+  f: 7,
+  z: 8,
+  x: 9,
+  c: 10,
+
+  sp: 20,
+  shift: 21,
+  alt: 22,
+};
+
+export const Pointers = {
+  left: 0,
+  center: 1,
+  right: 2,
 };
 
 export const Actions = {

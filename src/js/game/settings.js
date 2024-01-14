@@ -15,9 +15,9 @@ export const PlayerSettings = {
   },
 
   speed: 6, // 9
-  rotateSpeed: 6,
+  rotateSpeed: 8,
   sprint: 2.5, // 2.8
-  urgencyMove: 6, // 7
+  urgencyMove: 10, // 7
   urgencyTurn: 9, // 7
   airSpeed: 3,
   jumpPower: 15,
@@ -93,9 +93,9 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 20, // dev 20, prod 40
-    height: 20, // dev 20, prod 40
-    depth: 20, // dev 20, prod 40
+    width: 40, // dev 20, prod 40
+    height: 40, // dev 20, prod 40
+    depth: 40, // dev 20, prod 40
   },
 };
 
@@ -113,25 +113,25 @@ export const Ground = {
 };
 
 export const Controls = {
-  speed: 3, // 9
-  sprint: 2.5, // 2.8
-  urgencyMove: 6, // 7
-  urgencyTurn: 9, // 7
+  speed: 3,
+  sprint: 2.5,
+  urgencyMove: 7,
+  urgencyTurn: 9,
   airSpeed: 3,
   resistance: 10,
   airResistance: 2,
   rotateSpeed: 6,
   jumpPower: 15,
-  lookSpeed: 2, // 20
+  lookSpeed: 2,
 
   idleTime: 0.3,
-  restoreSpeed: 1.2,
+  restoreSpeed: 3,//1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 80,
 
   urgencyDuration: 0.2,
-  stunningDuration: 0.5, // 0.4
+  stunningDuration: 0.4,
 };
 
 export const World = {
@@ -156,5 +156,5 @@ export const AmmoSettings = {
   numAmmo: 2, // 100
   lifetime: 5000,
   speed: 1600,
-  rotateSpeed: PI * 2 * (4 / 360),
+  rotateSpeed: 8,
 };

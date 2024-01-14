@@ -151,12 +151,12 @@ class Player extends Publisher {
 
       if (d2 < r2) {
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
-        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(velocity));
+        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC
           .copy(normal)
           .multiplyScalar(normal.dot(ammo.velocity));
 
-        velocity.add(v2).sub(v1);
+        this.velocity.add(v2).sub(v1);
         ammo.velocity.add(v1).sub(v2);
 
         const d = (r - sqrt(d2)) / 2;

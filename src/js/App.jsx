@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 // import propTypes from 'prop-types';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -108,10 +108,21 @@ function App() {
   console.log('App::rendered');
   const [objects, setObjects] = useState(null);
   const [rendering, setRendering] = useState(null);
+  const [started, setStarted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const data = init();
     setObjects(data);
+
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement != null);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -121,13 +132,25 @@ function App() {
     }
   }, [objects]);
 
-  const started = rendering != null && rendering.isActive();
-
-  const start = useCallback(() => {
+  const togglePlay = useCallback(() => {
     if (rendering != null) {
-      rendering.start();
+      if (!started) {
+        rendering.start();
+        setStarted(true);
+      } else {
+        rendering.stop();
+        setStarted(false);
+      }
     }
-  }, [rendering]);
+  }, [rendering, started]);
+
+  const toggleFullScreen = useCallback(() => {
+    if (document.fullscreenElement == null) {
+      document.documentElement.requestFullscreen();
+    } else if (typeof document.exitFullscreen == 'function') {
+      document.exitFullscreen();
+    }
+  }, [document.fullscreenElement]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -140,9 +163,12 @@ function App() {
         </Grid>
       </Container>} */}
       <Box id="container" sx={{ position: 'relative' }}>
-        <Box sx={{ position: 'absolute', right: 0 }}>
-          <Button variant="contained" onClick={start}>
+        <Box sx={{ display: 'flex', gap: theme.spacing(1), position: 'absolute', top: theme.spacing(2), right: theme.spacing(2) }}>
+          <Button variant="contained" onClick={togglePlay}>
             {started ? '停止する' : '開始する'}
+          </Button>
+          <Button variant="contained" onClick={toggleFullScreen}>
+            {!isFullscreen ? '全画面にする' : '全画面を解除'}
           </Button>
         </Box>
       </Box>
