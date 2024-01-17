@@ -20,7 +20,7 @@ export const PlayerSettings = {
   urgencyMove: 10, // 7
   urgencyTurn: 9, // 7
   airSpeed: 3,
-  jumpPower: 15,
+  jumpPower: 12,
   lookSpeed: 2, // 20
 };
 

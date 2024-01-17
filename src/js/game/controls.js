@@ -11,6 +11,8 @@ const halfPI = PI / 2;
 const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
 
+const InputDuration = 200;
+
 const lerp = (x, y, p) => x + (y - x) * p;
 
 const sightColor = {
@@ -42,6 +44,12 @@ class FirstPersonControls extends Publisher {
   #states = new Set();
 
   #count = 0;
+
+  #lastKeyUp = '';
+
+  #keyUpTime = 0;
+
+  #mashed = false;
 
   constructor(screen, camera, player, domElement) {
     super();
@@ -262,6 +270,18 @@ class FirstPersonControls extends Publisher {
         }
       }
     }
+
+    const now = performance.now();
+
+    if (
+      !this.#mashed &&
+      now - this.#keyUpTime <= InputDuration &&
+      event.code === this.#lastKeyUp
+    ) {
+      this.#mashed = true;
+      this.#lastKeyUp = '';
+      this.#keyUpTime = 0;
+    }
   }
 
   onKeyUp(event) {
@@ -319,6 +339,9 @@ class FirstPersonControls extends Publisher {
         }
       }
     }
+
+    this.#keyUpTime = performance.now();
+    this.#lastKeyUp = event.code;
   }
 
   dispose() {
@@ -372,7 +395,8 @@ class FirstPersonControls extends Publisher {
 
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
-    if (this.player.onGround && this.#keys.has(Keys.c)) {
+    //if (this.player.onGround && this.#keys.has(Keys.c)) {
+    if (this.player.onGround && this.#mashed) {
       this.#states.add(States.urgency);
 
       if (this.#keys.has(Keys.w)) {
@@ -555,6 +579,7 @@ class FirstPersonControls extends Publisher {
       this.urgencyRemainingTime -= deltaTime;
 
       if (this.urgencyRemainingTime <= 0) {
+        this.#mashed = false;
         this.#actions.clear();
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);
