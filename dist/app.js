@@ -9597,33 +9597,33 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w);
+        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW);
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a);
+        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA);
         break;
       case 'ArrowDown':
       case 'KeyS':
-        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s);
+        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS);
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d);
+        this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD);
         break;
       case 'Space':
         {
-          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.sp);
+          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space);
           break;
         }
       case 'KeyQ':
         {
-          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q);
+          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ);
           break;
         }
       case 'KeyE':
         {
-          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e);
+          this.#keys.add(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE);
           break;
         }
       case 'KeyC':
@@ -9644,7 +9644,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     const now = performance.now();
     if (!this.#mashed && now - this.#keyUpTime <= InputDuration && event.code === this.#lastKeyUp) {
       this.#mashed = true;
-      this.#lastKeyUp = '';
       this.#keyUpTime = 0;
     }
   }
@@ -9653,34 +9652,34 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w);
+        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW);
         break;
       case 'ArrowLeft':
       case 'KeyA':
-        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a);
+        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA);
         break;
       case 'ArrowDown':
       case 'KeyS':
         this.moveBackward = false;
-        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s);
+        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS);
         break;
       case 'ArrowRight':
       case 'KeyD':
-        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d);
+        this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD);
         break;
       case 'Space':
         {
-          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.sp);
+          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space);
           break;
         }
       case 'KeyQ':
         {
-          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q);
+          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ);
           break;
         }
       case 'KeyE':
         {
-          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e);
+          this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE);
           break;
         }
       case 'KeyC':
@@ -9698,8 +9697,10 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
-    this.#keyUpTime = performance.now();
-    this.#lastKeyUp = event.code;
+    if (!this.#mashed) {
+      this.#keyUpTime = performance.now();
+      this.#lastKeyUp = event.code;
+    }
   }
   dispose() {
     this.domElement.removeEventListener('contextmenu', this.#contextmenu);
@@ -9729,7 +9730,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     // 入力操作の処理
 
     // update()で一度だけアクションを発動する
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.sp)) {
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
     }
 
@@ -9743,22 +9744,23 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     //if (this.player.onGround && this.#keys.has(Keys.c)) {
     if (this.player.onGround && this.#mashed) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
+      if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
-      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft);
-      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward);
-      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight);
-      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft);
-      } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
-      } else {
-        // 方向キーが押されてない場合はモードを解除
-        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      }
+      } /* else {
+         // 方向キーが押されてない場合はモードを解除
+         this.#states.delete(States.urgency);
+        }*/
+
       return;
     }
 
@@ -9770,17 +9772,17 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       this.#actions.clear();
        if (this.#keys.has(Keys.c)) {
         this.#states.add(States.urgency);
-         if (this.#keys.has(Keys.w)) {
+         if (this.#keys.has(Keys.KeyW)) {
           this.#actions.add(Actions.quickMoveForward);
-        } else if (this.#keys.has(Keys.a)) {
+        } else if (this.#keys.has(Keys.KeyA)) {
           this.#actions.add(Actions.quickTurnLeft);
-        } else if (this.#keys.has(Keys.s)) {
+        } else if (this.#keys.has(Keys.KeyS)) {
           this.#actions.add(Actions.quickMoveBackward);
-        } else if (this.#keys.has(Keys.d)) {
+        } else if (this.#keys.has(Keys.KeyD)) {
           this.#actions.add(Actions.quickTurnRight);
-        } else if (this.#keys.has(Keys.q)) {
+        } else if (this.#keys.has(Keys.KeyQ)) {
           this.#actions.add(Actions.quickMoveLeft);
-        } else if (this.#keys.has(Keys.e)) {
+        } else if (this.#keys.has(Keys.KeyE)) {
           this.#actions.add(Actions.quickMoveRight);
         } else {
           // 方向キーが押されてない場合はモードを解除
@@ -9799,48 +9801,48 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     }
 
     // 前進と後退
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
+    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.s)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
     }
 
     // 左右回転
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.a)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.d)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
     }
 
     // 左右平行移動
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
+    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ)) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.q)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
     }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.e)) {
+    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
     }
 
     //////////////////
     /*this.#actions.clear();
      // update()で一度だけアクションを発動する
-    if (this.#keys.has(Keys.sp)) {
+    if (this.#keys.has(Keys.Space)) {
       this.#actions.add(Actions.jump);
     }
      if (this.#keys.has(Keys.shift)) {
@@ -9848,20 +9850,20 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     } else {
       this.#states.delete(States.sprint);
     }
-     if (this.#keys.has(Keys.w) && !this.#keys.has(Keys.s)) {
+     if (this.#keys.has(Keys.KeyW) && !this.#keys.has(Keys.KeyS)) {
       this.#actions.add(Actions.moveForward);
-    } else if (this.#keys.has(Keys.s) && !this.#keys.has(Keys.w)) {
+    } else if (this.#keys.has(Keys.KeyS) && !this.#keys.has(Keys.KeyW)) {
       this.#actions.add(Actions.moveBackward);
     }
-     if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+     if (this.#keys.has(Keys.KeyA) && !this.#keys.has(Keys.KeyD)) {
       this.#actions.add(Actions.rotateLeft);
     }
-     if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+     if (this.#keys.has(Keys.KeyD) && !this.#keys.has(Keys.KeyA)) {
       this.#actions.add(Actions.rotateRight);
     }
-     if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+     if (this.#keys.has(Keys.KeyQ) && !this.#keys.has(Keys.KeyE)) {
       this.#actions.add(Actions.moveLeft);
-    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+    } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
       this.#actions.add(Actions.moveRight);
     }*/
   }
@@ -10084,20 +10086,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   States: function() { return /* binding */ States; }
 /* harmony export */ });
 const Keys = {
-  w: 0,
-  a: 1,
-  s: 2,
-  d: 3,
-  q: 4,
-  e: 5,
-  r: 6,
-  f: 7,
-  z: 8,
-  x: 9,
-  c: 10,
-  sp: 20,
-  shift: 21,
-  alt: 22
+  KeyW: 0,
+  ArrowUp: 0,
+  KeyA: 1,
+  ArrowLeft: 1,
+  KeyS: 2,
+  ArrowDown: 2,
+  KeyD: 3,
+  ArrowRight: 3,
+  KeyQ: 4,
+  KeyE: 5,
+  KeyR: 6,
+  KeyF: 7,
+  KeyZ: 8,
+  KeyX: 9,
+  KeyC: 10,
+  Space: 11,
+  shift: 20,
+  alt: 21
 };
 const Pointers = {
   left: 0,

@@ -1,20 +1,30 @@
 export const Keys = {
-  w: 0,
-  a: 1,
-  s: 2,
-  d: 3,
-  q: 4,
-  e: 5,
+  KeyW: 0,
+  ArrowUp: 0,
 
-  r: 6,
-  f: 7,
-  z: 8,
-  x: 9,
-  c: 10,
+  KeyA: 1,
+  ArrowLeft: 1,
 
-  sp: 20,
-  shift: 21,
-  alt: 22,
+  KeyS: 2,
+  ArrowDown: 2,
+
+  KeyD: 3,
+  ArrowRight: 3,
+
+  KeyQ: 4,
+  KeyE: 5,
+
+  KeyR: 6,
+  KeyF: 7,
+  KeyZ: 8,
+  KeyX: 9,
+  KeyC: 10,
+
+  Space: 11,
+
+
+  shift: 20,
+  alt: 21,
 };
 
 export const Pointers = {

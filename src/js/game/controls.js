@@ -222,36 +222,36 @@ class FirstPersonControls extends Publisher {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.#keys.add(Keys.w);
+        this.#keys.add(Keys.KeyW);
         break;
 
       case 'ArrowLeft':
       case 'KeyA':
-        this.#keys.add(Keys.a);
+        this.#keys.add(Keys.KeyA);
         break;
 
       case 'ArrowDown':
       case 'KeyS':
-        this.#keys.add(Keys.s);
+        this.#keys.add(Keys.KeyS);
         break;
 
       case 'ArrowRight':
       case 'KeyD':
-        this.#keys.add(Keys.d);
+        this.#keys.add(Keys.KeyD);
         break;
 
       case 'Space': {
-        this.#keys.add(Keys.sp);
+        this.#keys.add(Keys.Space);
         break;
       }
 
       case 'KeyQ': {
-        this.#keys.add(Keys.q);
+        this.#keys.add(Keys.KeyQ);
         break;
       }
 
       case 'KeyE': {
-        this.#keys.add(Keys.e);
+        this.#keys.add(Keys.KeyE);
         break;
       }
 
@@ -279,7 +279,6 @@ class FirstPersonControls extends Publisher {
       event.code === this.#lastKeyUp
     ) {
       this.#mashed = true;
-      this.#lastKeyUp = '';
       this.#keyUpTime = 0;
     }
   }
@@ -290,37 +289,37 @@ class FirstPersonControls extends Publisher {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
-        this.#keys.delete(Keys.w);
+        this.#keys.delete(Keys.KeyW);
         break;
 
       case 'ArrowLeft':
       case 'KeyA':
-        this.#keys.delete(Keys.a);
+        this.#keys.delete(Keys.KeyA);
         break;
 
       case 'ArrowDown':
       case 'KeyS':
         this.moveBackward = false;
-        this.#keys.delete(Keys.s);
+        this.#keys.delete(Keys.KeyS);
         break;
 
       case 'ArrowRight':
       case 'KeyD':
-        this.#keys.delete(Keys.d);
+        this.#keys.delete(Keys.KeyD);
         break;
 
       case 'Space': {
-        this.#keys.delete(Keys.sp);
+        this.#keys.delete(Keys.Space);
         break;
       }
 
       case 'KeyQ': {
-        this.#keys.delete(Keys.q);
+        this.#keys.delete(Keys.KeyQ);
         break;
       }
 
       case 'KeyE': {
-        this.#keys.delete(Keys.e);
+        this.#keys.delete(Keys.KeyE);
         break;
       }
 
@@ -340,8 +339,10 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    this.#keyUpTime = performance.now();
-    this.#lastKeyUp = event.code;
+    if (!this.#mashed) {
+      this.#keyUpTime = performance.now();
+      this.#lastKeyUp = event.code;
+    }
   }
 
   dispose() {
@@ -381,7 +382,7 @@ class FirstPersonControls extends Publisher {
     // 入力操作の処理
 
     // update()で一度だけアクションを発動する
-    if (this.#keys.has(Keys.sp)) {
+    if (this.#keys.has(Keys.Space)) {
       this.#actions.add(Actions.jump);
     }
 
@@ -396,25 +397,28 @@ class FirstPersonControls extends Publisher {
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
     //if (this.player.onGround && this.#keys.has(Keys.c)) {
-    if (this.player.onGround && this.#mashed) {
+    if (
+      this.player.onGround &&
+      this.#mashed
+    ) {
       this.#states.add(States.urgency);
 
-      if (this.#keys.has(Keys.w)) {
+      if (Keys[this.#lastKeyUp] === Keys.KeyW) {
         this.#actions.add(Actions.quickMoveForward);
-      } else if (this.#keys.has(Keys.a)) {
+      } else if (Keys[this.#lastKeyUp] === Keys.KeyA) {
         this.#actions.add(Actions.quickTurnLeft);
-      } else if (this.#keys.has(Keys.s)) {
+      } else if (Keys[this.#lastKeyUp] === Keys.KeyS) {
         this.#actions.add(Actions.quickMoveBackward);
-      } else if (this.#keys.has(Keys.d)) {
+      } else if (Keys[this.#lastKeyUp] === Keys.KeyD) {
         this.#actions.add(Actions.quickTurnRight);
-      } else if (this.#keys.has(Keys.q)) {
+      } else if (Keys[this.#lastKeyUp] === Keys.KeyQ) {
         this.#actions.add(Actions.quickMoveLeft);
-      } else if (this.#keys.has(Keys.e)) {
+      } else if (Keys[this.#lastKeyUp] === Keys.KeyE) {
         this.#actions.add(Actions.quickMoveRight);
-      } else {
+      }/* else {
         // 方向キーが押されてない場合はモードを解除
         this.#states.delete(States.urgency);
-      }
+      }*/
 
       return;
     }
@@ -429,17 +433,17 @@ class FirstPersonControls extends Publisher {
       if (this.#keys.has(Keys.c)) {
         this.#states.add(States.urgency);
 
-        if (this.#keys.has(Keys.w)) {
+        if (this.#keys.has(Keys.KeyW)) {
           this.#actions.add(Actions.quickMoveForward);
-        } else if (this.#keys.has(Keys.a)) {
+        } else if (this.#keys.has(Keys.KeyA)) {
           this.#actions.add(Actions.quickTurnLeft);
-        } else if (this.#keys.has(Keys.s)) {
+        } else if (this.#keys.has(Keys.KeyS)) {
           this.#actions.add(Actions.quickMoveBackward);
-        } else if (this.#keys.has(Keys.d)) {
+        } else if (this.#keys.has(Keys.KeyD)) {
           this.#actions.add(Actions.quickTurnRight);
-        } else if (this.#keys.has(Keys.q)) {
+        } else if (this.#keys.has(Keys.KeyQ)) {
           this.#actions.add(Actions.quickMoveLeft);
-        } else if (this.#keys.has(Keys.e)) {
+        } else if (this.#keys.has(Keys.KeyE)) {
           this.#actions.add(Actions.quickMoveRight);
         } else {
           // 方向キーが押されてない場合はモードを解除
@@ -459,47 +463,47 @@ class FirstPersonControls extends Publisher {
     }
 
     // 前進と後退
-    if (this.#keys.has(Keys.w) && !this.#keys.has(Keys.s)) {
+    if (this.#keys.has(Keys.KeyW) && !this.#keys.has(Keys.KeyS)) {
       this.#actions.add(Actions.moveForward);
-    } else if (this.#keys.has(Keys.s) && !this.#keys.has(Keys.w)) {
+    } else if (this.#keys.has(Keys.KeyS) && !this.#keys.has(Keys.KeyW)) {
       this.#actions.add(Actions.moveBackward);
     }
 
-    if (!this.#keys.has(Keys.w)) {
+    if (!this.#keys.has(Keys.KeyW)) {
       this.#actions.delete(Actions.moveForward);
     }
 
-    if (!this.#keys.has(Keys.s)) {
+    if (!this.#keys.has(Keys.KeyS)) {
       this.#actions.delete(Actions.moveBackward);
     }
 
     // 左右回転
-    if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+    if (this.#keys.has(Keys.KeyA) && !this.#keys.has(Keys.KeyD)) {
       this.#actions.add(Actions.rotateLeft);
-    } else if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+    } else if (this.#keys.has(Keys.KeyD) && !this.#keys.has(Keys.KeyA)) {
       this.#actions.add(Actions.rotateRight);
     }
 
-    if (!this.#keys.has(Keys.a)) {
+    if (!this.#keys.has(Keys.KeyA)) {
       this.#actions.delete(Actions.rotateLeft);
     }
 
-    if (!this.#keys.has(Keys.d)) {
+    if (!this.#keys.has(Keys.KeyD)) {
       this.#actions.delete(Actions.rotateRight);
     }
 
     // 左右平行移動
-    if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+    if (this.#keys.has(Keys.KeyQ) && !this.#keys.has(Keys.KeyE)) {
       this.#actions.add(Actions.moveLeft);
-    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+    } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
       this.#actions.add(Actions.moveRight);
     }
 
-    if (!this.#keys.has(Keys.q)) {
+    if (!this.#keys.has(Keys.KeyQ)) {
       this.#actions.delete(Actions.moveLeft);
     }
 
-    if (!this.#keys.has(Keys.e)) {
+    if (!this.#keys.has(Keys.KeyE)) {
       this.#actions.delete(Actions.moveRight);
     }
 
@@ -507,7 +511,7 @@ class FirstPersonControls extends Publisher {
     /*this.#actions.clear();
 
     // update()で一度だけアクションを発動する
-    if (this.#keys.has(Keys.sp)) {
+    if (this.#keys.has(Keys.Space)) {
       this.#actions.add(Actions.jump);
     }
 
@@ -517,23 +521,23 @@ class FirstPersonControls extends Publisher {
       this.#states.delete(States.sprint);
     }
 
-    if (this.#keys.has(Keys.w) && !this.#keys.has(Keys.s)) {
+    if (this.#keys.has(Keys.KeyW) && !this.#keys.has(Keys.KeyS)) {
       this.#actions.add(Actions.moveForward);
-    } else if (this.#keys.has(Keys.s) && !this.#keys.has(Keys.w)) {
+    } else if (this.#keys.has(Keys.KeyS) && !this.#keys.has(Keys.KeyW)) {
       this.#actions.add(Actions.moveBackward);
     }
 
-    if (this.#keys.has(Keys.a) && !this.#keys.has(Keys.d)) {
+    if (this.#keys.has(Keys.KeyA) && !this.#keys.has(Keys.KeyD)) {
       this.#actions.add(Actions.rotateLeft);
     }
 
-    if (this.#keys.has(Keys.d) && !this.#keys.has(Keys.a)) {
+    if (this.#keys.has(Keys.KeyD) && !this.#keys.has(Keys.KeyA)) {
       this.#actions.add(Actions.rotateRight);
     }
 
-    if (this.#keys.has(Keys.q) && !this.#keys.has(Keys.e)) {
+    if (this.#keys.has(Keys.KeyQ) && !this.#keys.has(Keys.KeyE)) {
       this.#actions.add(Actions.moveLeft);
-    } else if (this.#keys.has(Keys.e) && !this.#keys.has(Keys.q)) {
+    } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
       this.#actions.add(Actions.moveRight);
     }*/
   }
