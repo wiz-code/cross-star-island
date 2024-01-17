@@ -93,9 +93,9 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 20, // dev 20, prod 40
-    height: 20, // dev 20, prod 40
-    depth: 20, // dev 20, prod 40
+    width: 40, // dev 20, prod 40
+    height: 40, // dev 20, prod 40
+    depth: 40, // dev 20, prod 40
   },
 };
 

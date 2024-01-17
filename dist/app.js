@@ -9575,8 +9575,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    //this.lock();
-
+    this.lock();
     if (this.activeLook) {
       this.dispatchAction(event.button);
     }
@@ -11099,11 +11098,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 20,
+    width: 40,
     // dev 20, prod 40
-    height: 20,
+    height: 40,
     // dev 20, prod 40
-    depth: 20 // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Entity = {
