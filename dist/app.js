@@ -9432,6 +9432,7 @@ const {
 const halfPI = PI / 2;
 const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
+const InputDuration = 200;
 const lerp = (x, y, p) => x + (y - x) * p;
 const sightColor = {
   front: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
@@ -9456,6 +9457,9 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   #actions = new Set();
   #states = new Set();
   #count = 0;
+  #lastKeyUp = '';
+  #keyUpTime = 0;
+  #mashed = false;
   constructor(screen, camera, player, domElement) {
     super();
     this.screen = screen;
@@ -9637,6 +9641,12 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
+    const now = performance.now();
+    if (!this.#mashed && now - this.#keyUpTime <= InputDuration && event.code === this.#lastKeyUp) {
+      this.#mashed = true;
+      this.#lastKeyUp = '';
+      this.#keyUpTime = 0;
+    }
   }
   onKeyUp(event) {
     event.preventDefault();
@@ -9688,6 +9698,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
+    this.#keyUpTime = performance.now();
+    this.#lastKeyUp = event.code;
   }
   dispose() {
     this.domElement.removeEventListener('contextmenu', this.#contextmenu);
@@ -9728,7 +9740,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
 
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
-    if (this.player.onGround && this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.c)) {
+    //if (this.player.onGround && this.#keys.has(Keys.c)) {
+    if (this.player.onGround && this.#mashed) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
       if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.w)) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
@@ -9883,6 +9896,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     if (this.urgencyRemainingTime > 0) {
       this.urgencyRemainingTime -= deltaTime;
       if (this.urgencyRemainingTime <= 0) {
+        this.#mashed = false;
         this.#actions.clear();
         this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
         this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning);
@@ -11008,7 +11022,7 @@ const PlayerSettings = {
   urgencyTurn: 9,
   // 7
   airSpeed: 3,
-  jumpPower: 15,
+  jumpPower: 12,
   lookSpeed: 2 // 20
 };
 const Scene = {
