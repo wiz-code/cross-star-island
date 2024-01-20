@@ -9442,6 +9442,7 @@ const indicatorColor = {
   normal: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
   beyondFov: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.warnColor)
 };
+const ActionKeys = new Set(['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRigh', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyZ', 'KeyX', 'KeyC']);
 class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
   #vectorA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /////
 
@@ -9457,7 +9458,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   #actions = new Set();
   #states = new Set();
   #count = 0;
-  #lastKeyUp = '';
+  #lastKey = '';
+  #keyDownTime = 0;
   #keyUpTime = 0;
   #mashed = false;
   constructor(screen, camera, player, domElement) {
@@ -9547,11 +9549,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   unlock() {
     this.domElement.ownerDocument.exitPointerLock();
   }
-  setOnGround() {
-    let bool = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-    ///////////
-    this.onGround = bool;
-  }
   dispatchAction(button) {
     if (button === 0) {
       this.player.fire();
@@ -9640,10 +9637,43 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
-    const now = performance.now();
-    if (!this.#mashed && now - this.#keyUpTime <= InputDuration && event.code === this.#lastKeyUp) {
-      this.#mashed = true;
-      this.#keyUpTime = 0;
+    if (ActionKeys.has(event.code) && !event.repeat) {
+      const now = performance.now();
+      if (this.player.onGround && !this.#mashed) {
+        if (this.#keyUpTime === 0) {
+          this.#keyDownTime = now;
+          this.#lastKey = event.code;
+        } else {
+          if (now - this.#keyUpTime <= InputDuration) {
+            this.#mashed = true;
+          }
+          this.#keyUpTime = 0;
+        }
+      }
+
+      /*console.log(this.#keyDownTime, this.#keyUpTime)
+            if (
+              this.#keyDownTime === 0 &&
+              this.#keyUpTime === 0
+            ) {
+              console.log(1)
+              this.#keyDownTime = now;
+              this.#lastKey = event.code;
+            } else if (this.#lastKey === event.code) {
+              console.log(5)
+              if (this.#keyUpTime > 0) {
+                console.log(6)
+                if (now - this.#keyUpTime <= InputDuration) {
+                  console.log('7, mashed')
+                  this.#mashed = true;
+                }
+      
+                this.#keyUpTime = 0;
+              }
+            } else {
+              this.#keyUpTime = 0;
+      
+            }*/
     }
   }
   onKeyUp(event) {
@@ -9696,10 +9726,35 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
-    if (!this.#mashed) {
-      this.#keyUpTime = performance.now();
-      this.#lastKeyUp = event.code;
+    if (ActionKeys.has(event.code)) {
+      const now = performance.now();
+      if (this.player.onGround && !this.#mashed) {
+        if (this.#keyDownTime === 0) {
+          this.#keyUpTime = 0;
+          this.#lastKey = '';
+        } else {
+          if (now - this.#keyDownTime <= InputDuration) {
+            this.#keyUpTime = performance.now();
+          }
+          this.#keyDownTime = 0;
+        }
+      }
     }
+
+    /*if (this.#lastKey === event.code) {
+      console.log(2)
+      if (this.#keyDownTime > 0) {
+        console.log(3)
+        const now = performance.now();
+         if (
+          now - this.#keyDownTime <= InputDuration
+        ) {
+          console.log(4)
+          this.#keyUpTime = performance.now();
+        }
+         this.#keyDownTime = 0;
+      }
+    }*/
   }
   dispose() {
     this.domElement.removeEventListener('contextmenu', this.#contextmenu);
@@ -9741,19 +9796,19 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
     //if (this.player.onGround && this.#keys.has(Keys.c)) {
-    if (this.player.onGround && this.#mashed) {
+    if (this.#mashed) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) {
+      if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKeyUp] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) {
+      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
       } /* else {
          // 方向キーが押されてない場合はモードを解除
@@ -10085,6 +10140,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   States: function() { return /* binding */ States; }
 /* harmony export */ });
 const Keys = {
+  // event.codeで取得する
   KeyW: 0,
   ArrowUp: 0,
   KeyA: 1,
@@ -10101,6 +10157,7 @@ const Keys = {
   KeyX: 9,
   KeyC: 10,
   Space: 11,
+  // event.shiftKeyなどの真偽値で取得
   shift: 20,
   alt: 21
 };
@@ -11158,8 +11215,8 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 2,
-  // 100
+  numAmmo: 50,
+  // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8
