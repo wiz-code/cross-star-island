@@ -24,6 +24,29 @@ const indicatorColor = {
   beyondFov: new Color(Screen.warnColor),
 };
 
+const ActionKeys = new Set([
+  'KeyW',
+  'ArrowUp',
+
+  'KeyA',
+  'ArrowLeft',
+
+  'KeyS',
+  'ArrowDown',
+
+  'KeyD',
+  'ArrowRigh',
+
+  'KeyQ',
+  'KeyE',
+
+  'KeyR',
+  'KeyF',
+  'KeyZ',
+  'KeyX',
+  'KeyC',
+]);
+
 class FirstPersonControls extends Publisher {
   #vectorA = new Vector3();/////
 
@@ -45,7 +68,9 @@ class FirstPersonControls extends Publisher {
 
   #count = 0;
 
-  #lastKeyUp = '';
+  #lastKey = '';
+
+  #keyDownTime = 0;
 
   #keyUpTime = 0;
 
@@ -155,10 +180,6 @@ class FirstPersonControls extends Publisher {
 
   unlock() {
     this.domElement.ownerDocument.exitPointerLock();
-  }
-
-  setOnGround(bool = true) {///////////
-    this.onGround = bool;
   }
 
   dispatchAction(button) {
@@ -271,15 +292,45 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    const now = performance.now();
+    if (ActionKeys.has(event.code) && !event.repeat) {
+      const now = performance.now();
 
-    if (
-      !this.#mashed &&
-      now - this.#keyUpTime <= InputDuration &&
-      event.code === this.#lastKeyUp
-    ) {
-      this.#mashed = true;
-      this.#keyUpTime = 0;
+      if (this.player.onGround && !this.#mashed) {
+        if (this.#keyUpTime === 0) {
+          this.#keyDownTime = now;
+          this.#lastKey = event.code;
+        } else {
+          if (now - this.#keyUpTime <= InputDuration) {
+            this.#mashed = true;
+          }
+
+          this.#keyUpTime = 0;
+        }
+      }
+
+/*console.log(this.#keyDownTime, this.#keyUpTime)
+      if (
+        this.#keyDownTime === 0 &&
+        this.#keyUpTime === 0
+      ) {
+        console.log(1)
+        this.#keyDownTime = now;
+        this.#lastKey = event.code;
+      } else if (this.#lastKey === event.code) {
+        console.log(5)
+        if (this.#keyUpTime > 0) {
+          console.log(6)
+          if (now - this.#keyUpTime <= InputDuration) {
+            console.log('7, mashed')
+            this.#mashed = true;
+          }
+
+          this.#keyUpTime = 0;
+        }
+      } else {
+        this.#keyUpTime = 0;
+
+      }*/
     }
   }
 
@@ -339,10 +390,39 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    if (!this.#mashed) {
-      this.#keyUpTime = performance.now();
-      this.#lastKeyUp = event.code;
+    if (ActionKeys.has(event.code)) {
+      const now = performance.now();
+
+      if (this.player.onGround && !this.#mashed) {
+        if (this.#keyDownTime === 0) {
+          this.#keyUpTime = 0;
+          this.#lastKey = '';
+        } else {
+          if (now - this.#keyDownTime <= InputDuration) {
+            this.#keyUpTime = performance.now();
+          }
+
+          this.#keyDownTime = 0;
+        }
+      }
     }
+
+    /*if (this.#lastKey === event.code) {
+      console.log(2)
+      if (this.#keyDownTime > 0) {
+        console.log(3)
+        const now = performance.now();
+
+        if (
+          now - this.#keyDownTime <= InputDuration
+        ) {
+          console.log(4)
+          this.#keyUpTime = performance.now();
+        }
+
+        this.#keyDownTime = 0;
+      }
+    }*/
   }
 
   dispose() {
@@ -397,23 +477,20 @@ class FirstPersonControls extends Publisher {
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
     //if (this.player.onGround && this.#keys.has(Keys.c)) {
-    if (
-      this.player.onGround &&
-      this.#mashed
-    ) {
+    if (this.#mashed) {
       this.#states.add(States.urgency);
 
-      if (Keys[this.#lastKeyUp] === Keys.KeyW) {
+      if (Keys[this.#lastKey] === Keys.KeyW) {
         this.#actions.add(Actions.quickMoveForward);
-      } else if (Keys[this.#lastKeyUp] === Keys.KeyA) {
+      } else if (Keys[this.#lastKey] === Keys.KeyA) {
         this.#actions.add(Actions.quickTurnLeft);
-      } else if (Keys[this.#lastKeyUp] === Keys.KeyS) {
+      } else if (Keys[this.#lastKey] === Keys.KeyS) {
         this.#actions.add(Actions.quickMoveBackward);
-      } else if (Keys[this.#lastKeyUp] === Keys.KeyD) {
+      } else if (Keys[this.#lastKey] === Keys.KeyD) {
         this.#actions.add(Actions.quickTurnRight);
-      } else if (Keys[this.#lastKeyUp] === Keys.KeyQ) {
+      } else if (Keys[this.#lastKey] === Keys.KeyQ) {
         this.#actions.add(Actions.quickMoveLeft);
-      } else if (Keys[this.#lastKeyUp] === Keys.KeyE) {
+      } else if (Keys[this.#lastKey] === Keys.KeyE) {
         this.#actions.add(Actions.quickMoveRight);
       }/* else {
         // 方向キーが押されてない場合はモードを解除
@@ -584,6 +661,7 @@ class FirstPersonControls extends Publisher {
 
       if (this.urgencyRemainingTime <= 0) {
         this.#mashed = false;
+
         this.#actions.clear();
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);

@@ -1,4 +1,5 @@
 export const Keys = {
+  // event.codeで取得する
   KeyW: 0,
   ArrowUp: 0,
 
@@ -23,6 +24,7 @@ export const Keys = {
   Space: 11,
 
 
+  // event.shiftKeyなどの真偽値で取得
   shift: 20,
   alt: 21,
 };
