@@ -216,7 +216,7 @@ class FirstPersonControls extends Publisher {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    //this.lock();
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -296,7 +296,10 @@ class FirstPersonControls extends Publisher {
       const now = performance.now();
 
       if (this.player.onGround && !this.#mashed) {
-        if (this.#keyUpTime === 0) {
+        if (
+          this.#keyUpTime === 0 ||
+          now - this.#keyUpTime > InputDuration
+        ) {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {

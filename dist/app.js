@@ -9338,7 +9338,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.scene.add(group);
       this.list.push({
         mesh: group,
-        collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * 10 - 100, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
+        collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * -10 - 100, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
         velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
         createdAt: 0
       });
@@ -9572,7 +9572,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    //this.lock();
+
     if (this.activeLook) {
       this.dispatchAction(event.button);
     }
@@ -9640,7 +9641,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     if (ActionKeys.has(event.code) && !event.repeat) {
       const now = performance.now();
       if (this.player.onGround && !this.#mashed) {
-        if (this.#keyUpTime === 0) {
+        if (this.#keyUpTime === 0 || now - this.#keyUpTime > InputDuration) {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
@@ -11155,11 +11156,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11215,7 +11216,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,

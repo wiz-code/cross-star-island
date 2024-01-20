@@ -84,7 +84,7 @@ class Ammo extends Publisher {
       this.list.push({
         mesh: group,
         collider: new Sphere(
-          new Vector3(0, i * 10 - 100, 0),
+          new Vector3(0, i * -10 - 100, 0),
           AmmoSettings.radius
         ),
         velocity: new Vector3(),
