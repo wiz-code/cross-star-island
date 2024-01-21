@@ -9191,8 +9191,8 @@ const update = function () {
   const deltaTime = this.clock.getDelta() / _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame;
   for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
-    this.player.update(deltaTime);
     this.ammo.update(deltaTime);
+    this.player.update(deltaTime);
   }
   this.renderer.clear();
   this.renderer.render(this.scene.field, this.camera.field);
@@ -9336,12 +9336,13 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       group.add(wireMesh);
       group.add(pointsMesh);
       this.scene.add(group);
-      this.list.push({
+      const object = {
         mesh: group,
         collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * -10 - 100, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
         velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
         createdAt: 0
-      });
+      };
+      this.list.push(object);
     }
   }
   collisions() {
@@ -9368,7 +9369,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   update(deltaTime) {
     const len = this.list.length;
     for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i];
+      const ammo = this.list[i]; //console.log(i, ammo.collider.center)
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
       if (result) {
@@ -9572,8 +9573,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    //this.lock();
-
+    this.lock();
     if (this.activeLook) {
       this.dispatchAction(event.button);
     }
@@ -9770,7 +9770,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     this.velocity.add(direction);
   }
   rotate(delta) {
-    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.rotateSpeed * 0.02;
+    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.turnSpeed * 0.02;
     this.rotY += rotation;
     this.rotation.y += rotation;
     this.direction.applyAxisAngle(this.#virticalVector, rotation);
@@ -10802,9 +10802,29 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const {
+  abs,
   exp,
-  sqrt
+  sqrt,
+  PI
 } = Math;
+const dampingCoef = PI / 180;
+const minRotateAngle = PI / 720;
+const minMovement = 0.01;
+const addDamping = (component, damping, minValue) => {
+  let value = component;
+  if (value >= 0) {
+    value += damping;
+    if (value < minValue) {
+      value = 0;
+    }
+  } else {
+    value -= damping;
+    if (value >= -minValue) {
+      value = 0;
+    }
+  }
+  return value;
+};
 class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #dir = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #side = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
@@ -10819,6 +10839,9 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.ammo = ammo;
     this.onGround = false;
     this.position = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
+    this.forwardComponent = 0;
+    this.sideComponent = 0;
+    this.rotateComponent = 0;
     this.povCoords = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
     this.spherical = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
@@ -10826,7 +10849,6 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.camera.getWorldDirection(this.direction);
     this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
-    //this.controls.subscribe('fire', this.fire);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
     const start = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.y, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.z);
     const end = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.y + _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.height, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.z);
@@ -10850,18 +10872,34 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     } else {
       delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
     }
-    const direction = this.direction.clone().multiplyScalar(delta);
-    this.velocity.add(direction);
+    this.forwardComponent = delta;
+
+    //const direction = this.direction.clone().multiplyScalar(delta);
+    //this.velocity.add(direction);
   }
-  rotate(deltaTime) {
-    let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    let delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.rotateSpeed * 0.1;
-    if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyTurn;
+
+  /*rotate(deltaTime, state = States.idle) {
+    let delta = deltaTime * PlayerSettings.turnSpeed * 0.1;
+     if (state === States.urgency) {
+      delta *= PlayerSettings.urgencyTurn;
     }
-    this.direction.applyAxisAngle(this.#virticalVector, delta);
+     this.direction.applyAxisAngle(this.#virticalVector, delta);
     this.spherical.phi += delta;
     this.direction.normalize();
+  }*/
+  rotate(deltaTime) {
+    let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
+    let delta;
+    if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
+      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyTurn;
+    } else {
+      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.turnSpeed;
+    }
+
+    //this.direction.applyAxisAngle(this.#virticalVector, delta);
+    //this.spherical.phi += delta;
+    this.rotateComponent = delta;
+    //this.direction.normalize();
   }
   moveSide(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -10874,9 +10912,11 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     } else {
       delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
     }
-    const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+    this.sideComponent = delta;
+
+    /*const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
     direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));
+    this.velocity.add(direction.multiplyScalar(delta));*/
   }
   setPovCoords(povCoords) {
     this.povCoords = povCoords;
@@ -10893,15 +10933,15 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   ammoCollision(ammo) {
     const center = this.#vecA.addVectors(this.collider.start, this.collider.end).multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
+    //console.log(ammo.collider.center, this.collider.end)
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
-
-    // approximation: player = 3 ammos
     const colliders = [this.collider.start, this.collider.end, center];
     for (let i = 0, l = colliders.length; i < l; i += 1) {
       const point = colliders[i];
       const d2 = point.distanceToSquared(ammoCenter);
       if (d2 < r2) {
+        //console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
         const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity));
@@ -10915,13 +10955,9 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   collisions() {
     const result = this.worldOctree.capsuleIntersect(this.collider);
     this.onGround = false;
-    //this.controls.setOnGround(false);
-
     if (result) {
       const onGround = result.normal.y > 0;
       this.onGround = onGround;
-      //this.controls.setOnGround(onGround);
-
       if (!this.onGround) {
         this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
       }
@@ -10934,7 +10970,24 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     if (!this.onGround) {
       this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_3__.World.gravity * deltaTime;
     }
+    if (this.rotateComponent !== 0) {
+      this.direction.applyAxisAngle(this.#virticalVector, this.rotateComponent);
+      this.direction.normalize();
+      this.spherical.phi += this.rotateComponent;
+    }
+    if (this.forwardComponent !== 0) {
+      const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
+      this.velocity.add(direction);
+    }
+    if (this.sideComponent !== 0) {
+      const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+      direction.normalize();
+      this.velocity.add(direction.multiplyScalar(this.sideComponent));
+    }
     this.velocity.addScaledVector(this.velocity, damping);
+    this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
+    this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
+    this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     this.camera.rotation.x = this.povCoords.theta;
     this.camera.rotation.y = this.povCoords.phi + this.spherical.phi;
     this.collider.translate(this.velocity);
@@ -11072,21 +11125,19 @@ const PlayerSettings = {
   radius: 5,
   Position: {
     x: 0,
-    y: 300,
+    y: 200,
     z: 100
   },
   speed: 6,
-  // 9
-  rotateSpeed: 8,
+  turnSpeed: PI * 2 * (1 / 6),
+  // 1秒間に1/6周する
   sprint: 2.5,
-  // 2.8
-  urgencyMove: 10,
-  // 7
-  urgencyTurn: 9,
-  // 7
+  urgencyMove: PI * 2 * (5 / 4),
+  // 1秒間に5/4周する
+  urgencyTurn: 4,
+  //9
   airSpeed: 3,
-  jumpPower: 12,
-  lookSpeed: 2 // 20
+  jumpPower: 14
 };
 const Scene = {
   background: 0x000000,
@@ -11156,11 +11207,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 20,
+    width: 40,
     // dev 20, prod 40
-    height: 20,
+    height: 40,
     // dev 20, prod 40
-    depth: 20 // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11180,15 +11231,6 @@ const Ground = {
   wallHeightSize: 4
 };
 const Controls = {
-  speed: 3,
-  sprint: 2.5,
-  urgencyMove: 7,
-  urgencyTurn: 9,
-  airSpeed: 3,
-  resistance: 10,
-  airResistance: 2,
-  rotateSpeed: 6,
-  jumpPower: 15,
   lookSpeed: 2,
   idleTime: 0.3,
   restoreSpeed: 3,
@@ -11216,7 +11258,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5,
+  numAmmo: 50,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
