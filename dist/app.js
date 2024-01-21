@@ -9573,7 +9573,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    //this.lock();
+
     if (this.activeLook) {
       this.dispatchAction(event.button);
     }
@@ -10832,6 +10833,8 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0);
+  #test = 0; ////////////
+
   constructor(camera, ammo, worldOctree) {
     super();
     this.camera = camera;
@@ -10974,20 +10977,20 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.direction.applyAxisAngle(this.#virticalVector, this.rotateComponent);
       this.direction.normalize();
       this.spherical.phi += this.rotateComponent;
+      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
     }
     if (this.forwardComponent !== 0) {
       const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
       this.velocity.add(direction);
+      this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
     }
     if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
+      this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }
     this.velocity.addScaledVector(this.velocity, damping);
-    this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
-    this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
-    this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     this.camera.rotation.x = this.povCoords.theta;
     this.camera.rotation.y = this.povCoords.phi + this.spherical.phi;
     this.collider.translate(this.velocity);
@@ -11132,10 +11135,9 @@ const PlayerSettings = {
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
   sprint: 2.5,
-  urgencyMove: PI * 2 * (5 / 4),
+  urgencyMove: 10,
   // 1秒間に5/4周する
-  urgencyTurn: 4,
-  //9
+  urgencyTurn: PI * 2 * (5 / 4),
   airSpeed: 3,
   jumpPower: 14
 };
@@ -11207,11 +11209,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11258,7 +11260,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,

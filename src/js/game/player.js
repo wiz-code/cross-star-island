@@ -47,6 +47,8 @@ class Player extends Publisher {
 
   #virticalVector = new THREE.Vector3(0, 1, 0);
 
+  #test = 0;////////////
+
   constructor(camera, ammo, worldOctree) {
     super();
 
@@ -242,24 +244,26 @@ class Player extends Publisher {
       this.direction.normalize();
 
       this.spherical.phi += this.rotateComponent;
+
+      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
     }
 
     if (this.forwardComponent !== 0) {
       const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
       this.velocity.add(direction);
+
+      this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
     }
 
     if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
+    
+      this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }
 
     this.velocity.addScaledVector(this.velocity, damping);
-
-    this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
-    this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
-    this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
 
     this.camera.rotation.x = this.povCoords.theta;
     this.camera.rotation.y = this.povCoords.phi + this.spherical.phi;

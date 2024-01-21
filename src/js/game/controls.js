@@ -216,7 +216,7 @@ class FirstPersonControls extends Publisher {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    //this.lock();
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
