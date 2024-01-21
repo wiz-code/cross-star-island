@@ -11135,7 +11135,7 @@ const PlayerSettings = {
   // 1秒間に1/6周する
   sprint: 2.5,
   urgencyMove: 10,
-  urgencyTurn: PI * 2 * (5 / 8),
+  urgencyTurn: PI * 2 * (15 / 16),
   // 1秒間に5/4周する設定にすると、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
   jumpPower: 14
