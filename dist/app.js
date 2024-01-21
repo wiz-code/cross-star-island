@@ -9191,8 +9191,8 @@ const update = function () {
   const deltaTime = this.clock.getDelta() / _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame;
   for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
-    this.ammo.update(deltaTime);
     this.player.update(deltaTime);
+    this.ammo.update(deltaTime);
   }
   this.renderer.clear();
   this.renderer.render(this.scene.field, this.camera.field);
@@ -9236,7 +9236,7 @@ function App() {
   const toggleFullScreen = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     if (document.fullscreenElement == null) {
       document.documentElement.requestFullscreen();
-    } else if (typeof document.exitFullscreen == 'function') {
+    } else if (typeof document.exitFullscreen === 'function') {
       document.exitFullscreen();
     }
   }, [document.fullscreenElement]);
@@ -9369,7 +9369,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   update(deltaTime) {
     const len = this.list.length;
     for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i]; //console.log(i, ammo.collider.center)
+      const ammo = this.list[i]; // console.log(i, ammo.collider.center)
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
       if (result) {
@@ -9445,11 +9445,11 @@ const indicatorColor = {
 };
 const ActionKeys = new Set(['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRigh', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyZ', 'KeyX', 'KeyC']);
 class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
-  #vectorA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /////
+  #vectorA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// //
 
-  #vectorB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); ////////
+  #vectorB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// /////
 
-  #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0); //////////
+  #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0); /// ///////
 
   #contextmenu(event) {
     event.preventDefault();
@@ -9488,11 +9488,11 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     };
 
     // internals
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); //////////
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /////////
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Euler(0, 0, 0, 'YXZ'); ////////
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// ///////
+    this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// //////
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Euler(0, 0, 0, 'YXZ'); /// /////
     this.rotY = 0;
-    this.onGround = false; ///////////
+    this.onGround = false; /// ////////
 
     this.povCoords = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
     this.timeout = false;
@@ -9522,7 +9522,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     const {
       rotation
     } = this.camera;
-    //this.rotation.copy(rotation);
+    // this.rotation.copy(rotation);
     this.povCoords.phi = rotation.y;
     this.povCoords.theta = rotation.x;
     this.camera.getWorldDirection(this.direction);
@@ -9573,7 +9573,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    // this.lock(); // remove when dev mode
+
     if (this.activeLook) {
       this.dispatchAction(event.button);
     }
@@ -9652,29 +9653,27 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         }
       }
 
-      /*console.log(this.#keyDownTime, this.#keyUpTime)
-            if (
-              this.#keyDownTime === 0 &&
-              this.#keyUpTime === 0
-            ) {
-              console.log(1)
-              this.#keyDownTime = now;
-              this.#lastKey = event.code;
-            } else if (this.#lastKey === event.code) {
-              console.log(5)
-              if (this.#keyUpTime > 0) {
-                console.log(6)
-                if (now - this.#keyUpTime <= InputDuration) {
-                  console.log('7, mashed')
-                  this.#mashed = true;
-                }
-      
-                this.#keyUpTime = 0;
-              }
-            } else {
-              this.#keyUpTime = 0;
-      
-            }*/
+      /* console.log(this.#keyDownTime, this.#keyUpTime)
+      if (
+        this.#keyDownTime === 0 &&
+        this.#keyUpTime === 0
+      ) {
+        console.log(1)
+        this.#keyDownTime = now;
+        this.#lastKey = event.code;
+      } else if (this.#lastKey === event.code) {
+        console.log(5)
+        if (this.#keyUpTime > 0) {
+          console.log(6)
+          if (now - this.#keyUpTime <= InputDuration) {
+            console.log('7, mashed')
+            this.#mashed = true;
+          }
+           this.#keyUpTime = 0;
+        }
+      } else {
+        this.#keyUpTime = 0;
+       } */
     }
   }
   onKeyUp(event) {
@@ -9742,7 +9741,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       }
     }
 
-    /*if (this.#lastKey === event.code) {
+    /* if (this.#lastKey === event.code) {
       console.log(2)
       if (this.#keyDownTime > 0) {
         console.log(3)
@@ -9755,7 +9754,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         }
          this.#keyDownTime = 0;
       }
-    }*/
+    } */
   }
   dispose() {
     this.domElement.removeEventListener('contextmenu', this.#contextmenu);
@@ -9796,7 +9795,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
 
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
-    //if (this.player.onGround && this.#keys.has(Keys.c)) {
+    // if (this.player.onGround && this.#keys.has(Keys.c)) {
     if (this.#mashed) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
       if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) {
@@ -9812,9 +9811,9 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) {
         this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
       } /* else {
-         // 方向キーが押されてない場合はモードを解除
-         this.#states.delete(States.urgency);
-        }*/
+        // 方向キーが押されてない場合はモードを解除
+        this.#states.delete(States.urgency);
+        } */
 
       return;
     }
@@ -9847,7 +9846,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       }
     } else {
       return;
-    }*/
+    } */
 
     if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.shift)) {
       this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
@@ -9894,8 +9893,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
     }
 
-    //////////////////
-    /*this.#actions.clear();
+    /// ///////////////
+    /* this.#actions.clear();
      // update()で一度だけアクションを発動する
     if (this.#keys.has(Keys.Space)) {
       this.#actions.add(Actions.jump);
@@ -9920,7 +9919,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       this.#actions.add(Actions.moveLeft);
     } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
       this.#actions.add(Actions.moveRight);
-    }*/
+    } */
   }
   update(deltaTime) {
     if (this.moved) {
@@ -9974,9 +9973,9 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         this.player.moveSide(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
       }
     } else {
-      let speedDelta = 0;
+      const speedDelta = 0;
 
-      /*if (this.onGround) {
+      /* if (this.onGround) {
         speedDelta = deltaTime * Controls.speed;
          if (
           this.#states.has(States.sprint) &&
@@ -9986,9 +9985,9 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         }
       } else {
         speedDelta = deltaTime * Controls.airSpeed;
-      }*/
+      } */
 
-      /*if (this.#actions.has(Actions.rotateLeft)) {
+      /* if (this.#actions.has(Actions.rotateLeft)) {
         this.rotate(speedDelta);
       } else if (this.#actions.has(Actions.rotateRight)) {
         this.rotate(-speedDelta);
@@ -10004,7 +10003,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         this.moveSide(-speedDelta * 0.5);
       } else if (this.#actions.has(Actions.moveRight)) {
         this.moveSide(speedDelta * 0.5);
-      }*/
+      } */
       if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft)) {
         this.player.rotate(deltaTime);
       } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight)) {
@@ -10026,19 +10025,19 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       }
     }
 
-    /*if (this.onGround && this.#actions.has(Actions.jump)) {
+    /* if (this.onGround && this.#actions.has(Actions.jump)) {
       this.#actions.delete(Actions.jump);
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
-    }*/
+    } */
 
-    /*const resistance = this.onGround
+    /* const resistance = this.onGround
       ? Controls.resistance
       : Controls.airResistance;
     const damping = exp(-resistance * deltaTime) - 1;
      if (!this.onGround) {
       this.velocity.y -= World.gravity * deltaTime;
     }
-     this.velocity.addScaledVector(this.velocity, damping);*/
+     this.velocity.addScaledVector(this.velocity, damping); */
 
     // 自機の視点制御
     let actualLookSpeed = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.lookSpeed;
@@ -10072,8 +10071,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
 
       // this.povIndicator.position.x =
       // (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
-      let posX = this.viewHalfX * this.povCoords.phi / quarterPI;
-      //posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+      let posX = this.viewHalfX * -this.povCoords.phi / quarterPI;
+      // posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
 
       if (posX < -this.viewHalfX) {
         posX = -this.viewHalfX;
@@ -10112,8 +10111,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         if (this.povIndicator.material.color !== indicatorColor.normal) {
           this.povIndicator.material.color = indicatorColor.normal;
         }
-        let posX = this.viewHalfX * this.povCoords.phi / quarterPI;
-        /*posX = max(-this.viewHalfX, min(this.viewHalfX, posX));*/
+        const posX = this.viewHalfX * -this.povCoords.phi / quarterPI;
+        /* posX = max(-this.viewHalfX, min(this.viewHalfX, posX)); */
         this.povIndicator.position.x = posX;
       }
     }
@@ -10469,7 +10468,7 @@ const createWalls = () => {
     geomPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
     geomPoints.computeBoundingSphere();
     const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
+      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallColor
     });
     const matWire = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
       color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
@@ -10643,9 +10642,9 @@ const init = () => {
   // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
   const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
-  //const fineGrid = createFineGrid();
+  // const fineGrid = createFineGrid();
   scene.field.add(grid);
-  //scene.field.add(fineGrid);
+  // scene.field.add(fineGrid);
 
   const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
   scene.field.add(ground);
@@ -10832,7 +10831,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0);
-  #test = 0; ////////////
+  #test = 0; /// /////////
 
   constructor(camera, ammo, worldOctree) {
     super();
@@ -10876,11 +10875,11 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     this.forwardComponent = delta;
 
-    //const direction = this.direction.clone().multiplyScalar(delta);
-    //this.velocity.add(direction);
+    // const direction = this.direction.clone().multiplyScalar(delta);
+    // this.velocity.add(direction);
   }
 
-  /*rotate(deltaTime, state = States.idle) {
+  /* rotate(deltaTime, state = States.idle) {
     let delta = deltaTime * PlayerSettings.turnSpeed * 0.1;
      if (state === States.urgency) {
       delta *= PlayerSettings.urgencyTurn;
@@ -10888,20 +10887,20 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
      this.direction.applyAxisAngle(this.#virticalVector, delta);
     this.spherical.phi += delta;
     this.direction.normalize();
-  }*/
+  } */
   rotate(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    let delta;
+    let delta = deltaTime;
     if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyTurn;
+      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyTurn;
     } else {
-      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.turnSpeed;
+      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.turnSpeed;
     }
 
-    //this.direction.applyAxisAngle(this.#virticalVector, delta);
-    //this.spherical.phi += delta;
+    // this.direction.applyAxisAngle(this.#virticalVector, delta);
+    // this.spherical.phi += delta;
     this.rotateComponent = delta;
-    //this.direction.normalize();
+    // this.direction.normalize();
   }
   moveSide(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -10912,13 +10911,13 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyMove;
       }
     } else {
-      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
+      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
     }
     this.sideComponent = delta;
 
-    /*const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+    /* const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
     direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));*/
+    this.velocity.add(direction.multiplyScalar(delta)); */
   }
   setPovCoords(povCoords) {
     this.povCoords = povCoords;
@@ -10935,7 +10934,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   ammoCollision(ammo) {
     const center = this.#vecA.addVectors(this.collider.start, this.collider.end).multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
-    //console.log(ammo.collider.center, this.collider.end)
+    // console.log(ammo.collider.center, this.collider.end)
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
     const colliders = [this.collider.start, this.collider.end, center];
@@ -10943,7 +10942,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       const point = colliders[i];
       const d2 = point.distanceToSquared(ammoCenter);
       if (d2 < r2) {
-        //console.log('collision')
+        // console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
         const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity));
@@ -11136,7 +11135,7 @@ const PlayerSettings = {
   sprint: 2.5,
   urgencyMove: 10,
   urgencyTurn: PI * 2 * (13.8 / 16),
-  // 1秒間に5/4周する設定にすると、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+  // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
   jumpPower: 14
 };
@@ -11208,11 +11207,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11222,20 +11221,21 @@ const Ground = {
   Object: {
     color: 0x1955a6,
     size: 5,
-    pointsColor: 0xdc3545 //0xa3d8f6,
+    pointsColor: 0xdc3545 // 0xa3d8f6,
   },
   heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xf4e511,
   // 0xffff00,
-  wallHeightSize: 4
+  wallHeightSize: 4,
+  wallColor: 0x203b33
 };
 const Controls = {
   lookSpeed: 2,
   idleTime: 0.3,
   restoreSpeed: 3,
-  //1.2,
+  // 1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
@@ -11259,7 +11259,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,

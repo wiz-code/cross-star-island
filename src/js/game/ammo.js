@@ -85,7 +85,7 @@ class Ammo extends Publisher {
         mesh: group,
         collider: new Sphere(
           new Vector3(0, i * -10 - 100, 0),
-          AmmoSettings.radius
+          AmmoSettings.radius,
         ),
         velocity: new Vector3(),
         createdAt: 0,
@@ -133,7 +133,7 @@ class Ammo extends Publisher {
     const len = this.list.length;
 
     for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i];//console.log(i, ammo.collider.center)
+      const ammo = this.list[i]; // console.log(i, ammo.collider.center)
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
 

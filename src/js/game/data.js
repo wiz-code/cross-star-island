@@ -23,7 +23,6 @@ export const Keys = {
 
   Space: 11,
 
-
   // event.shiftKeyなどの真偽値で取得
   shift: 20,
   alt: 21,

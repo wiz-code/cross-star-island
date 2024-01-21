@@ -18,7 +18,7 @@ export const PlayerSettings = {
   turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
   sprint: 2.5,
   urgencyMove: 10,
-  urgencyTurn: PI * 2 * (13.8 / 16), // 1秒間に5/4周する設定にすると、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+  urgencyTurn: PI * 2 * (13.8 / 16), // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
   jumpPower: 14,
 };
@@ -92,9 +92,9 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 40, // dev 20, prod 40
-    height: 40, // dev 20, prod 40
-    depth: 40, // dev 20, prod 40
+    width: 20, // dev 20, prod 40
+    height: 20, // dev 20, prod 40
+    depth: 20, // dev 20, prod 40
   },
 };
 
@@ -106,20 +106,21 @@ export const Ground = {
   Object: {
     color: 0x1955a6,
     size: 5,
-    pointsColor: 0xdc3545,//0xa3d8f6,
+    pointsColor: 0xdc3545, // 0xa3d8f6,
   },
   heightCoef: 6,
   color: 0x4d4136,
   wireframeColor: 0x332000,
   pointsColor: 0xf4e511, // 0xffff00,
   wallHeightSize: 4,
+  wallColor: 0x203b33,
 };
 
 export const Controls = {
   lookSpeed: 2,
 
   idleTime: 0.3,
-  restoreSpeed: 3,//1.2,
+  restoreSpeed: 3, // 1.2,
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 80,
@@ -148,7 +149,7 @@ export const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50, // dev 5, prod 50
+  numAmmo: 5, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,

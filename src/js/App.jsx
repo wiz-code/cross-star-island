@@ -93,9 +93,8 @@ const update = function () {
 
   for (let i = 0; i < StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
-
-    this.ammo.update(deltaTime);
     this.player.update(deltaTime);
+    this.ammo.update(deltaTime);
   }
 
   this.renderer.clear();
@@ -148,7 +147,7 @@ function App() {
   const toggleFullScreen = useCallback(() => {
     if (document.fullscreenElement == null) {
       document.documentElement.requestFullscreen();
-    } else if (typeof document.exitFullscreen == 'function') {
+    } else if (typeof document.exitFullscreen === 'function') {
       document.exitFullscreen();
     }
   }, [document.fullscreenElement]);
@@ -164,7 +163,15 @@ function App() {
         </Grid>
       </Container>} */}
       <Box id="container" sx={{ position: 'relative' }}>
-        <Box sx={{ display: 'flex', gap: theme.spacing(1), position: 'absolute', top: theme.spacing(2), right: theme.spacing(2) }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: theme.spacing(1),
+            position: 'absolute',
+            top: theme.spacing(2),
+            right: theme.spacing(2),
+          }}
+        >
           <Button variant="contained" onClick={togglePlay}>
             {started ? '停止する' : '開始する'}
           </Button>

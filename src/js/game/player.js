@@ -47,7 +47,7 @@ class Player extends Publisher {
 
   #virticalVector = new THREE.Vector3(0, 1, 0);
 
-  #test = 0;////////////
+  #test = 0; /// /////////
 
   constructor(camera, ammo, worldOctree) {
     super();
@@ -97,10 +97,7 @@ class Player extends Publisher {
     if (this.onGround) {
       delta = deltaTime * PlayerSettings.speed;
 
-      if (
-        state === States.sprint &&
-        deltaTime >= 0
-      ) {
+      if (state === States.sprint && deltaTime >= 0) {
         delta *= PlayerSettings.sprint;
       } else if (state === States.urgency) {
         delta *= PlayerSettings.urgencyMove;
@@ -111,11 +108,11 @@ class Player extends Publisher {
 
     this.forwardComponent = delta;
 
-    //const direction = this.direction.clone().multiplyScalar(delta);
-    //this.velocity.add(direction);
+    // const direction = this.direction.clone().multiplyScalar(delta);
+    // this.velocity.add(direction);
   }
 
-  /*rotate(deltaTime, state = States.idle) {
+  /* rotate(deltaTime, state = States.idle) {
     let delta = deltaTime * PlayerSettings.turnSpeed * 0.1;
 
     if (state === States.urgency) {
@@ -125,20 +122,20 @@ class Player extends Publisher {
     this.direction.applyAxisAngle(this.#virticalVector, delta);
     this.spherical.phi += delta;
     this.direction.normalize();
-  }*/
+  } */
   rotate(deltaTime, state = States.idle) {
-    let delta;
+    let delta = deltaTime;
 
     if (state === States.urgency) {
-      delta = deltaTime * PlayerSettings.urgencyTurn;
+      delta *= PlayerSettings.urgencyTurn;
     } else {
-      delta = deltaTime * PlayerSettings.turnSpeed;
+      delta *= PlayerSettings.turnSpeed;
     }
 
-    //this.direction.applyAxisAngle(this.#virticalVector, delta);
-    //this.spherical.phi += delta;
+    // this.direction.applyAxisAngle(this.#virticalVector, delta);
+    // this.spherical.phi += delta;
     this.rotateComponent = delta;
-    //this.direction.normalize();
+    // this.direction.normalize();
   }
 
   moveSide(deltaTime, state = States.idle) {
@@ -151,14 +148,14 @@ class Player extends Publisher {
         delta *= PlayerSettings.urgencyMove;
       }
     } else {
-      delta = deltaTime * PlayerSettings.airSpeed;
+      delta *= PlayerSettings.airSpeed;
     }
 
     this.sideComponent = delta;
 
-    /*const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+    /* const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
     direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));*/
+    this.velocity.add(direction.multiplyScalar(delta)); */
   }
 
   setPovCoords(povCoords) {
@@ -184,7 +181,7 @@ class Player extends Publisher {
       .addVectors(this.collider.start, this.collider.end)
       .multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
-//console.log(ammo.collider.center, this.collider.end)
+    // console.log(ammo.collider.center, this.collider.end)
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
 
@@ -194,9 +191,12 @@ class Player extends Publisher {
       const point = colliders[i];
       const d2 = point.distanceToSquared(ammoCenter);
 
-      if (d2 < r2) {//console.log('collision')
+      if (d2 < r2) {
+        // console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
-        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
+        const v1 = this.#vecB
+          .copy(normal)
+          .multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC
           .copy(normal)
           .multiplyScalar(normal.dot(ammo.velocity));
@@ -230,9 +230,7 @@ class Player extends Publisher {
   }
 
   update(deltaTime) {
-    const resistance = this.onGround
-      ? World.resistance
-      : World.airResistance;
+    const resistance = this.onGround ? World.resistance : World.airResistance;
     const damping = exp(-resistance * deltaTime) - 1;
 
     if (!this.onGround) {
@@ -245,21 +243,34 @@ class Player extends Publisher {
 
       this.spherical.phi += this.rotateComponent;
 
-      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
+      this.rotateComponent = addDamping(
+        this.rotateComponent,
+        dampingCoef * damping,
+        minRotateAngle,
+      );
     }
 
     if (this.forwardComponent !== 0) {
-      const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
+      const direction = this.direction
+        .clone()
+        .multiplyScalar(this.forwardComponent);
       this.velocity.add(direction);
 
-      this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
+      this.forwardComponent = addDamping(
+        this.forwardComponent,
+        damping,
+        minMovement,
+      );
     }
 
     if (this.sideComponent !== 0) {
-      const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+      const direction = this.#side.crossVectors(
+        this.direction,
+        this.#virticalVector,
+      );
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
-    
+
       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }
 

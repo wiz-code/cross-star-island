@@ -75,9 +75,9 @@ const init = () => {
   container.appendChild(renderer.domElement);
 
   const grid = createGrid();
-  //const fineGrid = createFineGrid();
+  // const fineGrid = createFineGrid();
   scene.field.add(grid);
-  //scene.field.add(fineGrid);
+  // scene.field.add(fineGrid);
 
   const ground = createGround();
   scene.field.add(ground);
@@ -136,7 +136,7 @@ const init = () => {
     scene.screen,
     camera.field,
     player,
-    renderer.domElement
+    renderer.domElement,
   );
 
   /// /

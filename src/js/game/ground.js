@@ -195,7 +195,7 @@ export const createWalls = () => {
     geomPoints.computeBoundingSphere();
 
     const mat = new THREE.MeshBasicMaterial({
-      color: Ground.color,
+      color: Ground.wallColor,
     });
     const matWire = new THREE.MeshBasicMaterial({
       color: Ground.wireframeColor,

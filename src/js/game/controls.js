@@ -48,11 +48,11 @@ const ActionKeys = new Set([
 ]);
 
 class FirstPersonControls extends Publisher {
-  #vectorA = new Vector3();/////
+  #vectorA = new Vector3(); /// //
 
-  #vectorB = new Vector3();////////
+  #vectorB = new Vector3(); /// /////
 
-  #virticalVector = new Vector3(0, 1, 0);//////////
+  #virticalVector = new Vector3(0, 1, 0); /// ///////
 
   #contextmenu(event) {
     event.preventDefault();
@@ -106,11 +106,11 @@ class FirstPersonControls extends Publisher {
     };
 
     // internals
-    this.velocity = new Vector3();//////////
-    this.direction = new Vector3();/////////
-    this.rotation = new Euler(0, 0, 0, 'YXZ');////////
+    this.velocity = new Vector3(); /// ///////
+    this.direction = new Vector3(); /// //////
+    this.rotation = new Euler(0, 0, 0, 'YXZ'); /// /////
     this.rotY = 0;
-    this.onGround = false;///////////
+    this.onGround = false; /// ////////
 
     this.povCoords = new Spherical();
 
@@ -146,7 +146,7 @@ class FirstPersonControls extends Publisher {
 
   setOrientation() {
     const { rotation } = this.camera;
-    //this.rotation.copy(rotation);
+    // this.rotation.copy(rotation);
     this.povCoords.phi = rotation.y;
     this.povCoords.theta = rotation.x;
     this.camera.getWorldDirection(this.direction);
@@ -216,7 +216,7 @@ class FirstPersonControls extends Publisher {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock();
+    // this.lock(); // remove when dev mode
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -296,10 +296,7 @@ class FirstPersonControls extends Publisher {
       const now = performance.now();
 
       if (this.player.onGround && !this.#mashed) {
-        if (
-          this.#keyUpTime === 0 ||
-          now - this.#keyUpTime > InputDuration
-        ) {
+        if (this.#keyUpTime === 0 || now - this.#keyUpTime > InputDuration) {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
@@ -311,7 +308,7 @@ class FirstPersonControls extends Publisher {
         }
       }
 
-/*console.log(this.#keyDownTime, this.#keyUpTime)
+      /* console.log(this.#keyDownTime, this.#keyUpTime)
       if (
         this.#keyDownTime === 0 &&
         this.#keyUpTime === 0
@@ -333,7 +330,7 @@ class FirstPersonControls extends Publisher {
       } else {
         this.#keyUpTime = 0;
 
-      }*/
+      } */
     }
   }
 
@@ -410,7 +407,7 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    /*if (this.#lastKey === event.code) {
+    /* if (this.#lastKey === event.code) {
       console.log(2)
       if (this.#keyDownTime > 0) {
         console.log(3)
@@ -425,7 +422,7 @@ class FirstPersonControls extends Publisher {
 
         this.#keyDownTime = 0;
       }
-    }*/
+    } */
   }
 
   dispose() {
@@ -470,16 +467,13 @@ class FirstPersonControls extends Publisher {
     }
 
     // 緊急回避中とスタン中はアクションを更新しない
-    if (
-      this.#states.has(States.urgency) ||
-      this.#states.has(States.stunning)
-    ) {
+    if (this.#states.has(States.urgency) || this.#states.has(States.stunning)) {
       return;
     }
 
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
-    //if (this.player.onGround && this.#keys.has(Keys.c)) {
+    // if (this.player.onGround && this.#keys.has(Keys.c)) {
     if (this.#mashed) {
       this.#states.add(States.urgency);
 
@@ -495,10 +489,10 @@ class FirstPersonControls extends Publisher {
         this.#actions.add(Actions.quickMoveLeft);
       } else if (Keys[this.#lastKey] === Keys.KeyE) {
         this.#actions.add(Actions.quickMoveRight);
-      }/* else {
+      } /* else {
         // 方向キーが押されてない場合はモードを解除
         this.#states.delete(States.urgency);
-      }*/
+      } */
 
       return;
     }
@@ -534,7 +528,7 @@ class FirstPersonControls extends Publisher {
       }
     } else {
       return;
-    }*/
+    } */
 
     if (this.#keys.has(Keys.shift)) {
       this.#states.add(States.sprint);
@@ -587,8 +581,8 @@ class FirstPersonControls extends Publisher {
       this.#actions.delete(Actions.moveRight);
     }
 
-    //////////////////
-    /*this.#actions.clear();
+    /// ///////////////
+    /* this.#actions.clear();
 
     // update()で一度だけアクションを発動する
     if (this.#keys.has(Keys.Space)) {
@@ -619,7 +613,7 @@ class FirstPersonControls extends Publisher {
       this.#actions.add(Actions.moveLeft);
     } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
       this.#actions.add(Actions.moveRight);
-    }*/
+    } */
   }
 
   update(deltaTime) {
@@ -686,9 +680,9 @@ class FirstPersonControls extends Publisher {
         this.player.moveSide(deltaTime, States.urgency);
       }
     } else {
-      let speedDelta = 0;
+      const speedDelta = 0;
 
-      /*if (this.onGround) {
+      /* if (this.onGround) {
         speedDelta = deltaTime * Controls.speed;
 
         if (
@@ -699,9 +693,9 @@ class FirstPersonControls extends Publisher {
         }
       } else {
         speedDelta = deltaTime * Controls.airSpeed;
-      }*/
+      } */
 
-      /*if (this.#actions.has(Actions.rotateLeft)) {
+      /* if (this.#actions.has(Actions.rotateLeft)) {
         this.rotate(speedDelta);
       } else if (this.#actions.has(Actions.rotateRight)) {
         this.rotate(-speedDelta);
@@ -719,7 +713,7 @@ class FirstPersonControls extends Publisher {
         this.moveSide(-speedDelta * 0.5);
       } else if (this.#actions.has(Actions.moveRight)) {
         this.moveSide(speedDelta * 0.5);
-      }*/
+      } */
       if (this.#actions.has(Actions.rotateLeft)) {
         this.player.rotate(deltaTime);
       } else if (this.#actions.has(Actions.rotateRight)) {
@@ -743,13 +737,12 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    /*if (this.onGround && this.#actions.has(Actions.jump)) {
+    /* if (this.onGround && this.#actions.has(Actions.jump)) {
       this.#actions.delete(Actions.jump);
       this.velocity.y = Controls.jumpPower * deltaTime * 50;
-    }*/
+    } */
 
-
-    /*const resistance = this.onGround
+    /* const resistance = this.onGround
       ? Controls.resistance
       : Controls.airResistance;
     const damping = exp(-resistance * deltaTime) - 1;
@@ -758,7 +751,7 @@ class FirstPersonControls extends Publisher {
       this.velocity.y -= World.gravity * deltaTime;
     }
 
-    this.velocity.addScaledVector(this.velocity, damping);*/
+    this.velocity.addScaledVector(this.velocity, damping); */
 
     // 自機の視点制御
     let actualLookSpeed = Controls.lookSpeed;
@@ -800,8 +793,8 @@ class FirstPersonControls extends Publisher {
 
       // this.povIndicator.position.x =
       // (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
-      let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
-      //posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
+      let posX = (this.viewHalfX * -this.povCoords.phi) / quarterPI;
+      // posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
 
       if (posX < -this.viewHalfX) {
         posX = -this.viewHalfX;
@@ -846,13 +839,12 @@ class FirstPersonControls extends Publisher {
           this.povCoords.phi -= dr;
         }
 
-
         if (this.povIndicator.material.color !== indicatorColor.normal) {
           this.povIndicator.material.color = indicatorColor.normal;
         }
 
-        let posX = (this.viewHalfX * this.povCoords.phi) / quarterPI;
-        /*posX = max(-this.viewHalfX, min(this.viewHalfX, posX));*/
+        const posX = (this.viewHalfX * -this.povCoords.phi) / quarterPI;
+        /* posX = max(-this.viewHalfX, min(this.viewHalfX, posX)); */
         this.povIndicator.position.x = posX;
       }
     }
