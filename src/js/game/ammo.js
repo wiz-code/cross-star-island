@@ -81,7 +81,7 @@ class Ammo extends Publisher {
       group.add(pointsMesh);
       this.scene.add(group);
 
-      this.list.push({
+      const object = {
         mesh: group,
         collider: new Sphere(
           new Vector3(0, i * -10 - 100, 0),
@@ -89,7 +89,9 @@ class Ammo extends Publisher {
         ),
         velocity: new Vector3(),
         createdAt: 0,
-      });
+      };
+
+      this.list.push(object);
     }
   }
 
@@ -131,7 +133,7 @@ class Ammo extends Publisher {
     const len = this.list.length;
 
     for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i];
+      const ammo = this.list[i];//console.log(i, ammo.collider.center)
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
 

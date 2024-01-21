@@ -10,18 +10,17 @@ export const PlayerSettings = {
   radius: 5,
   Position: {
     x: 0,
-    y: 300,
+    y: 200,
     z: 100,
   },
 
-  speed: 6, // 9
-  rotateSpeed: 8,
-  sprint: 2.5, // 2.8
-  urgencyMove: 10, // 7
-  urgencyTurn: 9, // 7
+  speed: 6,
+  turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+  sprint: 2.5,
+  urgencyMove: PI * 2 * (5 / 4), // 1秒間に5/4周する
+  urgencyTurn: 4, //9
   airSpeed: 3,
-  jumpPower: 12,
-  lookSpeed: 2, // 20
+  jumpPower: 14,
 };
 
 export const Scene = {
@@ -93,9 +92,9 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 20, // dev 20, prod 40
-    height: 20, // dev 20, prod 40
-    depth: 20, // dev 20, prod 40
+    width: 40, // dev 20, prod 40
+    height: 40, // dev 20, prod 40
+    depth: 40, // dev 20, prod 40
   },
 };
 
@@ -117,15 +116,6 @@ export const Ground = {
 };
 
 export const Controls = {
-  speed: 3,
-  sprint: 2.5,
-  urgencyMove: 7,
-  urgencyTurn: 9,
-  airSpeed: 3,
-  resistance: 10,
-  airResistance: 2,
-  rotateSpeed: 6,
-  jumpPower: 15,
   lookSpeed: 2,
 
   idleTime: 0.3,
@@ -158,7 +148,7 @@ export const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5, // dev 5, prod 50
+  numAmmo: 50, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,
