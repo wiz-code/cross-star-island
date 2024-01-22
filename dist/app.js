@@ -9573,7 +9573,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    // this.lock(); // remove when dev mode
+    this.lock(); // remove when dev mode
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -9646,7 +9646,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
-          if (now - this.#keyUpTime <= InputDuration) {
+          if (now - this.#keyUpTime <= InputDuration && this.#lastKey === event.code) {
             this.#mashed = true;
           }
           this.#keyUpTime = 0;
@@ -9733,7 +9733,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.#keyUpTime = 0;
           this.#lastKey = '';
         } else {
-          if (now - this.#keyDownTime <= InputDuration) {
+          if (now - this.#keyDownTime <= InputDuration && this.#lastKey === event.code) {
             this.#keyUpTime = performance.now();
           }
           this.#keyDownTime = 0;
@@ -9763,22 +9763,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
-  }
-  moveForward(delta) {
-    const direction = this.direction.clone().multiplyScalar(delta);
-    this.velocity.add(direction);
-  }
-  rotate(delta) {
-    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.turnSpeed * 0.02;
-    this.rotY += rotation;
-    this.rotation.y += rotation;
-    this.direction.applyAxisAngle(this.#virticalVector, rotation);
-    this.direction.normalize();
-  }
-  moveSide(delta) {
-    const direction = this.#vectorB.crossVectors(this.direction, this.#virticalVector);
-    direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));
   }
   input() {
     // 入力操作の処理
@@ -11207,11 +11191,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 20,
+    width: 40,
     // dev 20, prod 40
-    height: 20,
+    height: 40,
     // dev 20, prod 40
-    depth: 20 // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11259,7 +11243,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5,
+  numAmmo: 50,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,

@@ -216,7 +216,7 @@ class FirstPersonControls extends Publisher {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    // this.lock(); // remove when dev mode
+    this.lock(); // remove when dev mode
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -296,11 +296,17 @@ class FirstPersonControls extends Publisher {
       const now = performance.now();
 
       if (this.player.onGround && !this.#mashed) {
-        if (this.#keyUpTime === 0 || now - this.#keyUpTime > InputDuration) {
+        if (
+          this.#keyUpTime === 0 ||
+          now - this.#keyUpTime > InputDuration
+        ) {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
-          if (now - this.#keyUpTime <= InputDuration) {
+          if (
+            now - this.#keyUpTime <= InputDuration &&
+            this.#lastKey === event.code
+          ) {
             this.#mashed = true;
           }
 
@@ -398,7 +404,10 @@ class FirstPersonControls extends Publisher {
           this.#keyUpTime = 0;
           this.#lastKey = '';
         } else {
-          if (now - this.#keyDownTime <= InputDuration) {
+          if (
+            now - this.#keyDownTime <= InputDuration &&
+            this.#lastKey === event.code
+          ) {
             this.#keyUpTime = performance.now();
           }
 
@@ -433,29 +442,6 @@ class FirstPersonControls extends Publisher {
 
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
-  }
-
-  moveForward(delta) {
-    const direction = this.direction.clone().multiplyScalar(delta);
-    this.velocity.add(direction);
-  }
-
-  rotate(delta) {
-    const rotation = delta * Controls.turnSpeed * 0.02;
-    this.rotY += rotation;
-    this.rotation.y += rotation;
-
-    this.direction.applyAxisAngle(this.#virticalVector, rotation);
-    this.direction.normalize();
-  }
-
-  moveSide(delta) {
-    const direction = this.#vectorB.crossVectors(
-      this.direction,
-      this.#virticalVector,
-    );
-    direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));
   }
 
   input() {
