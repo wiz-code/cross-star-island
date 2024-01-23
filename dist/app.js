@@ -9200,7 +9200,6 @@ const update = function () {
   this.stats.update();
 };
 function App() {
-  console.log('App::rendered');
   const [objects, setObjects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [rendering, setRendering] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
   const [started, setStarted] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
@@ -9433,7 +9432,8 @@ const {
 const halfPI = PI / 2;
 const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
-const InputDuration = 200;
+const InputDuration = 100; // 200
+
 const lerp = (x, y, p) => x + (y - x) * p;
 const sightColor = {
   front: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
@@ -9573,7 +9573,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // remove when dev mode
+    // this.lock(); // remove when dev mode
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -9646,7 +9646,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
-          if (now - this.#keyUpTime <= InputDuration && this.#lastKey === event.code) {
+          if (now - this.#keyUpTime <= InputDuration) {
             this.#mashed = true;
           }
           this.#keyUpTime = 0;
@@ -9733,7 +9733,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.#keyUpTime = 0;
           this.#lastKey = '';
         } else {
-          if (now - this.#keyDownTime <= InputDuration && this.#lastKey === event.code) {
+          if (now - this.#keyDownTime <= InputDuration) {
             this.#keyUpTime = performance.now();
           }
           this.#keyDownTime = 0;
@@ -9763,6 +9763,22 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+  }
+  moveForward(delta) {
+    const direction = this.direction.clone().multiplyScalar(delta);
+    this.velocity.add(direction);
+  }
+  rotate(delta) {
+    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.turnSpeed * 0.02;
+    this.rotY += rotation;
+    this.rotation.y += rotation;
+    this.direction.applyAxisAngle(this.#virticalVector, rotation);
+    this.direction.normalize();
+  }
+  moveSide(delta) {
+    const direction = this.#vectorB.crossVectors(this.direction, this.#virticalVector);
+    direction.normalize();
+    this.velocity.add(direction.multiplyScalar(delta));
   }
   input() {
     // 入力操作の処理
@@ -10383,6 +10399,42 @@ const generateTexture = (data, width, height) => {
   context.putImageData(image, 0, 0);
   return canvasScaled;
 };
+const createStage = function () {
+  let radius = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 100;
+  const geom = new three__WEBPACK_IMPORTED_MODULE_7__.CylinderGeometry(radius, radius, 10, 12);
+  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_7__.CylinderGeometry(radius + 2.5, radius + 2.5, 20, 12);
+  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+  bufferGeom.computeBoundingSphere();
+  const mat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
+  });
+  const wireMat = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
+    wireframe: true
+  });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
+  const texture = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas);
+  texture.needsUpdate = true;
+  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+    map: texture,
+    blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+    alphaTest: 0.5
+  });
+  const mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, mat);
+  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom, wireMat);
+  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Points(bufferGeom, pointsMat);
+  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  group.add(mesh);
+  group.add(wireMesh);
+  group.add(pointsMesh);
+  return group;
+};
 const createStone = function () {
   let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
   let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -10553,6 +10605,9 @@ const createGround = () => {
     ms.position.set(80, 100, -300);
     group.ground.add(ms);
   });
+  const stage = createStage();
+  stage.position.set(200, 150, -100);
+  group.ground.add(stage);
   const walls = createWalls();
   walls.forEach(wall => group.ground.add(wall));
   // ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
@@ -11121,7 +11176,7 @@ const PlayerSettings = {
   urgencyTurn: PI * 2 * (13.8 / 16),
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
-  jumpPower: 14
+  jumpPower: 15
 };
 const Scene = {
   background: 0x000000,
@@ -11191,11 +11246,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11218,8 +11273,8 @@ const Ground = {
 const Controls = {
   lookSpeed: 2,
   idleTime: 0.3,
-  restoreSpeed: 3,
-  // 1.2,
+  restoreSpeed: 6,
+  // 3,
   restoreMinAngle: PI * 2 * (0.2 / 360),
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
@@ -11243,7 +11298,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
