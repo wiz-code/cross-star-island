@@ -105,7 +105,6 @@ const update = function () {
 };
 
 function App() {
-  console.log('App::rendered');
   const [objects, setObjects] = useState(null);
   const [rendering, setRendering] = useState(null);
   const [started, setStarted] = useState(false);

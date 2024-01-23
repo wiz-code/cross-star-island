@@ -93,6 +93,54 @@ const generateTexture = (data, width, height) => {
   return canvasScaled;
 };
 
+const createStage = (radius = 100) => {
+  const geom = new THREE.CylinderGeometry(radius, radius, 10, 12);
+
+  const pointsGeom = new THREE.CylinderGeometry(radius + 2.5, radius + 2.5, 20, 12);
+  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+
+  const bufferGeom = new THREE.BufferGeometry();
+  bufferGeom.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(pointsVertices, 3),
+  );
+  bufferGeom.computeBoundingSphere();
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: Ground.Object.color,
+  });
+  const wireMat = new THREE.MeshBasicMaterial({
+    color: Ground.wireframeColor,
+    wireframe: true,
+  });
+
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  textures.crossStar(context);
+
+  const texture = new THREE.Texture(canvas);
+  texture.needsUpdate = true;
+
+  const pointsMat = new THREE.PointsMaterial({
+    color: Ground.Object.pointsColor,
+    size: Grid.size,
+    map: texture,
+    blending: THREE.NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  const mesh = new THREE.Mesh(geom, mat);
+  const wireMesh = new THREE.Mesh(geom, wireMat);
+  const pointsMesh = new THREE.Points(bufferGeom, pointsMat);
+
+  const group = new THREE.Group();
+  group.add(mesh);
+  group.add(wireMesh);
+  group.add(pointsMesh);
+
+  return group;
+};
+
 const createStone = (size = 1, detail = 0) => {
   const geom = new THREE.OctahedronGeometry(size, detail);
   geom.scale(0.2, 1, 0.2);
@@ -326,6 +374,10 @@ export const createGround = () => {
     ms.position.set(80, 100, -300);
     group.ground.add(ms);
   });
+
+  const stage = createStage();
+  stage.position.set(200, 150, -100);
+  group.ground.add(stage);
 
   const walls = createWalls();
   walls.forEach((wall) => group.ground.add(wall));
