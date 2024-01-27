@@ -9542,7 +9542,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -11023,11 +11023,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 20,
+    width: 40,
     // dev 20, prod 40
-    height: 20,
+    height: 40,
     // dev 20, prod 40
-    depth: 20 // dev 20, prod 40
+    depth: 40 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11076,7 +11076,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5,
+  numAmmo: 50,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
