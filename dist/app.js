@@ -9338,8 +9338,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       const object = {
         mesh: group,
         collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * -10 - 100, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
-        velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
-        createdAt: 0
+        velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3()
       };
       this.list.push(object);
     }
@@ -9401,80 +9400,68 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   FirstPersonControls: function() { return /* binding */ FirstPersonControls; }
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _screen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./screen */ "./src/js/game/screen.js");
+/* harmony import */ var _screen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./screen */ "./src/js/game/screen.js");
 
 
 
 
-
-const {
-  radToDeg,
-  degToRad,
-  clamp,
-  mapLinear
-} = three__WEBPACK_IMPORTED_MODULE_4__.MathUtils;
 const {
   abs,
   sign,
-  floor,
   max,
   min,
-  exp,
   PI
 } = Math;
 const halfPI = PI / 2;
 const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
-const InputDuration = 100; // 200
-
 const lerp = (x, y, p) => x + (y - x) * p;
 const sightColor = {
-  front: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
-  pov: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovColor)
+  front: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
+  pov: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovColor)
 };
 const indicatorColor = {
-  normal: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
-  beyondFov: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.warnColor)
+  normal: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
+  beyondFov: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.warnColor)
+};
+const onContextmenu = event => {
+  event.preventDefault();
 };
 const ActionKeys = new Set(['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRigh', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyZ', 'KeyX', 'KeyC']);
-class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
-  #vectorA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// //
-
-  #vectorB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// /////
-
-  #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0); /// ///////
-
-  #contextmenu(event) {
-    event.preventDefault();
-  }
+class FirstPersonControls {
+  #vectorA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+  #vectorB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
   #keys = new Set();
   #pointers = new Set();
   #actions = new Set();
   #states = new Set();
+  #rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
+  #dx = 0;
+  #dy = 0;
   #count = 0;
   #lastKey = '';
   #keyDownTime = 0;
   #keyUpTime = 0;
   #mashed = false;
+  #moved = false;
+  #timeout = false;
+  #st = 0;
+  #urgencyRemainingTime = 0; /// ///
+
+  #stunningRemainingTime = 0; /// //
+
   constructor(screen, camera, player, domElement) {
-    super();
     this.screen = screen;
     this.camera = camera;
     this.player = player;
     this.domElement = domElement;
-    this.povSight = (0,_screen__WEBPACK_IMPORTED_MODULE_3__.createSight)();
+    this.povSight = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createSight)();
     this.screen.add(this.povSight);
-    this.povIndicator = (0,_screen__WEBPACK_IMPORTED_MODULE_3__.createPovIndicator)();
+    this.povIndicator = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createPovIndicator)();
     this.screen.add(this.povIndicator);
-
-    // API
     this.enabled = true;
     this.activeLook = true;
     this.povLock = false;
@@ -9486,22 +9473,6 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       virtical: PI,
       horizontal: PI * 2
     };
-
-    // internals
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// ///////
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); /// //////
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Euler(0, 0, 0, 'YXZ'); /// /////
-    this.rotY = 0;
-    this.onGround = false; /// ////////
-
-    this.povCoords = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
-    this.timeout = false;
-    this.moved = false;
-    this.st = 0;
-    this.dx = 0;
-    this.dy = 0;
-    this.urgencyRemainingTime = 0;
-    this.stunningRemainingTime = 0;
     this.viewHalfX = 0;
     this.viewHalfY = 0;
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -9509,7 +9480,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     this.onPointerUp = this.onPointerUp.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
-    this.domElement.addEventListener('contextmenu', this.#contextmenu);
+    this.domElement.addEventListener('contextmenu', onContextmenu);
     this.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.domElement.addEventListener('pointermove', this.onPointerMove);
     this.domElement.addEventListener('pointerup', this.onPointerUp);
@@ -9522,10 +9493,8 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     const {
       rotation
     } = this.camera;
-    // this.rotation.copy(rotation);
-    this.povCoords.phi = rotation.y;
-    this.povCoords.theta = rotation.x;
-    this.camera.getWorldDirection(this.direction);
+    this.#rotation.phi = rotation.y;
+    this.#rotation.theta = rotation.x;
   }
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
@@ -9559,6 +9528,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     }
   }
   onPointerMove(event) {
+    this.#moved = true;
     if (this.#pointers.has(_data__WEBPACK_IMPORTED_MODULE_1__.Pointers.right)) {
       if (event.button === _data__WEBPACK_IMPORTED_MODULE_1__.Pointers.left) {
         if (this.#count % 2 === 0) {
@@ -9567,13 +9537,12 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
         this.#count += 1;
       }
     }
-    this.moved = true;
-    this.dx = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementX, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
-    this.dy = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementY, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
+    this.#dx = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementX, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
+    this.#dy = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementY, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // remove when dev mode
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -9592,6 +9561,9 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
   }
   onKeyDown(event) {
     event.preventDefault();
+    if (event.repeat) {
+      return;
+    }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
@@ -9639,41 +9611,19 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           }
         }
     }
-    if (ActionKeys.has(event.code) && !event.repeat) {
+    if (ActionKeys.has(event.code)) {
       const now = performance.now();
-      if (this.player.onGround && !this.#mashed) {
-        if (this.#keyUpTime === 0 || now - this.#keyUpTime > InputDuration) {
+      if (!this.#mashed) {
+        if (this.#keyUpTime === 0 || now - this.#keyUpTime > _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.inputDuration) {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
-          if (now - this.#keyUpTime <= InputDuration) {
+          if (now - this.#keyUpTime <= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.inputDuration) {
             this.#mashed = true;
           }
           this.#keyUpTime = 0;
         }
       }
-
-      /* console.log(this.#keyDownTime, this.#keyUpTime)
-      if (
-        this.#keyDownTime === 0 &&
-        this.#keyUpTime === 0
-      ) {
-        console.log(1)
-        this.#keyDownTime = now;
-        this.#lastKey = event.code;
-      } else if (this.#lastKey === event.code) {
-        console.log(5)
-        if (this.#keyUpTime > 0) {
-          console.log(6)
-          if (now - this.#keyUpTime <= InputDuration) {
-            console.log('7, mashed')
-            this.#mashed = true;
-          }
-           this.#keyUpTime = 0;
-        }
-      } else {
-        this.#keyUpTime = 0;
-       } */
     }
   }
   onKeyUp(event) {
@@ -9728,352 +9678,69 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
     }
     if (ActionKeys.has(event.code)) {
       const now = performance.now();
-      if (this.player.onGround && !this.#mashed) {
+      if (!this.#mashed) {
         if (this.#keyDownTime === 0) {
           this.#keyUpTime = 0;
           this.#lastKey = '';
         } else {
-          if (now - this.#keyDownTime <= InputDuration) {
+          if (now - this.#keyDownTime <= _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.inputDuration) {
             this.#keyUpTime = performance.now();
           }
           this.#keyDownTime = 0;
         }
       }
     }
-
-    /* if (this.#lastKey === event.code) {
-      console.log(2)
-      if (this.#keyDownTime > 0) {
-        console.log(3)
-        const now = performance.now();
-         if (
-          now - this.#keyDownTime <= InputDuration
-        ) {
-          console.log(4)
-          this.#keyUpTime = performance.now();
-        }
-         this.#keyDownTime = 0;
-      }
-    } */
   }
   dispose() {
-    this.domElement.removeEventListener('contextmenu', this.#contextmenu);
+    this.domElement.removeEventListener('contextmenu', onContextmenu);
     this.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
   }
-  moveForward(delta) {
-    const direction = this.direction.clone().multiplyScalar(delta);
-    this.velocity.add(direction);
-  }
-  rotate(delta) {
-    const rotation = delta * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.turnSpeed * 0.02;
-    this.rotY += rotation;
-    this.rotation.y += rotation;
-    this.direction.applyAxisAngle(this.#virticalVector, rotation);
-    this.direction.normalize();
-  }
-  moveSide(delta) {
-    const direction = this.#vectorB.crossVectors(this.direction, this.#virticalVector);
-    direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta));
-  }
-  input() {
-    // 入力操作の処理
-
-    // update()で一度だけアクションを発動する
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
-    }
-
-    // 緊急回避中とスタン中はアクションを更新しない
-    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency) || this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning)) {
-      return;
-    }
-
-    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
-    // ジャンプ中は緊急行動のコマンド受け付けは停止
-    // if (this.player.onGround && this.#keys.has(Keys.c)) {
-    if (this.#mashed) {
-      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_1__.Keys[this.#lastKey] === _data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight);
-      } /* else {
-        // 方向キーが押されてない場合はモードを解除
-        this.#states.delete(States.urgency);
-        } */
-
-      return;
-    }
-
-    /*
-    if (
-      !this.#states.has(States.urgency) &&
-      !this.#states.has(States.stunning)
-    ) {
-      this.#actions.clear();
-       if (this.#keys.has(Keys.c)) {
-        this.#states.add(States.urgency);
-         if (this.#keys.has(Keys.KeyW)) {
-          this.#actions.add(Actions.quickMoveForward);
-        } else if (this.#keys.has(Keys.KeyA)) {
-          this.#actions.add(Actions.quickTurnLeft);
-        } else if (this.#keys.has(Keys.KeyS)) {
-          this.#actions.add(Actions.quickMoveBackward);
-        } else if (this.#keys.has(Keys.KeyD)) {
-          this.#actions.add(Actions.quickTurnRight);
-        } else if (this.#keys.has(Keys.KeyQ)) {
-          this.#actions.add(Actions.quickMoveLeft);
-        } else if (this.#keys.has(Keys.KeyE)) {
-          this.#actions.add(Actions.quickMoveRight);
-        } else {
-          // 方向キーが押されてない場合はモードを解除
-          this.#states.delete(States.urgency);
-        }
-         return;
-      }
-    } else {
-      return;
-    } */
-
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.shift)) {
-      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
-    } else {
-      this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
-    }
-
-    // 前進と後退
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyW)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyS)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward);
-    }
-
-    // 左右回転
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyA)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyD)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight);
-    }
-
-    // 左右平行移動
-    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
-    } else if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE) && !this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyQ)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft);
-    }
-    if (!this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.KeyE)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight);
-    }
-
-    /// ///////////////
-    /* this.#actions.clear();
-     // update()で一度だけアクションを発動する
-    if (this.#keys.has(Keys.Space)) {
-      this.#actions.add(Actions.jump);
-    }
-     if (this.#keys.has(Keys.shift)) {
-      this.#states.add(States.sprint);
-    } else {
-      this.#states.delete(States.sprint);
-    }
-     if (this.#keys.has(Keys.KeyW) && !this.#keys.has(Keys.KeyS)) {
-      this.#actions.add(Actions.moveForward);
-    } else if (this.#keys.has(Keys.KeyS) && !this.#keys.has(Keys.KeyW)) {
-      this.#actions.add(Actions.moveBackward);
-    }
-     if (this.#keys.has(Keys.KeyA) && !this.#keys.has(Keys.KeyD)) {
-      this.#actions.add(Actions.rotateLeft);
-    }
-     if (this.#keys.has(Keys.KeyD) && !this.#keys.has(Keys.KeyA)) {
-      this.#actions.add(Actions.rotateRight);
-    }
-     if (this.#keys.has(Keys.KeyQ) && !this.#keys.has(Keys.KeyE)) {
-      this.#actions.add(Actions.moveLeft);
-    } else if (this.#keys.has(Keys.KeyE) && !this.#keys.has(Keys.KeyQ)) {
-      this.#actions.add(Actions.moveRight);
-    } */
-  }
   update(deltaTime) {
-    if (this.moved) {
-      this.moved = false;
-      this.timeout = true;
-      this.st = performance.now();
-    } else {
-      const now = performance.now();
-      if (now - this.st > _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.idleTime * 1000) {
-        this.st = 0;
-        this.timeout = false;
-      }
+    // this.input();
+    this.player.input(this.#keys, this.#lastKey, this.#mashed);
+    if (this.#mashed) {
+      this.#mashed = false;
     }
-    this.input();
-
-    // 自機の動き制御
-    if (this.stunningRemainingTime > 0) {
-      this.stunningRemainingTime -= deltaTime;
-      if (this.stunningRemainingTime <= 0) {
-        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning);
-        this.stunningRemainingTime = 0;
-      }
-    } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency) && this.urgencyRemainingTime === 0 && this.player.onGround) {
-      this.urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.urgencyDuration;
+    if (this.#keys.has(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space)) {
+      this.#keys.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Keys.Space);
     }
-    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.jump);
-      this.player.jump(deltaTime);
-    }
-    if (this.urgencyRemainingTime > 0) {
-      this.urgencyRemainingTime -= deltaTime;
-      if (this.urgencyRemainingTime <= 0) {
-        this.#mashed = false;
-        this.#actions.clear();
-        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-        this.#states.add(_data__WEBPACK_IMPORTED_MODULE_1__.States.stunning);
-        this.urgencyRemainingTime = 0;
-        this.stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.stunningDuration;
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveForward)) {
-        this.player.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveBackward)) {
-        this.player.moveForward(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnLeft)) {
-        this.player.rotate(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickTurnRight)) {
-        this.player.rotate(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveLeft)) {
-        this.player.moveSide(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.quickMoveRight)) {
-        this.player.moveSide(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.urgency);
-      }
-    } else {
-      const speedDelta = 0;
-
-      /* if (this.onGround) {
-        speedDelta = deltaTime * Controls.speed;
-         if (
-          this.#states.has(States.sprint) &&
-          this.#actions.has(Actions.moveForward)
-        ) {
-          speedDelta *= Controls.sprint;
-        }
-      } else {
-        speedDelta = deltaTime * Controls.airSpeed;
-      } */
-
-      /* if (this.#actions.has(Actions.rotateLeft)) {
-        this.rotate(speedDelta);
-      } else if (this.#actions.has(Actions.rotateRight)) {
-        this.rotate(-speedDelta);
-      }
-       if (this.#actions.has(Actions.moveForward)) {
-        this.player.moveForward(deltaTime);
-        //this.moveForward(speedDelta);
-      } else if (this.#actions.has(Actions.moveBackward)) {
-        this.player.moveForward(-deltaTime);
-        //this.moveForward(-speedDelta);
-      }
-       if (this.#actions.has(Actions.moveLeft)) {
-        this.moveSide(-speedDelta * 0.5);
-      } else if (this.#actions.has(Actions.moveRight)) {
-        this.moveSide(speedDelta * 0.5);
-      } */
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateLeft)) {
-        this.player.rotate(deltaTime);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.rotateRight)) {
-        this.player.rotate(-deltaTime);
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveForward)) {
-        if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_1__.States.sprint)) {
-          this.player.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_1__.States.sprint);
-        } else {
-          this.player.moveForward(deltaTime);
-        }
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveBackward)) {
-        this.player.moveForward(-deltaTime);
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveLeft)) {
-        this.player.moveSide(-deltaTime);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_1__.Actions.moveRight)) {
-        this.player.moveSide(deltaTime);
-      }
-    }
-
-    /* if (this.onGround && this.#actions.has(Actions.jump)) {
-      this.#actions.delete(Actions.jump);
-      this.velocity.y = Controls.jumpPower * deltaTime * 50;
-    } */
-
-    /* const resistance = this.onGround
-      ? Controls.resistance
-      : Controls.airResistance;
-    const damping = exp(-resistance * deltaTime) - 1;
-     if (!this.onGround) {
-      this.velocity.y -= World.gravity * deltaTime;
-    }
-     this.velocity.addScaledVector(this.velocity, damping); */
 
     // 自機の視点制御
+    if (this.#moved) {
+      this.#moved = false;
+      this.#timeout = true;
+      this.#st = performance.now();
+    } else {
+      const now = performance.now();
+      if (now - this.#st > _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.idleTime * 1000) {
+        this.#st = 0;
+        this.#timeout = false;
+      }
+    }
     let actualLookSpeed = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.lookSpeed;
-    const {
-      spherical
-    } = this.player;
-    // let actualLookSpeed = deltaTime * Controls.lookSpeed * 0.02;
-
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
-    if (this.timeout) {
+    if (this.#timeout) {
       if (this.povSight.material.color !== sightColor.pov) {
         this.povSight.material.color = sightColor.pov;
       }
       if (!this.povIndicator.visible) {
         this.povIndicator.visible = true;
       }
-
-      // this.rotation.x -= this.dy * actualLookSpeed;
-      // this.rotation.y -= this.dx * actualLookSpeed;
-
-      const degX = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.dy / (this.viewHalfY * 2);
+      const degX = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.#dy / (this.viewHalfY * 2);
       const radX = degX * degToRadCoef;
-      this.povCoords.theta -= radX * actualLookSpeed;
-      const degY = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.dx / (this.viewHalfX * 2);
+      this.#rotation.theta -= radX * actualLookSpeed;
+      const degY = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.#dx / (this.viewHalfX * 2);
       const radY = degY * degToRadCoef;
-      this.povCoords.phi -= radY * actualLookSpeed;
-      this.povCoords.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.povCoords.theta));
-      this.povCoords.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.povCoords.phi));
-
-      // this.povIndicator.position.x =
-      // (-this.viewHalfX * (this.rotY - this.rotation.y)) / PI;
-      let posX = this.viewHalfX * -this.povCoords.phi / quarterPI;
-      // posX = max(-this.viewHalfX, min(this.viewHalfX, posX));
-
+      this.#rotation.phi -= radY * actualLookSpeed;
+      this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
+      this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
+      let posX = this.viewHalfX * -this.#rotation.phi / quarterPI;
       if (posX < -this.viewHalfX) {
         posX = -this.viewHalfX;
         this.povIndicator.material.color = indicatorColor.beyondFov;
@@ -10085,7 +9752,7 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
       }
       this.povIndicator.position.x = posX;
     } else if (!this.povLock) {
-      if (this.povCoords.theta === 0 && this.povCoords.phi === 0) {
+      if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
         }
@@ -10093,35 +9760,34 @@ class FirstPersonControls extends _publisher__WEBPACK_IMPORTED_MODULE_2__["defau
           this.povIndicator.visible = false;
         }
       }
-      if (this.povCoords.theta !== 0) {
-        if (abs(this.povCoords.theta) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
-          this.povCoords.theta = 0;
+      if (this.#rotation.theta !== 0) {
+        if (abs(this.#rotation.theta) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
+          this.#rotation.theta = 0;
         } else {
-          const rx = -this.povCoords.theta * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.povCoords.theta) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
-          this.povCoords.theta += rx;
+          const rx = -this.#rotation.theta * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.#rotation.theta) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
+          this.#rotation.theta += rx;
         }
       }
-      if (this.povCoords.phi !== 0) {
-        if (abs(this.povCoords.phi) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
-          this.povCoords.phi = 0;
+      if (this.#rotation.phi !== 0) {
+        if (abs(this.#rotation.phi) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
+          this.#rotation.phi = 0;
         } else {
-          const dr = this.povCoords.phi * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(this.povCoords.phi) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
-          this.povCoords.phi -= dr;
+          const dr = this.#rotation.phi * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(this.#rotation.phi) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
+          this.#rotation.phi -= dr;
         }
         if (this.povIndicator.material.color !== indicatorColor.normal) {
           this.povIndicator.material.color = indicatorColor.normal;
         }
-        const posX = this.viewHalfX * -this.povCoords.phi / quarterPI;
-        /* posX = max(-this.viewHalfX, min(this.viewHalfX, posX)); */
+        const posX = this.viewHalfX * -this.#rotation.phi / quarterPI;
         this.povIndicator.position.x = posX;
       }
     }
-    this.player.setPovCoords(this.povCoords);
-    this.dx = 0;
-    this.dy = 0;
+    this.player.setPovRotation(this.#rotation);
+    this.#dx = 0;
+    this.#dy = 0;
   }
 }
-
+/* harmony default export */ __webpack_exports__["default"] = (FirstPersonControls);
 
 /***/ }),
 
@@ -10720,7 +10386,7 @@ const init = () => {
   worldOctree.fromGraphNode(ground);
   const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_5__["default"](scene.field, camera.field, worldOctree);
   const player = new _player__WEBPACK_IMPORTED_MODULE_6__["default"](camera.field, ammo, worldOctree);
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__.FirstPersonControls(scene.screen, camera.field, player, renderer.domElement);
+  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
 
   /// /
   // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
@@ -10825,22 +10491,17 @@ class Loop {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
 /* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
 /* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-
-
-
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 
 
 
 
 
 const {
-  abs,
   exp,
   sqrt,
   PI
@@ -10864,116 +10525,94 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
-  #dir = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #side = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #virticalVector = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0);
-  #test = 0; /// /////////
-
+  #dir = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
+  #side = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+  #vecA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+  #vecB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+  #vecC = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+  #euler = new three__WEBPACK_IMPORTED_MODULE_3__.Euler(0, 0, 0, 'YXZ');
+  #yawAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 1, 0);
+  #pitchAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 0, 0);
+  #onGround = false;
+  #actions = new Set();
+  #states = new Set();
+  #urgencyRemainingTime = 0;
+  #stunningRemainingTime = 0;
   constructor(camera, ammo, worldOctree) {
     super();
     this.camera = camera;
     this.worldOctree = worldOctree;
     this.ammo = ammo;
-    this.onGround = false;
-    this.position = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
+    this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     this.forwardComponent = 0;
     this.sideComponent = 0;
     this.rotateComponent = 0;
-    this.povCoords = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
-    this.spherical = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-    this.camera.getWorldDirection(this.direction);
+    this.povRotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+    this.direction = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.direction.clone();
     this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
-    const start = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.y, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.z);
-    const end = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(_settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.x, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.y + _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.height, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.Position.z);
-    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_5__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.radius);
+    const start = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.position.clone();
+    const end = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.position.clone();
+    end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height;
+    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
   }
   jump(deltaTime) {
-    if (this.onGround) {
-      this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.jumpPower * deltaTime * 50;
-    }
+    this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower * deltaTime * 50;
   }
   moveForward(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    let delta;
-    if (this.onGround) {
-      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.speed;
+    this.forwardComponent = deltaTime;
+    if (this.#onGround) {
+      this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.speed;
       if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.sprint && deltaTime >= 0) {
-        delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.sprint;
+        this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.sprint;
       } else if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-        delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyMove;
+        this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyMove;
       }
     } else {
-      delta = deltaTime * _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
+      this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.airSpeed;
     }
-    this.forwardComponent = delta;
-
-    // const direction = this.direction.clone().multiplyScalar(delta);
-    // this.velocity.add(direction);
   }
-
-  /* rotate(deltaTime, state = States.idle) {
-    let delta = deltaTime * PlayerSettings.turnSpeed * 0.1;
-     if (state === States.urgency) {
-      delta *= PlayerSettings.urgencyTurn;
-    }
-     this.direction.applyAxisAngle(this.#virticalVector, delta);
-    this.spherical.phi += delta;
-    this.direction.normalize();
-  } */
   rotate(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    let delta = deltaTime;
+    this.rotateComponent = deltaTime;
     if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyTurn;
+      this.rotateComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyTurn;
     } else {
-      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.turnSpeed;
+      this.rotateComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.turnSpeed;
     }
-
-    // this.direction.applyAxisAngle(this.#virticalVector, delta);
-    // this.spherical.phi += delta;
-    this.rotateComponent = delta;
-    // this.direction.normalize();
   }
   moveSide(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    let delta = deltaTime * 0.5;
-    if (this.onGround) {
-      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.speed;
+    this.sideComponent = deltaTime * 0.5;
+    if (this.#onGround) {
+      this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.speed;
       if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-        delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.urgencyMove;
+        this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyMove;
       }
     } else {
-      delta *= _settings__WEBPACK_IMPORTED_MODULE_3__.PlayerSettings.airSpeed;
+      this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.airSpeed;
     }
-    this.sideComponent = delta;
-
-    /* const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
-    direction.normalize();
-    this.velocity.add(direction.multiplyScalar(delta)); */
   }
-  setPovCoords(povCoords) {
-    this.povCoords = povCoords;
+  setPovRotation(povRotation) {
+    this.povRotation = povRotation.clone();
   }
   fire() {
     const ammo = this.ammo.list[this.ammo.index];
-    ammo.createdAt = performance.now();
-    this.camera.getWorldDirection(this.#dir);
-    ammo.collider.center.copy(this.collider.end).addScaledVector(this.#dir, this.collider.radius * 1.5);
-    ammo.velocity.copy(this.#dir).multiplyScalar(_settings__WEBPACK_IMPORTED_MODULE_3__.AmmoSettings.speed);
+    this.#euler.x = this.povRotation.theta + this.rotation.theta;
+    this.#euler.y = this.povRotation.phi + this.rotation.phi;
+    const dir = this.#dir.clone().applyEuler(this.#euler);
+    ammo.collider.center.copy(this.collider.end).addScaledVector(dir, this.collider.radius * 1.5);
+    ammo.velocity.copy(dir).multiplyScalar(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.speed);
     ammo.velocity.addScaledVector(this.velocity, 2);
     this.ammo.index = (this.ammo.index + 1) % this.ammo.list.length;
   }
   ammoCollision(ammo) {
     const center = this.#vecA.addVectors(this.collider.start, this.collider.end).multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
-    // console.log(ammo.collider.center, this.collider.end)
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
     const colliders = [this.collider.start, this.collider.end, center];
@@ -10994,26 +10633,167 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   }
   collisions() {
     const result = this.worldOctree.capsuleIntersect(this.collider);
-    this.onGround = false;
+    this.#onGround = false;
     if (result) {
       const onGround = result.normal.y > 0;
-      this.onGround = onGround;
-      if (!this.onGround) {
+      this.#onGround = onGround;
+      if (!this.#onGround) {
         this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
       }
       this.collider.translate(result.normal.multiplyScalar(result.depth));
     }
   }
+  input(keys, lastKey, mashed) {
+    // 入力操作の処理
+
+    // update()で一度だけアクションを発動する
+    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.Space) && this.#onGround) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
+    }
+
+    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
+    // ジャンプ中は緊急行動のコマンド受け付けは停止
+    if (mashed) {
+      if (!this.#onGround) {
+        return;
+      }
+      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+    }
+
+    // 緊急回避中は一部アクションを制限、スタン中はすべてのアクションを更新しない
+    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency)) {
+      if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveForward);
+      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnLeft);
+      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveBackward);
+      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnRight);
+      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveLeft);
+      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE) {
+        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveRight);
+      }
+      return;
+    }
+    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning)) {
+      return;
+    }
+    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.shift)) {
+      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
+    } else {
+      this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
+    }
+
+    // 前進と後退
+    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward);
+    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward);
+    }
+
+    // 左右回転
+    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft);
+    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight);
+    }
+
+    // 左右平行移動
+    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft);
+    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ)) {
+      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft);
+    }
+    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight);
+    }
+  }
   update(deltaTime) {
-    const resistance = this.onGround ? _settings__WEBPACK_IMPORTED_MODULE_3__.World.resistance : _settings__WEBPACK_IMPORTED_MODULE_3__.World.airResistance;
+    // 自機の動き制御
+    if (this.#stunningRemainingTime > 0) {
+      this.#stunningRemainingTime -= deltaTime;
+      if (this.#stunningRemainingTime <= 0) {
+        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
+        this.#stunningRemainingTime = 0;
+      }
+    } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) && this.#urgencyRemainingTime === 0 && this.#onGround) {
+      this.#urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.urgencyDuration;
+    }
+    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump)) {
+      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
+      this.jump(deltaTime);
+    }
+    if (this.#urgencyRemainingTime > 0) {
+      this.#urgencyRemainingTime -= deltaTime;
+      if (this.#urgencyRemainingTime <= 0) {
+        this.#actions.clear();
+        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+        this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
+        this.#urgencyRemainingTime = 0;
+        this.#stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.stunningDuration;
+      }
+      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveForward)) {
+        this.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveBackward)) {
+        this.moveForward(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnLeft)) {
+        this.rotate(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnRight)) {
+        this.rotate(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveLeft)) {
+        this.moveSide(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveRight)) {
+        this.moveSide(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
+      }
+    } else {
+      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft)) {
+        this.rotate(deltaTime);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight)) {
+        this.rotate(-deltaTime);
+      }
+      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward)) {
+        if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint)) {
+          this.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
+        } else {
+          this.moveForward(deltaTime);
+        }
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward)) {
+        this.moveForward(-deltaTime);
+      }
+      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft)) {
+        this.moveSide(-deltaTime);
+      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight)) {
+        this.moveSide(deltaTime);
+      }
+    }
+
+    // 移動の減衰処理
+    const resistance = this.#onGround ? _settings__WEBPACK_IMPORTED_MODULE_2__.World.resistance : _settings__WEBPACK_IMPORTED_MODULE_2__.World.airResistance;
     const damping = exp(-resistance * deltaTime) - 1;
-    if (!this.onGround) {
-      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_3__.World.gravity * deltaTime;
+    if (!this.#onGround) {
+      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime;
     }
     if (this.rotateComponent !== 0) {
-      this.direction.applyAxisAngle(this.#virticalVector, this.rotateComponent);
+      this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
       this.direction.normalize();
-      this.spherical.phi += this.rotateComponent;
+      this.rotation.phi += this.rotateComponent;
       this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
     }
     if (this.forwardComponent !== 0) {
@@ -11022,14 +10802,14 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
     }
     if (this.sideComponent !== 0) {
-      const direction = this.#side.crossVectors(this.direction, this.#virticalVector);
+      const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }
     this.velocity.addScaledVector(this.velocity, damping);
-    this.camera.rotation.x = this.povCoords.theta;
-    this.camera.rotation.y = this.povCoords.phi + this.spherical.phi;
+    this.camera.rotation.x = this.povRotation.theta;
+    this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
     this.collider.translate(this.velocity);
     this.camera.position.copy(this.collider.end);
     this.collisions();
@@ -11163,11 +10943,8 @@ const StepsPerFrame = 3;
 const PlayerSettings = {
   height: 30,
   radius: 5,
-  Position: {
-    x: 0,
-    y: 200,
-    z: 100
-  },
+  position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 200, 100),
+  direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, -1),
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
@@ -11246,11 +11023,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11278,7 +11055,8 @@ const Controls = {
   restoreMinAngle: PI * 2 * (0.2 / 360),
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
-  stunningDuration: 0.4
+  stunningDuration: 0.4,
+  inputDuration: 100
 };
 const World = {
   gravity: 6,
@@ -11298,7 +11076,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
