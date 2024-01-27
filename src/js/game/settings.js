@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3, VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
 const { PI } = Math;
 
@@ -8,11 +8,8 @@ export const StepsPerFrame = 3;
 export const PlayerSettings = {
   height: 30,
   radius: 5,
-  Position: {
-    x: 0,
-    y: 200,
-    z: 100,
-  },
+  position: new Vector3(0, 200, 100),
+  direction: new Vector3(0, 0, -1),
 
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
@@ -47,8 +44,8 @@ export const Renderer = {
   },
   ShadowMap: {
     enabled: true,
-    type: THREE.VSMShadowMap,
-    toneMapping: THREE.ACESFilmicToneMapping,
+    type: VSMShadowMap,
+    toneMapping: ACESFilmicToneMapping,
   },
 };
 export const Light = {
@@ -92,9 +89,9 @@ export const Grid = {
     depth: 80,
   },
   Segments: {
-    width: 40, // dev 20, prod 40
-    height: 40, // dev 20, prod 40
-    depth: 40, // dev 20, prod 40
+    width: 20, // dev 20, prod 40
+    height: 20, // dev 20, prod 40
+    depth: 20, // dev 20, prod 40
   },
 };
 
@@ -127,6 +124,8 @@ export const Controls = {
 
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
+
+  inputDuration: 100,
 };
 
 export const World = {
@@ -149,7 +148,7 @@ export const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50, // dev 5, prod 50
+  numAmmo: 5, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,

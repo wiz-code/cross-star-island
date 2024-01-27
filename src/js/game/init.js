@@ -7,7 +7,7 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 import { debounce } from 'throttle-debounce';
 
-import { FirstPersonControls } from './controls';
+import FirstPersonControls from './controls';
 import {
   Scene,
   Camera,

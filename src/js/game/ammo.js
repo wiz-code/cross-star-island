@@ -88,7 +88,6 @@ class Ammo extends Publisher {
           AmmoSettings.radius,
         ),
         velocity: new Vector3(),
-        createdAt: 0,
       };
 
       this.list.push(object);

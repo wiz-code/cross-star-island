@@ -96,7 +96,12 @@ const generateTexture = (data, width, height) => {
 const createStage = (radius = 100) => {
   const geom = new THREE.CylinderGeometry(radius, radius, 10, 12);
 
-  const pointsGeom = new THREE.CylinderGeometry(radius + 2.5, radius + 2.5, 20, 12);
+  const pointsGeom = new THREE.CylinderGeometry(
+    radius + 2.5,
+    radius + 2.5,
+    20,
+    12,
+  );
   const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
   const bufferGeom = new THREE.BufferGeometry();
