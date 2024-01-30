@@ -85,8 +85,8 @@ class Player extends Publisher {
     this.collider = new Capsule(start, end, PlayerSettings.radius);
   }
 
-  jump(deltaTime) {
-    this.velocity.y = PlayerSettings.jumpPower * deltaTime * 50;
+  jump() {
+    this.velocity.y = PlayerSettings.jumpPower;
   }
 
   moveForward(deltaTime, state = States.idle) {
@@ -116,7 +116,7 @@ class Player extends Publisher {
   }
 
   moveSide(deltaTime, state = States.idle) {
-    this.sideComponent = deltaTime * 0.5;
+    this.sideComponent = deltaTime * 0.7;
 
     if (this.#onGround) {
       this.sideComponent *= PlayerSettings.speed;
@@ -313,7 +313,7 @@ class Player extends Publisher {
 
     if (this.#actions.has(Actions.jump)) {
       this.#actions.delete(Actions.jump);
-      this.jump(deltaTime);
+      this.jump();
     }
 
     if (this.#urgencyRemainingTime > 0) {

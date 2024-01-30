@@ -15,9 +15,12 @@ import {
   Light,
   PlayerSettings,
   ResizeDelayTime,
+  Grid,
+  Ground,
 } from './settings';
 import { createGrid, createFineGrid } from './grid';
 import { createGround } from './ground';
+import stages from './stages';
 
 import Ammo from './ammo';
 import Player from './player';
@@ -74,13 +77,25 @@ const init = () => {
   // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
-  const grid = createGrid();
+  /*const grid = createGrid(
+    Grid.Segments.width,
+    Grid.Segments.height,
+    Grid.Segments.depth,
+    Grid.Spacing.width,
+    Grid.Spacing.height,
+    Grid.Spacing.depth
+  );*/
   // const fineGrid = createFineGrid();
-  scene.field.add(grid);
+  //scene.field.add(grid);
   // scene.field.add(fineGrid);
 
-  const ground = createGround();
-  scene.field.add(ground);
+  //const ground = createGround(20, 3, 80, 80, 2);
+  /* Grid.Segments.width,
+    Grid.Segments.depth,
+    Grid.Spacing.width,
+    Grid.Spacing.depth,
+    Ground.heightCoef, */
+  //scene.field.add(ground);
 
   const light = {};
 
@@ -128,7 +143,10 @@ const init = () => {
 
   // worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
-  worldOctree.fromGraphNode(ground);
+  //worldOctree.fromGraphNode(ground);
+  const firstStage = stages.firstStage(scene.field);
+  worldOctree.fromGraphNode(firstStage);
+
   const ammo = new Ammo(scene.field, camera.field, worldOctree);
   const player = new Player(camera.field, ammo, worldOctree);
 

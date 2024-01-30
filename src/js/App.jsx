@@ -134,14 +134,22 @@ function App() {
   const togglePlay = useCallback(() => {
     if (rendering != null) {
       if (!started) {
+        if (objects != null) {
+          objects.clock.start();
+        }
+
         rendering.start();
         setStarted(true);
       } else {
+        if (objects != null) {
+          objects.clock.stop();
+        }
+
         rendering.stop();
         setStarted(false);
       }
     }
-  }, [rendering, started]);
+  }, [rendering, started, objects]);
 
   const toggleFullScreen = useCallback(() => {
     if (document.fullscreenElement == null) {

@@ -36,63 +36,6 @@ const generateHeight = (width, height) => {
   return data;
 };
 
-const generateTexture = (data, width, height) => {
-  const vector3 = new THREE.Vector3(0, 0, 0);
-  const sun = new THREE.Vector3(1, 1, 1);
-  sun.normalize();
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-
-  let context = canvas.getContext('2d');
-  context.fillStyle = '#000';
-  context.fillRect(0, 0, width, height);
-
-  let image = context.getImageData(0, 0, canvas.width, canvas.height);
-  let imageData = image.data;
-
-  for (let i = 0, j = 0, l = imageData.length; i < l; i += 4, j += 1) {
-    vector3.x = data[j - 2] - data[j + 2];
-    vector3.y = 2;
-    vector3.z = data[j - width * 2] - data[j + width * 2];
-    vector3.normalize();
-
-    const shade = vector3.dot(sun);
-
-    imageData[i] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
-    imageData[i + 1] = (32 + shade * 96) * (0.5 + data[j] * 0.007);
-    imageData[i + 2] = shade * 96 * (0.5 + data[j] * 0.007);
-  }
-
-  context.putImageData(image, 0, 0);
-
-  // Scaled 4x
-
-  const canvasScaled = document.createElement('canvas');
-  canvasScaled.width = width * 4;
-  canvasScaled.height = height * 4;
-
-  context = canvasScaled.getContext('2d');
-  context.scale(4, 4);
-  context.drawImage(canvas, 0, 0);
-
-  image = context.getImageData(0, 0, canvasScaled.width, canvasScaled.height);
-  imageData = image.data;
-
-  for (let i = 0, l = imageData.length; i < l; i += 4) {
-    const v = floor(customRandom() * 5);
-
-    imageData[i] += v;
-    imageData[i + 1] += v;
-    imageData[i + 2] += v;
-  }
-
-  context.putImageData(image, 0, 0);
-
-  return canvasScaled;
-};
-
 const createStage = (radius = 100) => {
   const geom = new THREE.CylinderGeometry(radius, radius, 10, 12);
 
@@ -295,22 +238,29 @@ export const createWalls = () => {
   return walls;
 };
 
-export const createGround = () => {
-  const width = Grid.Segments.width * Grid.Spacing.width;
-  const depth = Grid.Segments.depth * Grid.Spacing.depth;
+export const createGround = (
+  widthSegments = 10,
+  depthSegments = 10,
+  widthSpacing = 80,
+  depthSpacing = 80,
+  bumpHeight = 1,
+  position = { x: 0, y: 0, z: 0 },
+  rotation = { x: 0, y: 0, z: 0 },
+) => {
+  const width = widthSegments * widthSpacing;
+  const depth = depthSegments * depthSpacing;
 
   const data = generateHeight(width, depth);
 
   const geom = {};
   const mat = {};
   const mesh = {};
-  const group = {};
 
   geom.ground = new THREE.PlaneGeometry(
     width,
     depth,
-    Grid.Segments.width - 1,
-    Grid.Segments.depth - 1,
+    widthSegments,
+    depthSegments,
   );
   geom.ground.rotateX(-PI / 2);
 
@@ -318,7 +268,7 @@ export const createGround = () => {
   const pointsVertices = vertices.slice(0);
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
-    vertices[j + 1] = data[i] * Ground.heightCoef;
+    vertices[j + 1] = data[i] * bumpHeight;
     pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
   }
 
@@ -328,11 +278,6 @@ export const createGround = () => {
     new THREE.Float32BufferAttribute(pointsVertices, 3),
   );
   geom.groundPoints.computeBoundingSphere();
-
-  /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
-	texture.wrapS = THREE.ClampToEdgeWrapping;
-	texture.wrapT = THREE.ClampToEdgeWrapping;
-	texture.colorSpace = THREE.SRGBColorSpace; */
 
   mat.ground = new THREE.MeshBasicMaterial({
     color: Ground.color,
@@ -365,29 +310,30 @@ export const createGround = () => {
   mesh.wireframe = new THREE.Mesh(geom.ground, mat.groundWire);
   mesh.points = new THREE.Points(geom.groundPoints, mat.groundPoints);
 
-  group.ground = new THREE.Group();
-  group.ground.add(mesh.ground);
-  group.ground.add(mesh.wireframe);
-  group.ground.add(mesh.points);
+  const group = new THREE.Group();
+  group.add(mesh.ground);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
 
-  geom.stones = [];
+  group.position.set(position.x, position.y, position.z);
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+
+  /*geom.stones = [];
   const stone = createStone(60);
   geom.stones.push(stone);
 
   geom.stones.forEach((ms) => {
     ms.rotation.y = PI / 10;
     ms.position.set(80, 100, -300);
-    group.ground.add(ms);
+    group.add(ms);
   });
 
   const stage = createStage();
   stage.position.set(200, 150, -100);
-  group.ground.add(stage);
+  group.add(stage);*/
 
-  const walls = createWalls();
-  walls.forEach((wall) => group.ground.add(wall));
-  // ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
-  // ground.rotation.x = -PI / 2
+  /* const walls = createWalls();
+  walls.forEach((wall) => group.add(wall)); */
 
-  return group.ground;
+  return group;
 };

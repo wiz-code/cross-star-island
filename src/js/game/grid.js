@@ -4,20 +4,29 @@ import textures from './textures';
 
 const { floor } = Math;
 
-export const createGrid = () => {
+export const createGrid = (
+  widthSegments = 10,
+  heightSegments = 10,
+  depthSegments = 10,
+  widthSpacing = 80,
+  heightSpacing = 80,
+  depthSpacing = 80,
+  position = { x: 0, y: 0, z: 0 },
+  rotation = { x: 0, y: 0, z: 0 }
+) => {
   const vertices = [];
   const halfSize = {
-    width: floor((Grid.Segments.width * Grid.Spacing.width) / 2),
-    height: floor((Grid.Segments.height * Grid.Spacing.height) / 2),
-    depth: floor((Grid.Segments.depth * Grid.Spacing.depth) / 2),
+    width: floor((widthSegments * widthSpacing) / 2),
+    height: floor((heightSegments * heightSpacing) / 2),
+    depth: floor((depthSegments * depthSpacing) / 2),
   };
 
-  for (let i = 0, l = Grid.Segments.width; i < l; i += 1) {
-    for (let j = 0, m = Grid.Segments.height; j < m; j += 1) {
-      for (let k = 0, n = Grid.Segments.depth; k < n; k += 1) {
-        const x = i * Grid.Spacing.width - halfSize.width;
-        const y = j * Grid.Spacing.height - halfSize.height;
-        const z = k * Grid.Spacing.depth - halfSize.depth;
+  for (let i = 0, l = widthSegments; i < l; i += 1) {
+    for (let j = 0, m = heightSegments; j < m; j += 1) {
+      for (let k = 0, n = depthSegments; k < n; k += 1) {
+        const x = i * widthSpacing - halfSize.width;
+        const y = j * heightSpacing - halfSize.height;
+        const z = k * depthSpacing - halfSize.depth;
         vertices.push(x, y, z);
       }
     }
@@ -48,6 +57,8 @@ export const createGrid = () => {
   });
 
   const grid = new THREE.Points(geometry, material);
+  grid.position.set(position.x, position.y, position.z);
+  grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return grid;
 };
