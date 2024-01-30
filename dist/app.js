@@ -9224,14 +9224,20 @@ function App() {
   const togglePlay = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     if (rendering != null) {
       if (!started) {
+        if (objects != null) {
+          objects.clock.start();
+        }
         rendering.start();
         setStarted(true);
       } else {
+        if (objects != null) {
+          objects.clock.stop();
+        }
         rendering.stop();
         setStarted(false);
       }
     }
-  }, [rendering, started]);
+  }, [rendering, started, objects]);
   const toggleFullScreen = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     if (document.fullscreenElement == null) {
       document.documentElement.requestFullscreen();
@@ -9542,7 +9548,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -9880,19 +9886,35 @@ __webpack_require__.r(__webpack_exports__);
 const {
   floor
 } = Math;
-const createGrid = () => {
+const createGrid = function () {
+  let widthSegments = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+  let heightSegments = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+  let depthSegments = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10;
+  let widthSpacing = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 80;
+  let heightSpacing = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 80;
+  let depthSpacing = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 80;
+  let position = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  let rotation = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
   const vertices = [];
   const halfSize = {
-    width: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.width / 2),
-    height: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.height * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.height / 2),
-    depth: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.depth / 2)
+    width: floor(widthSegments * widthSpacing / 2),
+    height: floor(heightSegments * heightSpacing / 2),
+    depth: floor(depthSegments * depthSpacing / 2)
   };
-  for (let i = 0, l = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.width; i < l; i += 1) {
-    for (let j = 0, m = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.height; j < m; j += 1) {
-      for (let k = 0, n = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.depth; k < n; k += 1) {
-        const x = i * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.width - halfSize.width;
-        const y = j * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.height - halfSize.height;
-        const z = k * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.depth - halfSize.depth;
+  for (let i = 0, l = widthSegments; i < l; i += 1) {
+    for (let j = 0, m = heightSegments; j < m; j += 1) {
+      for (let k = 0, n = depthSegments; k < n; k += 1) {
+        const x = i * widthSpacing - halfSize.width;
+        const y = j * heightSpacing - halfSize.height;
+        const z = k * depthSpacing - halfSize.depth;
         vertices.push(x, y, z);
       }
     }
@@ -9915,6 +9937,8 @@ const createGrid = () => {
     alphaTest: 0.5
   });
   const grid = new three__WEBPACK_IMPORTED_MODULE_3__.Points(geometry, material);
+  grid.position.set(position.x, position.y, position.z);
+  grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   return grid;
 };
 const createFineGrid = () => {
@@ -10021,49 +10045,6 @@ const generateHeight = (width, height) => {
     quality *= 2;
   }
   return data;
-};
-const generateTexture = (data, width, height) => {
-  const vector3 = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
-  const sun = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
-  sun.normalize();
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  let context = canvas.getContext('2d');
-  context.fillStyle = '#000';
-  context.fillRect(0, 0, width, height);
-  let image = context.getImageData(0, 0, canvas.width, canvas.height);
-  let imageData = image.data;
-  for (let i = 0, j = 0, l = imageData.length; i < l; i += 4, j += 1) {
-    vector3.x = data[j - 2] - data[j + 2];
-    vector3.y = 2;
-    vector3.z = data[j - width * 2] - data[j + width * 2];
-    vector3.normalize();
-    const shade = vector3.dot(sun);
-    imageData[i] = (96 + shade * 128) * (0.5 + data[j] * 0.007);
-    imageData[i + 1] = (32 + shade * 96) * (0.5 + data[j] * 0.007);
-    imageData[i + 2] = shade * 96 * (0.5 + data[j] * 0.007);
-  }
-  context.putImageData(image, 0, 0);
-
-  // Scaled 4x
-
-  const canvasScaled = document.createElement('canvas');
-  canvasScaled.width = width * 4;
-  canvasScaled.height = height * 4;
-  context = canvasScaled.getContext('2d');
-  context.scale(4, 4);
-  context.drawImage(canvas, 0, 0);
-  image = context.getImageData(0, 0, canvasScaled.width, canvasScaled.height);
-  imageData = image.data;
-  for (let i = 0, l = imageData.length; i < l; i += 4) {
-    const v = floor(customRandom() * 5);
-    imageData[i] += v;
-    imageData[i + 1] += v;
-    imageData[i + 2] += v;
-  }
-  context.putImageData(image, 0, 0);
-  return canvasScaled;
 };
 const createStage = function () {
   let radius = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 100;
@@ -10209,31 +10190,39 @@ const createWalls = () => {
   }
   return walls;
 };
-const createGround = () => {
-  const width = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.width;
-  const depth = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.depth;
+const createGround = function () {
+  let widthSegments = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+  let depthSegments = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+  let widthSpacing = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 80;
+  let depthSpacing = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 80;
+  let bumpHeight = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 1;
+  let position = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  let rotation = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  const width = widthSegments * widthSpacing;
+  const depth = depthSegments * depthSpacing;
   const data = generateHeight(width, depth);
   const geom = {};
   const mat = {};
   const mesh = {};
-  const group = {};
-  geom.ground = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, depth, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 1);
+  geom.ground = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, depth, widthSegments, depthSegments);
   geom.ground.rotateX(-PI / 2);
   const vertices = geom.ground.attributes.position.array;
   const pointsVertices = vertices.slice(0);
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
-    vertices[j + 1] = data[i] * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.heightCoef;
+    vertices[j + 1] = data[i] * bumpHeight;
     pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
   }
   geom.groundPoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
   geom.groundPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
   geom.groundPoints.computeBoundingSphere();
-
-  /* const texture = new THREE.CanvasTexture(generateTexture(data, width, depth));
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace; */
-
   mat.ground = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
   });
@@ -10259,27 +10248,29 @@ const createGround = () => {
   mesh.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.ground);
   mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.groundWire);
   mesh.points = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.groundPoints, mat.groundPoints);
-  group.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
-  group.ground.add(mesh.ground);
-  group.ground.add(mesh.wireframe);
-  group.ground.add(mesh.points);
-  geom.stones = [];
+  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  group.add(mesh.ground);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+  group.position.set(position.x, position.y, position.z);
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+
+  /*geom.stones = [];
   const stone = createStone(60);
   geom.stones.push(stone);
-  geom.stones.forEach(ms => {
+   geom.stones.forEach((ms) => {
     ms.rotation.y = PI / 10;
     ms.position.set(80, 100, -300);
-    group.ground.add(ms);
+    group.add(ms);
   });
-  const stage = createStage();
+   const stage = createStage();
   stage.position.set(200, 150, -100);
-  group.ground.add(stage);
-  const walls = createWalls();
-  walls.forEach(wall => group.ground.add(wall));
-  // ground.position.y = -Grid.Segments.height * Grid.Spacing.height;
-  // ground.rotation.x = -PI / 2
+  group.add(stage);*/
 
-  return group.ground;
+  /* const walls = createWalls();
+  walls.forEach((wall) => group.add(wall)); */
+
+  return group;
 };
 
 /***/ }),
@@ -10292,17 +10283,19 @@ const createGround = () => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
-/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
 /* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
-/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
-/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
+/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
+/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+
 
 
 
@@ -10321,44 +10314,58 @@ const {
   floor
 } = Math;
 const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_7__.Clock();
+  const clock = new three__WEBPACK_IMPORTED_MODULE_8__.Clock();
   let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
   let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
   const scene = {};
-  scene.field = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
-  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_7__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
-  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_7__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
-  scene.screen = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+  scene.field = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
+  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_8__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
+  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_8__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
+  scene.screen = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
   const camera = {};
-  camera.field = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
+  camera.field = new three__WEBPACK_IMPORTED_MODULE_8__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
   camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
   camera.field.position.set(0, 0, 0);
-  camera.screen = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
+  camera.screen = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
   const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
+  const renderer = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderer({
     antialias: false
   });
   renderer.autoClear = false;
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_7__.Color(0x000000));
+  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_8__.Color(0x000000));
   renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
   renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
   // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
   // renderer.shadowMap.type = Renderer.ShadowMap.type;
   // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
-  const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_3__.createGrid)();
+
+  /*const grid = createGrid(
+    Grid.Segments.width,
+    Grid.Segments.height,
+    Grid.Segments.depth,
+    Grid.Spacing.width,
+    Grid.Spacing.height,
+    Grid.Spacing.depth
+  );*/
   // const fineGrid = createFineGrid();
-  scene.field.add(grid);
+  //scene.field.add(grid);
   // scene.field.add(fineGrid);
 
-  const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_4__.createGround)();
-  scene.field.add(ground);
+  //const ground = createGround(20, 3, 80, 80, 2);
+  /* Grid.Segments.width,
+    Grid.Segments.depth,
+    Grid.Spacing.width,
+    Grid.Spacing.depth,
+    Ground.heightCoef, */
+  //scene.field.add(ground);
+
   const light = {};
-  light.fill = new three__WEBPACK_IMPORTED_MODULE_7__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
+  light.fill = new three__WEBPACK_IMPORTED_MODULE_8__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
   light.fill.position.set(2, 1, 1);
   // scene.add(light.fill);
 
-  light.directional = new three__WEBPACK_IMPORTED_MODULE_7__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
+  light.directional = new three__WEBPACK_IMPORTED_MODULE_8__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
   light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.castShadow;
   light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.near;
   light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.far;
@@ -10382,23 +10389,25 @@ const init = () => {
   scene.add(arrow); */
 
   // worldOctree.fromGraphNode(grid);
-  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_8__.Octree();
-  worldOctree.fromGraphNode(ground);
-  const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_5__["default"](scene.field, camera.field, worldOctree);
-  const player = new _player__WEBPACK_IMPORTED_MODULE_6__["default"](camera.field, ammo, worldOctree);
+  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__.Octree();
+  //worldOctree.fromGraphNode(ground);
+  const firstStage = _stages__WEBPACK_IMPORTED_MODULE_5__["default"].firstStage(scene.field);
+  worldOctree.fromGraphNode(firstStage);
+  const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, camera.field, worldOctree);
+  const player = new _player__WEBPACK_IMPORTED_MODULE_7__["default"](camera.field, ammo, worldOctree);
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
 
   /// /
   // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
   // scene.add(helper);
-  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_9__.OctreeHelper(worldOctree);
+  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_10__.OctreeHelper(worldOctree);
   helper.visible = false;
   scene.field.add(helper);
 
   // helpers
-  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_7__.AxesHelper(180);
+  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_8__.AxesHelper(180);
   scene.field.add(axesHelper);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = '0px';
   container.appendChild(stats.domElement);
@@ -10559,8 +10568,8 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height;
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
   }
-  jump(deltaTime) {
-    this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower * deltaTime * 50;
+  jump() {
+    this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower;
   }
   moveForward(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -10587,7 +10596,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   }
   moveSide(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.sideComponent = deltaTime * 0.5;
+    this.sideComponent = deltaTime * 0.7;
     if (this.#onGround) {
       this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.speed;
       if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
@@ -10738,7 +10747,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
-      this.jump(deltaTime);
+      this.jump();
     }
     if (this.#urgencyRemainingTime > 0) {
       this.#urgencyRemainingTime -= deltaTime;
@@ -10943,17 +10952,17 @@ const StepsPerFrame = 3;
 const PlayerSettings = {
   height: 30,
   radius: 5,
-  position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 200, 100),
+  position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 200, 50 /* 100 */),
   direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, -1),
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
   sprint: 2.5,
-  urgencyMove: 10,
+  urgencyMove: 8,
   urgencyTurn: PI * 2 * (13.8 / 16),
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
-  jumpPower: 15
+  jumpPower: 6.5
 };
 const Scene = {
   background: 0x000000,
@@ -11023,11 +11032,11 @@ const Grid = {
     depth: 80
   },
   Segments: {
-    width: 40,
+    width: 20,
     // dev 20, prod 40
-    height: 40,
+    height: 20,
     // dev 20, prod 40
-    depth: 40 // dev 20, prod 40
+    depth: 20 // dev 20, prod 40
   }
 };
 const Entity = {
@@ -11056,7 +11065,7 @@ const Controls = {
   pointerMaxMove: 80,
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
-  inputDuration: 100
+  inputDuration: 120
 };
 const World = {
   gravity: 6,
@@ -11076,12 +11085,51 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8
 };
+
+/***/ }),
+
+/***/ "./src/js/game/stages.js":
+/*!*******************************!*\
+  !*** ./src/js/game/stages.js ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
+/* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
+
+
+
+
+const stages = {
+  firstStage: scene => {
+    const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_1__.createGrid)(20, 12, 10, 80, 80, 80);
+    const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_2__.createGround)(20, 3, 80, 80, 2, {
+      x: 0,
+      y: -200,
+      z: 0
+    }, {
+      x: 0,
+      y: 0,
+      z: 0.3
+    });
+    const stage = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
+    stage.add(grid);
+    stage.add(ground);
+    scene.add(stage);
+    return stage;
+  }
+};
+/* harmony default export */ __webpack_exports__["default"] = (stages);
 
 /***/ }),
 
