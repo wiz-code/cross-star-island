@@ -14,7 +14,7 @@ import { createGrid } from './grid';
 import { createGround } from './ground';
 
 const stages = {
-  firstStage: (scene) => {
+  firstStage: () => {
     const grid = createGrid(
       20,
       12,
@@ -36,7 +36,6 @@ const stages = {
     const stage = new Group();
     stage.add(grid);
     stage.add(ground);
-    scene.add(stage);
 
     return stage;
   },

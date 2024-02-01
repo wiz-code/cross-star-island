@@ -256,15 +256,15 @@ export const createGround = (
   const mat = {};
   const mesh = {};
 
-  geom.ground = new THREE.PlaneGeometry(
+  geom.surface = new THREE.PlaneGeometry(
     width,
     depth,
     widthSegments,
     depthSegments,
   );
-  geom.ground.rotateX(-PI / 2);
+  geom.surface.rotateX(-PI / 2);
 
-  const vertices = geom.ground.attributes.position.array;
+  const vertices = geom.surface.attributes.position.array;
   const pointsVertices = vertices.slice(0);
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
@@ -272,19 +272,24 @@ export const createGround = (
     pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
   }
 
-  geom.groundPoints = new THREE.BufferGeometry();
-  geom.groundPoints.setAttribute(
+  geom.wireframe = new THREE.WireframeGeometry(geom.surface);
+
+  geom.points = new THREE.BufferGeometry();
+  geom.points.setAttribute(
     'position',
     new THREE.Float32BufferAttribute(pointsVertices, 3),
   );
-  geom.groundPoints.computeBoundingSphere();
+  geom.points.computeBoundingSphere();
 
-  mat.ground = new THREE.MeshBasicMaterial({
+  mat.surface = new THREE.MeshBasicMaterial({
     color: Ground.color,
   });
-  mat.groundWire = new THREE.MeshBasicMaterial({
+  /*mat.wireframe = new THREE.MeshBasicMaterial({
     color: Ground.wireframeColor,
     wireframe: true,
+  });*/
+  mat.wireframe = new THREE.LineBasicMaterial({
+    color: Ground.wireframeColor,
   });
 
   const canvas = {};
@@ -298,7 +303,7 @@ export const createGround = (
   texture.ground = new THREE.Texture(canvas.ground);
   texture.ground.needsUpdate = true;
 
-  mat.groundPoints = new THREE.PointsMaterial({
+  mat.points = new THREE.PointsMaterial({
     color: Ground.pointsColor,
     size: Grid.size,
     map: texture.ground,
@@ -306,17 +311,21 @@ export const createGround = (
     alphaTest: 0.5,
   });
 
-  mesh.ground = new THREE.Mesh(geom.ground, mat.ground);
-  mesh.wireframe = new THREE.Mesh(geom.ground, mat.groundWire);
-  mesh.points = new THREE.Points(geom.groundPoints, mat.groundPoints);
+  mesh.surface = new THREE.Mesh(geom.surface, mat.surface);
+  mesh.surface.name = 'surface';
+  //mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
+  mesh.wireframe = new THREE.LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe.name = 'wireframe';
+  mesh.points = new THREE.Points(geom.points, mat.points);
+  mesh.points.name = 'points';
 
-  const group = new THREE.Group();
-  group.add(mesh.ground);
-  group.add(mesh.wireframe);
-  group.add(mesh.points);
+  const ground = new THREE.Group();
+  ground.add(mesh.surface);
+  ground.add(mesh.wireframe);
+  ground.add(mesh.points);
 
-  group.position.set(position.x, position.y, position.z);
-  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  ground.position.set(position.x, position.y, position.z);
+  ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   /*geom.stones = [];
   const stone = createStone(60);
@@ -335,5 +344,5 @@ export const createGround = (
   /* const walls = createWalls();
   walls.forEach((wall) => group.add(wall)); */
 
-  return group;
+  return ground;
 };

@@ -144,8 +144,10 @@ const init = () => {
   // worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
   //worldOctree.fromGraphNode(ground);
-  const firstStage = stages.firstStage(scene.field);
-  worldOctree.fromGraphNode(firstStage);
+  const stage = stages.firstStage();
+  scene.field.add(stage);
+
+  worldOctree.fromGraphNode(stage);
 
   const ammo = new Ammo(scene.field, camera.field, worldOctree);
   const player = new Player(camera.field, ammo, worldOctree);
