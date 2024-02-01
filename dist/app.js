@@ -10212,23 +10212,27 @@ const createGround = function () {
   const geom = {};
   const mat = {};
   const mesh = {};
-  geom.ground = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, depth, widthSegments, depthSegments);
-  geom.ground.rotateX(-PI / 2);
-  const vertices = geom.ground.attributes.position.array;
+  geom.surface = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(width, depth, widthSegments, depthSegments);
+  geom.surface.rotateX(-PI / 2);
+  const vertices = geom.surface.attributes.position.array;
   const pointsVertices = vertices.slice(0);
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
     vertices[j + 1] = data[i] * bumpHeight;
     pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
   }
-  geom.groundPoints = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
-  geom.groundPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
-  geom.groundPoints.computeBoundingSphere();
-  mat.ground = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+  geom.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.WireframeGeometry(geom.surface);
+  geom.points = new three__WEBPACK_IMPORTED_MODULE_7__.BufferGeometry();
+  geom.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_7__.Float32BufferAttribute(pointsVertices, 3));
+  geom.points.computeBoundingSphere();
+  mat.surface = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
   });
-  mat.groundWire = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-    wireframe: true
+  /*mat.wireframe = new THREE.MeshBasicMaterial({
+    color: Ground.wireframeColor,
+    wireframe: true,
+  });*/
+  mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.LineBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor
   });
   const canvas = {};
   const context = {};
@@ -10238,22 +10242,26 @@ const createGround = function () {
   _textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context.ground);
   texture.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Texture(canvas.ground);
   texture.ground.needsUpdate = true;
-  mat.groundPoints = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
+  mat.points = new three__WEBPACK_IMPORTED_MODULE_7__.PointsMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.pointsColor,
     size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
     map: texture.ground,
     blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
     alphaTest: 0.5
   });
-  mesh.ground = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.ground);
-  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.ground, mat.groundWire);
-  mesh.points = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.groundPoints, mat.groundPoints);
-  const group = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
-  group.add(mesh.ground);
-  group.add(mesh.wireframe);
-  group.add(mesh.points);
-  group.position.set(position.x, position.y, position.z);
-  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  mesh.surface = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.surface, mat.surface);
+  mesh.surface.name = 'surface';
+  //mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
+  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe.name = 'wireframe';
+  mesh.points = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.points, mat.points);
+  mesh.points.name = 'points';
+  const ground = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
+  ground.add(mesh.surface);
+  ground.add(mesh.wireframe);
+  ground.add(mesh.points);
+  ground.position.set(position.x, position.y, position.z);
+  ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   /*geom.stones = [];
   const stone = createStone(60);
@@ -10270,7 +10278,7 @@ const createGround = function () {
   /* const walls = createWalls();
   walls.forEach((wall) => group.add(wall)); */
 
-  return group;
+  return ground;
 };
 
 /***/ }),
@@ -10391,8 +10399,9 @@ const init = () => {
   // worldOctree.fromGraphNode(grid);
   const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__.Octree();
   //worldOctree.fromGraphNode(ground);
-  const firstStage = _stages__WEBPACK_IMPORTED_MODULE_5__["default"].firstStage(scene.field);
-  worldOctree.fromGraphNode(firstStage);
+  const stage = _stages__WEBPACK_IMPORTED_MODULE_5__["default"].firstStage();
+  scene.field.add(stage);
+  worldOctree.fromGraphNode(stage);
   const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, camera.field, worldOctree);
   const player = new _player__WEBPACK_IMPORTED_MODULE_7__["default"](camera.field, ammo, worldOctree);
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
@@ -10962,7 +10971,7 @@ const PlayerSettings = {
   urgencyTurn: PI * 2 * (13.8 / 16),
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
-  jumpPower: 6.5
+  jumpPower: 6
 };
 const Scene = {
   background: 0x000000,
@@ -11085,7 +11094,7 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5,
+  numAmmo: 50,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
@@ -11111,7 +11120,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const stages = {
-  firstStage: scene => {
+  firstStage: () => {
     const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_1__.createGrid)(20, 12, 10, 80, 80, 80);
     const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_2__.createGround)(20, 3, 80, 80, 2, {
       x: 0,
@@ -11125,7 +11134,6 @@ const stages = {
     const stage = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
     stage.add(grid);
     stage.add(ground);
-    scene.add(stage);
     return stage;
   }
 };

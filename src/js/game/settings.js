@@ -148,7 +148,7 @@ export const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 5, // dev 5, prod 50
+  numAmmo: 50, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,
