@@ -9343,7 +9343,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.scene.add(group);
       const object = {
         mesh: group,
-        collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * -10 - 100, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
+        collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius * 2 - 1000, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
         velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3()
       };
       this.list.push(object);
@@ -9377,7 +9377,8 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
       if (result) {
-        ammo.velocity.addScaledVector(result.normal, -result.normal.dot(ammo.velocity) * 1.5);
+        ammo.velocity.addScaledVector(result.normal, -result.normal.dot(ammo.velocity) * result.normal.y //1.5,
+        );
         ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {
         ammo.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime * 100;
@@ -10519,8 +10520,11 @@ __webpack_require__.r(__webpack_exports__);
 const {
   exp,
   sqrt,
+  cos,
   PI
 } = Math;
+const RAD_30 = 30 / 360 * PI * 2;
+const COS_30 = cos(RAD_30);
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
 const minMovement = 0.01;
@@ -10583,6 +10587,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     } = _settings__WEBPACK_IMPORTED_MODULE_2__.Stages[name];
     this.rotation.phi = player.direction;
     this.camera.rotation.y = player.direction;
+    this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
     const start = player.position.clone();
     const end = start.clone();
@@ -10666,7 +10671,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const result = this.worldOctree.capsuleIntersect(this.collider);
     this.#onGround = false;
     if (result) {
-      const onGround = result.normal.y > 0;
+      const onGround = result.normal.y > COS_30;
       this.#onGround = onGround;
       if (!this.#onGround) {
         this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
@@ -11135,17 +11140,17 @@ const Stages = {
     }, {
       grid: [20, 12, 10, 80, 80, 80, {
         x: -600,
-        y: -600,
+        y: -700,
         z: -900
       }],
-      ground: [20, 3, 80, 80, 2, {
-        x: -600,
-        y: -600,
-        z: -700
+      ground: [20, 3, 80, 80, 5, {
+        x: -700,
+        y: -800,
+        z: -500
       }, {
         x: 0.02,
         y: PI / 2,
-        z: -0.3
+        z: -0.5
       }]
     }]
   }
