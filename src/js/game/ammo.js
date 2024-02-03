@@ -84,7 +84,7 @@ class Ammo extends Publisher {
       const object = {
         mesh: group,
         collider: new Sphere(
-          new Vector3(0, i * -10 - 100, 0),
+          new Vector3(0, i * AmmoSettings.radius * 2 - 1000, 0),
           AmmoSettings.radius,
         ),
         velocity: new Vector3(),
@@ -139,7 +139,7 @@ class Ammo extends Publisher {
       if (result) {
         ammo.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(ammo.velocity) * 1.5,
+          -result.normal.dot(ammo.velocity) * result.normal.y, //1.5,
         );
         ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {

@@ -5,8 +5,10 @@ import { Keys, Actions, States } from './data';
 import Publisher from './publisher';
 import { Stages, World, PlayerSettings, Controls, AmmoSettings } from './settings';
 
-const { exp, sqrt, PI } = Math;
+const { exp, sqrt, cos, PI } = Math;
 
+const RAD_30 = 30 / 360 * PI * 2;
+const COS_30 = cos(RAD_30);
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
 const minMovement = 0.01;
@@ -92,7 +94,9 @@ class Player extends Publisher {
 
     this.rotation.phi = player.direction;
     this.camera.rotation.y = player.direction;
+    this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
+
 
     const start = player.position.clone();
     const end = start.clone();
@@ -204,7 +208,7 @@ class Player extends Publisher {
     this.#onGround = false;
 
     if (result) {
-      const onGround = result.normal.y > 0;
+      const onGround = result.normal.y > COS_30;
       this.#onGround = onGround;
 
       if (!this.#onGround) {
