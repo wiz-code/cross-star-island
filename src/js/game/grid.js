@@ -63,24 +63,40 @@ export const createGrid = (
   return grid;
 };
 
-export const createFineGrid = () => {
+export const createFineGrid = (
+  widthSegments = 10,
+  heightSegments = 10,
+  depthSegments = 10,
+  widthSpacing = 80,
+  heightSpacing = 80,
+  depthSpacing = 80,
+  position = { x: 0, y: 0, z: 0 },
+  rotation = { x: 0, y: 0, z: 0 }
+) => {
   const vertices = [];
   const halfSize = {
-    width: floor((Grid.Segments.width * Grid.Spacing.width) / 2),
-    height: floor((Grid.Segments.height * Grid.Spacing.height) / 2),
-    depth: floor((Grid.Segments.depth * Grid.Spacing.depth) / 2),
+    width: floor((widthSegments * widthSpacing) / 2),
+    height: floor((heightSegments * heightSpacing) / 2),
+    depth: floor((depthSegments * depthSpacing) / 2),
   };
 
-  for (let i = 0, l = Grid.Segments.width * 2 - 1; i < l; i += 1) {
-    for (let j = 0, m = Grid.Segments.height * 2 - 1; j < m; j += 1) {
-      for (let k = 0, n = Grid.Segments.depth * 2 - 1; k < n; k += 1) {
-        const width = floor(Grid.Spacing.width / 2);
-        const height = floor(Grid.Spacing.height / 2);
-        const depth = floor(Grid.Spacing.depth / 2);
-        const x = i * width - halfSize.width - width;
-        const y = j * height - halfSize.height - height;
-        const z = k * depth - halfSize.depth - depth;
-        vertices.push(x, y, z);
+  const width = floor(widthSpacing / 2);
+  const height = floor(heightSpacing / 2);
+  const depth = floor(depthSpacing / 2);
+
+  for (let i = 0, l = widthSegments * 2 - 1; i < l; i += 1) {
+    for (let j = 0, m = heightSegments * 2 - 1; j < m; j += 1) {
+      for (let k = 0, n = depthSegments * 2 - 1; k < n; k += 1) {
+        if (
+          i % 2 !== 0 ||
+          j % 2 !== 0 ||
+          k % 2 !== 0
+        ) {
+          const x = i * width - halfSize.width;
+          const y = j * height - halfSize.height;
+          const z = k * depth - halfSize.depth;
+          vertices.push(x, y, z);
+        }
       }
     }
   }

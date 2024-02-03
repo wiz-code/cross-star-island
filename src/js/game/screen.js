@@ -2,7 +2,7 @@ import { Texture, SpriteMaterial, Sprite } from 'three';
 import { Screen } from './settings';
 import textures from './textures';
 
-const { floor } = Math;
+const { PI, floor } = Math;
 
 export const createSight = () => {
   const canvas = document.createElement('canvas');
@@ -27,7 +27,7 @@ export const createSight = () => {
 export const createPovIndicator = () => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  textures.isoscelesTriangle(context);
+  textures.isoscelesTriangle(context, PI);
 
   const halfHeight = window.innerHeight / 2;
 
@@ -42,6 +42,7 @@ export const createPovIndicator = () => {
   const sprite = new Sprite(material);
   sprite.visible = false;
   sprite.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
+  sprite.rotation.set(PI / 2, 0, PI / 2);
   sprite.position.setZ(-10);
 
   return sprite;

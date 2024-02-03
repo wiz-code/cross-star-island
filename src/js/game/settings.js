@@ -1,4 +1,4 @@
-import { Vector3, VSMShadowMap, ACESFilmicToneMapping } from 'three';
+import { Vector3, Euler, VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
 const { PI } = Math;
 
@@ -8,8 +8,6 @@ export const StepsPerFrame = 3;
 export const PlayerSettings = {
   height: 30,
   radius: 5,
-  position: new Vector3(650, 200, 50 /* 100 */),
-  direction: new Vector3(0, 0, -1),
 
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
@@ -114,13 +112,13 @@ export const Ground = {
 };
 
 export const Controls = {
-  lookSpeed: 2,
+  lookSpeed: 1,
 
   idleTime: 0.3,
   restoreSpeed: 6, // 3,
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
-  pointerMaxMove: 80,
+  pointerMaxMove: 100,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
@@ -148,8 +146,27 @@ export const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50, // dev 5, prod 50
+  numAmmo: 5, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,
+};
+
+export const Stages = {
+  firstStage: {
+    player: {
+      position: new Vector3(650, 200, 0),
+      direction: PI / 2,
+    },
+    components: [
+      {
+        grid: [20, 12, 10, 80, 80, 80],
+        ground: [20, 3, 80, 80, 2, { x: 0, y: -200, z: 0 }, { x: -0.05, y: 0, z: 0.3 }],
+      },
+      {
+        grid: [20, 12, 10, 80, 80, 80, { x: -600, y: -600, z: -900 }],
+        ground: [20, 3, 80, 80, 2, { x: -600, y: -600, z: -700 }, { x: 0.02, y: PI / 2, z: -0.3 }],
+      },
+    ],
+  },
 };

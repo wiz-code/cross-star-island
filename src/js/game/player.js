@@ -3,7 +3,7 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States } from './data';
 import Publisher from './publisher';
-import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
+import { Stages, World, PlayerSettings, Controls, AmmoSettings } from './settings';
 
 const { exp, sqrt, PI } = Math;
 
@@ -73,16 +73,31 @@ class Player extends Publisher {
     this.povRotation = new Spherical();
     this.rotation = new Spherical(); // phi and theta
     this.velocity = new Vector3();
-    this.direction = PlayerSettings.direction.clone();
+
+    //this.rotation.phi = PlayerSettings.direction;
+    //this.camera.rotation.y = PlayerSettings.direction;
+
+    this.direction = new Vector3();
+    //this.camera.getWorldDirection(this.direction);
 
     this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
 
-    const start = PlayerSettings.position.clone();
-    const end = PlayerSettings.position.clone();
+    this.collider = new Capsule();
+  }
+
+  init(name) {
+    const { player } = Stages[name];
+
+    this.rotation.phi = player.direction;
+    this.camera.rotation.y = player.direction;
+    this.camera.getWorldDirection(this.direction);
+
+    const start = player.position.clone();
+    const end = start.clone();
     end.y += PlayerSettings.height;
-    this.collider = new Capsule(start, end, PlayerSettings.radius);
+    this.collider.set(start, end, PlayerSettings.radius);
   }
 
   jump() {
@@ -138,6 +153,7 @@ class Player extends Publisher {
     this.#euler.x = this.povRotation.theta + this.rotation.theta;
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
+    ammo.mesh.rotation.copy(this.#euler);
 
     ammo.collider.center
       .copy(this.collider.end)
@@ -206,6 +222,7 @@ class Player extends Publisher {
     // 入力操作の処理
 
     // update()で一度だけアクションを発動する
+    // 緊急行動中はonGroundがfalseでもジャンプ可にする
     if (keys.has(Keys.Space) && this.#onGround) {
       this.#actions.add(Actions.jump);
     }

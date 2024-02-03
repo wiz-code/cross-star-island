@@ -12,6 +12,7 @@ import {
   Scene,
   Camera,
   Renderer,
+  Stages,
   Light,
   PlayerSettings,
   ResizeDelayTime,
@@ -20,7 +21,7 @@ import {
 } from './settings';
 import { createGrid, createFineGrid } from './grid';
 import { createGround } from './ground';
-import stages from './stages';
+import { createStage } from './stages';
 
 import Ammo from './ammo';
 import Player from './player';
@@ -77,35 +78,15 @@ const init = () => {
   // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
 
-  /*const grid = createGrid(
-    Grid.Segments.width,
-    Grid.Segments.height,
-    Grid.Segments.depth,
-    Grid.Spacing.width,
-    Grid.Spacing.height,
-    Grid.Spacing.depth
-  );*/
-  // const fineGrid = createFineGrid();
-  //scene.field.add(grid);
-  // scene.field.add(fineGrid);
-
-  //const ground = createGround(20, 3, 80, 80, 2);
-  /* Grid.Segments.width,
-    Grid.Segments.depth,
-    Grid.Spacing.width,
-    Grid.Spacing.depth,
-    Ground.heightCoef, */
-  //scene.field.add(ground);
-
   const light = {};
 
-  light.fill = new THREE.HemisphereLight(
+  /*light.fill = new THREE.HemisphereLight(
     Light.Hemisphere.groundColor,
     Light.Hemisphere.color,
     Light.Hemisphere.intensity,
   );
   light.fill.position.set(2, 1, 1);
-  // scene.add(light.fill);
+  scene.add(light.fill);
 
   light.directional = new THREE.DirectionalLight(
     Light.Directional.color,
@@ -131,26 +112,19 @@ const init = () => {
     Light.Directional.Position.y,
     Light.Directional.Position.z,
   );
-  // scene.add(light.directional);
+  scene.add(light.directional);*/
 
-  /* const direction = new THREE.Vector3();
-  direction.normalize();
-  const origin = new THREE.Vector3();
-  const length = 100;
-  const hex = 0xffffff;
-  const arrow = new THREE.ArrowHelper(direction, origin, length, hex);
-  scene.add(arrow); */
-
-  // worldOctree.fromGraphNode(grid);
   const worldOctree = new Octree();
-  //worldOctree.fromGraphNode(ground);
-  const stage = stages.firstStage();
+
+  const stage = createStage('firstStage');
   scene.field.add(stage);
 
   worldOctree.fromGraphNode(stage);
 
   const ammo = new Ammo(scene.field, camera.field, worldOctree);
   const player = new Player(camera.field, ammo, worldOctree);
+
+  player.init('firstStage');
 
   const controls = new FirstPersonControls(
     scene.screen,
@@ -159,12 +133,11 @@ const init = () => {
     renderer.domElement,
   );
 
-  /// /
-  // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
-  // scene.add(helper);
+  /* let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  scene.add(helper);
   const helper = new OctreeHelper(worldOctree);
   helper.visible = false;
-  scene.field.add(helper);
+  scene.field.add(helper);*/
 
   // helpers
   const axesHelper = new THREE.AxesHelper(180);
@@ -172,7 +145,8 @@ const init = () => {
 
   const stats = new Stats();
   stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '0px';
+  stats.domElement.style.top = 'auto';
+  stats.domElement.style.bottom = 0;
   container.appendChild(stats.domElement);
 
   const onWindowResize = () => {

@@ -29,6 +29,45 @@ const textures = {
 
     return context;
   },
+  crossStarDotted(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+
+    context.beginPath();
+
+    /*context.rect(56, 0, 16, 32);
+    context.rect(96, 56, 16, 16);
+    context.rect(56, 96, 16, 32);
+    context.rect(0, 56, 32, 16);*/
+
+    context.rect(56, 0, 16, 28);
+    context.rect(100, 56, 28, 16);
+    context.rect(56, 100, 16, 28);
+    context.rect(0, 56, 28, 16);
+
+
+    context.moveTo(56, 32);
+    context.lineTo(72, 32);
+    context.lineTo(72, 56);
+    context.lineTo(96, 56);
+    context.lineTo(96, 72);
+    context.lineTo(72, 72);
+    context.lineTo(72, 96);
+    context.lineTo(56, 96);
+    context.lineTo(56, 72);
+    context.lineTo(32, 72);
+    context.lineTo(32, 56);
+    context.lineTo(56, 56);
+    context.closePath();
+    context.fill();
+
+    return context;
+  },
   crossStarThick(context) {
     const { canvas } = context;
     canvas.width = 128;
@@ -159,21 +198,23 @@ const textures = {
     return context;
   },
 
-  isoscelesTriangle(context) {
+  isoscelesTriangle(context, rotation = 0) {
     const { canvas } = context;
     canvas.width = 128;
     canvas.height = 128;
 
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
+
+    context.translate(64, 64);
+    context.rotate(rotation);
     context.lineWidth = 5;
     context.miterLimit = 20;
     context.strokeStyle = '#FFF';
     context.beginPath();
-    context.moveTo(64, 64);
-    context.lineTo(119, 112);
-    context.lineTo(9, 112);
-    context.lineTo(64, 64);
+    context.moveTo(0, 0);
+    context.lineTo(55, 48);
+    context.lineTo(-55, 48);
     context.closePath();
 
     context.stroke();

@@ -6,7 +6,6 @@ import { createSight, createPovIndicator } from './screen';
 
 const { abs, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
-const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
 
 const lerp = (x, y, p) => x + (y - x) * p;
@@ -143,7 +142,7 @@ class FirstPersonControls {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
 
-    this.povIndicator.position.setY(-this.viewHalfY + Screen.sightPovSize / 2);
+    this.povIndicator.position.setY(this.viewHalfY - Screen.sightPovSize / 2);
   }
 
   lookAt(x, y, z) {
@@ -155,8 +154,6 @@ class FirstPersonControls {
 
     this.camera.lookAt(this.#vectorA);
     this.setOrientation();
-
-    return this;
   }
 
   async lock() {
@@ -390,7 +387,6 @@ class FirstPersonControls {
   }
 
   update(deltaTime) {
-    // this.input();
     this.player.input(this.#keys, this.#lastKey, this.#mashed);
 
     if (this.#mashed) {
@@ -430,11 +426,11 @@ class FirstPersonControls {
         this.povIndicator.visible = true;
       }
 
-      const degX = (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+      const degX = 90 * this.#dy / this.viewHalfY;//(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * actualLookSpeed;
 
-      const degY = (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+      const degY = 135 * this.#dx / this.viewHalfX;//(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
       const radY = degY * degToRadCoef;
       this.#rotation.phi -= radY * actualLookSpeed;
 
@@ -447,7 +443,7 @@ class FirstPersonControls {
         min(PI - this.minPolarAngle.horizontal, this.#rotation.phi),
       );
 
-      let posX = (this.viewHalfX * -this.#rotation.phi) / quarterPI;
+      let posX = (this.viewHalfX * -this.#rotation.phi) / PI;
 
       if (posX < -this.viewHalfX) {
         posX = -this.viewHalfX;
@@ -496,7 +492,7 @@ class FirstPersonControls {
           this.povIndicator.material.color = indicatorColor.normal;
         }
 
-        const posX = (this.viewHalfX * -this.#rotation.phi) / quarterPI;
+        const posX = (this.viewHalfX * -this.#rotation.phi) / PI;
         this.povIndicator.position.x = posX;
       }
     }
