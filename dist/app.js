@@ -9257,7 +9257,7 @@ function App() {
       display: 'flex',
       gap: theme.spacing(1),
       position: 'absolute',
-      top: theme.spacing(2),
+      bottom: theme.spacing(2),
       right: theme.spacing(2)
     }
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
@@ -9422,7 +9422,6 @@ const {
   PI
 } = Math;
 const halfPI = PI / 2;
-const quarterPI = PI / 4;
 const degToRadCoef = PI / 180;
 const lerp = (x, y, p) => x + (y - x) * p;
 const sightColor = {
@@ -9505,7 +9504,7 @@ class FirstPersonControls {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-    this.povIndicator.position.setY(-this.viewHalfY + _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
+    this.povIndicator.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
   }
   lookAt(x, y, z) {
     if (x.isVector3) {
@@ -9515,7 +9514,6 @@ class FirstPersonControls {
     }
     this.camera.lookAt(this.#vectorA);
     this.setOrientation();
-    return this;
   }
   async lock() {
     if (this.domElement.ownerDocument.pointerLockElement == null) {
@@ -9706,7 +9704,6 @@ class FirstPersonControls {
     document.removeEventListener('keyup', this.onKeyUp);
   }
   update(deltaTime) {
-    // this.input();
     this.player.input(this.#keys, this.#lastKey, this.#mashed);
     if (this.#mashed) {
       this.#mashed = false;
@@ -9738,15 +9735,15 @@ class FirstPersonControls {
       if (!this.povIndicator.visible) {
         this.povIndicator.visible = true;
       }
-      const degX = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.#dy / (this.viewHalfY * 2);
+      const degX = 90 * this.#dy / this.viewHalfY; //(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * actualLookSpeed;
-      const degY = _settings__WEBPACK_IMPORTED_MODULE_0__.Camera.FOV * this.#dx / (this.viewHalfX * 2);
+      const degY = 135 * this.#dx / this.viewHalfX; //(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
       const radY = degY * degToRadCoef;
       this.#rotation.phi -= radY * actualLookSpeed;
       this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
       this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
-      let posX = this.viewHalfX * -this.#rotation.phi / quarterPI;
+      let posX = this.viewHalfX * -this.#rotation.phi / PI;
       if (posX < -this.viewHalfX) {
         posX = -this.viewHalfX;
         this.povIndicator.material.color = indicatorColor.beyondFov;
@@ -9784,7 +9781,7 @@ class FirstPersonControls {
         if (this.povIndicator.material.color !== indicatorColor.normal) {
           this.povIndicator.material.color = indicatorColor.normal;
         }
-        const posX = this.viewHalfX * -this.#rotation.phi / quarterPI;
+        const posX = this.viewHalfX * -this.#rotation.phi / PI;
         this.povIndicator.position.x = posX;
       }
     }
@@ -9941,23 +9938,41 @@ const createGrid = function () {
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   return grid;
 };
-const createFineGrid = () => {
+const createFineGrid = function () {
+  let widthSegments = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+  let heightSegments = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+  let depthSegments = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10;
+  let widthSpacing = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 80;
+  let heightSpacing = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 80;
+  let depthSpacing = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 80;
+  let position = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
+  let rotation = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : {
+    x: 0,
+    y: 0,
+    z: 0
+  };
   const vertices = [];
   const halfSize = {
-    width: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.width * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.width / 2),
-    height: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.height * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.height / 2),
-    depth: floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.depth * _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.depth / 2)
+    width: floor(widthSegments * widthSpacing / 2),
+    height: floor(heightSegments * heightSpacing / 2),
+    depth: floor(depthSegments * depthSpacing / 2)
   };
-  for (let i = 0, l = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.width * 2 - 1; i < l; i += 1) {
-    for (let j = 0, m = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.height * 2 - 1; j < m; j += 1) {
-      for (let k = 0, n = _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Segments.depth * 2 - 1; k < n; k += 1) {
-        const width = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.width / 2);
-        const height = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.height / 2);
-        const depth = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.Spacing.depth / 2);
-        const x = i * width - halfSize.width - width;
-        const y = j * height - halfSize.height - height;
-        const z = k * depth - halfSize.depth - depth;
-        vertices.push(x, y, z);
+  const width = floor(widthSpacing / 2);
+  const height = floor(heightSpacing / 2);
+  const depth = floor(depthSpacing / 2);
+  for (let i = 0, l = widthSegments * 2 - 1; i < l; i += 1) {
+    for (let j = 0, m = heightSegments * 2 - 1; j < m; j += 1) {
+      for (let k = 0, n = depthSegments * 2 - 1; k < n; k += 1) {
+        if (i % 2 !== 0 || j % 2 !== 0 || k % 2 !== 0) {
+          const x = i * width - halfSize.width;
+          const y = j * height - halfSize.height;
+          const z = k * depth - halfSize.depth;
+          vertices.push(x, y, z);
+        }
       }
     }
   }
@@ -10292,9 +10307,8 @@ const createGround = function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
 /* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
-/* harmony import */ var three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/helpers/OctreeHelper.js */ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
@@ -10347,78 +10361,61 @@ const init = () => {
   // renderer.shadowMap.type = Renderer.ShadowMap.type;
   // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
   container.appendChild(renderer.domElement);
-
-  /*const grid = createGrid(
-    Grid.Segments.width,
-    Grid.Segments.height,
-    Grid.Segments.depth,
-    Grid.Spacing.width,
-    Grid.Spacing.height,
-    Grid.Spacing.depth
-  );*/
-  // const fineGrid = createFineGrid();
-  //scene.field.add(grid);
-  // scene.field.add(fineGrid);
-
-  //const ground = createGround(20, 3, 80, 80, 2);
-  /* Grid.Segments.width,
-    Grid.Segments.depth,
-    Grid.Spacing.width,
-    Grid.Spacing.depth,
-    Ground.heightCoef, */
-  //scene.field.add(ground);
-
   const light = {};
-  light.fill = new three__WEBPACK_IMPORTED_MODULE_8__.HemisphereLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.groundColor, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Hemisphere.intensity);
+
+  /*light.fill = new THREE.HemisphereLight(
+    Light.Hemisphere.groundColor,
+    Light.Hemisphere.color,
+    Light.Hemisphere.intensity,
+  );
   light.fill.position.set(2, 1, 1);
-  // scene.add(light.fill);
+  scene.add(light.fill);
+   light.directional = new THREE.DirectionalLight(
+    Light.Directional.color,
+    Light.Directional.intensity,
+  );
+   light.directional.castShadow = Light.Directional.castShadow;
+  light.directional.shadow.camera.near = Light.Directional.near;
+  light.directional.shadow.camera.far = Light.Directional.Shadow.far;
+  light.directional.shadow.camera.right = Light.Directional.Shadow.right;
+  light.directional.shadow.camera.left = Light.Directional.Shadow.left;
+  light.directional.shadow.camera.top = Light.Directional.Shadow.top;
+  light.directional.shadow.camera.bottom = Light.Directional.Shadow.bottom;
+  light.directional.shadow.mapSize.width =
+    Light.Directional.Shadow.MapSize.width;
+  light.directional.shadow.mapSize.height =
+    Light.Directional.Shadow.MapSize.height;
+  light.directional.shadow.radius = Light.Directional.Shadow.radius;
+  light.directional.shadow.bias = Light.Directional.Shadow.bias;
+   light.directional.position.set(
+    Light.Directional.Position.x,
+    Light.Directional.Position.y,
+    Light.Directional.Position.z,
+  );
+  scene.add(light.directional);*/
 
-  light.directional = new three__WEBPACK_IMPORTED_MODULE_8__.DirectionalLight(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.intensity);
-  light.directional.castShadow = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.castShadow;
-  light.directional.shadow.camera.near = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.near;
-  light.directional.shadow.camera.far = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.far;
-  light.directional.shadow.camera.right = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.right;
-  light.directional.shadow.camera.left = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.left;
-  light.directional.shadow.camera.top = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.top;
-  light.directional.shadow.camera.bottom = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.bottom;
-  light.directional.shadow.mapSize.width = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.MapSize.width;
-  light.directional.shadow.mapSize.height = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.MapSize.height;
-  light.directional.shadow.radius = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.radius;
-  light.directional.shadow.bias = _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Shadow.bias;
-  light.directional.position.set(_settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.x, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.y, _settings__WEBPACK_IMPORTED_MODULE_2__.Light.Directional.Position.z);
-  // scene.add(light.directional);
-
-  /* const direction = new THREE.Vector3();
-  direction.normalize();
-  const origin = new THREE.Vector3();
-  const length = 100;
-  const hex = 0xffffff;
-  const arrow = new THREE.ArrowHelper(direction, origin, length, hex);
-  scene.add(arrow); */
-
-  // worldOctree.fromGraphNode(grid);
   const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__.Octree();
-  //worldOctree.fromGraphNode(ground);
-  const stage = _stages__WEBPACK_IMPORTED_MODULE_5__["default"].firstStage();
+  const stage = (0,_stages__WEBPACK_IMPORTED_MODULE_5__.createStage)('firstStage');
   scene.field.add(stage);
   worldOctree.fromGraphNode(stage);
   const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, camera.field, worldOctree);
   const player = new _player__WEBPACK_IMPORTED_MODULE_7__["default"](camera.field, ammo, worldOctree);
+  player.init('firstStage');
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
 
-  /// /
-  // let helper = new THREE.Box3Helper(worldBox, 0xffff00);
-  // scene.add(helper);
-  const helper = new three_addons_helpers_OctreeHelper_js__WEBPACK_IMPORTED_MODULE_10__.OctreeHelper(worldOctree);
+  /* let helper = new THREE.Box3Helper(worldBox, 0xffff00);
+  scene.add(helper);
+  const helper = new OctreeHelper(worldOctree);
   helper.visible = false;
-  scene.field.add(helper);
+  scene.field.add(helper);*/
 
   // helpers
   const axesHelper = new three__WEBPACK_IMPORTED_MODULE_8__.AxesHelper(180);
   scene.field.add(axesHelper);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__["default"]();
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
   stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = '0px';
+  stats.domElement.style.top = 'auto';
+  stats.domElement.style.bottom = 0;
   container.appendChild(stats.domElement);
   const onWindowResize = () => {
     const iw = window.innerWidth;
@@ -10568,14 +10565,29 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.povRotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-    this.direction = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.direction.clone();
+
+    //this.rotation.phi = PlayerSettings.direction;
+    //this.camera.rotation.y = PlayerSettings.direction;
+
+    this.direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+    //this.camera.getWorldDirection(this.direction);
+
     this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
-    const start = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.position.clone();
-    const end = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.position.clone();
+    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule();
+  }
+  init(name) {
+    const {
+      player
+    } = _settings__WEBPACK_IMPORTED_MODULE_2__.Stages[name];
+    this.rotation.phi = player.direction;
+    this.camera.rotation.y = player.direction;
+    this.camera.getWorldDirection(this.direction);
+    const start = player.position.clone();
+    const end = start.clone();
     end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height;
-    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
+    this.collider.set(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
   }
   jump() {
     this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower;
@@ -10623,6 +10635,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.#euler.x = this.povRotation.theta + this.rotation.theta;
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
+    ammo.mesh.rotation.copy(this.#euler);
     ammo.collider.center.copy(this.collider.end).addScaledVector(dir, this.collider.radius * 1.5);
     ammo.velocity.copy(dir).multiplyScalar(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.speed);
     ammo.velocity.addScaledVector(this.velocity, 2);
@@ -10665,6 +10678,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     // 入力操作の処理
 
     // update()で一度だけアクションを発動する
+    // 緊急行動中はonGroundがfalseでもジャンプ可にする
     if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.Space) && this.#onGround) {
       this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
     }
@@ -10890,6 +10904,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const {
+  PI,
   floor
 } = Math;
 const createSight = () => {
@@ -10910,7 +10925,7 @@ const createSight = () => {
 const createPovIndicator = () => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context);
+  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context, PI);
   const halfHeight = window.innerHeight / 2;
   const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
   texture.needsUpdate = true;
@@ -10921,6 +10936,7 @@ const createPovIndicator = () => {
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
   sprite.visible = false;
   sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, 0);
+  sprite.rotation.set(PI / 2, 0, PI / 2);
   sprite.position.setZ(-10);
   return sprite;
 };
@@ -10948,6 +10964,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ResizeDelayTime: function() { return /* binding */ ResizeDelayTime; },
 /* harmony export */   Scene: function() { return /* binding */ Scene; },
 /* harmony export */   Screen: function() { return /* binding */ Screen; },
+/* harmony export */   Stages: function() { return /* binding */ Stages; },
 /* harmony export */   StepsPerFrame: function() { return /* binding */ StepsPerFrame; },
 /* harmony export */   World: function() { return /* binding */ World; }
 /* harmony export */ });
@@ -10961,8 +10978,6 @@ const StepsPerFrame = 3;
 const PlayerSettings = {
   height: 30,
   radius: 5,
-  position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 200, 50 /* 100 */),
-  direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, -1),
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
@@ -11066,12 +11081,12 @@ const Ground = {
   wallColor: 0x203b33
 };
 const Controls = {
-  lookSpeed: 2,
+  lookSpeed: 1,
   idleTime: 0.3,
   restoreSpeed: 6,
   // 3,
   restoreMinAngle: PI * 2 * (0.2 / 360),
-  pointerMaxMove: 80,
+  pointerMaxMove: 100,
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
   inputDuration: 120
@@ -11094,11 +11109,46 @@ const AmmoSettings = {
   pointColor: 0xa3d8f6,
   pointSize: 10,
   radius: 5,
-  numAmmo: 50,
+  numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8
+};
+const Stages = {
+  firstStage: {
+    player: {
+      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 200, 0),
+      direction: PI / 2
+    },
+    components: [{
+      grid: [20, 12, 10, 80, 80, 80],
+      ground: [20, 3, 80, 80, 2, {
+        x: 0,
+        y: -200,
+        z: 0
+      }, {
+        x: -0.05,
+        y: 0,
+        z: 0.3
+      }]
+    }, {
+      grid: [20, 12, 10, 80, 80, 80, {
+        x: -600,
+        y: -600,
+        z: -900
+      }],
+      ground: [20, 3, 80, 80, 2, {
+        x: -600,
+        y: -600,
+        z: -700
+      }, {
+        x: 0.02,
+        y: PI / 2,
+        z: -0.3
+      }]
+    }]
+  }
 };
 
 /***/ }),
@@ -11111,6 +11161,9 @@ const AmmoSettings = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createStage: function() { return /* binding */ createStage; }
+/* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
@@ -11119,9 +11172,28 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+const createStage = name => {
+  const {
+    components
+  } = _settings__WEBPACK_IMPORTED_MODULE_0__.Stages[name];
+  const stage = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
+  for (let i = 0, l = components.length; i < l; i += 1) {
+    const component = components[i];
+    const grid = _grid__WEBPACK_IMPORTED_MODULE_1__.createGrid.apply(null, component.grid);
+    const fineGrid = _grid__WEBPACK_IMPORTED_MODULE_1__.createFineGrid.apply(null, component.grid);
+    const ground = _ground__WEBPACK_IMPORTED_MODULE_2__.createGround.apply(null, component.ground);
+    const block = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
+    block.add(grid);
+    block.add(fineGrid);
+    block.add(ground);
+    stage.add(block);
+  }
+  return stage;
+};
 const stages = {
-  firstStage: () => {
+  firstStage() {
     const grid = (0,_grid__WEBPACK_IMPORTED_MODULE_1__.createGrid)(20, 12, 10, 80, 80, 80);
+    const fineGrid = (0,_grid__WEBPACK_IMPORTED_MODULE_1__.createFineGrid)(20, 12, 10, 80, 80, 80);
     const ground = (0,_ground__WEBPACK_IMPORTED_MODULE_2__.createGround)(20, 3, 80, 80, 2, {
       x: 0,
       y: -200,
@@ -11133,6 +11205,7 @@ const stages = {
     });
     const stage = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
     stage.add(grid);
+    stage.add(fineGrid);
     stage.add(ground);
     return stage;
   }
@@ -11175,6 +11248,42 @@ const textures = {
     context.lineTo(56, 72);
     context.lineTo(0, 72);
     context.lineTo(0, 56);
+    context.lineTo(56, 56);
+    context.closePath();
+    context.fill();
+    return context;
+  },
+  crossStarDotted(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+
+    /*context.rect(56, 0, 16, 32);
+    context.rect(96, 56, 16, 16);
+    context.rect(56, 96, 16, 32);
+    context.rect(0, 56, 32, 16);*/
+
+    context.rect(56, 0, 16, 28);
+    context.rect(100, 56, 28, 16);
+    context.rect(56, 100, 16, 28);
+    context.rect(0, 56, 28, 16);
+    context.moveTo(56, 32);
+    context.lineTo(72, 32);
+    context.lineTo(72, 56);
+    context.lineTo(96, 56);
+    context.lineTo(96, 72);
+    context.lineTo(72, 72);
+    context.lineTo(72, 96);
+    context.lineTo(56, 96);
+    context.lineTo(56, 72);
+    context.lineTo(32, 72);
+    context.lineTo(32, 56);
     context.lineTo(56, 56);
     context.closePath();
     context.fill();
@@ -11301,6 +11410,7 @@ const textures = {
     return context;
   },
   isoscelesTriangle(context) {
+    let rotation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
     const {
       canvas
     } = context;
@@ -11308,14 +11418,15 @@ const textures = {
     canvas.height = 128;
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
+    context.translate(64, 64);
+    context.rotate(rotation);
     context.lineWidth = 5;
     context.miterLimit = 20;
     context.strokeStyle = '#FFF';
     context.beginPath();
-    context.moveTo(64, 64);
-    context.lineTo(119, 112);
-    context.lineTo(9, 112);
-    context.lineTo(64, 64);
+    context.moveTo(0, 0);
+    context.lineTo(55, 48);
+    context.lineTo(-55, 48);
     context.closePath();
     context.stroke();
     return context;
@@ -105233,90 +105344,6 @@ if ( typeof window !== 'undefined' ) {
 	} else {
 
 		window.__THREE__ = REVISION;
-
-	}
-
-}
-
-
-
-
-/***/ }),
-
-/***/ "./node_modules/three/examples/jsm/helpers/OctreeHelper.js":
-/*!*****************************************************************!*\
-  !*** ./node_modules/three/examples/jsm/helpers/OctreeHelper.js ***!
-  \*****************************************************************/
-/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   OctreeHelper: function() { return /* binding */ OctreeHelper; }
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-
-
-class OctreeHelper extends three__WEBPACK_IMPORTED_MODULE_0__.LineSegments {
-
-	constructor( octree, color = 0xffff00 ) {
-
-		super( new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry(), new three__WEBPACK_IMPORTED_MODULE_0__.LineBasicMaterial( { color: color, toneMapped: false } ) );
-
-		this.octree = octree;
-		this.color = color;
-
-		this.type = 'OctreeHelper';
-
-		this.update();
-
-	}
-
-	update() {
-
-		const vertices = [];
-
-		function traverse( tree ) {
-
-			for ( let i = 0; i < tree.length; i ++ ) {
-
-				const min = tree[ i ].box.min;
-				const max = tree[ i ].box.max;
-
-				vertices.push( max.x, max.y, max.z ); vertices.push( min.x, max.y, max.z ); // 0, 1
-				vertices.push( min.x, max.y, max.z ); vertices.push( min.x, min.y, max.z ); // 1, 2
-				vertices.push( min.x, min.y, max.z ); vertices.push( max.x, min.y, max.z ); // 2, 3
-				vertices.push( max.x, min.y, max.z ); vertices.push( max.x, max.y, max.z ); // 3, 0
-
-				vertices.push( max.x, max.y, min.z ); vertices.push( min.x, max.y, min.z ); // 4, 5
-				vertices.push( min.x, max.y, min.z ); vertices.push( min.x, min.y, min.z ); // 5, 6
-				vertices.push( min.x, min.y, min.z ); vertices.push( max.x, min.y, min.z ); // 6, 7
-				vertices.push( max.x, min.y, min.z ); vertices.push( max.x, max.y, min.z ); // 7, 4
-
-				vertices.push( max.x, max.y, max.z ); vertices.push( max.x, max.y, min.z ); // 0, 4
-				vertices.push( min.x, max.y, max.z ); vertices.push( min.x, max.y, min.z ); // 1, 5
-				vertices.push( min.x, min.y, max.z ); vertices.push( min.x, min.y, min.z ); // 2, 6
-				vertices.push( max.x, min.y, max.z ); vertices.push( max.x, min.y, min.z ); // 3, 7
-
-				traverse( tree[ i ].subTrees );
-
-			}
-
-		}
-
-		traverse( this.octree.subTrees );
-
-		this.geometry.dispose();
-
-		this.geometry = new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry();
-		this.geometry.setAttribute( 'position', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( vertices, 3 ) );
-
-	}
-
-	dispose() {
-
-		this.geometry.dispose();
-		this.material.dispose();
 
 	}
 
