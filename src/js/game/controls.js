@@ -133,8 +133,17 @@ class FirstPersonControls {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
 
+    this.onChangeRotateComponent = this.onChangeRotateComponent.bind(this);
+    this.player.subscribe('onChangeRotateComponent', this.onChangeRotateComponent);
+
     this.handleResize();
     this.setOrientation();
+  }
+
+  onChangeRotateComponent(rotateComponent) {
+    if (this.povLock) {
+      this.#rotation.phi -= rotateComponent;
+    }
   }
 
   setOrientation() {
@@ -425,35 +434,37 @@ class FirstPersonControls {
       actualLookSpeed = 0;
     }
 
-    if (this.#timeout) {
-      if (this.povSight.material.color !== sightColor.pov) {
-        this.povSight.material.color = sightColor.pov;
+    if (this.#timeout || this.povLock) {
+      if (this.#timeout) {
+        if (this.povSight.material.color !== sightColor.pov) {
+          this.povSight.material.color = sightColor.pov;
+        }
+
+        if (!this.povIndicator.horizontal.visible) {
+          this.povIndicator.horizontal.visible = true;
+        }
+
+        if (!this.povIndicator.virtical.visible) {
+          this.povIndicator.virtical.visible = true;
+        }
+
+        const degX = 90 * this.#dy / this.viewHalfY;//(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const radX = degX * degToRadCoef;
+        this.#rotation.theta -= radX * actualLookSpeed;
+
+        const degY = 135 * this.#dx / this.viewHalfX;//(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const radY = degY * degToRadCoef;
+        this.#rotation.phi -= radY * actualLookSpeed;
+
+        this.#rotation.theta = max(
+          halfPI - this.maxPolarAngle.virtical,
+          min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta),
+        );
+        this.#rotation.phi = max(
+          PI - this.maxPolarAngle.horizontal,
+          min(PI - this.minPolarAngle.horizontal, this.#rotation.phi),
+        );
       }
-
-      if (!this.povIndicator.horizontal.visible) {
-        this.povIndicator.horizontal.visible = true;
-      }
-
-      if (!this.povIndicator.virtical.visible) {
-        this.povIndicator.virtical.visible = true;
-      }
-
-      const degX = 90 * this.#dy / this.viewHalfY;//(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
-      const radX = degX * degToRadCoef;
-      this.#rotation.theta -= radX * actualLookSpeed;
-
-      const degY = 135 * this.#dx / this.viewHalfX;//(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
-      const radY = degY * degToRadCoef;
-      this.#rotation.phi -= radY * actualLookSpeed;
-
-      this.#rotation.theta = max(
-        halfPI - this.maxPolarAngle.virtical,
-        min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta),
-      );
-      this.#rotation.phi = max(
-        PI - this.maxPolarAngle.horizontal,
-        min(PI - this.minPolarAngle.horizontal, this.#rotation.phi),
-      );
 
       let posX = (this.viewHalfX * -this.#rotation.phi) / PI;
       let posY = (this.viewHalfY * this.#rotation.theta) / halfPI;
@@ -480,7 +491,7 @@ class FirstPersonControls {
 
       this.povIndicator.horizontal.position.x = posX;
       this.povIndicator.virtical.position.y = posY;
-    } else if (!this.povLock) {
+    } else  {
       if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;

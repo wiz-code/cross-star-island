@@ -82,7 +82,7 @@ class Player extends Publisher {
     this.direction = new Vector3();
     //this.camera.getWorldDirection(this.direction);
 
-    this.fire = this.fire.bind(this);
+    //this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
 
@@ -102,6 +102,17 @@ class Player extends Publisher {
     const end = start.clone();
     end.y += PlayerSettings.height;
     this.collider.set(start, end, PlayerSettings.radius);
+  }
+
+  getRotateDiff() {
+    if (
+      this.#actions.has(Actions.rotateLeft) ||
+      this.#actions.has(Actions.rotateRight)
+    ) {
+      return this.rotateComponent;
+    }
+
+    return 0;
   }
 
   jump() {
@@ -398,6 +409,7 @@ class Player extends Publisher {
       this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
+      this.publish('onChangeRotateComponent', this.rotateComponent);
 
       this.rotateComponent = addDamping(
         this.rotateComponent,
