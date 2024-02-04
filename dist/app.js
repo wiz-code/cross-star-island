@@ -9496,8 +9496,15 @@ class FirstPersonControls {
     this.domElement.addEventListener('pointerup', this.onPointerUp);
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
+    this.onChangeRotateComponent = this.onChangeRotateComponent.bind(this);
+    this.player.subscribe('onChangeRotateComponent', this.onChangeRotateComponent);
     this.handleResize();
     this.setOrientation();
+  }
+  onChangeRotateComponent(rotateComponent) {
+    if (this.povLock) {
+      this.#rotation.phi -= rotateComponent;
+    }
   }
   setOrientation() {
     const {
@@ -9736,24 +9743,26 @@ class FirstPersonControls {
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
-    if (this.#timeout) {
-      if (this.povSight.material.color !== sightColor.pov) {
-        this.povSight.material.color = sightColor.pov;
+    if (this.#timeout || this.povLock) {
+      if (this.#timeout) {
+        if (this.povSight.material.color !== sightColor.pov) {
+          this.povSight.material.color = sightColor.pov;
+        }
+        if (!this.povIndicator.horizontal.visible) {
+          this.povIndicator.horizontal.visible = true;
+        }
+        if (!this.povIndicator.virtical.visible) {
+          this.povIndicator.virtical.visible = true;
+        }
+        const degX = 90 * this.#dy / this.viewHalfY; //(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const radX = degX * degToRadCoef;
+        this.#rotation.theta -= radX * actualLookSpeed;
+        const degY = 135 * this.#dx / this.viewHalfX; //(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const radY = degY * degToRadCoef;
+        this.#rotation.phi -= radY * actualLookSpeed;
+        this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
+        this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       }
-      if (!this.povIndicator.horizontal.visible) {
-        this.povIndicator.horizontal.visible = true;
-      }
-      if (!this.povIndicator.virtical.visible) {
-        this.povIndicator.virtical.visible = true;
-      }
-      const degX = 90 * this.#dy / this.viewHalfY; //(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
-      const radX = degX * degToRadCoef;
-      this.#rotation.theta -= radX * actualLookSpeed;
-      const degY = 135 * this.#dx / this.viewHalfX; //(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
-      const radY = degY * degToRadCoef;
-      this.#rotation.phi -= radY * actualLookSpeed;
-      this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
-      this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       let posX = this.viewHalfX * -this.#rotation.phi / PI;
       let posY = this.viewHalfY * this.#rotation.theta / halfPI;
       if (posX <= -this.viewHalfX) {
@@ -9776,7 +9785,7 @@ class FirstPersonControls {
       }
       this.povIndicator.horizontal.position.x = posX;
       this.povIndicator.virtical.position.y = posY;
-    } else if (!this.povLock) {
+    } else {
       if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
@@ -10605,7 +10614,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
     //this.camera.getWorldDirection(this.direction);
 
-    this.fire = this.fire.bind(this);
+    //this.fire = this.fire.bind(this);
     this.ammoCollision = this.ammoCollision.bind(this);
     this.ammo.subscribe('ammoCollision', this.ammoCollision);
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule();
@@ -10622,6 +10631,12 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const end = start.clone();
     end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height;
     this.collider.set(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
+  }
+  getRotateDiff() {
+    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft) || this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight)) {
+      return this.rotateComponent;
+    }
+    return 0;
   }
   jump() {
     this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower;
@@ -10860,6 +10875,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
       this.direction.normalize();
       this.rotation.phi += this.rotateComponent;
+      this.publish('onChangeRotateComponent', this.rotateComponent);
       this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
     }
     if (this.forwardComponent !== 0) {
