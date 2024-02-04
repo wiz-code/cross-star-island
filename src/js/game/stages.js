@@ -20,15 +20,19 @@ export const createStage = (name) => {
 
   for (let i = 0, l = components.length; i < l; i += 1) {
     const component = components[i];
-
-    const grid = createGrid.apply(null, component.grid);
-    const fineGrid = createFineGrid.apply(null, component.grid);
-    const ground = createGround.apply(null, component.ground);
-
     const block = new Group();
-    block.add(grid);
-    block.add(fineGrid);
-    block.add(ground);
+
+    if (component.grid != null) {
+      const grid = createGrid.apply(null, component.grid);
+      const fineGrid = createFineGrid.apply(null, component.grid);
+      block.add(grid);
+      block.add(fineGrid);
+    }
+
+    if (component.ground != null) {
+      const ground = createGround.apply(null, component.ground);
+      block.add(ground);
+    }
 
     stage.add(block);
   }

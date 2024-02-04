@@ -155,18 +155,32 @@ export const AmmoSettings = {
 export const Stages = {
   firstStage: {
     player: {
-      position: new Vector3(650, 200, 0),
+      //position: new Vector3(650, 200, 0),
+      position: new Vector3(0, 100, 0),
       direction: PI / 2,
     },
     components: [
       {
-        grid: [20, 12, 10, 80, 80, 80],
-        ground: [20, 3, 80, 80, 2, { x: 0, y: -200, z: 0 }, { x: -0.05, y: 0, z: 0.3 }],
+        grid: [44, 6, 8, 80, 80, 80, { x: 0, y: 0, z: 0 }],
+        ground: [40, 4, 80, 80, 0, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }],
+      },
+      {
+        ground: [40, 4, 80, 80, 0, { x: 0, y: 160, z: 160 }, { x: -PI / 2, y: 0, z: 0 }],
+      },
+      {
+        ground: [40, 4, 80, 80, 0, { x: 0, y: 320, z: 0 }, { x: -PI, y: 0, z: 0 }],
+      },
+      {
+        ground: [40, 4, 80, 80, 0, { x: 0, y: 160, z: -160 }, { x: PI / 2, y: 0, z: 0 }],
+      },
+      /*{
+        grid: [24, 12, 10, 80, 80, 80, { x: 320, y: 0, z: 0 }],
+        ground: [20, 3, 80, 80, 2, { x: 0, y: 0, z: 0 }, { x: -0.05, y: 0, z: 0 }],
       },
       {
         grid: [20, 12, 10, 80, 80, 80, { x: -600, y: -700, z: -900 }],
         ground: [20, 3, 80, 80, 5, { x: -700, y: -800, z: -500 }, { x: 0.02, y: PI / 2, z: -0.5 }],
-      },
+      },*/
     ],
   },
 };
