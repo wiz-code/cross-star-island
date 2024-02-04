@@ -9467,7 +9467,11 @@ class FirstPersonControls {
     this.povSight = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createSight)();
     this.screen.add(this.povSight);
     this.povIndicator = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createPovIndicator)();
-    this.screen.add(this.povIndicator);
+    this.screen.add(this.povIndicator.horizontal);
+    this.screen.add(this.povIndicator.virtical);
+    this.centerMark = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createCenterMark)();
+    this.screen.add(this.centerMark.horizontal);
+    this.screen.add(this.centerMark.virtical);
     this.enabled = true;
     this.activeLook = true;
     this.povLock = false;
@@ -9505,7 +9509,10 @@ class FirstPersonControls {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-    this.povIndicator.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
+    this.povIndicator.horizontal.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
+    this.povIndicator.virtical.position.setX(this.viewHalfX - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
+    this.centerMark.horizontal.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2 + 7);
+    this.centerMark.virtical.position.setX(this.viewHalfX - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2 + 7);
   }
   lookAt(x, y, z) {
     if (x.isVector3) {
@@ -9547,7 +9554,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    //this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -9733,8 +9740,11 @@ class FirstPersonControls {
       if (this.povSight.material.color !== sightColor.pov) {
         this.povSight.material.color = sightColor.pov;
       }
-      if (!this.povIndicator.visible) {
-        this.povIndicator.visible = true;
+      if (!this.povIndicator.horizontal.visible) {
+        this.povIndicator.horizontal.visible = true;
+      }
+      if (!this.povIndicator.virtical.visible) {
+        this.povIndicator.virtical.visible = true;
       }
       const degX = 90 * this.#dy / this.viewHalfY; //(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
       const radX = degX * degToRadCoef;
@@ -9745,23 +9755,37 @@ class FirstPersonControls {
       this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
       this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       let posX = this.viewHalfX * -this.#rotation.phi / PI;
-      if (posX < -this.viewHalfX) {
+      let posY = this.viewHalfY * this.#rotation.theta / halfPI;
+      if (posX <= -this.viewHalfX) {
         posX = -this.viewHalfX;
-        this.povIndicator.material.color = indicatorColor.beyondFov;
-      } else if (posX > this.viewHalfX) {
+        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
+      } else if (posX >= this.viewHalfX) {
         posX = this.viewHalfX;
-        this.povIndicator.material.color = indicatorColor.beyondFov;
-      } else if (this.povIndicator.material.color !== indicatorColor.normal) {
-        this.povIndicator.material.color = indicatorColor.normal;
+        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
+      } else if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+        this.povIndicator.horizontal.material.color = indicatorColor.normal;
       }
-      this.povIndicator.position.x = posX;
+      if (posY <= -this.viewHalfY) {
+        posY = -this.viewHalfY;
+        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+      } else if (posY >= this.viewHalfY) {
+        posY = this.viewHalfY;
+        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+      } else if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+        this.povIndicator.virtical.material.color = indicatorColor.normal;
+      }
+      this.povIndicator.horizontal.position.x = posX;
+      this.povIndicator.virtical.position.y = posY;
     } else if (!this.povLock) {
       if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
         }
-        if (this.povIndicator.visible) {
-          this.povIndicator.visible = false;
+        if (this.povIndicator.horizontal.visible) {
+          this.povIndicator.horizontal.visible = false;
+        }
+        if (this.povIndicator.virtical.visible) {
+          this.povIndicator.virtical.visible = false;
         }
       }
       if (this.#rotation.theta !== 0) {
@@ -9779,11 +9803,16 @@ class FirstPersonControls {
           const dr = this.#rotation.phi * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(this.#rotation.phi) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
           this.#rotation.phi -= dr;
         }
-        if (this.povIndicator.material.color !== indicatorColor.normal) {
-          this.povIndicator.material.color = indicatorColor.normal;
+        if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+          this.povIndicator.horizontal.material.color = indicatorColor.normal;
+        }
+        if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+          this.povIndicator.virtical.material.color = indicatorColor.normal;
         }
         const posX = this.viewHalfX * -this.#rotation.phi / PI;
-        this.povIndicator.position.x = posX;
+        this.povIndicator.horizontal.position.x = posX;
+        const posY = this.viewHalfY * this.#rotation.theta / halfPI;
+        this.povIndicator.virtical.position.y = posY;
       }
     }
     this.player.setPovRotation(this.#rotation);
@@ -10899,6 +10928,7 @@ class Publisher {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   createCenterMark: function() { return /* binding */ createCenterMark; },
 /* harmony export */   createPovIndicator: function() { return /* binding */ createPovIndicator; },
 /* harmony export */   createSight: function() { return /* binding */ createSight; }
 /* harmony export */ });
@@ -10912,37 +10942,88 @@ const {
   PI,
   floor
 } = Math;
+const canvas = {};
+const context = {};
+const texture = {};
+canvas.povIndicator = {};
+context.povIndicator = {};
+texture.povIndicator = {};
+canvas.povIndicator.horizontal = document.createElement('canvas');
+context.povIndicator.horizontal = canvas.povIndicator.horizontal.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context.povIndicator.horizontal, PI);
+texture.povIndicator.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.povIndicator.horizontal);
+texture.povIndicator.horizontal.needsUpdate = true;
+canvas.povIndicator.virtical = document.createElement('canvas');
+context.povIndicator.virtical = canvas.povIndicator.virtical.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context.povIndicator.virtical, -PI / 2);
+texture.povIndicator.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.povIndicator.virtical);
+texture.povIndicator.virtical.needsUpdate = true;
+canvas.povCenterMark = {};
+context.povCenterMark = {};
+texture.povCenterMark = {};
+canvas.povCenterMark.horizontal = document.createElement('canvas');
+context.povCenterMark.horizontal = canvas.povCenterMark.horizontal.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context.povCenterMark.horizontal, PI, true);
+texture.povCenterMark.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.povCenterMark.horizontal);
+texture.povCenterMark.horizontal.needsUpdate = true;
+canvas.povCenterMark.virtical = document.createElement('canvas');
+context.povCenterMark.virtical = canvas.povCenterMark.virtical.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context.povCenterMark.virtical, -PI / 2, true);
+texture.povCenterMark.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.povCenterMark.virtical);
+texture.povCenterMark.virtical.needsUpdate = true;
+canvas.sight = document.createElement('canvas');
+context.sight = canvas.sight.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].sight(context.sight);
+texture.sight = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.sight);
+texture.sight.needsUpdate = true;
 const createSight = () => {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].sight(context);
-  const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
-  texture.needsUpdate = true;
   const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
     color: 0xffffff,
-    map: texture
+    map: texture.sight
   });
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
   sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, 0);
   sprite.position.set(0, 0, -10);
   return sprite;
 };
-const createPovIndicator = () => {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_1__["default"].isoscelesTriangle(context, PI);
-  const halfHeight = window.innerHeight / 2;
-  const texture = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas);
-  texture.needsUpdate = true;
-  const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+const createCenterMark = () => {
+  const material = {};
+  material.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
     color: 0xffffff,
-    map: texture
+    map: texture.povCenterMark.horizontal
   });
-  const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
-  sprite.visible = false;
-  sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, 0);
-  sprite.rotation.set(PI / 2, 0, PI / 2);
-  sprite.position.setZ(-10);
+  material.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: 0xffffff,
+    map: texture.povCenterMark.virtical
+  });
+  const sprite = {};
+  sprite.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material.horizontal);
+  sprite.horizontal.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize * 0.5, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize * 0.5, 0);
+  sprite.horizontal.position.setZ(-20);
+  sprite.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material.virtical);
+  sprite.virtical.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize * 0.5, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize * 0.5, 0);
+  sprite.virtical.position.setZ(-20);
+  return sprite;
+};
+const createPovIndicator = () => {
+  const sprite = {};
+  const material = {};
+  material.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: 0xffffff,
+    map: texture.povIndicator.horizontal
+  });
+  material.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: 0xffffff,
+    map: texture.povIndicator.virtical
+  });
+  sprite.horizontal = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material.horizontal);
+  sprite.horizontal.visible = false;
+  sprite.horizontal.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, 0);
+  sprite.horizontal.position.setZ(-10);
+  sprite.virtical = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material.virtical);
+  sprite.virtical.visible = false;
+  sprite.virtical.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize, 0);
+  sprite.virtical.position.setZ(-10);
   return sprite;
 };
 
@@ -11416,6 +11497,7 @@ const textures = {
   },
   isoscelesTriangle(context) {
     let rotation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    let fill = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
     const {
       canvas
     } = context;
@@ -11425,15 +11507,20 @@ const textures = {
     context.fillRect(0, 0, 128, 128);
     context.translate(64, 64);
     context.rotate(rotation);
-    context.lineWidth = 5;
+    context.lineWidth = 6;
     context.miterLimit = 20;
     context.strokeStyle = '#FFF';
+    context.fillStyle = '#FFF';
     context.beginPath();
     context.moveTo(0, 0);
     context.lineTo(55, 48);
     context.lineTo(-55, 48);
     context.closePath();
-    context.stroke();
+    if (fill) {
+      context.fill();
+    } else {
+      context.stroke();
+    }
     return context;
   }
 };
