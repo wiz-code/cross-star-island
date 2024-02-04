@@ -2,7 +2,7 @@ import { Spherical, Vector3, Color } from 'three';
 
 import { Camera, Controls, Screen } from './settings';
 import { Keys, Pointers } from './data';
-import { createSight, createPovIndicator } from './screen';
+import { createSight, createPovIndicator, createCenterMark } from './screen';
 
 const { abs, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
@@ -95,7 +95,12 @@ class FirstPersonControls {
     this.screen.add(this.povSight);
 
     this.povIndicator = createPovIndicator();
-    this.screen.add(this.povIndicator);
+    this.screen.add(this.povIndicator.horizontal);
+    this.screen.add(this.povIndicator.virtical);
+
+    this.centerMark = createCenterMark();
+    this.screen.add(this.centerMark.horizontal);
+    this.screen.add(this.centerMark.virtical);
 
     this.enabled = true;
 
@@ -142,7 +147,10 @@ class FirstPersonControls {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
 
-    this.povIndicator.position.setY(this.viewHalfY - Screen.sightPovSize / 2);
+    this.povIndicator.horizontal.position.setY(this.viewHalfY - Screen.sightPovSize / 2);
+    this.povIndicator.virtical.position.setX(this.viewHalfX - Screen.sightPovSize / 2);
+    this.centerMark.horizontal.position.setY(this.viewHalfY - Screen.sightPovSize / 2 + 7);
+    this.centerMark.virtical.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
   }
 
   lookAt(x, y, z) {
@@ -201,7 +209,7 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    //this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -422,8 +430,12 @@ class FirstPersonControls {
         this.povSight.material.color = sightColor.pov;
       }
 
-      if (!this.povIndicator.visible) {
-        this.povIndicator.visible = true;
+      if (!this.povIndicator.horizontal.visible) {
+        this.povIndicator.horizontal.visible = true;
+      }
+
+      if (!this.povIndicator.virtical.visible) {
+        this.povIndicator.virtical.visible = true;
       }
 
       const degX = 90 * this.#dy / this.viewHalfY;//(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
@@ -444,26 +456,42 @@ class FirstPersonControls {
       );
 
       let posX = (this.viewHalfX * -this.#rotation.phi) / PI;
+      let posY = (this.viewHalfY * this.#rotation.theta) / halfPI;
 
-      if (posX < -this.viewHalfX) {
+      if (posX <= -this.viewHalfX) {
         posX = -this.viewHalfX;
-        this.povIndicator.material.color = indicatorColor.beyondFov;
-      } else if (posX > this.viewHalfX) {
+        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
+      } else if (posX >= this.viewHalfX) {
         posX = this.viewHalfX;
-        this.povIndicator.material.color = indicatorColor.beyondFov;
-      } else if (this.povIndicator.material.color !== indicatorColor.normal) {
-        this.povIndicator.material.color = indicatorColor.normal;
+        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
+      } else if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+        this.povIndicator.horizontal.material.color = indicatorColor.normal;
       }
 
-      this.povIndicator.position.x = posX;
+      if (posY <= -this.viewHalfY) {
+        posY = -this.viewHalfY;
+        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+      } else if (posY >= this.viewHalfY) {
+        posY = this.viewHalfY;
+        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+      } else if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+        this.povIndicator.virtical.material.color = indicatorColor.normal;
+      }
+
+      this.povIndicator.horizontal.position.x = posX;
+      this.povIndicator.virtical.position.y = posY;
     } else if (!this.povLock) {
       if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
         }
 
-        if (this.povIndicator.visible) {
-          this.povIndicator.visible = false;
+        if (this.povIndicator.horizontal.visible) {
+          this.povIndicator.horizontal.visible = false;
+        }
+
+        if (this.povIndicator.virtical.visible) {
+          this.povIndicator.virtical.visible = false;
         }
       }
 
@@ -488,12 +516,19 @@ class FirstPersonControls {
           this.#rotation.phi -= dr;
         }
 
-        if (this.povIndicator.material.color !== indicatorColor.normal) {
-          this.povIndicator.material.color = indicatorColor.normal;
+        if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+          this.povIndicator.horizontal.material.color = indicatorColor.normal;
+        }
+
+        if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+          this.povIndicator.virtical.material.color = indicatorColor.normal;
         }
 
         const posX = (this.viewHalfX * -this.#rotation.phi) / PI;
-        this.povIndicator.position.x = posX;
+        this.povIndicator.horizontal.position.x = posX;
+
+        const posY = (this.viewHalfY * this.#rotation.theta) / halfPI;
+        this.povIndicator.virtical.position.y = posY;
       }
     }
 

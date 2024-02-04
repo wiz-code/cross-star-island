@@ -198,7 +198,7 @@ const textures = {
     return context;
   },
 
-  isoscelesTriangle(context, rotation = 0) {
+  isoscelesTriangle(context, rotation = 0, fill = false) {
     const { canvas } = context;
     canvas.width = 128;
     canvas.height = 128;
@@ -208,16 +208,21 @@ const textures = {
 
     context.translate(64, 64);
     context.rotate(rotation);
-    context.lineWidth = 5;
+    context.lineWidth = 6;
     context.miterLimit = 20;
     context.strokeStyle = '#FFF';
+    context.fillStyle = '#FFF';
     context.beginPath();
     context.moveTo(0, 0);
     context.lineTo(55, 48);
     context.lineTo(-55, 48);
     context.closePath();
 
-    context.stroke();
+    if (fill) {
+      context.fill();
+    } else {
+      context.stroke();
+    }
 
     return context;
   },
