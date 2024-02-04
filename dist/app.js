@@ -9922,6 +9922,19 @@ __webpack_require__.r(__webpack_exports__);
 const {
   floor
 } = Math;
+const canvas = {};
+const context = {};
+const texture = {};
+canvas.grid = document.createElement('canvas');
+context.grid = canvas.grid.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_2__["default"].crossStar(context.grid);
+texture.grid = new three__WEBPACK_IMPORTED_MODULE_3__.Texture(canvas.grid);
+texture.grid.needsUpdate = true;
+canvas.fineGrid = document.createElement('canvas');
+context.fineGrid = canvas.fineGrid.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_2__["default"].crossStarThin(context.fineGrid);
+texture.fineGrid = new three__WEBPACK_IMPORTED_MODULE_3__.Texture(canvas.fineGrid);
+texture.fineGrid.needsUpdate = true;
 const createGrid = function () {
   let widthSegments = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
   let heightSegments = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
@@ -9945,9 +9958,9 @@ const createGrid = function () {
     height: floor(heightSegments * heightSpacing / 2),
     depth: floor(depthSegments * depthSpacing / 2)
   };
-  for (let i = 0, l = widthSegments; i < l; i += 1) {
-    for (let j = 0, m = heightSegments; j < m; j += 1) {
-      for (let k = 0, n = depthSegments; k < n; k += 1) {
+  for (let i = 0, l = widthSegments + 1; i < l; i += 1) {
+    for (let j = 0, m = heightSegments + 1; j < m; j += 1) {
+      for (let k = 0, n = depthSegments + 1; k < n; k += 1) {
         const x = i * widthSpacing - halfSize.width;
         const y = j * heightSpacing - halfSize.height;
         const z = k * depthSpacing - halfSize.depth;
@@ -9958,15 +9971,10 @@ const createGrid = function () {
   const geometry = new three__WEBPACK_IMPORTED_MODULE_3__.BufferGeometry();
   geometry.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_3__.Float32BufferAttribute(vertices, 3));
   geometry.computeBoundingSphere();
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_2__["default"].crossStar(context);
-  const texture = new three__WEBPACK_IMPORTED_MODULE_3__.Texture(canvas);
-  texture.needsUpdate = true;
   const material = new three__WEBPACK_IMPORTED_MODULE_3__.PointsMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.color,
     size: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.size,
-    map: texture,
+    map: texture.grid,
     blending: three__WEBPACK_IMPORTED_MODULE_3__.NormalBlending,
     depthTest: true,
     transparent: true,
@@ -10003,9 +10011,9 @@ const createFineGrid = function () {
   const width = floor(widthSpacing / 2);
   const height = floor(heightSpacing / 2);
   const depth = floor(depthSpacing / 2);
-  for (let i = 0, l = widthSegments * 2 - 1; i < l; i += 1) {
-    for (let j = 0, m = heightSegments * 2 - 1; j < m; j += 1) {
-      for (let k = 0, n = depthSegments * 2 - 1; k < n; k += 1) {
+  for (let i = 0, l = widthSegments * 2 + 1; i < l; i += 1) {
+    for (let j = 0, m = heightSegments * 2 + 1; j < m; j += 1) {
+      for (let k = 0, n = depthSegments * 2 + 1; k < n; k += 1) {
         if (i % 2 !== 0 || j % 2 !== 0 || k % 2 !== 0) {
           const x = i * width - halfSize.width;
           const y = j * height - halfSize.height;
@@ -10018,22 +10026,19 @@ const createFineGrid = function () {
   const geometry = new three__WEBPACK_IMPORTED_MODULE_3__.BufferGeometry();
   geometry.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_3__.Float32BufferAttribute(vertices, 3));
   geometry.computeBoundingSphere();
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  _textures__WEBPACK_IMPORTED_MODULE_2__["default"].crossStarThin(context);
-  const texture = new three__WEBPACK_IMPORTED_MODULE_3__.Texture(canvas);
-  texture.needsUpdate = true;
   const size = floor(_settings__WEBPACK_IMPORTED_MODULE_1__.Grid.size / 2);
   const material = new three__WEBPACK_IMPORTED_MODULE_3__.PointsMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.color,
     size,
-    map: texture,
+    map: texture.fineGrid,
     blending: three__WEBPACK_IMPORTED_MODULE_3__.NormalBlending,
     depthTest: true,
     transparent: true,
     alphaTest: 0.5
   });
   const grid = new three__WEBPACK_IMPORTED_MODULE_3__.Points(geometry, material);
+  grid.position.set(position.x, position.y, position.z);
+  grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   return grid;
 };
 
@@ -11220,36 +11225,64 @@ const AmmoSettings = {
 const Stages = {
   firstStage: {
     player: {
-      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 200, 0),
+      //position: new Vector3(650, 200, 0),
+      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 100, 0),
       direction: PI / 2
     },
     components: [{
-      grid: [20, 12, 10, 80, 80, 80],
-      ground: [20, 3, 80, 80, 2, {
+      grid: [44, 6, 8, 80, 80, 80, {
         x: 0,
-        y: -200,
+        y: 0,
+        z: 0
+      }],
+      ground: [40, 4, 80, 80, 0, {
+        x: 0,
+        y: 0,
         z: 0
       }, {
-        x: -0.05,
+        x: 0,
         y: 0,
-        z: 0.3
+        z: 0
       }]
     }, {
-      grid: [20, 12, 10, 80, 80, 80, {
-        x: -600,
-        y: -700,
-        z: -900
-      }],
-      ground: [20, 3, 80, 80, 5, {
-        x: -700,
-        y: -800,
-        z: -500
+      ground: [40, 4, 80, 80, 0, {
+        x: 0,
+        y: 160,
+        z: 160
       }, {
-        x: 0.02,
-        y: PI / 2,
-        z: -0.5
+        x: -PI / 2,
+        y: 0,
+        z: 0
       }]
-    }]
+    }, {
+      ground: [40, 4, 80, 80, 0, {
+        x: 0,
+        y: 320,
+        z: 0
+      }, {
+        x: -PI,
+        y: 0,
+        z: 0
+      }]
+    }, {
+      ground: [40, 4, 80, 80, 0, {
+        x: 0,
+        y: 160,
+        z: -160
+      }, {
+        x: PI / 2,
+        y: 0,
+        z: 0
+      }]
+    }
+    /*{
+      grid: [24, 12, 10, 80, 80, 80, { x: 320, y: 0, z: 0 }],
+      ground: [20, 3, 80, 80, 2, { x: 0, y: 0, z: 0 }, { x: -0.05, y: 0, z: 0 }],
+    },
+    {
+      grid: [20, 12, 10, 80, 80, 80, { x: -600, y: -700, z: -900 }],
+      ground: [20, 3, 80, 80, 5, { x: -700, y: -800, z: -500 }, { x: 0.02, y: PI / 2, z: -0.5 }],
+    },*/]
   }
 };
 
@@ -11281,13 +11314,17 @@ const createStage = name => {
   const stage = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
   for (let i = 0, l = components.length; i < l; i += 1) {
     const component = components[i];
-    const grid = _grid__WEBPACK_IMPORTED_MODULE_1__.createGrid.apply(null, component.grid);
-    const fineGrid = _grid__WEBPACK_IMPORTED_MODULE_1__.createFineGrid.apply(null, component.grid);
-    const ground = _ground__WEBPACK_IMPORTED_MODULE_2__.createGround.apply(null, component.ground);
     const block = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
-    block.add(grid);
-    block.add(fineGrid);
-    block.add(ground);
+    if (component.grid != null) {
+      const grid = _grid__WEBPACK_IMPORTED_MODULE_1__.createGrid.apply(null, component.grid);
+      const fineGrid = _grid__WEBPACK_IMPORTED_MODULE_1__.createFineGrid.apply(null, component.grid);
+      block.add(grid);
+      block.add(fineGrid);
+    }
+    if (component.ground != null) {
+      const ground = _ground__WEBPACK_IMPORTED_MODULE_2__.createGround.apply(null, component.ground);
+      block.add(ground);
+    }
     stage.add(block);
   }
   return stage;
