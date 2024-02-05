@@ -9344,7 +9344,8 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       const object = {
         mesh: group,
         collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius * 2 - 1000, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
-        velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3()
+        velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
+        weight: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.weight
       };
       this.list.push(object);
     }
@@ -9377,8 +9378,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(ammo.collider);
       if (result) {
-        ammo.velocity.addScaledVector(result.normal, -result.normal.dot(ammo.velocity) * result.normal.y //1.5,
-        );
+        ammo.velocity.addScaledVector(result.normal, -result.normal.dot(ammo.velocity) * 1.5);
         ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {
         ammo.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime * 100;
@@ -9981,7 +9981,11 @@ const createGrid = function () {
     alphaTest: 0.5
   });
   const grid = new three__WEBPACK_IMPORTED_MODULE_3__.Points(geometry, material);
-  grid.position.set(position.x, position.y, position.z);
+  if (position.grid == null) {
+    grid.position.set(position.x, position.y, position.z);
+  } else {
+    grid.position.set(position.grid.x * widthSpacing, position.grid.y * heightSpacing, position.grid.z * depthSpacing);
+  }
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   return grid;
 };
@@ -10037,7 +10041,11 @@ const createFineGrid = function () {
     alphaTest: 0.5
   });
   const grid = new three__WEBPACK_IMPORTED_MODULE_3__.Points(geometry, material);
-  grid.position.set(position.x, position.y, position.z);
+  if (position.grid == null) {
+    grid.position.set(position.x, position.y, position.z);
+  } else {
+    grid.position.set(position.grid.x * widthSpacing, position.grid.y * heightSpacing, position.grid.z * depthSpacing);
+  }
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   return grid;
 };
@@ -10319,7 +10327,12 @@ const createGround = function () {
   ground.add(mesh.surface);
   ground.add(mesh.wireframe);
   ground.add(mesh.points);
-  ground.position.set(position.x, position.y, position.z);
+  if (position.grid == null) {
+    ground.position.set(position.x, position.y, position.z);
+  } else {
+    const spacing = position.grid.spacing ?? 10;
+    ground.position.set(position.grid.x * spacing, position.grid.y * spacing, position.grid.z * spacing);
+  }
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   /*geom.stones = [];
@@ -10634,7 +10647,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.camera.getWorldDirection(this.direction);
     const start = player.position.clone();
     const end = start.clone();
-    end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height;
+    end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height + _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius;
     this.collider.set(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
   }
   getRotateDiff() {
@@ -10698,6 +10711,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   ammoCollision(ammo) {
     const center = this.#vecA.addVectors(this.collider.start, this.collider.end).multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
+    const weightRatio = ammo.weight / _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.weight;
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
     const colliders = [this.collider.start, this.collider.end, center];
@@ -10708,7 +10722,7 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         // console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
         const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
-        const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity));
+        const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity) * weightRatio);
         this.velocity.add(v2).sub(v1);
         ammo.velocity.add(v1).sub(v2);
         const d = (r - sqrt(d2)) / 2;
@@ -11081,10 +11095,11 @@ const {
   PI
 } = Math;
 const ResizeDelayTime = 200;
-const StepsPerFrame = 3;
+const StepsPerFrame = 5;
 const PlayerSettings = {
-  height: 30,
+  height: 40,
   radius: 5,
+  weight: 60,
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
@@ -11093,14 +11108,14 @@ const PlayerSettings = {
   urgencyTurn: PI * 2 * (13.8 / 16),
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
-  jumpPower: 6
+  jumpPower: 2
 };
 const Scene = {
   background: 0x000000,
   Fog: {
     color: 0x000000,
     near: 30,
-    far: 1600
+    far: 1800
   }
 };
 const Camera = {
@@ -11108,7 +11123,6 @@ const Camera = {
   Aspect: window.innerWidth / window.innerHeight,
   near: PlayerSettings.radius / 2,
   far: 2000,
-  // メートル換算470m
   order: 'YXZ'
 };
 const Renderer = {
@@ -11220,7 +11234,8 @@ const AmmoSettings = {
   // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
-  rotateSpeed: 8
+  rotateSpeed: 8,
+  weight: 1
 };
 const Stages = {
   firstStage: {
@@ -11231,44 +11246,58 @@ const Stages = {
     },
     components: [{
       grid: [44, 6, 8, 80, 80, 80, {
-        x: 0,
-        y: 0,
-        z: 0
+        grid: {
+          x: 0,
+          y: -0.2,
+          z: 0
+        }
       }],
-      ground: [40, 4, 80, 80, 0, {
-        x: 0,
-        y: 0,
-        z: 0
+      ground: [40, 6, 80, 80, 0, {
+        grid: {
+          x: 0,
+          y: 0,
+          z: 0,
+          spacing: 80
+        }
       }, {
         x: 0,
         y: 0,
         z: 0
       }]
     }, {
-      ground: [40, 4, 80, 80, 0, {
-        x: 0,
-        y: 160,
-        z: 160
+      ground: [40, 6, 80, 80, 0, {
+        grid: {
+          x: 0,
+          y: 1.9,
+          z: 2.1,
+          spacing: 80
+        }
       }, {
         x: -PI / 2,
         y: 0,
         z: 0
       }]
     }, {
-      ground: [40, 4, 80, 80, 0, {
-        x: 0,
-        y: 320,
-        z: 0
+      ground: [40, 8, 80, 80, 0, {
+        grid: {
+          x: 0,
+          y: 5.5,
+          z: 0,
+          spacing: 80
+        }
       }, {
         x: -PI,
         y: 0,
         z: 0
       }]
     }, {
-      ground: [40, 4, 80, 80, 0, {
-        x: 0,
-        y: 160,
-        z: -160
+      ground: [40, 6, 80, 80, 0, {
+        grid: {
+          x: 0,
+          y: 1.9,
+          z: -2.1,
+          spacing: 80
+        }
       }, {
         x: PI / 2,
         y: 0,
