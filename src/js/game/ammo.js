@@ -88,6 +88,7 @@ class Ammo extends Publisher {
           AmmoSettings.radius,
         ),
         velocity: new Vector3(),
+        weight: AmmoSettings.weight,
       };
 
       this.list.push(object);
@@ -139,7 +140,7 @@ class Ammo extends Publisher {
       if (result) {
         ammo.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(ammo.velocity) * result.normal.y, //1.5,
+          -result.normal.dot(ammo.velocity) * 1.5
         );
         ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {

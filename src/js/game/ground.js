@@ -324,7 +324,17 @@ export const createGround = (
   ground.add(mesh.wireframe);
   ground.add(mesh.points);
 
-  ground.position.set(position.x, position.y, position.z);
+  if (position.grid == null) {
+    ground.position.set(position.x, position.y, position.z);
+  } else {
+    const spacing = position.grid.spacing ?? 10;
+    ground.position.set(
+      position.grid.x * spacing,
+      position.grid.y * spacing,
+      position.grid.z * spacing
+    );
+  }
+
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   /*geom.stones = [];

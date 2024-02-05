@@ -3,11 +3,12 @@ import { Vector3, Euler, VSMShadowMap, ACESFilmicToneMapping } from 'three';
 const { PI } = Math;
 
 export const ResizeDelayTime = 200;
-export const StepsPerFrame = 3;
+export const StepsPerFrame = 5;
 
 export const PlayerSettings = {
-  height: 30,
+  height: 40,
   radius: 5,
+  weight: 60,
 
   speed: 6,
   turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
@@ -15,7 +16,7 @@ export const PlayerSettings = {
   urgencyMove: 8,
   urgencyTurn: PI * 2 * (13.8 / 16), // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   airSpeed: 3,
-  jumpPower: 6,
+  jumpPower: 2,
 };
 
 export const Scene = {
@@ -23,14 +24,14 @@ export const Scene = {
   Fog: {
     color: 0x000000,
     near: 30,
-    far: 1600,
+    far: 1800,
   },
 };
 export const Camera = {
   FOV: 70,
   Aspect: window.innerWidth / window.innerHeight,
   near: PlayerSettings.radius / 2,
-  far: 2000, // メートル換算470m
+  far: 2000,
   order: 'YXZ',
 };
 
@@ -150,6 +151,7 @@ export const AmmoSettings = {
   lifetime: 5000,
   speed: 1600,
   rotateSpeed: 8,
+  weight: 1,
 };
 
 export const Stages = {
@@ -161,17 +163,17 @@ export const Stages = {
     },
     components: [
       {
-        grid: [44, 6, 8, 80, 80, 80, { x: 0, y: 0, z: 0 }],
-        ground: [40, 4, 80, 80, 0, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }],
+        grid: [44, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
+        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 0, z: 0, spacing: 80 } }, { x: 0, y: 0, z: 0 }],
       },
       {
-        ground: [40, 4, 80, 80, 0, { x: 0, y: 160, z: 160 }, { x: -PI / 2, y: 0, z: 0 }],
+        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } }, { x: -PI / 2, y: 0, z: 0 }],
       },
       {
-        ground: [40, 4, 80, 80, 0, { x: 0, y: 320, z: 0 }, { x: -PI, y: 0, z: 0 }],
+        ground: [40, 8, 80, 80, 0, { grid: { x: 0, y: 5.5, z: 0, spacing: 80 } }, { x: -PI, y: 0, z: 0 }],
       },
       {
-        ground: [40, 4, 80, 80, 0, { x: 0, y: 160, z: -160 }, { x: PI / 2, y: 0, z: 0 }],
+        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 1.9, z: -2.1, spacing: 80 } }, { x: PI / 2, y: 0, z: 0 }],
       },
       /*{
         grid: [24, 12, 10, 80, 80, 80, { x: 320, y: 0, z: 0 }],

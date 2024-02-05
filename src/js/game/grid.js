@@ -68,7 +68,17 @@ export const createGrid = (
   });
 
   const grid = new THREE.Points(geometry, material);
-  grid.position.set(position.x, position.y, position.z);
+
+  if (position.grid == null) {
+    grid.position.set(position.x, position.y, position.z);
+  } else {
+    grid.position.set(
+      position.grid.x * widthSpacing,
+      position.grid.y * heightSpacing,
+      position.grid.z * depthSpacing
+    );
+  }
+
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return grid;
@@ -132,7 +142,17 @@ export const createFineGrid = (
   });
 
   const grid = new THREE.Points(geometry, material);
-  grid.position.set(position.x, position.y, position.z);
+
+  if (position.grid == null) {
+    grid.position.set(position.x, position.y, position.z);
+  } else {
+    grid.position.set(
+      position.grid.x * widthSpacing,
+      position.grid.y * heightSpacing,
+      position.grid.z * depthSpacing
+    );
+  }
+  
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return grid;

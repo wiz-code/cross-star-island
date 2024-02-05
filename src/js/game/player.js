@@ -100,7 +100,7 @@ class Player extends Publisher {
 
     const start = player.position.clone();
     const end = start.clone();
-    end.y += PlayerSettings.height;
+    end.y += PlayerSettings.height + PlayerSettings.radius;
     this.collider.set(start, end, PlayerSettings.radius);
   }
 
@@ -185,6 +185,7 @@ class Player extends Publisher {
       .addVectors(this.collider.start, this.collider.end)
       .multiplyScalar(0.5);
     const ammoCenter = ammo.collider.center;
+    const weightRatio = ammo.weight / PlayerSettings.weight;
 
     const r = this.collider.radius + ammo.collider.radius;
     const r2 = r * r;
@@ -203,7 +204,7 @@ class Player extends Publisher {
           .multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC
           .copy(normal)
-          .multiplyScalar(normal.dot(ammo.velocity));
+          .multiplyScalar(normal.dot(ammo.velocity) * weightRatio);
 
         this.velocity.add(v2).sub(v1);
         ammo.velocity.add(v1).sub(v2);
