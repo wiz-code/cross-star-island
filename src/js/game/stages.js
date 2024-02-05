@@ -35,11 +35,23 @@ export const createStage = (name) => {
     }
 
     if (component.arrow != null) {
-      const direction = component.arrow.direction ?? new THREE.Vector3(0, 0, -1);
+      let direction = new Vector3(0, 0, -1);
+
+      if (component.arrow.direction != null) {
+        direction = component.arrow.direction.normalize();
+      }
+
       const position = component.arrow.position ?? new THREE.Vector3(0, 0, 0);
       const length = component.arrow.length ?? 1;
       const color = component.arrow.color ?? 0xffffff;
-      const arrow = new ArrowHelper(direction, position, length, color, length * 0.4, length * 0.1);
+      const arrow = new ArrowHelper(
+        direction,
+        position,
+        length,
+        color,
+        length * 0.6,
+        length * 0.2,
+      );
       block.add(arrow);
     }
 
@@ -51,22 +63,8 @@ export const createStage = (name) => {
 
 const stages = {
   firstStage() {
-    const grid = createGrid(
-      20,
-      12,
-      10,
-      80,
-      80,
-      80
-    );
-    const fineGrid = createFineGrid(
-      20,
-      12,
-      10,
-      80,
-      80,
-      80
-    );
+    const grid = createGrid(20, 12, 10, 80, 80, 80);
+    const fineGrid = createFineGrid(20, 12, 10, 80, 80, 80);
 
     const ground = createGround(
       20,
@@ -75,7 +73,7 @@ const stages = {
       80,
       2,
       { x: 0, y: -200, z: 0 },
-      { x: 0, y: 0, z: 0.3 }
+      { x: 0, y: 0, z: 0.3 },
     );
 
     const stage = new Group();

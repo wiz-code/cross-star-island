@@ -1,56 +1,178 @@
-import * as THREE from 'three';
+import {
+  IcosahedronGeometry,
+  OctahedronGeometry,
+  BufferGeometry,
+  WireframeGeometry,
+  MeshBasicMaterial,
+  MeshNormalMaterial,
+  LineBasicMaterial,
+  PointsMaterial,
+  Mesh,
+  LineSegments,
+  Points,
+  Group,
+  Float32BufferAttribute,
+  Texture,
+  Sphere,
+  Vector3,
+  NormalBlending,
+} from 'three';
 
-import { Grid, Ground } from './settings';
+import { World, Grid, ObjectSettings } from './settings';
+import Publisher from './publisher';
 import textures from './textures';
 
-const { random, sin, floor, abs, PI } = Math;
+const { exp, sqrt, PI } = Math;
 
-const createStone = (size = 1, detail = 0) => {
-  const geom = new THREE.OctahedronGeometry(size, detail);
-  geom.scale(0.2, 1, 0.2);
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+textures.crossStar(context);
 
-  const pointsGeom = new THREE.OctahedronGeometry(size + 4, detail);
-  pointsGeom.scale(0.26, 1, 0.26);
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+const texture = new Texture(canvas);
+texture.needsUpdate = true;
 
-  const bufferGeom = new THREE.BufferGeometry();
-  bufferGeom.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(pointsVertices, 3),
-  );
-  bufferGeom.computeBoundingSphere();
+class CollisionObject extends Publisher {
+  #vecA = new Vector3();
 
-  const mat = new THREE.MeshBasicMaterial({
-    color: Ground.Object.color,
-  });
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: Ground.wireframeColor,
-    wireframe: true,
-  });
+  #vecB = new Vector3();
 
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  textures.crossStar(context);
+  #vecC = new Vector3();
 
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
+  constructor(scene, worldOctree) {
+    super();
 
-  const pointsMat = new THREE.PointsMaterial({
-    color: Ground.Object.pointsColor,
-    size: Grid.size,
-    map: texture,
-    blending: THREE.NormalBlending,
-    alphaTest: 0.5,
-  });
+    this.scene = scene;
+    this.worldOctree = worldOctree;
+    this.list = [];
+  }
 
-  const mesh = new THREE.Mesh(geom, mat);
-  const wireMesh = new THREE.Mesh(geom, wireMat);
-  const pointsMesh = new THREE.Points(bufferGeom, pointsMat);
+  add(collisionObject) {
+    this.scene.add(collisionObject.object);
+    this.list.push(collisionObject);
+  }
 
-  const group = new THREE.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
+  remove(object) {}
 
-  return group;
-};
+  collisions() {
+    for (let i = 0, l = this.list.length; i < l; i += 1) {
+      const a1 = this.list[i];
+
+      for (let j = i + 1; j < l; j += 1) {
+        const a2 = this.list[j];
+
+        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
+        const r = a1.collider.radius + a2.collider.radius;
+        const r2 = r * r;
+
+        if (d2 < r2) {
+          const normal = this.#vecA
+            .subVectors(a1.collider.center, a2.collider.center)
+            .normalize();
+          const v1 = this.#vecB
+            .copy(normal)
+            .multiplyScalar(normal.dot(a1.velocity));
+          const v2 = this.#vecC
+            .copy(normal)
+            .multiplyScalar(normal.dot(a2.velocity));
+
+          a1.velocity.add(v2).sub(v1);
+          a2.velocity.add(v1).sub(v2);
+
+          const d = (r - sqrt(d2)) / 2;
+
+          a1.collider.center.addScaledVector(normal, d);
+          a2.collider.center.addScaledVector(normal, -d);
+        }
+      }
+    }
+  }
+
+  update(deltaTime) {
+    const len = this.list.length;
+
+    for (let i = 0; i < len; i += 1) {
+      const collisionObject = this.list[i];
+      collisionObject.collider.center.addScaledVector(collisionObject.velocity, deltaTime);
+      const result = this.worldOctree.sphereIntersect(collisionObject.collider);
+
+      if (result) {
+        collisionObject.velocity.addScaledVector(
+          result.normal,
+          -result.normal.dot(collisionObject.velocity) * 1.5,
+        );
+        collisionObject.collider.center.add(result.normal.multiplyScalar(result.depth));
+      } else {
+        collisionObject.velocity.y -= World.gravity * deltaTime * 100;
+      }
+
+      const damping = exp(-0.2 * deltaTime) - 1;
+      collisionObject.velocity.addScaledVector(collisionObject.velocity, damping);
+      this.publish('collideWith', collisionObject);
+    }
+
+    this.collisions();
+
+    for (let i = 0; i < len; i += 1) {
+      const collisionObject = this.list[i];
+      // オブジェクト固有の挙動をupdate()に記述するようにしたい
+      collisionObject.update();
+
+      collisionObject.object.rotation.x -=
+        deltaTime * ObjectSettings.rotateSpeed;
+      collisionObject.object.rotation.z -=
+        deltaTime * ObjectSettings.rotateSpeed;
+      collisionObject.object.position.copy(collisionObject.collider.center);
+    }
+  }
+
+  static createStone(size = 1, detail = 0, weight = 1) {
+    const geom = new IcosahedronGeometry(size, detail);
+    const wireframeGeom = new WireframeGeometry(geom);
+
+    const pointsGeom = new OctahedronGeometry(size + 4, detail);
+    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+
+    const bufferGeom = new BufferGeometry();
+    bufferGeom.setAttribute(
+      'position',
+      new Float32BufferAttribute(pointsVertices, 3),
+    );
+    bufferGeom.computeBoundingSphere();
+
+    const mat = new MeshBasicMaterial({
+      color: ObjectSettings.color,
+    });
+    const wireframeMat = new LineBasicMaterial({
+      color: ObjectSettings.wireframeColor,
+    });
+
+    const pointsMat = new PointsMaterial({
+      color: ObjectSettings.pointsColor,
+      size: Grid.size,
+      map: texture,
+      blending: NormalBlending,
+      alphaTest: 0.5,
+    });
+
+    const mesh = new Mesh(geom, mat);
+    const wireMesh = new LineSegments(wireframeGeom, wireframeMat);
+    const pointsMesh = new Points(bufferGeom, pointsMat);
+
+    const object = new Group();
+    object.add(mesh);
+    object.add(wireMesh);
+    object.add(pointsMesh);
+
+    const collisionObject = {
+      object,
+      collider: new Sphere(new Vector3(), size),
+      velocity: new Vector3(),
+      weight,
+      update() {},
+    };
+
+    return collisionObject;
+  }
+}
+
+export default CollisionObject;

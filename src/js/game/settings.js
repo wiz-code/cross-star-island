@@ -16,7 +16,7 @@ export const PlayerSettings = {
   urgencyMove: 8,
 
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15 / 16), //PI * 2 * (13.8 / 16),
+  urgencyTurn: PI * 2 * (15 / 16), // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2,
 };
@@ -100,6 +100,13 @@ export const Entity = {
   //
 };
 
+export const ObjectSettings = {
+  color: 0x3d342b,
+  wireframeColor: 0x70624c,
+  pointsColor: 0xf4e511,
+  rotateSpeed: 2,
+};
+
 export const Ground = {
   Object: {
     color: 0x1955a6,
@@ -144,11 +151,11 @@ export const Screen = {
 };
 
 export const AmmoSettings = {
-  color: 0xff0000,
-  wireColor: 0x332000,
-  pointColor: 0xa3d8f6,
+  color: 0xffe870,
+  wireColor: 0xfffbe6,
+  pointColor: 0xf45c41, // 0xa3d8f6,
   pointSize: 10,
-  radius: 5,
+  radius: 7,
   numAmmo: 5, // dev 5, prod 50
   lifetime: 5000,
   speed: 1600,
@@ -159,33 +166,83 @@ export const AmmoSettings = {
 export const Stages = {
   firstStage: {
     player: {
-      //position: new Vector3(650, 200, 0),
-      position: new Vector3(1520, 0, 0),
+      // position: new Vector3(650, 200, 0),
+      position: new Vector3(-650, 0, 0),
       direction: PI / 2,
     },
+    checkPoints: [
+      {
+        position: new Vector3(650, 0, 0),
+        direction: PI / 2,
+      },
+    ],
     components: [
       {
-        grid: [44, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
-        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 0, z: 0, spacing: 80 } }, { x: 0, y: 0, z: 0 }],
-        arrow: { direction: new Vector3(-1, 0, 0), position: new Vector3(1350, 80, -160), length: 80, color: 0xffffff },
+        grid: [24, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
+        ground: [
+          20,
+          6,
+          80,
+          80,
+          0,
+          { grid: { x: 0, y: 0, z: 0, spacing: 80 } },
+          { x: 0, y: 0, z: 0 },
+        ],
+        arrow: {
+          direction: new Vector3(-1, 0, 0),
+          position: new Vector3(400, 200, 0),
+          length: 200,
+          color: 0xffffff,
+        },
       },
       {
-        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } }, { x: -PI / 2, y: 0, z: 0 }],
+        ground: [
+          20,
+          6,
+          80,
+          80,
+          0,
+          { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } },
+          { x: -PI / 2, y: 0, z: 0 },
+        ],
       },
       {
-        ground: [40, 8, 80, 80, 0, { grid: { x: 0, y: 5.5, z: 0, spacing: 80 } }, { x: -PI, y: 0, z: 0 }],
+        ground: [
+          20,
+          8,
+          80,
+          80,
+          0,
+          { grid: { x: 0, y: 5.5, z: 0, spacing: 80 } },
+          { x: -PI, y: 0, z: 0 },
+        ],
       },
       {
-        ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 1.9, z: -2.1, spacing: 80 } }, { x: PI / 2, y: 0, z: 0 }],
-      },
-      /*{
-        grid: [24, 12, 10, 80, 80, 80, { x: 320, y: 0, z: 0 }],
-        ground: [20, 3, 80, 80, 2, { x: 0, y: 0, z: 0 }, { x: -0.05, y: 0, z: 0 }],
+        ground: [
+          20,
+          6,
+          80,
+          80,
+          0,
+          { grid: { x: 0, y: 1.9, z: -2.1, spacing: 80 } },
+          { x: PI / 2, y: 0, z: 0 },
+        ],
       },
       {
-        grid: [20, 12, 10, 80, 80, 80, { x: -600, y: -700, z: -900 }],
-        ground: [20, 3, 80, 80, 5, { x: -700, y: -800, z: -500 }, { x: 0.02, y: PI / 2, z: -0.5 }],
-      },*/
+        arrow: {
+          direction: new Vector3(0, -1, 0),
+          position: new Vector3(-960, 300, 0),
+          length: 200,
+          color: 0xffffff,
+        },
+        ground: [20, 5, 80, 80, 2, { grid: { x: -19.5, y: -1, z: 0, spacing: 80 } }, { x: 0, y: 0, z: -0.2 }],
+      },
+      {
+        ground: [20, 8, 80, 80, 4, { grid: { x: -19.5, y: -2, z: 2.1, spacing: 80 } }, { x: -1.4, y: 0, z: 0 }],
+      },
+      {
+        ground: [20, 8, 80, 80, 4, { grid: { x: -19.5, y: -2, z: -2.1, spacing: 80 } }, { x: 1.4, y: 0, z: 0 }],
+      },
     ],
   },
 };

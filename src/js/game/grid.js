@@ -30,7 +30,7 @@ export const createGrid = (
   heightSpacing = 80,
   depthSpacing = 80,
   position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 }
+  rotation = { x: 0, y: 0, z: 0 },
 ) => {
   const vertices = [];
   const halfSize = {
@@ -75,7 +75,7 @@ export const createGrid = (
     grid.position.set(
       position.grid.x * widthSpacing,
       position.grid.y * heightSpacing,
-      position.grid.z * depthSpacing
+      position.grid.z * depthSpacing,
     );
   }
 
@@ -92,7 +92,7 @@ export const createFineGrid = (
   heightSpacing = 80,
   depthSpacing = 80,
   position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 }
+  rotation = { x: 0, y: 0, z: 0 },
 ) => {
   const vertices = [];
   const halfSize = {
@@ -108,11 +108,7 @@ export const createFineGrid = (
   for (let i = 0, l = widthSegments * 2 + 1; i < l; i += 1) {
     for (let j = 0, m = heightSegments * 2 + 1; j < m; j += 1) {
       for (let k = 0, n = depthSegments * 2 + 1; k < n; k += 1) {
-        if (
-          i % 2 !== 0 ||
-          j % 2 !== 0 ||
-          k % 2 !== 0
-        ) {
+        if (i % 2 !== 0 || j % 2 !== 0 || k % 2 !== 0) {
           const x = i * width - halfSize.width;
           const y = j * height - halfSize.height;
           const z = k * depth - halfSize.depth;
@@ -149,10 +145,10 @@ export const createFineGrid = (
     grid.position.set(
       position.grid.x * widthSpacing,
       position.grid.y * heightSpacing,
-      position.grid.z * depthSpacing
+      position.grid.z * depthSpacing,
     );
   }
-  
+
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return grid;

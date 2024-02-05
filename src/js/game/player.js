@@ -3,11 +3,17 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States } from './data';
 import Publisher from './publisher';
-import { Stages, World, PlayerSettings, Controls, AmmoSettings } from './settings';
+import {
+  Stages,
+  World,
+  PlayerSettings,
+  Controls,
+  AmmoSettings,
+} from './settings';
 
 const { exp, sqrt, cos, PI } = Math;
 
-const RAD_30 = 30 / 360 * PI * 2;
+const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
@@ -60,13 +66,14 @@ class Player extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  constructor(camera, ammo, worldOctree) {
+  constructor(camera, ammo, object, worldOctree) {
     super();
 
     this.camera = camera;
     this.worldOctree = worldOctree;
 
     this.ammo = ammo;
+    this.object = object;
 
     this.position = new Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     this.forwardComponent = 0;
@@ -76,15 +83,16 @@ class Player extends Publisher {
     this.rotation = new Spherical(); // phi and theta
     this.velocity = new Vector3();
 
-    //this.rotation.phi = PlayerSettings.direction;
-    //this.camera.rotation.y = PlayerSettings.direction;
+    // this.rotation.phi = PlayerSettings.direction;
+    // this.camera.rotation.y = PlayerSettings.direction;
 
     this.direction = new Vector3();
-    //this.camera.getWorldDirection(this.direction);
+    // this.camera.getWorldDirection(this.direction);
 
-    //this.fire = this.fire.bind(this);
-    this.ammoCollision = this.ammoCollision.bind(this);
-    this.ammo.subscribe('ammoCollision', this.ammoCollision);
+    // this.fire = this.fire.bind(this);
+    this.collideWith = this.collideWith.bind(this);
+    this.ammo.subscribe('collideWith', this.collideWith);
+    this.object.subscribe('collideWith', this.collideWith);
 
     this.collider = new Capsule();
   }
@@ -96,7 +104,6 @@ class Player extends Publisher {
     this.camera.rotation.y = player.direction;
     this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
-
 
     const start = player.position.clone();
     const end = start.clone();
@@ -180,36 +187,36 @@ class Player extends Publisher {
     this.ammo.index = (this.ammo.index + 1) % this.ammo.list.length;
   }
 
-  ammoCollision(ammo) {
+  collideWith(object) {
     const center = this.#vecA
       .addVectors(this.collider.start, this.collider.end)
       .multiplyScalar(0.5);
-    const ammoCenter = ammo.collider.center;
-    const weightRatio = ammo.weight / PlayerSettings.weight;
+    const objectCenter = object.collider.center;
+    const weightRatio = object.weight / PlayerSettings.weight;
 
-    const r = this.collider.radius + ammo.collider.radius;
+    const r = this.collider.radius + object.collider.radius;
     const r2 = r * r;
 
     const colliders = [this.collider.start, this.collider.end, center];
 
     for (let i = 0, l = colliders.length; i < l; i += 1) {
       const point = colliders[i];
-      const d2 = point.distanceToSquared(ammoCenter);
+      const d2 = point.distanceToSquared(objectCenter);
 
       if (d2 < r2) {
-        const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
+        const normal = this.#vecA.subVectors(point, objectCenter).normalize();
         const v1 = this.#vecB
           .copy(normal)
           .multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC
           .copy(normal)
-          .multiplyScalar(normal.dot(ammo.velocity) * weightRatio);
+          .multiplyScalar(normal.dot(object.velocity) * weightRatio);
 
         this.velocity.add(v2).sub(v1);
-        ammo.velocity.add(v1).sub(v2);
+        object.velocity.add(v1).sub(v2);
 
         const d = (r - sqrt(d2)) / 2;
-        ammoCenter.addScaledVector(normal, -d);
+        objectCenter.addScaledVector(normal, -d);
       }
     }
   }

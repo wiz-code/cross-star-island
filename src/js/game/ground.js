@@ -284,10 +284,10 @@ export const createGround = (
   mat.surface = new THREE.MeshBasicMaterial({
     color: Ground.color,
   });
-  /*mat.wireframe = new THREE.MeshBasicMaterial({
+  /* mat.wireframe = new THREE.MeshBasicMaterial({
     color: Ground.wireframeColor,
     wireframe: true,
-  });*/
+  }); */
   mat.wireframe = new THREE.LineBasicMaterial({
     color: Ground.wireframeColor,
   });
@@ -313,7 +313,7 @@ export const createGround = (
 
   mesh.surface = new THREE.Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  //mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
+  // mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
   mesh.wireframe = new THREE.LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
   mesh.points = new THREE.Points(geom.points, mat.points);
@@ -331,13 +331,13 @@ export const createGround = (
     ground.position.set(
       position.grid.x * spacing,
       position.grid.y * spacing,
-      position.grid.z * spacing
+      position.grid.z * spacing,
     );
   }
 
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
-  /*geom.stones = [];
+  /* geom.stones = [];
   const stone = createStone(60);
   geom.stones.push(stone);
 
@@ -349,7 +349,7 @@ export const createGround = (
 
   const stage = createStage();
   stage.position.set(200, 150, -100);
-  group.add(stage);*/
+  group.add(stage); */
 
   /* const walls = createWalls();
   walls.forEach((wall) => group.add(wall)); */

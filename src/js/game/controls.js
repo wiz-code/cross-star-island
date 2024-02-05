@@ -134,7 +134,10 @@ class FirstPersonControls {
     document.addEventListener('keyup', this.onKeyUp);
 
     this.onChangeRotateComponent = this.onChangeRotateComponent.bind(this);
-    this.player.subscribe('onChangeRotateComponent', this.onChangeRotateComponent);
+    this.player.subscribe(
+      'onChangeRotateComponent',
+      this.onChangeRotateComponent,
+    );
 
     this.handleResize();
     this.setOrientation();
@@ -156,10 +159,18 @@ class FirstPersonControls {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
 
-    this.povIndicator.horizontal.position.setY(this.viewHalfY - Screen.sightPovSize / 2);
-    this.povIndicator.virtical.position.setX(this.viewHalfX - Screen.sightPovSize / 2);
-    this.centerMark.horizontal.position.setY(this.viewHalfY - Screen.sightPovSize / 2 + 7);
-    this.centerMark.virtical.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
+    this.povIndicator.horizontal.position.setY(
+      this.viewHalfY - Screen.sightPovSize / 2,
+    );
+    this.povIndicator.virtical.position.setX(
+      this.viewHalfX - Screen.sightPovSize / 2,
+    );
+    this.centerMark.horizontal.position.setY(
+      this.viewHalfY - Screen.sightPovSize / 2 + 7,
+    );
+    this.centerMark.virtical.position.setX(
+      this.viewHalfX - Screen.sightPovSize / 2 + 7,
+    );
   }
 
   lookAt(x, y, z) {
@@ -218,7 +229,7 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -448,11 +459,11 @@ class FirstPersonControls {
           this.povIndicator.virtical.visible = true;
         }
 
-        const degX = 90 * this.#dy / this.viewHalfY;//(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const degX = (90 * this.#dy) / this.viewHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
         const radX = degX * degToRadCoef;
         this.#rotation.theta -= radX * actualLookSpeed;
 
-        const degY = 135 * this.#dx / this.viewHalfX;//(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const degY = (135 * this.#dx) / this.viewHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
         const radY = degY * degToRadCoef;
         this.#rotation.phi -= radY * actualLookSpeed;
 
@@ -475,7 +486,9 @@ class FirstPersonControls {
       } else if (posX >= this.viewHalfX) {
         posX = this.viewHalfX;
         this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
-      } else if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+      } else if (
+        this.povIndicator.horizontal.material.color !== indicatorColor.normal
+      ) {
         this.povIndicator.horizontal.material.color = indicatorColor.normal;
       }
 
@@ -485,13 +498,15 @@ class FirstPersonControls {
       } else if (posY >= this.viewHalfY) {
         posY = this.viewHalfY;
         this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
-      } else if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+      } else if (
+        this.povIndicator.virtical.material.color !== indicatorColor.normal
+      ) {
         this.povIndicator.virtical.material.color = indicatorColor.normal;
       }
 
       this.povIndicator.horizontal.position.x = posX;
       this.povIndicator.virtical.position.y = posY;
-    } else  {
+    } else {
       if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
         if (this.povSight.material.color !== sightColor.front) {
           this.povSight.material.color = sightColor.front;
@@ -527,11 +542,15 @@ class FirstPersonControls {
           this.#rotation.phi -= dr;
         }
 
-        if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
+        if (
+          this.povIndicator.horizontal.material.color !== indicatorColor.normal
+        ) {
           this.povIndicator.horizontal.material.color = indicatorColor.normal;
         }
 
-        if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+        if (
+          this.povIndicator.virtical.material.color !== indicatorColor.normal
+        ) {
           this.povIndicator.virtical.material.color = indicatorColor.normal;
         }
 

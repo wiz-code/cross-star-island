@@ -24,6 +24,13 @@ import textures from './textures';
 
 const { exp, sqrt } = Math;
 
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+textures.crossStar(context);
+
+const texture = new Texture(canvas);
+texture.needsUpdate = true;
+
 class Ammo extends Publisher {
   #vecA = new Vector3();
 
@@ -31,11 +38,10 @@ class Ammo extends Publisher {
 
   #vecC = new Vector3();
 
-  constructor(scene, camera, worldOctree) {
+  constructor(scene, worldOctree) {
     super();
 
     this.scene = scene;
-    this.camera = camera;
     this.worldOctree = worldOctree;
 
     const geom = new IcosahedronGeometry(AmmoSettings.radius, 0);
@@ -50,21 +56,14 @@ class Ammo extends Publisher {
     );
     bufferGeom.computeBoundingSphere();
 
-    const mat = new MeshNormalMaterial();
-    /*const wireMat = new MeshBasicMaterial({
+    const mat = new MeshBasicMaterial({ color: AmmoSettings.color });
+    /* const wireMat = new MeshBasicMaterial({
       color: AmmoSettings.wireColor,
       wireframe: true,
-    });*/
+    }); */
     const wireMat = new LineBasicMaterial({
       color: AmmoSettings.wireColor,
     });
-
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    textures.crossStar(context);
-
-    const texture = new Texture(canvas);
-    texture.needsUpdate = true;
 
     const pointsMat = new PointsMaterial({
       color: AmmoSettings.pointColor,
@@ -147,7 +146,7 @@ class Ammo extends Publisher {
       if (result) {
         ammo.velocity.addScaledVector(
           result.normal,
-          -result.normal.dot(ammo.velocity) * 1.5
+          -result.normal.dot(ammo.velocity) * 1.5,
         );
         ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {
@@ -156,7 +155,7 @@ class Ammo extends Publisher {
 
       const damping = exp(-0.2 * deltaTime) - 1;
       ammo.velocity.addScaledVector(ammo.velocity, damping);
-      this.publish('ammoCollision', ammo);
+      this.publish('collideWith', ammo);
     }
 
     this.collisions();

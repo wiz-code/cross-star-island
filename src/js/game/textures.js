@@ -40,16 +40,15 @@ const textures = {
 
     context.beginPath();
 
-    /*context.rect(56, 0, 16, 32);
+    /* context.rect(56, 0, 16, 32);
     context.rect(96, 56, 16, 16);
     context.rect(56, 96, 16, 32);
-    context.rect(0, 56, 32, 16);*/
+    context.rect(0, 56, 32, 16); */
 
     context.rect(56, 0, 16, 28);
     context.rect(100, 56, 28, 16);
     context.rect(56, 100, 16, 28);
     context.rect(0, 56, 28, 16);
-
 
     context.moveTo(56, 32);
     context.lineTo(72, 32);

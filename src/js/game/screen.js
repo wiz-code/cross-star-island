@@ -13,7 +13,8 @@ context.povIndicator = {};
 texture.povIndicator = {};
 
 canvas.povIndicator.horizontal = document.createElement('canvas');
-context.povIndicator.horizontal = canvas.povIndicator.horizontal.getContext('2d');
+context.povIndicator.horizontal =
+  canvas.povIndicator.horizontal.getContext('2d');
 textures.isoscelesTriangle(context.povIndicator.horizontal, PI);
 texture.povIndicator.horizontal = new Texture(canvas.povIndicator.horizontal);
 texture.povIndicator.horizontal.needsUpdate = true;
@@ -29,7 +30,8 @@ context.povCenterMark = {};
 texture.povCenterMark = {};
 
 canvas.povCenterMark.horizontal = document.createElement('canvas');
-context.povCenterMark.horizontal = canvas.povCenterMark.horizontal.getContext('2d');
+context.povCenterMark.horizontal =
+  canvas.povCenterMark.horizontal.getContext('2d');
 textures.isoscelesTriangle(context.povCenterMark.horizontal, PI, true);
 texture.povCenterMark.horizontal = new Texture(canvas.povCenterMark.horizontal);
 texture.povCenterMark.horizontal.needsUpdate = true;
@@ -75,11 +77,19 @@ export const createCenterMark = () => {
   const sprite = {};
 
   sprite.horizontal = new Sprite(material.horizontal);
-  sprite.horizontal.scale.set(Screen.sightPovSize * 0.5, Screen.sightPovSize * 0.5, 0);
+  sprite.horizontal.scale.set(
+    Screen.sightPovSize * 0.5,
+    Screen.sightPovSize * 0.5,
+    0,
+  );
   sprite.horizontal.position.setZ(-20);
 
   sprite.virtical = new Sprite(material.virtical);
-  sprite.virtical.scale.set(Screen.sightPovSize * 0.5, Screen.sightPovSize * 0.5, 0);
+  sprite.virtical.scale.set(
+    Screen.sightPovSize * 0.5,
+    Screen.sightPovSize * 0.5,
+    0,
+  );
   sprite.virtical.position.setZ(-20);
 
   return sprite;

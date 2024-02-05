@@ -23,6 +23,7 @@ import { createGrid, createFineGrid } from './grid';
 import { createGround } from './ground';
 import { createStage } from './stages';
 
+import CollisionObject from './object';
 import Ammo from './ammo';
 import Player from './player';
 
@@ -80,7 +81,7 @@ const init = () => {
 
   const light = {};
 
-  /*light.fill = new THREE.HemisphereLight(
+  /* light.fill = new THREE.HemisphereLight(
     Light.Hemisphere.groundColor,
     Light.Hemisphere.color,
     Light.Hemisphere.intensity,
@@ -112,7 +113,7 @@ const init = () => {
     Light.Directional.Position.y,
     Light.Directional.Position.z,
   );
-  scene.add(light.directional);*/
+  scene.add(light.directional); */
 
   const worldOctree = new Octree();
 
@@ -121,8 +122,19 @@ const init = () => {
 
   worldOctree.fromGraphNode(stage);
 
-  const ammo = new Ammo(scene.field, camera.field, worldOctree);
-  const player = new Player(camera.field, ammo, worldOctree);
+  const collisionObject = new CollisionObject(scene.field, worldOctree);
+  const stone = CollisionObject.createStone(80, 1, 15);
+  stone.object.position.set(-2200, 300, 0);
+  stone.collider.center = new THREE.Vector3(-2200, 300, 0);
+  collisionObject.add(stone);
+  const ammo = new Ammo(scene.field, worldOctree);
+  const player = new Player(camera.field, ammo, collisionObject, worldOctree);
+
+  setInterval(() => {
+    stone.object.position.set(-2000, 300, 0);
+    stone.velocity = new THREE.Vector3(0, 0, 0);
+    stone.collider.center = new THREE.Vector3(-2200, 300, 0);
+  }, 10000);
 
   player.init('firstStage');
 
@@ -137,7 +149,7 @@ const init = () => {
   scene.add(helper);
   const helper = new OctreeHelper(worldOctree);
   helper.visible = false;
-  scene.field.add(helper);*/
+  scene.field.add(helper); */
 
   // helpers
   const axesHelper = new THREE.AxesHelper(180);
@@ -180,6 +192,7 @@ const init = () => {
     light,
     renderer,
     clock,
+    collisionObject,
     ammo,
     player,
     stats,
