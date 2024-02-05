@@ -9192,6 +9192,7 @@ const update = function () {
   for (let i = 0; i < _game_settings__WEBPACK_IMPORTED_MODULE_3__.StepsPerFrame; i += 1) {
     this.controls.update(deltaTime);
     this.player.update(deltaTime);
+    this.collisionObject.update(deltaTime);
     this.ammo.update(deltaTime);
   }
   this.renderer.clear();
@@ -9298,14 +9299,18 @@ const {
   exp,
   sqrt
 } = Math;
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
+texture.needsUpdate = true;
 class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  constructor(scene, camera, worldOctree) {
+  constructor(scene, worldOctree) {
     super();
     this.scene = scene;
-    this.camera = camera;
     this.worldOctree = worldOctree;
     const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius, 0);
     const geomWire = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
@@ -9314,19 +9319,16 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
     bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
     bufferGeom.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshNormalMaterial();
-    /*const wireMat = new MeshBasicMaterial({
+    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.color
+    });
+    /* const wireMat = new MeshBasicMaterial({
       color: AmmoSettings.wireColor,
       wireframe: true,
-    });*/
+    }); */
     const wireMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
       color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.wireColor
     });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    _textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
-    const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
-    texture.needsUpdate = true;
     const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
       color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.pointColor,
       size: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.pointSize,
@@ -9389,7 +9391,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       }
       const damping = exp(-0.2 * deltaTime) - 1;
       ammo.velocity.addScaledVector(ammo.velocity, damping);
-      this.publish('ammoCollision', ammo);
+      this.publish('collideWith', ammo);
     }
     this.collisions();
     for (let i = 0; i < len; i += 1) {
@@ -9758,10 +9760,10 @@ class FirstPersonControls {
         if (!this.povIndicator.virtical.visible) {
           this.povIndicator.virtical.visible = true;
         }
-        const degX = 90 * this.#dy / this.viewHalfY; //(Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const degX = 90 * this.#dy / this.viewHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
         const radX = degX * degToRadCoef;
         this.#rotation.theta -= radX * actualLookSpeed;
-        const degY = 135 * this.#dx / this.viewHalfX; //(Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const degY = 135 * this.#dx / this.viewHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
         const radY = degY * degToRadCoef;
         this.#rotation.phi -= radY * actualLookSpeed;
         this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
@@ -10298,10 +10300,10 @@ const createGround = function () {
   mat.surface = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
   });
-  /*mat.wireframe = new THREE.MeshBasicMaterial({
+  /* mat.wireframe = new THREE.MeshBasicMaterial({
     color: Ground.wireframeColor,
     wireframe: true,
-  });*/
+  }); */
   mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.LineBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor
   });
@@ -10322,7 +10324,7 @@ const createGround = function () {
   });
   mesh.surface = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  //mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
+  // mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
   mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
   mesh.points = new three__WEBPACK_IMPORTED_MODULE_7__.Points(geom.points, mat.points);
@@ -10339,7 +10341,7 @@ const createGround = function () {
   }
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
-  /*geom.stones = [];
+  /* geom.stones = [];
   const stone = createStone(60);
   geom.stones.push(stone);
    geom.stones.forEach((ms) => {
@@ -10349,7 +10351,7 @@ const createGround = function () {
   });
    const stage = createStage();
   stage.position.set(200, 150, -100);
-  group.add(stage);*/
+  group.add(stage); */
 
   /* const walls = createWalls();
   walls.forEach((wall) => group.add(wall)); */
@@ -10367,17 +10369,19 @@ const createGround = function () {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
 /* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
 /* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
-/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
-/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+/* harmony import */ var _object__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./object */ "./src/js/game/object.js");
+/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
+/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+
 
 
 
@@ -10397,25 +10401,25 @@ const {
   floor
 } = Math;
 const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_8__.Clock();
+  const clock = new three__WEBPACK_IMPORTED_MODULE_9__.Clock();
   let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
   let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
   const scene = {};
-  scene.field = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
-  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_8__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
-  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_8__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
-  scene.screen = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
+  scene.field = new three__WEBPACK_IMPORTED_MODULE_9__.Scene();
+  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_9__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
+  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_9__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
+  scene.screen = new three__WEBPACK_IMPORTED_MODULE_9__.Scene();
   const camera = {};
-  camera.field = new three__WEBPACK_IMPORTED_MODULE_8__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
+  camera.field = new three__WEBPACK_IMPORTED_MODULE_9__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
   camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
   camera.field.position.set(0, 0, 0);
-  camera.screen = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
+  camera.screen = new three__WEBPACK_IMPORTED_MODULE_9__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
   const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderer({
+  const renderer = new three__WEBPACK_IMPORTED_MODULE_9__.WebGLRenderer({
     antialias: false
   });
   renderer.autoClear = false;
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_8__.Color(0x000000));
+  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_9__.Color(0x000000));
   renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
   renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
   // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
@@ -10424,7 +10428,7 @@ const init = () => {
   container.appendChild(renderer.domElement);
   const light = {};
 
-  /*light.fill = new THREE.HemisphereLight(
+  /* light.fill = new THREE.HemisphereLight(
     Light.Hemisphere.groundColor,
     Light.Hemisphere.color,
     Light.Hemisphere.intensity,
@@ -10453,14 +10457,24 @@ const init = () => {
     Light.Directional.Position.y,
     Light.Directional.Position.z,
   );
-  scene.add(light.directional);*/
+  scene.add(light.directional); */
 
-  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_9__.Octree();
+  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_10__.Octree();
   const stage = (0,_stages__WEBPACK_IMPORTED_MODULE_5__.createStage)('firstStage');
   scene.field.add(stage);
   worldOctree.fromGraphNode(stage);
-  const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, camera.field, worldOctree);
-  const player = new _player__WEBPACK_IMPORTED_MODULE_7__["default"](camera.field, ammo, worldOctree);
+  const collisionObject = new _object__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, worldOctree);
+  const stone = _object__WEBPACK_IMPORTED_MODULE_6__["default"].createStone(80, 1, 15);
+  stone.object.position.set(-2200, 300, 0);
+  stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(-2200, 300, 0);
+  collisionObject.add(stone);
+  const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_7__["default"](scene.field, worldOctree);
+  const player = new _player__WEBPACK_IMPORTED_MODULE_8__["default"](camera.field, ammo, collisionObject, worldOctree);
+  setInterval(() => {
+    stone.object.position.set(-2000, 300, 0);
+    stone.velocity = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0);
+    stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(-2200, 300, 0);
+  }, 10000);
   player.init('firstStage');
   const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
 
@@ -10468,12 +10482,12 @@ const init = () => {
   scene.add(helper);
   const helper = new OctreeHelper(worldOctree);
   helper.visible = false;
-  scene.field.add(helper);*/
+  scene.field.add(helper); */
 
   // helpers
-  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_8__.AxesHelper(180);
+  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_9__.AxesHelper(180);
   scene.field.add(axesHelper);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_10__["default"]();
+  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__["default"]();
   stats.domElement.style.position = 'absolute';
   stats.domElement.style.top = 'auto';
   stats.domElement.style.bottom = 0;
@@ -10503,6 +10517,7 @@ const init = () => {
     light,
     renderer,
     clock,
+    collisionObject,
     ammo,
     player,
     stats
@@ -10556,6 +10571,142 @@ class Loop {
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Loop);
+
+/***/ }),
+
+/***/ "./src/js/game/object.js":
+/*!*******************************!*\
+  !*** ./src/js/game/object.js ***!
+  \*******************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
+/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+
+
+
+
+
+const {
+  exp,
+  sqrt,
+  PI
+} = Math;
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
+texture.needsUpdate = true;
+class CollisionObject extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
+  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  constructor(scene, worldOctree) {
+    super();
+    this.scene = scene;
+    this.worldOctree = worldOctree;
+    this.list = [];
+  }
+  add(collisionObject) {
+    this.scene.add(collisionObject.object);
+    this.list.push(collisionObject);
+  }
+  remove(object) {}
+  collisions() {
+    for (let i = 0, l = this.list.length; i < l; i += 1) {
+      const a1 = this.list[i];
+      for (let j = i + 1; j < l; j += 1) {
+        const a2 = this.list[j];
+        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
+        const r = a1.collider.radius + a2.collider.radius;
+        const r2 = r * r;
+        if (d2 < r2) {
+          const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
+          const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
+          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
+          a1.velocity.add(v2).sub(v1);
+          a2.velocity.add(v1).sub(v2);
+          const d = (r - sqrt(d2)) / 2;
+          a1.collider.center.addScaledVector(normal, d);
+          a2.collider.center.addScaledVector(normal, -d);
+        }
+      }
+    }
+  }
+  update(deltaTime) {
+    const len = this.list.length;
+    for (let i = 0; i < len; i += 1) {
+      const collisionObject = this.list[i];
+      collisionObject.collider.center.addScaledVector(collisionObject.velocity, deltaTime);
+      const result = this.worldOctree.sphereIntersect(collisionObject.collider);
+      if (result) {
+        collisionObject.velocity.addScaledVector(result.normal, -result.normal.dot(collisionObject.velocity) * 1.5);
+        collisionObject.collider.center.add(result.normal.multiplyScalar(result.depth));
+      } else {
+        collisionObject.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime * 100;
+      }
+      const damping = exp(-0.2 * deltaTime) - 1;
+      collisionObject.velocity.addScaledVector(collisionObject.velocity, damping);
+      this.publish('collideWith', collisionObject);
+    }
+    this.collisions();
+    for (let i = 0; i < len; i += 1) {
+      const collisionObject = this.list[i];
+      // オブジェクト固有の挙動をupdate()に記述するようにしたい
+      collisionObject.update();
+      collisionObject.object.rotation.x -= deltaTime * _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.rotateSpeed;
+      collisionObject.object.rotation.z -= deltaTime * _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.rotateSpeed;
+      collisionObject.object.position.copy(collisionObject.collider.center);
+    }
+  }
+  static createStone() {
+    let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    let weight = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+    const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(size, detail);
+    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
+    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.OctahedronGeometry(size + 4, detail);
+    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
+    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
+    bufferGeom.computeBoundingSphere();
+    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.color
+    });
+    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.wireframeColor
+    });
+    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.pointsColor,
+      size: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.size,
+      map: texture,
+      blending: three__WEBPACK_IMPORTED_MODULE_4__.NormalBlending,
+      alphaTest: 0.5
+    });
+    const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
+    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(wireframeGeom, wireframeMat);
+    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
+    const object = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
+    object.add(mesh);
+    object.add(wireMesh);
+    object.add(pointsMesh);
+    const collisionObject = {
+      object,
+      collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(), size),
+      velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
+      weight,
+      update() {}
+    };
+    return collisionObject;
+  }
+}
+/* harmony default export */ __webpack_exports__["default"] = (CollisionObject);
 
 /***/ }),
 
@@ -10617,11 +10768,12 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #states = new Set();
   #urgencyRemainingTime = 0;
   #stunningRemainingTime = 0;
-  constructor(camera, ammo, worldOctree) {
+  constructor(camera, ammo, object, worldOctree) {
     super();
     this.camera = camera;
     this.worldOctree = worldOctree;
     this.ammo = ammo;
+    this.object = object;
     this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     this.forwardComponent = 0;
     this.sideComponent = 0;
@@ -10630,15 +10782,16 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
 
-    //this.rotation.phi = PlayerSettings.direction;
-    //this.camera.rotation.y = PlayerSettings.direction;
+    // this.rotation.phi = PlayerSettings.direction;
+    // this.camera.rotation.y = PlayerSettings.direction;
 
     this.direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-    //this.camera.getWorldDirection(this.direction);
+    // this.camera.getWorldDirection(this.direction);
 
-    //this.fire = this.fire.bind(this);
-    this.ammoCollision = this.ammoCollision.bind(this);
-    this.ammo.subscribe('ammoCollision', this.ammoCollision);
+    // this.fire = this.fire.bind(this);
+    this.collideWith = this.collideWith.bind(this);
+    this.ammo.subscribe('collideWith', this.collideWith);
+    this.object.subscribe('collideWith', this.collideWith);
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule();
   }
   init(name) {
@@ -10712,24 +10865,24 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     ammo.velocity.addScaledVector(this.velocity, 2);
     this.ammo.index = (this.ammo.index + 1) % this.ammo.list.length;
   }
-  ammoCollision(ammo) {
+  collideWith(object) {
     const center = this.#vecA.addVectors(this.collider.start, this.collider.end).multiplyScalar(0.5);
-    const ammoCenter = ammo.collider.center;
-    const weightRatio = ammo.weight / _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.weight;
-    const r = this.collider.radius + ammo.collider.radius;
+    const objectCenter = object.collider.center;
+    const weightRatio = object.weight / _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.weight;
+    const r = this.collider.radius + object.collider.radius;
     const r2 = r * r;
     const colliders = [this.collider.start, this.collider.end, center];
     for (let i = 0, l = colliders.length; i < l; i += 1) {
       const point = colliders[i];
-      const d2 = point.distanceToSquared(ammoCenter);
+      const d2 = point.distanceToSquared(objectCenter);
       if (d2 < r2) {
-        const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
+        const normal = this.#vecA.subVectors(point, objectCenter).normalize();
         const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
-        const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity) * weightRatio);
+        const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(object.velocity) * weightRatio);
         this.velocity.add(v2).sub(v1);
-        ammo.velocity.add(v1).sub(v2);
+        object.velocity.add(v1).sub(v2);
         const d = (r - sqrt(d2)) / 2;
-        ammoCenter.addScaledVector(normal, -d);
+        objectCenter.addScaledVector(normal, -d);
       }
     }
   }
@@ -11083,6 +11236,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Grid: function() { return /* binding */ Grid; },
 /* harmony export */   Ground: function() { return /* binding */ Ground; },
 /* harmony export */   Light: function() { return /* binding */ Light; },
+/* harmony export */   ObjectSettings: function() { return /* binding */ ObjectSettings; },
 /* harmony export */   PlayerSettings: function() { return /* binding */ PlayerSettings; },
 /* harmony export */   Renderer: function() { return /* binding */ Renderer; },
 /* harmony export */   ResizeDelayTime: function() { return /* binding */ ResizeDelayTime; },
@@ -11110,7 +11264,7 @@ const PlayerSettings = {
   urgencyMove: 8,
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   urgencyTurn: PI * 2 * (15 / 16),
-  //PI * 2 * (13.8 / 16),
+  // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2
 };
@@ -11191,6 +11345,12 @@ const Grid = {
 const Entity = {
   //
 };
+const ObjectSettings = {
+  color: 0x3d342b,
+  wireframeColor: 0x70624c,
+  pointsColor: 0xf4e511,
+  rotateSpeed: 2
+};
 const Ground = {
   Object: {
     color: 0x1955a6,
@@ -11229,11 +11389,12 @@ const Screen = {
   sightPovSize: 48
 };
 const AmmoSettings = {
-  color: 0xff0000,
-  wireColor: 0x332000,
-  pointColor: 0xa3d8f6,
+  color: 0xffe870,
+  wireColor: 0xfffbe6,
+  pointColor: 0xf45c41,
+  // 0xa3d8f6,
   pointSize: 10,
-  radius: 5,
+  radius: 7,
   numAmmo: 5,
   // dev 5, prod 50
   lifetime: 5000,
@@ -11244,19 +11405,23 @@ const AmmoSettings = {
 const Stages = {
   firstStage: {
     player: {
-      //position: new Vector3(650, 200, 0),
-      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1520, 0, 0),
+      // position: new Vector3(650, 200, 0),
+      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-650, 0, 0),
       direction: PI / 2
     },
+    checkPoints: [{
+      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 0, 0),
+      direction: PI / 2
+    }],
     components: [{
-      grid: [44, 6, 8, 80, 80, 80, {
+      grid: [24, 6, 8, 80, 80, 80, {
         grid: {
           x: 0,
           y: -0.2,
           z: 0
         }
       }],
-      ground: [40, 6, 80, 80, 0, {
+      ground: [20, 6, 80, 80, 0, {
         grid: {
           x: 0,
           y: 0,
@@ -11270,12 +11435,12 @@ const Stages = {
       }],
       arrow: {
         direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-1, 0, 0),
-        position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1350, 80, -160),
-        length: 80,
+        position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(400, 200, 0),
+        length: 200,
         color: 0xffffff
       }
     }, {
-      ground: [40, 6, 80, 80, 0, {
+      ground: [20, 6, 80, 80, 0, {
         grid: {
           x: 0,
           y: 1.9,
@@ -11288,7 +11453,7 @@ const Stages = {
         z: 0
       }]
     }, {
-      ground: [40, 8, 80, 80, 0, {
+      ground: [20, 8, 80, 80, 0, {
         grid: {
           x: 0,
           y: 5.5,
@@ -11301,7 +11466,7 @@ const Stages = {
         z: 0
       }]
     }, {
-      ground: [40, 6, 80, 80, 0, {
+      ground: [20, 6, 80, 80, 0, {
         grid: {
           x: 0,
           y: 1.9,
@@ -11313,15 +11478,52 @@ const Stages = {
         y: 0,
         z: 0
       }]
-    }
-    /*{
-      grid: [24, 12, 10, 80, 80, 80, { x: 320, y: 0, z: 0 }],
-      ground: [20, 3, 80, 80, 2, { x: 0, y: 0, z: 0 }, { x: -0.05, y: 0, z: 0 }],
-    },
-    {
-      grid: [20, 12, 10, 80, 80, 80, { x: -600, y: -700, z: -900 }],
-      ground: [20, 3, 80, 80, 5, { x: -700, y: -800, z: -500 }, { x: 0.02, y: PI / 2, z: -0.5 }],
-    },*/]
+    }, {
+      arrow: {
+        direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, -1, 0),
+        position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-960, 300, 0),
+        length: 200,
+        color: 0xffffff
+      },
+      ground: [20, 5, 80, 80, 2, {
+        grid: {
+          x: -19.5,
+          y: -1,
+          z: 0,
+          spacing: 80
+        }
+      }, {
+        x: 0,
+        y: 0,
+        z: -0.2
+      }]
+    }, {
+      ground: [20, 8, 80, 80, 4, {
+        grid: {
+          x: -19.5,
+          y: -2,
+          z: 2.1,
+          spacing: 80
+        }
+      }, {
+        x: -1.4,
+        y: 0,
+        z: 0
+      }]
+    }, {
+      ground: [20, 8, 80, 80, 4, {
+        grid: {
+          x: -19.5,
+          y: -2,
+          z: -2.1,
+          spacing: 80
+        }
+      }, {
+        x: 1.4,
+        y: 0,
+        z: 0
+      }]
+    }]
   }
 };
 
@@ -11365,11 +11567,14 @@ const createStage = name => {
       block.add(ground);
     }
     if (component.arrow != null) {
-      const direction = component.arrow.direction ?? new THREE.Vector3(0, 0, -1);
+      let direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
+      if (component.arrow.direction != null) {
+        direction = component.arrow.direction.normalize();
+      }
       const position = component.arrow.position ?? new THREE.Vector3(0, 0, 0);
       const length = component.arrow.length ?? 1;
       const color = component.arrow.color ?? 0xffffff;
-      const arrow = new three__WEBPACK_IMPORTED_MODULE_3__.ArrowHelper(direction, position, length, color, length * 0.4, length * 0.1);
+      const arrow = new three__WEBPACK_IMPORTED_MODULE_3__.ArrowHelper(direction, position, length, color, length * 0.6, length * 0.2);
       block.add(arrow);
     }
     stage.add(block);
@@ -11450,10 +11655,10 @@ const textures = {
     context.fillStyle = '#FFF';
     context.beginPath();
 
-    /*context.rect(56, 0, 16, 32);
+    /* context.rect(56, 0, 16, 32);
     context.rect(96, 56, 16, 16);
     context.rect(56, 96, 16, 32);
-    context.rect(0, 56, 32, 16);*/
+    context.rect(0, 56, 32, 16); */
 
     context.rect(56, 0, 16, 28);
     context.rect(100, 56, 28, 16);
