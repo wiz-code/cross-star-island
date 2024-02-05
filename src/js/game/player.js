@@ -197,7 +197,6 @@ class Player extends Publisher {
       const d2 = point.distanceToSquared(ammoCenter);
 
       if (d2 < r2) {
-        // console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
         const v1 = this.#vecB
           .copy(normal)

@@ -2,10 +2,13 @@ import {
   IcosahedronGeometry,
   OctahedronGeometry,
   BufferGeometry,
+  WireframeGeometry,
   MeshBasicMaterial,
   MeshNormalMaterial,
+  LineBasicMaterial,
   PointsMaterial,
   Mesh,
+  LineSegments,
   Points,
   Group,
   Float32BufferAttribute,
@@ -36,6 +39,7 @@ class Ammo extends Publisher {
     this.worldOctree = worldOctree;
 
     const geom = new IcosahedronGeometry(AmmoSettings.radius, 0);
+    const geomWire = new WireframeGeometry(geom);
     const pointsGeom = new OctahedronGeometry(AmmoSettings.radius + 4, 0);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
@@ -47,9 +51,12 @@ class Ammo extends Publisher {
     bufferGeom.computeBoundingSphere();
 
     const mat = new MeshNormalMaterial();
-    const wireMat = new MeshBasicMaterial({
+    /*const wireMat = new MeshBasicMaterial({
       color: AmmoSettings.wireColor,
       wireframe: true,
+    });*/
+    const wireMat = new LineBasicMaterial({
+      color: AmmoSettings.wireColor,
     });
 
     const canvas = document.createElement('canvas');
@@ -72,7 +79,7 @@ class Ammo extends Publisher {
 
     for (let i = 0; i < AmmoSettings.numAmmo; i += 1) {
       const mesh = new Mesh(geom, mat);
-      const wireMesh = new Mesh(geom, wireMat);
+      const wireMesh = new LineSegments(geomWire, wireMat);
       const pointsMesh = new Points(bufferGeom, pointsMat);
 
       const group = new Group();

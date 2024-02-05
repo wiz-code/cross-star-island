@@ -9308,15 +9308,19 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.camera = camera;
     this.worldOctree = worldOctree;
     const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius, 0);
+    const geomWire = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
     const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.OctahedronGeometry(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius + 4, 0);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
     const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
     bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
     bufferGeom.computeBoundingSphere();
     const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshNormalMaterial();
-    const wireMat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.wireColor,
-      wireframe: true
+    /*const wireMat = new MeshBasicMaterial({
+      color: AmmoSettings.wireColor,
+      wireframe: true,
+    });*/
+    const wireMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.wireColor
     });
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -9334,7 +9338,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.index = 0;
     for (let i = 0; i < _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.numAmmo; i += 1) {
       const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
-      const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, wireMat);
+      const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geomWire, wireMat);
       const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
       const group = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
       group.add(mesh);
@@ -9561,7 +9565,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    //this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -10719,7 +10723,6 @@ class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       const point = colliders[i];
       const d2 = point.distanceToSquared(ammoCenter);
       if (d2 < r2) {
-        // console.log('collision')
         const normal = this.#vecA.subVectors(point, ammoCenter).normalize();
         const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
         const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(ammo.velocity) * weightRatio);
@@ -11099,14 +11102,15 @@ const StepsPerFrame = 5;
 const PlayerSettings = {
   height: 40,
   radius: 5,
-  weight: 60,
-  speed: 6,
+  weight: 100,
+  speed: 3,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
   sprint: 2.5,
   urgencyMove: 8,
-  urgencyTurn: PI * 2 * (13.8 / 16),
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+  urgencyTurn: PI * 2 * (15 / 16),
+  //PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2
 };
@@ -11241,7 +11245,7 @@ const Stages = {
   firstStage: {
     player: {
       //position: new Vector3(650, 200, 0),
-      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 100, 0),
+      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1520, 0, 0),
       direction: PI / 2
     },
     components: [{
@@ -11263,7 +11267,13 @@ const Stages = {
         x: 0,
         y: 0,
         z: 0
-      }]
+      }],
+      arrow: {
+        direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-1, 0, 0),
+        position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1350, 80, -160),
+        length: 80,
+        color: 0xffffff
+      }
     }, {
       ground: [40, 6, 80, 80, 0, {
         grid: {
@@ -11353,6 +11363,14 @@ const createStage = name => {
     if (component.ground != null) {
       const ground = _ground__WEBPACK_IMPORTED_MODULE_2__.createGround.apply(null, component.ground);
       block.add(ground);
+    }
+    if (component.arrow != null) {
+      const direction = component.arrow.direction ?? new THREE.Vector3(0, 0, -1);
+      const position = component.arrow.position ?? new THREE.Vector3(0, 0, 0);
+      const length = component.arrow.length ?? 1;
+      const color = component.arrow.color ?? 0xffffff;
+      const arrow = new three__WEBPACK_IMPORTED_MODULE_3__.ArrowHelper(direction, position, length, color, length * 0.4, length * 0.1);
+      block.add(arrow);
     }
     stage.add(block);
   }

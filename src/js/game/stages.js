@@ -1,4 +1,4 @@
-import { Vector3, Group } from 'three';
+import { Vector3, Group, ArrowHelper } from 'three';
 
 import {
   Scene,
@@ -32,6 +32,15 @@ export const createStage = (name) => {
     if (component.ground != null) {
       const ground = createGround.apply(null, component.ground);
       block.add(ground);
+    }
+
+    if (component.arrow != null) {
+      const direction = component.arrow.direction ?? new THREE.Vector3(0, 0, -1);
+      const position = component.arrow.position ?? new THREE.Vector3(0, 0, 0);
+      const length = component.arrow.length ?? 1;
+      const color = component.arrow.color ?? 0xffffff;
+      const arrow = new ArrowHelper(direction, position, length, color, length * 0.4, length * 0.1);
+      block.add(arrow);
     }
 
     stage.add(block);

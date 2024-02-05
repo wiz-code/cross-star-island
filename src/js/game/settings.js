@@ -8,13 +8,15 @@ export const StepsPerFrame = 5;
 export const PlayerSettings = {
   height: 40,
   radius: 5,
-  weight: 60,
+  weight: 100,
 
-  speed: 6,
+  speed: 3,
   turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
   sprint: 2.5,
   urgencyMove: 8,
-  urgencyTurn: PI * 2 * (13.8 / 16), // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+
+  // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+  urgencyTurn: PI * 2 * (15 / 16), //PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2,
 };
@@ -158,13 +160,14 @@ export const Stages = {
   firstStage: {
     player: {
       //position: new Vector3(650, 200, 0),
-      position: new Vector3(0, 100, 0),
+      position: new Vector3(1520, 0, 0),
       direction: PI / 2,
     },
     components: [
       {
         grid: [44, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
         ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 0, z: 0, spacing: 80 } }, { x: 0, y: 0, z: 0 }],
+        arrow: { direction: new Vector3(-1, 0, 0), position: new Vector3(1350, 80, -160), length: 80, color: 0xffffff },
       },
       {
         ground: [40, 6, 80, 80, 0, { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } }, { x: -PI / 2, y: 0, z: 0 }],
