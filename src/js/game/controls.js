@@ -190,6 +190,8 @@ class FirstPersonControls {
     }
   }
 
+  dispose() {}
+
   unlock() {
     this.domElement.ownerDocument.exitPointerLock();
   }
@@ -229,7 +231,7 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -412,6 +414,11 @@ class FirstPersonControls {
 
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+
+    this.player.unsubscribe(
+      'onChangeRotateComponent',
+      this.onChangeRotateComponent,
+    );
   }
 
   update(deltaTime) {

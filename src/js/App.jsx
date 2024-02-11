@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 
 import * as THREE from 'three'; /// //////////////
+import Game from './game/game';
 import init from './game/init';
 import Loop from './game/loop';
 import { StepsPerFrame } from './game/settings';
@@ -88,7 +89,7 @@ const theme = createTheme({
   },
 });
 
-const update = function () {
+/* const update = function () {
   const deltaTime = this.clock.getDelta() / StepsPerFrame;
 
   for (let i = 0; i < StepsPerFrame; i += 1) {
@@ -103,17 +104,18 @@ const update = function () {
   this.renderer.render(this.scene.screen, this.camera.screen);
 
   this.stats.update();
-};
+}; */
 
 function App() {
-  const [objects, setObjects] = useState(null);
+  const [game, setGame] = useState(null);
   const [rendering, setRendering] = useState(null);
   const [started, setStarted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    const data = init();
-    setObjects(data);
+    // const data = init();
+    const data = new Game();
+    setGame(data);
 
     const onFullscreenChange = () => {
       setIsFullscreen(document.fullscreenElement != null);
@@ -126,31 +128,32 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (objects != null) {
-      const loop = new Loop(update, objects);
+    if (game != null) {
+      // const loop = new Loop(update, objects);
+      const loop = new Loop(game.update, game);
       setRendering(loop);
     }
-  }, [objects]);
+  }, [game]);
 
   const togglePlay = useCallback(() => {
     if (rendering != null) {
       if (!started) {
-        if (objects != null) {
-          objects.clock.start();
+        if (game != null) {
+          game.clock.start();
         }
 
         rendering.start();
         setStarted(true);
       } else {
-        if (objects != null) {
-          objects.clock.stop();
+        if (game != null) {
+          game.clock.stop();
         }
 
         rendering.stop();
         setStarted(false);
       }
     }
-  }, [rendering, started, objects]);
+  }, [rendering, started, game]);
 
   const toggleFullScreen = useCallback(() => {
     if (document.fullscreenElement == null) {

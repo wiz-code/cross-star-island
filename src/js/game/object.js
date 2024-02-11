@@ -92,7 +92,10 @@ class CollisionObject extends Publisher {
 
     for (let i = 0; i < len; i += 1) {
       const collisionObject = this.list[i];
-      collisionObject.collider.center.addScaledVector(collisionObject.velocity, deltaTime);
+      collisionObject.collider.center.addScaledVector(
+        collisionObject.velocity,
+        deltaTime,
+      );
       const result = this.worldOctree.sphereIntersect(collisionObject.collider);
 
       if (result) {
@@ -100,13 +103,18 @@ class CollisionObject extends Publisher {
           result.normal,
           -result.normal.dot(collisionObject.velocity) * 1.5,
         );
-        collisionObject.collider.center.add(result.normal.multiplyScalar(result.depth));
+        collisionObject.collider.center.add(
+          result.normal.multiplyScalar(result.depth),
+        );
       } else {
         collisionObject.velocity.y -= World.gravity * deltaTime * 100;
       }
 
       const damping = exp(-0.2 * deltaTime) - 1;
-      collisionObject.velocity.addScaledVector(collisionObject.velocity, damping);
+      collisionObject.velocity.addScaledVector(
+        collisionObject.velocity,
+        damping,
+      );
       this.publish('collideWith', collisionObject);
     }
 
@@ -117,8 +125,8 @@ class CollisionObject extends Publisher {
       // オブジェクト固有の挙動をupdate()に記述するようにしたい
       collisionObject.update();
 
-      collisionObject.object.rotation.x -=
-        deltaTime * ObjectSettings.rotateSpeed;
+      // collisionObject.object.rotation.x +=
+      // deltaTime * ObjectSettings.rotateSpeed;
       collisionObject.object.rotation.z -=
         deltaTime * ObjectSettings.rotateSpeed;
       collisionObject.object.position.copy(collisionObject.collider.center);

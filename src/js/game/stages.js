@@ -1,10 +1,11 @@
 import { Vector3, Group, ArrowHelper } from 'three';
 
+import { Stages } from './data';
 import {
   Scene,
   Camera,
   Renderer,
-  Stages,
+  //Stages,
   Light,
   PlayerSettings,
   ResizeDelayTime,
@@ -14,8 +15,11 @@ import {
 import { createGrid, createFineGrid } from './grid';
 import { createGround } from './ground';
 
+const data = new Map(Stages);
+
 export const createStage = (name) => {
-  const { components } = Stages[name];
+  //const { components } = Stages[name];
+  const { components } = data.get(name);
   const stage = new Group();
 
   for (let i = 0, l = components.length; i < l; i += 1) {
@@ -23,14 +27,14 @@ export const createStage = (name) => {
     const block = new Group();
 
     if (component.grid != null) {
-      const grid = createGrid.apply(null, component.grid);
-      const fineGrid = createFineGrid.apply(null, component.grid);
+      const grid = createGrid(...component.grid);
+      const fineGrid = createFineGrid(...component.grid);
       block.add(grid);
       block.add(fineGrid);
     }
 
     if (component.ground != null) {
-      const ground = createGround.apply(null, component.ground);
+      const ground = createGround(...component.ground);
       block.add(ground);
     }
 
@@ -41,7 +45,7 @@ export const createStage = (name) => {
         direction = component.arrow.direction.normalize();
       }
 
-      const position = component.arrow.position ?? new THREE.Vector3(0, 0, 0);
+      const position = component.arrow.position ?? new Vector3(0, 0, 0);
       const length = component.arrow.length ?? 1;
       const color = component.arrow.color ?? 0xffffff;
       const arrow = new ArrowHelper(

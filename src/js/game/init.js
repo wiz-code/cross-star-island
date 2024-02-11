@@ -9,6 +9,7 @@ import { debounce } from 'throttle-debounce';
 
 import FirstPersonControls from './controls';
 import {
+  Game,
   Scene,
   Camera,
   Renderer,
@@ -24,8 +25,8 @@ import { createGround } from './ground';
 import { createStage } from './stages';
 
 import CollisionObject from './object';
-import Ammo from './ammo';
-import Player from './player';
+import Ammo from './ammo.old';
+import Player from './player.old';
 
 const { floor } = Math;
 
@@ -180,7 +181,7 @@ const init = () => {
     controls.handleResize();
   };
 
-  const onResize = debounce(ResizeDelayTime, onWindowResize);
+  const onResize = debounce(Game.ResizeDelayTime, onWindowResize);
 
   window.addEventListener('resize', onResize);
 

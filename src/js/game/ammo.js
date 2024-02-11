@@ -18,11 +18,13 @@ import {
   NormalBlending,
 } from 'three';
 
+import { Ammo as AmmoData } from './data';
 import Publisher from './publisher';
 import { World, AmmoSettings } from './settings';
 import textures from './textures';
 
 const { exp, sqrt } = Math;
+const data = new Map(AmmoData);
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -38,15 +40,32 @@ class Ammo extends Publisher {
 
   #vecC = new Vector3();
 
-  constructor(scene, worldOctree) {
+  constructor(name) {
     super();
 
-    this.scene = scene;
-    this.worldOctree = worldOctree;
+    const {
+      color,
+      wireColor,
+      pointColor,
+      pointSize,
 
-    const geom = new IcosahedronGeometry(AmmoSettings.radius, 0);
+      radius,
+      detail,
+      numAmmo,
+      speed,
+      rotateSpeed,
+      weight,
+      fireInterval,
+      accuracy,
+
+      update,
+    } = { ...data.get(name) };
+
+    this.name = name;
+
+    const geom = new IcosahedronGeometry(radius, detail);
     const geomWire = new WireframeGeometry(geom);
-    const pointsGeom = new OctahedronGeometry(AmmoSettings.radius + 4, 0);
+    const pointsGeom = new OctahedronGeometry(radius + 4, detail);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();
@@ -56,18 +75,18 @@ class Ammo extends Publisher {
     );
     bufferGeom.computeBoundingSphere();
 
-    const mat = new MeshBasicMaterial({ color: AmmoSettings.color });
+    const mat = new MeshBasicMaterial({ color });
     /* const wireMat = new MeshBasicMaterial({
       color: AmmoSettings.wireColor,
       wireframe: true,
     }); */
     const wireMat = new LineBasicMaterial({
-      color: AmmoSettings.wireColor,
+      color: wireColor,
     });
 
     const pointsMat = new PointsMaterial({
-      color: AmmoSettings.pointColor,
-      size: AmmoSettings.pointSize,
+      color: pointColor,
+      size: pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,
@@ -76,7 +95,7 @@ class Ammo extends Publisher {
     this.list = [];
     this.index = 0;
 
-    for (let i = 0; i < AmmoSettings.numAmmo; i += 1) {
+    for (let i = 0; i < numAmmo; i += 1) {
       const mesh = new Mesh(geom, mat);
       const wireMesh = new LineSegments(geomWire, wireMat);
       const pointsMesh = new Points(bufferGeom, pointsMat);
@@ -85,85 +104,22 @@ class Ammo extends Publisher {
       group.add(mesh);
       group.add(wireMesh);
       group.add(pointsMesh);
-      this.scene.add(group);
+      //this.scene.add(group);
 
-      const object = {
-        mesh: group,
+      const bullet = {
+        object: group,
         collider: new Sphere(
-          new Vector3(0, i * AmmoSettings.radius * 2 - 1000, 0),
-          AmmoSettings.radius,
+          new Vector3(0, i * radius * 2 - 1000, 0),
+          radius,
         ),
         velocity: new Vector3(),
-        weight: AmmoSettings.weight,
+        weight,
+        speed,
+        rotateSpeed,
       };
+      bullet.update = update.bind(bullet);
 
-      this.list.push(object);
-    }
-  }
-
-  collisions() {
-    for (let i = 0, l = this.list.length; i < l; i += 1) {
-      const a1 = this.list[i];
-
-      for (let j = i + 1; j < l; j += 1) {
-        const a2 = this.list[j];
-
-        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-        const r = a1.collider.radius + a2.collider.radius;
-        const r2 = r * r;
-
-        if (d2 < r2) {
-          const normal = this.#vecA
-            .subVectors(a1.collider.center, a2.collider.center)
-            .normalize();
-          const v1 = this.#vecB
-            .copy(normal)
-            .multiplyScalar(normal.dot(a1.velocity));
-          const v2 = this.#vecC
-            .copy(normal)
-            .multiplyScalar(normal.dot(a2.velocity));
-
-          a1.velocity.add(v2).sub(v1);
-          a2.velocity.add(v1).sub(v2);
-
-          const d = (r - sqrt(d2)) / 2;
-
-          a1.collider.center.addScaledVector(normal, d);
-          a2.collider.center.addScaledVector(normal, -d);
-        }
-      }
-    }
-  }
-
-  update(deltaTime) {
-    const len = this.list.length;
-
-    for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i]; // console.log(i, ammo.collider.center)
-      ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
-      const result = this.worldOctree.sphereIntersect(ammo.collider);
-
-      if (result) {
-        ammo.velocity.addScaledVector(
-          result.normal,
-          -result.normal.dot(ammo.velocity) * 1.5,
-        );
-        ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
-      } else {
-        ammo.velocity.y -= World.gravity * deltaTime * 100;
-      }
-
-      const damping = exp(-0.2 * deltaTime) - 1;
-      ammo.velocity.addScaledVector(ammo.velocity, damping);
-      this.publish('collideWith', ammo);
-    }
-
-    this.collisions();
-
-    for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i];
-      ammo.mesh.rotation.z -= deltaTime * AmmoSettings.rotateSpeed;
-      ammo.mesh.position.copy(ammo.collider.center);
+      this.list.push(bullet);
     }
   }
 }

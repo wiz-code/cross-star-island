@@ -2,8 +2,12 @@ import { Vector3, Euler, VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
 const { PI } = Math;
 
-export const ResizeDelayTime = 200;
 export const StepsPerFrame = 5;
+
+export const Game = {
+  stepsPerFrame: 5,
+  resizeDelayTime: 200,
+};
 
 export const PlayerSettings = {
   height: 40,
@@ -16,7 +20,7 @@ export const PlayerSettings = {
   urgencyMove: 8,
 
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15.5 / 16), // PI * 2 * (13.8 / 16),
+  urgencyTurn: PI * 2 * (15.8 / 16), // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2,
 };
@@ -101,15 +105,15 @@ export const Entity = {
 };
 
 export const ObjectSettings = {
-  color: 0x3d342b,
-  wireframeColor: 0x70624c,
+  color: 0x203b33, // 0x3d342b,
+  wireframeColor: 0x4c625b, // 0x70624c,
   pointsColor: 0xf4e511,
   rotateSpeed: 2,
 };
 
 export const Ground = {
   Object: {
-    color: 0x1955a6,
+    color: 0x203b33, // 0x1955a6,
     size: 5,
     pointsColor: 0xdc3545, // 0xa3d8f6,
   },
@@ -235,13 +239,37 @@ export const Stages = {
           length: 200,
           color: 0xffffff,
         },
-        ground: [20, 5, 80, 80, 2, { grid: { x: -19.5, y: -1, z: 0, spacing: 80 } }, { x: 0, y: 0, z: -0.2 }],
+        ground: [
+          20,
+          5,
+          80,
+          80,
+          2,
+          { grid: { x: -19.5, y: -1, z: 0, spacing: 80 } },
+          { x: 0, y: 0, z: -0.2 },
+        ],
       },
       {
-        ground: [20, 8, 80, 80, 4, { grid: { x: -19.5, y: -2, z: 2.1, spacing: 80 } }, { x: -1.4, y: 0, z: 0 }],
+        ground: [
+          20,
+          8,
+          80,
+          80,
+          4,
+          { grid: { x: -19.5, y: -2, z: 2.1, spacing: 80 } },
+          { x: -1.4, y: 0, z: 0 },
+        ],
       },
       {
-        ground: [20, 8, 80, 80, 4, { grid: { x: -19.5, y: -2, z: -2.1, spacing: 80 } }, { x: 1.4, y: 0, z: 0 }],
+        ground: [
+          20,
+          8,
+          80,
+          80,
+          4,
+          { grid: { x: -19.5, y: -2, z: -2.1, spacing: 80 } },
+          { x: 1.4, y: 0, z: 0 },
+        ],
       },
     ],
   },
