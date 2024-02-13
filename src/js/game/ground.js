@@ -283,11 +283,8 @@ export const createGround = (
 
   mat.surface = new THREE.MeshBasicMaterial({
     color: Ground.color,
+    // side: THREE.DoubleSide,
   });
-  /* mat.wireframe = new THREE.MeshBasicMaterial({
-    color: Ground.wireframeColor,
-    wireframe: true,
-  }); */
   mat.wireframe = new THREE.LineBasicMaterial({
     color: Ground.wireframeColor,
   });

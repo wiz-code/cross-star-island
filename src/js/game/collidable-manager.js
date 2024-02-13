@@ -19,6 +19,7 @@ import {
 } from 'three';
 
 import { World, Grid, ObjectSettings } from './settings';
+import { Tweens } from './data';
 import Publisher from './publisher';
 import textures from './textures';
 
@@ -63,7 +64,6 @@ class CollidableManager extends Publisher {
 
     this.scene.add(collidable.object);
 
-
     if (!this.list.has(type)) {
       this.list.set(type, []);
     }
@@ -81,40 +81,36 @@ class CollidableManager extends Publisher {
   }
 
   collisions() {
-    const objects = Array.from(this.list.values());
+    const list = Array.from(this.list.values()).flat();
 
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const a1 = list[i];
 
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const a1 = list[j];
+      for (let j = i + 1; j < l; j += 1) {
+        const a2 = list[j];
 
-        for (let k = j + 1; k < m; k += 1) {
-          const a2 = list[k];
+        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
+        const r = a1.collider.radius + a2.collider.radius;
+        const r2 = r * r;
 
-          const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-          const r = a1.collider.radius + a2.collider.radius;
-          const r2 = r * r;
+        if (d2 < r2) {
+          const normal = this.#vecA
+            .subVectors(a1.collider.center, a2.collider.center)
+            .normalize();
+          const v1 = this.#vecB
+            .copy(normal)
+            .multiplyScalar(normal.dot(a1.velocity));
+          const v2 = this.#vecC
+            .copy(normal)
+            .multiplyScalar(normal.dot(a2.velocity));
 
-          if (d2 < r2) {
-            const normal = this.#vecA
-              .subVectors(a1.collider.center, a2.collider.center)
-              .normalize();
-            const v1 = this.#vecB
-              .copy(normal)
-              .multiplyScalar(normal.dot(a1.velocity));
-            const v2 = this.#vecC
-              .copy(normal)
-              .multiplyScalar(normal.dot(a2.velocity));
+          a1.velocity.add(v2).sub(v1);
+          a2.velocity.add(v1).sub(v2);
 
-            a1.velocity.add(v2).sub(v1);
-            a2.velocity.add(v1).sub(v2);
+          const d = (r - sqrt(d2)) / 2;
 
-            const d = (r - sqrt(d2)) / 2;
-
-            a1.collider.center.addScaledVector(normal, d);
-            a2.collider.center.addScaledVector(normal, -d);
-          }
+          a1.collider.center.addScaledVector(normal, d);
+          a2.collider.center.addScaledVector(normal, -d);
         }
       }
     }
@@ -154,48 +150,43 @@ class CollidableManager extends Publisher {
   }
 
   update(deltaTime) {
-    const objects = Array.from(this.list.values());
+    const list = Array.from(this.list.values()).flat();
 
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+      collidable.collider.center.addScaledVector(
+        collidable.velocity,
+        deltaTime,
+      );
+      const result = this.worldOctree.sphereIntersect(collidable.collider);
 
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const collidable = list[j];
-        collidable.collider.center.addScaledVector(
-          collidable.velocity,
-          deltaTime,
+      if (result) {
+        collidable.velocity.addScaledVector(
+          result.normal,
+          -result.normal.dot(collidable.velocity) * 1.5,
         );
-        const result = this.worldOctree.sphereIntersect(collidable.collider);
-
-        if (result) {
-          collidable.velocity.addScaledVector(
-            result.normal,
-            -result.normal.dot(collidable.velocity) * 1.5,
-          );
-          collidable.collider.center.add(
-            result.normal.multiplyScalar(result.depth),
-          );
-        } else {
-          collidable.velocity.y -= World.gravity * deltaTime * 100;
-        }
-
-        const damping = exp(-0.2 * deltaTime) - 1;
-        collidable.velocity.addScaledVector(collidable.velocity, damping);
-        this.publish('collideWith', collidable);
+        collidable.collider.center.add(
+          result.normal.multiplyScalar(result.depth),
+        );
+      } else {
+        collidable.velocity.y -= World.gravity * deltaTime * 100;
       }
+
+      collidable.object.position.copy(collidable.collider.center);
+
+      const damping = exp(-0.2 * deltaTime) - 1;
+      collidable.velocity.addScaledVector(collidable.velocity, damping);
+
+      this.publish('collideWith', collidable);
     }
 
     this.collisions();
 
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
-
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const collidable = list[j];
-        // オブジェクト固有の挙動をupdate()に記述する
-        if (typeof collidable.update === 'function') {
-          collidable.update(deltaTime);
-        }
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+      // オブジェクト固有の挙動をupdate()に記述する
+      if (typeof collidable.update === 'function') {
+        collidable.update(deltaTime);
       }
     }
   }

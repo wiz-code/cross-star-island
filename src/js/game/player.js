@@ -75,6 +75,16 @@ class Player extends Character {
     this.camera.getWorldDirection(this.direction);
   }
 
+  setPosition(checkPoint) {
+    this.rotation.phi = checkPoint.direction;
+    this.camera.rotation.y = checkPoint.direction;
+    this.camera.getWorldDirection(this.direction);
+
+    this.collider.start.copy(checkPoint.position);
+    this.collider.end.copy(checkPoint.position);
+    this.collider.end.y += this.data.height;
+  }
+
   update(deltaTime) {
     super.update(deltaTime);
 

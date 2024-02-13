@@ -19,11 +19,10 @@ import {
 } from 'three';
 
 import { World, Grid, ObjectSettings } from './settings';
-import { Obstacles } from './data';
+import { Obstacles, Tweeners, Stages } from './data';
 import textures from './textures';
 
 const { exp, sqrt, PI } = Math;
-const ObstacleData = new Map(Obstacles);
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -34,7 +33,7 @@ texture.needsUpdate = true;
 
 function noop() {}
 
-class Stone {
+class Obstacle {
   static defaults = {
     size: 1,
     detail: 0,
@@ -52,7 +51,12 @@ class Stone {
   };
 
   constructor(name, opts = {}) {
-    if (!ObstacleData.has(name)) {
+    this.data = {};
+    this.data.obstacle = new Map(Obstacles);
+    this.data.tweeners = new Map(Tweeners);
+    this.data.stage = new Map(Stages);
+
+    if (!this.data.obstacle.has(name)) {
       throw new Error('data not found');
     }
 
@@ -67,14 +71,18 @@ class Stone {
       weight,
       rotateSpeed,
 
+      tweens,
       update,
-    } = { ...Stone.defaults, ...ObstacleData.get(name), ...opts };
+    } = { ...Obstacle.defaults, ...this.data.obstacle.get(name), ...opts };
 
     this.name = name;
+    this.rotateSpeed = rotateSpeed;
     this.weight = weight;
     this.collider = new Sphere(new Vector3(), size);
     this.velocity = new Vector3();
     this.update = update.bind(this);
+
+    this.tweens = new Map();
 
     const geom = new IcosahedronGeometry(size, detail);
     const wireframeGeom = new WireframeGeometry(geom);
@@ -113,6 +121,23 @@ class Stone {
     this.object.add(wireMesh);
     this.object.add(pointsMesh);
   }
+
+  setTweeners(tweeners) {
+    tweeners.forEach((tweenName) => {
+      const tweener = this.data.tweeners.get(tweenName);
+      const tween = tweener(this.object.position);
+      this.tweens.set(tweenName, tween.start());
+    });
+  }
+
+  tween() {
+    const list = Array.from(this.tweens.values());
+
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const tween = list[i];
+      tween.update();
+    }
+  }
 }
 
-export default Stone;
+export default Obstacle;

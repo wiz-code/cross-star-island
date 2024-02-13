@@ -24,7 +24,6 @@ import { World, AmmoSettings } from './settings';
 import textures from './textures';
 
 const { exp, sqrt } = Math;
-const data = new Map(AmmoData);
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -43,6 +42,12 @@ class Ammo extends Publisher {
   constructor(name) {
     super();
 
+    this.name = name;
+
+    const dataMap = new Map(AmmoData);
+    const ammo = dataMap.get(name);
+
+    // this.data = { ...ammo };
     const {
       color,
       wireColor,
@@ -59,9 +64,7 @@ class Ammo extends Publisher {
       accuracy,
 
       update,
-    } = { ...data.get(name) };
-
-    this.name = name;
+    } = { ...ammo };
 
     const geom = new IcosahedronGeometry(radius, detail);
     const geomWire = new WireframeGeometry(geom);

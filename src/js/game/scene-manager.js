@@ -2,7 +2,6 @@ class SceneManager {
   constructor(renderer) {
     this.renderer = renderer;
     this.list = new Map();
-    this.current = null;
   }
 
   add(name, scene, camera) {

@@ -1,4 +1,5 @@
 import { Vector3 } from 'three';
+import TWEEN from '@tweenjs/tween.js'
 
 const { PI } = Math;
 
@@ -77,7 +78,8 @@ export const Obstacles = [
       rotateSpeed: 2,
 
       update(deltaTime) {
-        //
+        this.object.rotation.z -= deltaTime * this.rotateSpeed;
+        this.tween();
       },
     },
   ],
@@ -92,7 +94,7 @@ export const Compositions = [
 
 export const Ammo = [
   [
-    'small-rounded',
+    'small-bullet',
     {
       color: 0xffe870,
       wireColor: 0xfffbe6,
@@ -110,7 +112,6 @@ export const Ammo = [
 
       update(deltaTime) {
         this.object.rotation.z -= deltaTime * this.rotateSpeed;
-        this.object.position.copy(this.collider.center);
       },
     },
   ],
@@ -130,12 +131,25 @@ export const Characters = [
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 2 * (15.5 / 16), // PI * 2 * (13.8 / 16),
+      urgencyTurn: PI * 2 * (15.8 / 16), // PI * 2 * (13.8 / 16),
       airSpeed: 3,
       jumpPower: 2,
 
-      defaultAmmo: 'small-rounded',
-      ammoTypes: ['small-rounded'],
+      ammoTypes: ['small-bullet'],
+    },
+  ],
+];
+
+export const Tweeners = [
+  [
+    'rolling-stone-position',
+    (position) => {
+      const tween = new TWEEN.Tween(position);
+      tween.delay(3000).to({ x: -2000, y: 300, z: 0 }, 100).repeat(Infinity);
+      tween.onUpdate((object) => {
+        console.log(object.x, object.y, object.z)
+      });
+      return tween;
     },
   ],
 ];
@@ -146,8 +160,15 @@ export const Stages = [
     {
       checkPoints: [
         {
-          position: new Vector3(650, 5000, 0),
+          position: new Vector3(-650, 0, 0),
           direction: PI / 2,
+        },
+      ],
+      obstacles: [
+        {
+          name: 'round-stone',
+          position: new Vector3(-2000, 300, 0),
+          tweeners: ['rolling-stone-position'],
         },
       ],
       components: [
@@ -187,7 +208,7 @@ export const Stages = [
             80,
             80,
             0,
-            { grid: { x: 0, y: 5.5, z: 0, spacing: 80 } },
+            { grid: { x: 0, y: 4.8, z: 0, spacing: 80 } },
             { x: -PI, y: 0, z: 0 },
           ],
         },
@@ -203,6 +224,7 @@ export const Stages = [
           ],
         },
         {
+          grid: [20, 6, 8, 80, 80, 80, { grid: { x: -22, y: -0.2, z: 0 } }],
           arrow: {
             direction: new Vector3(0, -1, 0),
             position: new Vector3(-960, 300, 0),

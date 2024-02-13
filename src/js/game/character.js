@@ -33,8 +33,6 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 
-const characterData = new Map(Characters);
-
 class Character extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
@@ -65,16 +63,20 @@ class Character extends Publisher {
   constructor(name, ammos) {
     super();
 
-    if (!characterData.has(name)) {
+    const dataMap = new Map(Characters);
+
+    if (!dataMap.has(name)) {
       throw new Error('character data not found');
     }
 
-    this.data = characterData.get(name);
+    const character = dataMap.get(name);
 
     this.name = name;
     this.ammos = ammos;
-    this.ammoType = this.data.defaultAmmo;
 
+    this.data = { ...character };
+    
+    this.ammoType = this.data.ammoTypes[0];
     this.position = new Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     this.forwardComponent = 0;
     this.sideComponent = 0;
@@ -85,7 +87,6 @@ class Character extends Publisher {
     this.direction = new Vector3(0, 0, -1);
 
     this.collider = new Capsule();
-
     const start = this.position;
     const end = this.position.clone();
     end.y += this.data.height;

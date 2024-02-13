@@ -24,18 +24,17 @@ import {
 } from './settings';
 
 import FirstPersonControls from './controls';
-import { Characters, Stages, Compositions } from './data';
+import { Characters, Stages, Compositions, Ammo as AmmoData } from './data';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import Character from './character';
 import Player from './player';
 import Ammo from './ammo';
+import Obstacle from './obstacle';
 import { createStage } from './stages';
 
-const { PI, floor } = Math;
-
-const RAD_30 = (30 / 360) * PI * 2;
+const { floor } = Math;
 
 class Game {
   constructor() {
@@ -96,6 +95,7 @@ class Game {
     this.data.stages = new Map(Stages);
     this.data.characters = new Map(Characters);
     this.data.compositions = new Map(Compositions);
+    this.data.ammos = new Map(AmmoData);
 
     this.objects = new CollidableManager(this.scene.field, this.worldOctree);
     this.characters = new CharacterManager(
@@ -103,8 +103,15 @@ class Game {
       this.objects,
       this.worldOctree,
     );
-    this.controls = null;
 
+    this.ammos = new Map();
+    const ammoNames = Array.from(this.data.ammos.keys());
+    ammoNames.forEach((name) => {
+      const ammo = new Ammo(name);
+      this.ammos.set(name, ammo);
+    });
+
+    this.controls = null;
     this.player = null;
     this.stage = null;
 
@@ -135,22 +142,27 @@ class Game {
 
 //////////////////
     const data = this.data.stages.get('firstStage');
-    const [checkPoint] = data.checkPoints
-    const ammo = new Ammo('small-rounded');
-    const ammos = new Map().set(ammo.name, ammo);
-    this.objects.add('ammo', ammo);
-    const player = new Player(this.camera.field, 'hero1', ammos);
-    player.rotation.phi = checkPoint.direction;
-    this.camera.field.rotation.y = checkPoint.direction;
-    this.camera.field.rotation.x = -RAD_30;
-    this.camera.field.getWorldDirection(player.direction);
-    player.collider.start = checkPoint.position;
-    player.collider.end = player.collider.start.clone();
-    player.collider.end.y += player.data.height;
+    const [checkPoint] = data.checkPoints;
+
+    const player = new Player(this.camera.field, 'hero1', this.ammos);
+    player.setPosition(checkPoint);
+
+    const stone = new Obstacle('round-stone');
+
+    this.objects.add('ammo', this.ammos.get('small-bullet'));
+    this.objects.add('obstacle', stone);
+    stone.collider.center = new Vector3(-2200, 300, 0);
+    const [behavior] = data.obstacles;
+    //stone.setTweeners(behavior.tweeners);
+
+    setInterval(() => {
+      stone.velocity = new Vector3(0, 0, 0);
+      stone.collider.center = new Vector3(-2200, 300, 0);
+    }, 10000);
 
     this.setPlayer(player);
-    this.ready = true;
     this.setMode('play');
+    this.ready = true;
 //////////////
 
     const onResize = function onResize() {
@@ -189,7 +201,7 @@ class Game {
   setPlayer(character) {
     if (this.player == null) {
       this.player = character;
-      this.addCharacter(this.player);
+      this.characters.add(this.player);
 
       this.controls = new FirstPersonControls(
         this.scene.screen,
@@ -200,6 +212,15 @@ class Game {
     }
   }
 
+  removePlayer(character) {
+    if (this.player != null) {
+      this.player = null;
+      this.controls.dispose();
+
+      this.characters.remove(character);
+    }
+  }
+
   setMode(mode) {
     this.mode = mode;
 
@@ -207,7 +228,7 @@ class Game {
       case 'loading': {}
       case 'initial': {}
       case 'play': {
-        this.play();
+        this.setStage();
 
         break;
       }
@@ -216,7 +237,7 @@ class Game {
     }
   }
 
-  play() {
+  setStage() {
     this.scenes.clear();
     this.scenes.add('field', this.scene.field, this.camera.field);
     this.scenes.add('screen', this.scene.screen, this.camera.screen);
@@ -224,9 +245,7 @@ class Game {
     const stageNames = this.data.compositions.get('stage');
     const stageName = stageNames[this.stageIndex];
 
-    if (this.stage != null) {
-      this.worldOctree.clear();
-    }
+    this.clearStage();
 
     this.stage = createStage(stageName);
     this.scene.field.add(this.stage);
@@ -234,33 +253,11 @@ class Game {
     this.worldOctree.fromGraphNode(this.stage);
   }
 
-  addCharacter(character) {
-    this.characters.add(character);
-  }
-
-  removeCharacter(character) {
-    if (this.player === character) {
-      this.player = null;
-      this.controls.dispose();
-    }
-
-    this.characters.remove(character);
-  }
-
-  setStage(stageIndex = 0) {
-    // TODO: 前のステージを破棄する
-
-    // 新しいステージを作成する
-    const data = this.data.stages[stageIndex];
-
-    if (data != null) {
-      const [name] = data;
-      /// //
-    }
-  }
-
   clearStage() {
-    //
+    if (this.stage != null) {
+      this.scene.field.clear();
+      this.worldOctree.clear();
+    }
   }
 
   nextStage() {
