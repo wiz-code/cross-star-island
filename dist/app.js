@@ -9310,7 +9310,6 @@ const {
   exp,
   sqrt
 } = Math;
-const data = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Ammo);
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
 _textures__WEBPACK_IMPORTED_MODULE_4__["default"].crossStar(context);
@@ -9322,6 +9321,11 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
   #vecC = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
   constructor(name) {
     super();
+    this.name = name;
+    const dataMap = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Ammo);
+    const ammo = dataMap.get(name);
+
+    // this.data = { ...ammo };
     const {
       color,
       wireColor,
@@ -9337,9 +9341,8 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
       accuracy,
       update
     } = {
-      ...data.get(name)
+      ...ammo
     };
-    this.name = name;
     const geom = new three__WEBPACK_IMPORTED_MODULE_5__.IcosahedronGeometry(radius, detail);
     const geomWire = new three__WEBPACK_IMPORTED_MODULE_5__.WireframeGeometry(geom);
     const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_5__.OctahedronGeometry(radius + 4, detail);
@@ -9701,7 +9704,6 @@ const addDamping = (component, damping, minValue) => {
   }
   return value;
 };
-const characterData = new Map(_data__WEBPACK_IMPORTED_MODULE_0__.Characters);
 class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #dir = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
   #side = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
@@ -9718,13 +9720,17 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #stunningRemainingTime = 0;
   constructor(name, ammos) {
     super();
-    if (!characterData.has(name)) {
+    const dataMap = new Map(_data__WEBPACK_IMPORTED_MODULE_0__.Characters);
+    if (!dataMap.has(name)) {
       throw new Error('character data not found');
     }
-    this.data = characterData.get(name);
+    const character = dataMap.get(name);
     this.name = name;
     this.ammos = ammos;
-    this.ammoType = this.data.defaultAmmo;
+    this.data = {
+      ...character
+    };
+    this.ammoType = this.data.ammoTypes[0];
     this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     this.forwardComponent = 0;
     this.sideComponent = 0;
@@ -9982,10 +9988,12 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
 /* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
+/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+
 
 
 
@@ -9998,13 +10006,13 @@ const {
 } = Math;
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
-const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
+_textures__WEBPACK_IMPORTED_MODULE_4__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_5__.Texture(canvas);
 texture.needsUpdate = true;
-class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default"] {
+  #vecA = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
+  #vecB = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
+  #vecC = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
   constructor(scene, worldOctree) {
     super();
     this.scene = scene;
@@ -10040,26 +10048,23 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default
     this.list.set(type, list);
   }
   collisions() {
-    const objects = Array.from(this.list.values());
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const a1 = list[j];
-        for (let k = j + 1; k < m; k += 1) {
-          const a2 = list[k];
-          const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-          const r = a1.collider.radius + a2.collider.radius;
-          const r2 = r * r;
-          if (d2 < r2) {
-            const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
-            const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
-            const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
-            a1.velocity.add(v2).sub(v1);
-            a2.velocity.add(v1).sub(v2);
-            const d = (r - sqrt(d2)) / 2;
-            a1.collider.center.addScaledVector(normal, d);
-            a2.collider.center.addScaledVector(normal, -d);
-          }
+    const list = Array.from(this.list.values()).flat();
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const a1 = list[i];
+      for (let j = i + 1; j < l; j += 1) {
+        const a2 = list[j];
+        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
+        const r = a1.collider.radius + a2.collider.radius;
+        const r2 = r * r;
+        if (d2 < r2) {
+          const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
+          const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
+          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
+          a1.velocity.add(v2).sub(v1);
+          a2.velocity.add(v1).sub(v2);
+          const d = (r - sqrt(d2)) / 2;
+          a1.collider.center.addScaledVector(normal, d);
+          a2.collider.center.addScaledVector(normal, -d);
         }
       }
     }
@@ -10092,33 +10097,28 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default
     } */
   }
   update(deltaTime) {
-    const objects = Array.from(this.list.values());
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const collidable = list[j];
-        collidable.collider.center.addScaledVector(collidable.velocity, deltaTime);
-        const result = this.worldOctree.sphereIntersect(collidable.collider);
-        if (result) {
-          collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
-          collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
-        } else {
-          collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime * 100;
-        }
-        const damping = exp(-0.2 * deltaTime) - 1;
-        collidable.velocity.addScaledVector(collidable.velocity, damping);
-        this.publish('collideWith', collidable);
+    const list = Array.from(this.list.values()).flat();
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+      collidable.collider.center.addScaledVector(collidable.velocity, deltaTime);
+      const result = this.worldOctree.sphereIntersect(collidable.collider);
+      if (result) {
+        collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
+        collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
+      } else {
+        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime * 100;
       }
+      collidable.object.position.copy(collidable.collider.center);
+      const damping = exp(-0.2 * deltaTime) - 1;
+      collidable.velocity.addScaledVector(collidable.velocity, damping);
+      this.publish('collideWith', collidable);
     }
     this.collisions();
-    for (let i = 0, l = objects.length; i < l; i += 1) {
-      const list = objects[i];
-      for (let j = 0, m = list.length; j < m; j += 1) {
-        const collidable = list[j];
-        // オブジェクト固有の挙動をupdate()に記述する
-        if (typeof collidable.update === 'function') {
-          collidable.update(deltaTime);
-        }
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+      // オブジェクト固有の挙動をupdate()に記述する
+      if (typeof collidable.update === 'function') {
+        collidable.update(deltaTime);
       }
     }
   }
@@ -10290,7 +10290,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -10580,9 +10580,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Obstacles: function() { return /* binding */ Obstacles; },
 /* harmony export */   Pointers: function() { return /* binding */ Pointers; },
 /* harmony export */   Stages: function() { return /* binding */ Stages; },
-/* harmony export */   States: function() { return /* binding */ States; }
+/* harmony export */   States: function() { return /* binding */ States; },
+/* harmony export */   Tweeners: function() { return /* binding */ Tweeners; }
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _tweenjs_tween_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @tweenjs/tween.js */ "./node_modules/@tweenjs/tween.js/dist/tween.esm.js");
+
 
 const {
   PI
@@ -10644,11 +10647,12 @@ const Obstacles = [['round-stone', {
   pointsColor: 0xf4e511,
   rotateSpeed: 2,
   update(deltaTime) {
-    //
+    this.object.rotation.z -= deltaTime * this.rotateSpeed;
+    this.tween();
   }
 }]];
 const Compositions = [['stage', ['firstStage']]];
-const Ammo = [['small-rounded', {
+const Ammo = [['small-bullet', {
   color: 0xffe870,
   wireColor: 0xfffbe6,
   pointColor: 0xf45c41,
@@ -10666,7 +10670,6 @@ const Ammo = [['small-rounded', {
 
   update(deltaTime) {
     this.object.rotation.z -= deltaTime * this.rotateSpeed;
-    this.object.position.copy(this.collider.center);
   }
 }]];
 const Characters = [['hero1', {
@@ -10679,17 +10682,33 @@ const Characters = [['hero1', {
   sprint: 2.5,
   urgencyMove: 8,
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15.5 / 16),
+  urgencyTurn: PI * 2 * (15.8 / 16),
   // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2,
-  defaultAmmo: 'small-rounded',
-  ammoTypes: ['small-rounded']
+  ammoTypes: ['small-bullet']
+}]];
+const Tweeners = [['rolling-stone-position', position => {
+  const tween = new _tweenjs_tween_js__WEBPACK_IMPORTED_MODULE_0__["default"].Tween(position);
+  tween.delay(3000).to({
+    x: -2000,
+    y: 300,
+    z: 0
+  }, 100).repeat(Infinity);
+  tween.onUpdate(object => {
+    console.log(object.x, object.y, object.z);
+  });
+  return tween;
 }]];
 const Stages = [['firstStage', {
   checkPoints: [{
-    position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(650, 5000, 0),
+    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-650, 0, 0),
     direction: PI / 2
+  }],
+  obstacles: [{
+    name: 'round-stone',
+    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-2000, 300, 0),
+    tweeners: ['rolling-stone-position']
   }],
   components: [{
     grid: [24, 6, 8, 80, 80, 80, {
@@ -10712,8 +10731,8 @@ const Stages = [['firstStage', {
       z: 0
     }],
     arrow: {
-      direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-1, 0, 0),
-      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(400, 200, 0),
+      direction: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-1, 0, 0),
+      position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(400, 200, 0),
       length: 200,
       color: 0xffffff
     }
@@ -10734,7 +10753,7 @@ const Stages = [['firstStage', {
     ground: [20, 8, 80, 80, 0, {
       grid: {
         x: 0,
-        y: 5.5,
+        y: 4.8,
         z: 0,
         spacing: 80
       }
@@ -10757,9 +10776,16 @@ const Stages = [['firstStage', {
       z: 0
     }]
   }, {
+    grid: [20, 6, 8, 80, 80, 80, {
+      grid: {
+        x: -22,
+        y: -0.2,
+        z: 0
+      }
+    }],
     arrow: {
-      direction: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, -1, 0),
-      position: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-960, 300, 0),
+      direction: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, -1, 0),
+      position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-960, 300, 0),
       length: 200,
       color: 0xffffff
     },
@@ -10814,9 +10840,9 @@ const Stages = [['firstStage', {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
@@ -10827,7 +10853,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _character__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./character */ "./src/js/game/character.js");
 /* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
 /* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
-/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
+/* harmony import */ var _obstacle__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./obstacle */ "./src/js/game/obstacle.js");
+/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
+
 
 
 
@@ -10843,24 +10871,22 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const {
-  PI,
   floor
 } = Math;
-const RAD_30 = 30 / 360 * PI * 2;
 class Game {
   constructor() {
-    this.clock = new three__WEBPACK_IMPORTED_MODULE_11__.Clock();
-    this.worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_12__.Octree();
+    this.clock = new three__WEBPACK_IMPORTED_MODULE_12__.Clock();
+    this.worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_13__.Octree();
     this.windowHalf = {
       width: floor(window.innerWidth / 2),
       height: floor(window.innerHeight / 2)
     };
     this.container = document.getElementById('container');
-    this.renderer = new three__WEBPACK_IMPORTED_MODULE_11__.WebGLRenderer({
+    this.renderer = new three__WEBPACK_IMPORTED_MODULE_12__.WebGLRenderer({
       antialias: false
     });
     this.renderer.autoClear = false;
-    this.renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_11__.Color(0x000000));
+    this.renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_12__.Color(0x000000));
     this.renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
@@ -10870,20 +10896,27 @@ class Game {
     this.scenes = new _scene_manager__WEBPACK_IMPORTED_MODULE_6__["default"](this.renderer);
     this.scene = {};
     this.camera = {};
-    this.scene.field = new three__WEBPACK_IMPORTED_MODULE_11__.Scene();
-    this.scene.field.background = new three__WEBPACK_IMPORTED_MODULE_11__.Color(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.background);
-    this.scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_11__.Fog(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.far);
-    this.scene.screen = new three__WEBPACK_IMPORTED_MODULE_11__.Scene();
-    this.camera.field = new three__WEBPACK_IMPORTED_MODULE_11__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_1__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.far);
+    this.scene.field = new three__WEBPACK_IMPORTED_MODULE_12__.Scene();
+    this.scene.field.background = new three__WEBPACK_IMPORTED_MODULE_12__.Color(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.background);
+    this.scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_12__.Fog(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.far);
+    this.scene.screen = new three__WEBPACK_IMPORTED_MODULE_12__.Scene();
+    this.camera.field = new three__WEBPACK_IMPORTED_MODULE_12__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_1__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.far);
     this.camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.order;
     this.camera.field.position.set(0, 0, 0);
-    this.camera.screen = new three__WEBPACK_IMPORTED_MODULE_11__.OrthographicCamera(-this.windowHalf.width, this.windowHalf.width, this.windowHalf.height, -this.windowHalf.height, 0.1, 1000);
+    this.camera.screen = new three__WEBPACK_IMPORTED_MODULE_12__.OrthographicCamera(-this.windowHalf.width, this.windowHalf.width, this.windowHalf.height, -this.windowHalf.height, 0.1, 1000);
     this.data = {};
     this.data.stages = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Stages);
     this.data.characters = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Characters);
     this.data.compositions = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Compositions);
+    this.data.ammos = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Ammo);
     this.objects = new _collidable_manager__WEBPACK_IMPORTED_MODULE_4__["default"](this.scene.field, this.worldOctree);
     this.characters = new _character_manager__WEBPACK_IMPORTED_MODULE_5__["default"](this.scene.field, this.objects, this.worldOctree);
+    this.ammos = new Map();
+    const ammoNames = Array.from(this.data.ammos.keys());
+    ammoNames.forEach(name => {
+      const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_9__["default"](name);
+      this.ammos.set(name, ammo);
+    });
     this.controls = null;
     this.player = null;
     this.stage = null;
@@ -10914,20 +10947,22 @@ class Game {
     //////////////////
     const data = this.data.stages.get('firstStage');
     const [checkPoint] = data.checkPoints;
-    const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_9__["default"]('small-rounded');
-    const ammos = new Map().set(ammo.name, ammo);
-    this.objects.add('ammo', ammo);
-    const player = new _player__WEBPACK_IMPORTED_MODULE_8__["default"](this.camera.field, 'hero1', ammos);
-    player.rotation.phi = checkPoint.direction;
-    this.camera.field.rotation.y = checkPoint.direction;
-    this.camera.field.rotation.x = -RAD_30;
-    this.camera.field.getWorldDirection(player.direction);
-    player.collider.start = checkPoint.position;
-    player.collider.end = player.collider.start.clone();
-    player.collider.end.y += player.data.height;
+    const player = new _player__WEBPACK_IMPORTED_MODULE_8__["default"](this.camera.field, 'hero1', this.ammos);
+    player.setPosition(checkPoint);
+    const stone = new _obstacle__WEBPACK_IMPORTED_MODULE_10__["default"]('round-stone');
+    this.objects.add('ammo', this.ammos.get('small-bullet'));
+    this.objects.add('obstacle', stone);
+    stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(-2200, 300, 0);
+    const [behavior] = data.obstacles;
+    //stone.setTweeners(behavior.tweeners);
+
+    setInterval(() => {
+      stone.velocity = new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0);
+      stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(-2200, 300, 0);
+    }, 10000);
     this.setPlayer(player);
-    this.ready = true;
     this.setMode('play');
+    this.ready = true;
     //////////////
 
     const onResize = function onResize() {
@@ -10949,7 +10984,7 @@ class Game {
     };
     this.onResize = (0,throttle_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(_settings__WEBPACK_IMPORTED_MODULE_1__.Game.resizeDelayTime, onResize.bind(this));
     window.addEventListener('resize', this.onResize);
-    this.stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_13__["default"]();
+    this.stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_14__["default"]();
     this.stats.domElement.style.position = 'absolute';
     this.stats.domElement.style.top = 'auto';
     this.stats.domElement.style.bottom = 0;
@@ -10958,8 +10993,15 @@ class Game {
   setPlayer(character) {
     if (this.player == null) {
       this.player = character;
-      this.addCharacter(this.player);
+      this.characters.add(this.player);
       this.controls = new _controls__WEBPACK_IMPORTED_MODULE_2__["default"](this.scene.screen, this.camera.field, this.player, this.renderer.domElement);
+    }
+  }
+  removePlayer(character) {
+    if (this.player != null) {
+      this.player = null;
+      this.controls.dispose();
+      this.characters.remove(character);
     }
   }
   setMode(mode) {
@@ -10971,49 +11013,29 @@ class Game {
         {}
       case 'play':
         {
-          this.play();
+          this.setStage();
           break;
         }
       default:
         {}
     }
   }
-  play() {
+  setStage() {
     this.scenes.clear();
     this.scenes.add('field', this.scene.field, this.camera.field);
     this.scenes.add('screen', this.scene.screen, this.camera.screen);
     const stageNames = this.data.compositions.get('stage');
     const stageName = stageNames[this.stageIndex];
-    if (this.stage != null) {
-      this.worldOctree.clear();
-    }
-    this.stage = (0,_stages__WEBPACK_IMPORTED_MODULE_10__.createStage)(stageName);
+    this.clearStage();
+    this.stage = (0,_stages__WEBPACK_IMPORTED_MODULE_11__.createStage)(stageName);
     this.scene.field.add(this.stage);
     this.worldOctree.fromGraphNode(this.stage);
   }
-  addCharacter(character) {
-    this.characters.add(character);
-  }
-  removeCharacter(character) {
-    if (this.player === character) {
-      this.player = null;
-      this.controls.dispose();
-    }
-    this.characters.remove(character);
-  }
-  setStage() {
-    let stageIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-    // TODO: 前のステージを破棄する
-
-    // 新しいステージを作成する
-    const data = this.data.stages[stageIndex];
-    if (data != null) {
-      const [name] = data;
-      /// //
-    }
-  }
   clearStage() {
-    //
+    if (this.stage != null) {
+      this.scene.field.clear();
+      this.worldOctree.clear();
+    }
   }
   nextStage() {
     const currentIndex = this.stageIndex + 1;
@@ -11444,11 +11466,8 @@ const createGround = function () {
   geom.points.computeBoundingSphere();
   mat.surface = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
+    // side: THREE.DoubleSide,
   });
-  /* mat.wireframe = new THREE.MeshBasicMaterial({
-    color: Ground.wireframeColor,
-    wireframe: true,
-  }); */
   mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_7__.LineBasicMaterial({
     color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor
   });
@@ -11857,6 +11876,124 @@ class CollisionObject extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"]
 
 /***/ }),
 
+/***/ "./src/js/game/obstacle.js":
+/*!*********************************!*\
+  !*** ./src/js/game/obstacle.js ***!
+  \*********************************/
+/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
+
+
+
+
+const {
+  exp,
+  sqrt,
+  PI
+} = Math;
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_2__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_3__.Texture(canvas);
+texture.needsUpdate = true;
+function noop() {}
+class Obstacle {
+  static defaults = {
+    size: 1,
+    detail: 0,
+    weight: 1,
+    color: 0xffffff,
+    wireframeColor: 0x000000,
+    pointsColor: 0xffffff,
+    rotateSpeed: 1,
+    collider: new three__WEBPACK_IMPORTED_MODULE_3__.Sphere(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(), 1),
+    velocity: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(),
+    update: noop
+  };
+  constructor(name) {
+    let opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    this.data = {};
+    this.data.obstacle = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Obstacles);
+    this.data.tweeners = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Tweeners);
+    this.data.stage = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Stages);
+    if (!this.data.obstacle.has(name)) {
+      throw new Error('data not found');
+    }
+    const {
+      size,
+      detail,
+      color,
+      wireframeColor,
+      pointsColor,
+      weight,
+      rotateSpeed,
+      tweens,
+      update
+    } = {
+      ...Obstacle.defaults,
+      ...this.data.obstacle.get(name),
+      ...opts
+    };
+    this.name = name;
+    this.rotateSpeed = rotateSpeed;
+    this.weight = weight;
+    this.collider = new three__WEBPACK_IMPORTED_MODULE_3__.Sphere(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(), size);
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
+    this.update = update.bind(this);
+    this.tweens = new Map();
+    const geom = new three__WEBPACK_IMPORTED_MODULE_3__.IcosahedronGeometry(size, detail);
+    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_3__.WireframeGeometry(geom);
+    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_3__.OctahedronGeometry(size + 4, detail);
+    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_3__.BufferGeometry();
+    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_3__.Float32BufferAttribute(pointsVertices, 3));
+    bufferGeom.computeBoundingSphere();
+    const mat = new three__WEBPACK_IMPORTED_MODULE_3__.MeshBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_0__.ObjectSettings.color
+    });
+    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_3__.LineBasicMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_0__.ObjectSettings.wireframeColor
+    });
+    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_3__.PointsMaterial({
+      color: _settings__WEBPACK_IMPORTED_MODULE_0__.ObjectSettings.pointsColor,
+      size: _settings__WEBPACK_IMPORTED_MODULE_0__.Grid.size,
+      map: texture,
+      blending: three__WEBPACK_IMPORTED_MODULE_3__.NormalBlending,
+      alphaTest: 0.5
+    });
+    const mesh = new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(geom, mat);
+    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_3__.LineSegments(wireframeGeom, wireframeMat);
+    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_3__.Points(bufferGeom, pointsMat);
+    this.object = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
+    this.object.add(mesh);
+    this.object.add(wireMesh);
+    this.object.add(pointsMesh);
+  }
+  setTweeners(tweeners) {
+    tweeners.forEach(tweenName => {
+      const tweener = this.data.tweeners.get(tweenName);
+      const tween = tweener(this.object.position);
+      this.tweens.set(tweenName, tween.start());
+    });
+  }
+  tween() {
+    const list = Array.from(this.tweens.values());
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const tween = list[i];
+      tween.update();
+    }
+  }
+}
+/* harmony default export */ __webpack_exports__["default"] = (Obstacle);
+
+/***/ }),
+
 /***/ "./src/js/game/player.js":
 /*!*******************************!*\
   !*** ./src/js/game/player.js ***!
@@ -11919,6 +12056,14 @@ class Player extends _character__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.camera = camera;
     this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
+  }
+  setPosition(checkPoint) {
+    this.rotation.phi = checkPoint.direction;
+    this.camera.rotation.y = checkPoint.direction;
+    this.camera.getWorldDirection(this.direction);
+    this.collider.start.copy(checkPoint.position);
+    this.collider.end.copy(checkPoint.position);
+    this.collider.end.y += this.data.height;
   }
   update(deltaTime) {
     super.update(deltaTime);
@@ -12354,7 +12499,6 @@ class SceneManager {
   constructor(renderer) {
     this.renderer = renderer;
     this.list = new Map();
-    this.current = null;
   }
   add(name, scene, camera) {
     if (!this.list.has(name)) {
@@ -52501,6 +52645,910 @@ function _setPrototypeOf(o, p) {
   };
   return _setPrototypeOf(o, p);
 }
+
+/***/ }),
+
+/***/ "./node_modules/@tweenjs/tween.js/dist/tween.esm.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/@tweenjs/tween.js/dist/tween.esm.js ***!
+  \**********************************************************/
+/***/ (function(__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Easing: function() { return /* binding */ Easing; },
+/* harmony export */   Group: function() { return /* binding */ Group; },
+/* harmony export */   Interpolation: function() { return /* binding */ Interpolation; },
+/* harmony export */   Sequence: function() { return /* binding */ Sequence; },
+/* harmony export */   Tween: function() { return /* binding */ Tween; },
+/* harmony export */   VERSION: function() { return /* binding */ VERSION; },
+/* harmony export */   add: function() { return /* binding */ add; },
+/* harmony export */   "default": function() { return /* binding */ exports; },
+/* harmony export */   getAll: function() { return /* binding */ getAll; },
+/* harmony export */   nextId: function() { return /* binding */ nextId; },
+/* harmony export */   now: function() { return /* binding */ now; },
+/* harmony export */   remove: function() { return /* binding */ remove; },
+/* harmony export */   removeAll: function() { return /* binding */ removeAll; },
+/* harmony export */   update: function() { return /* binding */ update; }
+/* harmony export */ });
+/**
+ * The Ease class provides a collection of easing functions for use with tween.js.
+ */
+var Easing = Object.freeze({
+    Linear: Object.freeze({
+        None: function (amount) {
+            return amount;
+        },
+        In: function (amount) {
+            return this.None(amount);
+        },
+        Out: function (amount) {
+            return this.None(amount);
+        },
+        InOut: function (amount) {
+            return this.None(amount);
+        },
+    }),
+    Quadratic: Object.freeze({
+        In: function (amount) {
+            return amount * amount;
+        },
+        Out: function (amount) {
+            return amount * (2 - amount);
+        },
+        InOut: function (amount) {
+            if ((amount *= 2) < 1) {
+                return 0.5 * amount * amount;
+            }
+            return -0.5 * (--amount * (amount - 2) - 1);
+        },
+    }),
+    Cubic: Object.freeze({
+        In: function (amount) {
+            return amount * amount * amount;
+        },
+        Out: function (amount) {
+            return --amount * amount * amount + 1;
+        },
+        InOut: function (amount) {
+            if ((amount *= 2) < 1) {
+                return 0.5 * amount * amount * amount;
+            }
+            return 0.5 * ((amount -= 2) * amount * amount + 2);
+        },
+    }),
+    Quartic: Object.freeze({
+        In: function (amount) {
+            return amount * amount * amount * amount;
+        },
+        Out: function (amount) {
+            return 1 - --amount * amount * amount * amount;
+        },
+        InOut: function (amount) {
+            if ((amount *= 2) < 1) {
+                return 0.5 * amount * amount * amount * amount;
+            }
+            return -0.5 * ((amount -= 2) * amount * amount * amount - 2);
+        },
+    }),
+    Quintic: Object.freeze({
+        In: function (amount) {
+            return amount * amount * amount * amount * amount;
+        },
+        Out: function (amount) {
+            return --amount * amount * amount * amount * amount + 1;
+        },
+        InOut: function (amount) {
+            if ((amount *= 2) < 1) {
+                return 0.5 * amount * amount * amount * amount * amount;
+            }
+            return 0.5 * ((amount -= 2) * amount * amount * amount * amount + 2);
+        },
+    }),
+    Sinusoidal: Object.freeze({
+        In: function (amount) {
+            return 1 - Math.sin(((1.0 - amount) * Math.PI) / 2);
+        },
+        Out: function (amount) {
+            return Math.sin((amount * Math.PI) / 2);
+        },
+        InOut: function (amount) {
+            return 0.5 * (1 - Math.sin(Math.PI * (0.5 - amount)));
+        },
+    }),
+    Exponential: Object.freeze({
+        In: function (amount) {
+            return amount === 0 ? 0 : Math.pow(1024, amount - 1);
+        },
+        Out: function (amount) {
+            return amount === 1 ? 1 : 1 - Math.pow(2, -10 * amount);
+        },
+        InOut: function (amount) {
+            if (amount === 0) {
+                return 0;
+            }
+            if (amount === 1) {
+                return 1;
+            }
+            if ((amount *= 2) < 1) {
+                return 0.5 * Math.pow(1024, amount - 1);
+            }
+            return 0.5 * (-Math.pow(2, -10 * (amount - 1)) + 2);
+        },
+    }),
+    Circular: Object.freeze({
+        In: function (amount) {
+            return 1 - Math.sqrt(1 - amount * amount);
+        },
+        Out: function (amount) {
+            return Math.sqrt(1 - --amount * amount);
+        },
+        InOut: function (amount) {
+            if ((amount *= 2) < 1) {
+                return -0.5 * (Math.sqrt(1 - amount * amount) - 1);
+            }
+            return 0.5 * (Math.sqrt(1 - (amount -= 2) * amount) + 1);
+        },
+    }),
+    Elastic: Object.freeze({
+        In: function (amount) {
+            if (amount === 0) {
+                return 0;
+            }
+            if (amount === 1) {
+                return 1;
+            }
+            return -Math.pow(2, 10 * (amount - 1)) * Math.sin((amount - 1.1) * 5 * Math.PI);
+        },
+        Out: function (amount) {
+            if (amount === 0) {
+                return 0;
+            }
+            if (amount === 1) {
+                return 1;
+            }
+            return Math.pow(2, -10 * amount) * Math.sin((amount - 0.1) * 5 * Math.PI) + 1;
+        },
+        InOut: function (amount) {
+            if (amount === 0) {
+                return 0;
+            }
+            if (amount === 1) {
+                return 1;
+            }
+            amount *= 2;
+            if (amount < 1) {
+                return -0.5 * Math.pow(2, 10 * (amount - 1)) * Math.sin((amount - 1.1) * 5 * Math.PI);
+            }
+            return 0.5 * Math.pow(2, -10 * (amount - 1)) * Math.sin((amount - 1.1) * 5 * Math.PI) + 1;
+        },
+    }),
+    Back: Object.freeze({
+        In: function (amount) {
+            var s = 1.70158;
+            return amount === 1 ? 1 : amount * amount * ((s + 1) * amount - s);
+        },
+        Out: function (amount) {
+            var s = 1.70158;
+            return amount === 0 ? 0 : --amount * amount * ((s + 1) * amount + s) + 1;
+        },
+        InOut: function (amount) {
+            var s = 1.70158 * 1.525;
+            if ((amount *= 2) < 1) {
+                return 0.5 * (amount * amount * ((s + 1) * amount - s));
+            }
+            return 0.5 * ((amount -= 2) * amount * ((s + 1) * amount + s) + 2);
+        },
+    }),
+    Bounce: Object.freeze({
+        In: function (amount) {
+            return 1 - Easing.Bounce.Out(1 - amount);
+        },
+        Out: function (amount) {
+            if (amount < 1 / 2.75) {
+                return 7.5625 * amount * amount;
+            }
+            else if (amount < 2 / 2.75) {
+                return 7.5625 * (amount -= 1.5 / 2.75) * amount + 0.75;
+            }
+            else if (amount < 2.5 / 2.75) {
+                return 7.5625 * (amount -= 2.25 / 2.75) * amount + 0.9375;
+            }
+            else {
+                return 7.5625 * (amount -= 2.625 / 2.75) * amount + 0.984375;
+            }
+        },
+        InOut: function (amount) {
+            if (amount < 0.5) {
+                return Easing.Bounce.In(amount * 2) * 0.5;
+            }
+            return Easing.Bounce.Out(amount * 2 - 1) * 0.5 + 0.5;
+        },
+    }),
+    generatePow: function (power) {
+        if (power === void 0) { power = 4; }
+        power = power < Number.EPSILON ? Number.EPSILON : power;
+        power = power > 10000 ? 10000 : power;
+        return {
+            In: function (amount) {
+                return Math.pow(amount, power);
+            },
+            Out: function (amount) {
+                return 1 - Math.pow((1 - amount), power);
+            },
+            InOut: function (amount) {
+                if (amount < 0.5) {
+                    return Math.pow((amount * 2), power) / 2;
+                }
+                return (1 - Math.pow((2 - amount * 2), power)) / 2 + 0.5;
+            },
+        };
+    },
+});
+
+var now = function () { return performance.now(); };
+
+/**
+ * Controlling groups of tweens
+ *
+ * Using the TWEEN singleton to manage your tweens can cause issues in large apps with many components.
+ * In these cases, you may want to create your own smaller groups of tween
+ */
+var Group = /** @class */ (function () {
+    function Group() {
+        this._tweens = {};
+        this._tweensAddedDuringUpdate = {};
+    }
+    Group.prototype.getAll = function () {
+        var _this = this;
+        return Object.keys(this._tweens).map(function (tweenId) {
+            return _this._tweens[tweenId];
+        });
+    };
+    Group.prototype.removeAll = function () {
+        this._tweens = {};
+    };
+    Group.prototype.add = function (tween) {
+        this._tweens[tween.getId()] = tween;
+        this._tweensAddedDuringUpdate[tween.getId()] = tween;
+    };
+    Group.prototype.remove = function (tween) {
+        delete this._tweens[tween.getId()];
+        delete this._tweensAddedDuringUpdate[tween.getId()];
+    };
+    Group.prototype.update = function (time, preserve) {
+        if (time === void 0) { time = now(); }
+        if (preserve === void 0) { preserve = false; }
+        var tweenIds = Object.keys(this._tweens);
+        if (tweenIds.length === 0) {
+            return false;
+        }
+        // Tweens are updated in "batches". If you add a new tween during an
+        // update, then the new tween will be updated in the next batch.
+        // If you remove a tween during an update, it may or may not be updated.
+        // However, if the removed tween was added during the current batch,
+        // then it will not be updated.
+        while (tweenIds.length > 0) {
+            this._tweensAddedDuringUpdate = {};
+            for (var i = 0; i < tweenIds.length; i++) {
+                var tween = this._tweens[tweenIds[i]];
+                var autoStart = !preserve;
+                if (tween && tween.update(time, autoStart) === false && !preserve) {
+                    delete this._tweens[tweenIds[i]];
+                }
+            }
+            tweenIds = Object.keys(this._tweensAddedDuringUpdate);
+        }
+        return true;
+    };
+    return Group;
+}());
+
+/**
+ *
+ */
+var Interpolation = {
+    Linear: function (v, k) {
+        var m = v.length - 1;
+        var f = m * k;
+        var i = Math.floor(f);
+        var fn = Interpolation.Utils.Linear;
+        if (k < 0) {
+            return fn(v[0], v[1], f);
+        }
+        if (k > 1) {
+            return fn(v[m], v[m - 1], m - f);
+        }
+        return fn(v[i], v[i + 1 > m ? m : i + 1], f - i);
+    },
+    Bezier: function (v, k) {
+        var b = 0;
+        var n = v.length - 1;
+        var pw = Math.pow;
+        var bn = Interpolation.Utils.Bernstein;
+        for (var i = 0; i <= n; i++) {
+            b += pw(1 - k, n - i) * pw(k, i) * v[i] * bn(n, i);
+        }
+        return b;
+    },
+    CatmullRom: function (v, k) {
+        var m = v.length - 1;
+        var f = m * k;
+        var i = Math.floor(f);
+        var fn = Interpolation.Utils.CatmullRom;
+        if (v[0] === v[m]) {
+            if (k < 0) {
+                i = Math.floor((f = m * (1 + k)));
+            }
+            return fn(v[(i - 1 + m) % m], v[i], v[(i + 1) % m], v[(i + 2) % m], f - i);
+        }
+        else {
+            if (k < 0) {
+                return v[0] - (fn(v[0], v[0], v[1], v[1], -f) - v[0]);
+            }
+            if (k > 1) {
+                return v[m] - (fn(v[m], v[m], v[m - 1], v[m - 1], f - m) - v[m]);
+            }
+            return fn(v[i ? i - 1 : 0], v[i], v[m < i + 1 ? m : i + 1], v[m < i + 2 ? m : i + 2], f - i);
+        }
+    },
+    Utils: {
+        Linear: function (p0, p1, t) {
+            return (p1 - p0) * t + p0;
+        },
+        Bernstein: function (n, i) {
+            var fc = Interpolation.Utils.Factorial;
+            return fc(n) / fc(i) / fc(n - i);
+        },
+        Factorial: (function () {
+            var a = [1];
+            return function (n) {
+                var s = 1;
+                if (a[n]) {
+                    return a[n];
+                }
+                for (var i = n; i > 1; i--) {
+                    s *= i;
+                }
+                a[n] = s;
+                return s;
+            };
+        })(),
+        CatmullRom: function (p0, p1, p2, p3, t) {
+            var v0 = (p2 - p0) * 0.5;
+            var v1 = (p3 - p1) * 0.5;
+            var t2 = t * t;
+            var t3 = t * t2;
+            return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1;
+        },
+    },
+};
+
+/**
+ * Utils
+ */
+var Sequence = /** @class */ (function () {
+    function Sequence() {
+    }
+    Sequence.nextId = function () {
+        return Sequence._nextId++;
+    };
+    Sequence._nextId = 0;
+    return Sequence;
+}());
+
+var mainGroup = new Group();
+
+/**
+ * Tween.js - Licensed under the MIT license
+ * https://github.com/tweenjs/tween.js
+ * ----------------------------------------------
+ *
+ * See https://github.com/tweenjs/tween.js/graphs/contributors for the full list of contributors.
+ * Thank you all, you're awesome!
+ */
+var Tween = /** @class */ (function () {
+    function Tween(_object, _group) {
+        if (_group === void 0) { _group = mainGroup; }
+        this._object = _object;
+        this._group = _group;
+        this._isPaused = false;
+        this._pauseStart = 0;
+        this._valuesStart = {};
+        this._valuesEnd = {};
+        this._valuesStartRepeat = {};
+        this._duration = 1000;
+        this._isDynamic = false;
+        this._initialRepeat = 0;
+        this._repeat = 0;
+        this._yoyo = false;
+        this._isPlaying = false;
+        this._reversed = false;
+        this._delayTime = 0;
+        this._startTime = 0;
+        this._easingFunction = Easing.Linear.None;
+        this._interpolationFunction = Interpolation.Linear;
+        // eslint-disable-next-line
+        this._chainedTweens = [];
+        this._onStartCallbackFired = false;
+        this._onEveryStartCallbackFired = false;
+        this._id = Sequence.nextId();
+        this._isChainStopped = false;
+        this._propertiesAreSetUp = false;
+        this._goToEnd = false;
+    }
+    Tween.prototype.getId = function () {
+        return this._id;
+    };
+    Tween.prototype.isPlaying = function () {
+        return this._isPlaying;
+    };
+    Tween.prototype.isPaused = function () {
+        return this._isPaused;
+    };
+    Tween.prototype.getDuration = function () {
+        return this._duration;
+    };
+    Tween.prototype.to = function (target, duration) {
+        if (duration === void 0) { duration = 1000; }
+        if (this._isPlaying)
+            throw new Error('Can not call Tween.to() while Tween is already started or paused. Stop the Tween first.');
+        this._valuesEnd = target;
+        this._propertiesAreSetUp = false;
+        this._duration = duration < 0 ? 0 : duration;
+        return this;
+    };
+    Tween.prototype.duration = function (duration) {
+        if (duration === void 0) { duration = 1000; }
+        this._duration = duration < 0 ? 0 : duration;
+        return this;
+    };
+    Tween.prototype.dynamic = function (dynamic) {
+        if (dynamic === void 0) { dynamic = false; }
+        this._isDynamic = dynamic;
+        return this;
+    };
+    Tween.prototype.start = function (time, overrideStartingValues) {
+        if (time === void 0) { time = now(); }
+        if (overrideStartingValues === void 0) { overrideStartingValues = false; }
+        if (this._isPlaying) {
+            return this;
+        }
+        // eslint-disable-next-line
+        this._group && this._group.add(this);
+        this._repeat = this._initialRepeat;
+        if (this._reversed) {
+            // If we were reversed (f.e. using the yoyo feature) then we need to
+            // flip the tween direction back to forward.
+            this._reversed = false;
+            for (var property in this._valuesStartRepeat) {
+                this._swapEndStartRepeatValues(property);
+                this._valuesStart[property] = this._valuesStartRepeat[property];
+            }
+        }
+        this._isPlaying = true;
+        this._isPaused = false;
+        this._onStartCallbackFired = false;
+        this._onEveryStartCallbackFired = false;
+        this._isChainStopped = false;
+        this._startTime = time;
+        this._startTime += this._delayTime;
+        if (!this._propertiesAreSetUp || overrideStartingValues) {
+            this._propertiesAreSetUp = true;
+            // If dynamic is not enabled, clone the end values instead of using the passed-in end values.
+            if (!this._isDynamic) {
+                var tmp = {};
+                for (var prop in this._valuesEnd)
+                    tmp[prop] = this._valuesEnd[prop];
+                this._valuesEnd = tmp;
+            }
+            this._setupProperties(this._object, this._valuesStart, this._valuesEnd, this._valuesStartRepeat, overrideStartingValues);
+        }
+        return this;
+    };
+    Tween.prototype.startFromCurrentValues = function (time) {
+        return this.start(time, true);
+    };
+    Tween.prototype._setupProperties = function (_object, _valuesStart, _valuesEnd, _valuesStartRepeat, overrideStartingValues) {
+        for (var property in _valuesEnd) {
+            var startValue = _object[property];
+            var startValueIsArray = Array.isArray(startValue);
+            var propType = startValueIsArray ? 'array' : typeof startValue;
+            var isInterpolationList = !startValueIsArray && Array.isArray(_valuesEnd[property]);
+            // If `to()` specifies a property that doesn't exist in the source object,
+            // we should not set that property in the object
+            if (propType === 'undefined' || propType === 'function') {
+                continue;
+            }
+            // Check if an Array was provided as property value
+            if (isInterpolationList) {
+                var endValues = _valuesEnd[property];
+                if (endValues.length === 0) {
+                    continue;
+                }
+                // Handle an array of relative values.
+                // Creates a local copy of the Array with the start value at the front
+                var temp = [startValue];
+                for (var i = 0, l = endValues.length; i < l; i += 1) {
+                    var value = this._handleRelativeValue(startValue, endValues[i]);
+                    if (isNaN(value)) {
+                        isInterpolationList = false;
+                        console.warn('Found invalid interpolation list. Skipping.');
+                        break;
+                    }
+                    temp.push(value);
+                }
+                if (isInterpolationList) {
+                    // if (_valuesStart[property] === undefined) { // handle end values only the first time. NOT NEEDED? setupProperties is now guarded by _propertiesAreSetUp.
+                    _valuesEnd[property] = temp;
+                    // }
+                }
+            }
+            // handle the deepness of the values
+            if ((propType === 'object' || startValueIsArray) && startValue && !isInterpolationList) {
+                _valuesStart[property] = startValueIsArray ? [] : {};
+                var nestedObject = startValue;
+                for (var prop in nestedObject) {
+                    _valuesStart[property][prop] = nestedObject[prop];
+                }
+                // TODO? repeat nested values? And yoyo? And array values?
+                _valuesStartRepeat[property] = startValueIsArray ? [] : {};
+                var endValues = _valuesEnd[property];
+                // If dynamic is not enabled, clone the end values instead of using the passed-in end values.
+                if (!this._isDynamic) {
+                    var tmp = {};
+                    for (var prop in endValues)
+                        tmp[prop] = endValues[prop];
+                    _valuesEnd[property] = endValues = tmp;
+                }
+                this._setupProperties(nestedObject, _valuesStart[property], endValues, _valuesStartRepeat[property], overrideStartingValues);
+            }
+            else {
+                // Save the starting value, but only once unless override is requested.
+                if (typeof _valuesStart[property] === 'undefined' || overrideStartingValues) {
+                    _valuesStart[property] = startValue;
+                }
+                if (!startValueIsArray) {
+                    // eslint-disable-next-line
+                    // @ts-ignore FIXME?
+                    _valuesStart[property] *= 1.0; // Ensures we're using numbers, not strings
+                }
+                if (isInterpolationList) {
+                    // eslint-disable-next-line
+                    // @ts-ignore FIXME?
+                    _valuesStartRepeat[property] = _valuesEnd[property].slice().reverse();
+                }
+                else {
+                    _valuesStartRepeat[property] = _valuesStart[property] || 0;
+                }
+            }
+        }
+    };
+    Tween.prototype.stop = function () {
+        if (!this._isChainStopped) {
+            this._isChainStopped = true;
+            this.stopChainedTweens();
+        }
+        if (!this._isPlaying) {
+            return this;
+        }
+        // eslint-disable-next-line
+        this._group && this._group.remove(this);
+        this._isPlaying = false;
+        this._isPaused = false;
+        if (this._onStopCallback) {
+            this._onStopCallback(this._object);
+        }
+        return this;
+    };
+    Tween.prototype.end = function () {
+        this._goToEnd = true;
+        this.update(Infinity);
+        return this;
+    };
+    Tween.prototype.pause = function (time) {
+        if (time === void 0) { time = now(); }
+        if (this._isPaused || !this._isPlaying) {
+            return this;
+        }
+        this._isPaused = true;
+        this._pauseStart = time;
+        // eslint-disable-next-line
+        this._group && this._group.remove(this);
+        return this;
+    };
+    Tween.prototype.resume = function (time) {
+        if (time === void 0) { time = now(); }
+        if (!this._isPaused || !this._isPlaying) {
+            return this;
+        }
+        this._isPaused = false;
+        this._startTime += time - this._pauseStart;
+        this._pauseStart = 0;
+        // eslint-disable-next-line
+        this._group && this._group.add(this);
+        return this;
+    };
+    Tween.prototype.stopChainedTweens = function () {
+        for (var i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
+            this._chainedTweens[i].stop();
+        }
+        return this;
+    };
+    Tween.prototype.group = function (group) {
+        if (group === void 0) { group = mainGroup; }
+        this._group = group;
+        return this;
+    };
+    Tween.prototype.delay = function (amount) {
+        if (amount === void 0) { amount = 0; }
+        this._delayTime = amount;
+        return this;
+    };
+    Tween.prototype.repeat = function (times) {
+        if (times === void 0) { times = 0; }
+        this._initialRepeat = times;
+        this._repeat = times;
+        return this;
+    };
+    Tween.prototype.repeatDelay = function (amount) {
+        this._repeatDelayTime = amount;
+        return this;
+    };
+    Tween.prototype.yoyo = function (yoyo) {
+        if (yoyo === void 0) { yoyo = false; }
+        this._yoyo = yoyo;
+        return this;
+    };
+    Tween.prototype.easing = function (easingFunction) {
+        if (easingFunction === void 0) { easingFunction = Easing.Linear.None; }
+        this._easingFunction = easingFunction;
+        return this;
+    };
+    Tween.prototype.interpolation = function (interpolationFunction) {
+        if (interpolationFunction === void 0) { interpolationFunction = Interpolation.Linear; }
+        this._interpolationFunction = interpolationFunction;
+        return this;
+    };
+    // eslint-disable-next-line
+    Tween.prototype.chain = function () {
+        var tweens = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            tweens[_i] = arguments[_i];
+        }
+        this._chainedTweens = tweens;
+        return this;
+    };
+    Tween.prototype.onStart = function (callback) {
+        this._onStartCallback = callback;
+        return this;
+    };
+    Tween.prototype.onEveryStart = function (callback) {
+        this._onEveryStartCallback = callback;
+        return this;
+    };
+    Tween.prototype.onUpdate = function (callback) {
+        this._onUpdateCallback = callback;
+        return this;
+    };
+    Tween.prototype.onRepeat = function (callback) {
+        this._onRepeatCallback = callback;
+        return this;
+    };
+    Tween.prototype.onComplete = function (callback) {
+        this._onCompleteCallback = callback;
+        return this;
+    };
+    Tween.prototype.onStop = function (callback) {
+        this._onStopCallback = callback;
+        return this;
+    };
+    /**
+     * @returns true if the tween is still playing after the update, false
+     * otherwise (calling update on a paused tween still returns true because
+     * it is still playing, just paused).
+     */
+    Tween.prototype.update = function (time, autoStart) {
+        var _this = this;
+        var _a;
+        if (time === void 0) { time = now(); }
+        if (autoStart === void 0) { autoStart = true; }
+        if (this._isPaused)
+            return true;
+        var property;
+        var endTime = this._startTime + this._duration;
+        if (!this._goToEnd && !this._isPlaying) {
+            if (time > endTime)
+                return false;
+            if (autoStart)
+                this.start(time, true);
+        }
+        this._goToEnd = false;
+        if (time < this._startTime) {
+            return true;
+        }
+        if (this._onStartCallbackFired === false) {
+            if (this._onStartCallback) {
+                this._onStartCallback(this._object);
+            }
+            this._onStartCallbackFired = true;
+        }
+        if (this._onEveryStartCallbackFired === false) {
+            if (this._onEveryStartCallback) {
+                this._onEveryStartCallback(this._object);
+            }
+            this._onEveryStartCallbackFired = true;
+        }
+        var elapsedTime = time - this._startTime;
+        var durationAndDelay = this._duration + ((_a = this._repeatDelayTime) !== null && _a !== void 0 ? _a : this._delayTime);
+        var totalTime = this._duration + this._repeat * durationAndDelay;
+        var calculateElapsedPortion = function () {
+            if (_this._duration === 0)
+                return 1;
+            if (elapsedTime > totalTime) {
+                return 1;
+            }
+            var timesRepeated = Math.trunc(elapsedTime / durationAndDelay);
+            var timeIntoCurrentRepeat = elapsedTime - timesRepeated * durationAndDelay;
+            // TODO use %?
+            // const timeIntoCurrentRepeat = elapsedTime % durationAndDelay
+            var portion = Math.min(timeIntoCurrentRepeat / _this._duration, 1);
+            if (portion === 0 && elapsedTime === _this._duration) {
+                return 1;
+            }
+            return portion;
+        };
+        var elapsed = calculateElapsedPortion();
+        var value = this._easingFunction(elapsed);
+        // properties transformations
+        this._updateProperties(this._object, this._valuesStart, this._valuesEnd, value);
+        if (this._onUpdateCallback) {
+            this._onUpdateCallback(this._object, elapsed);
+        }
+        if (this._duration === 0 || elapsedTime >= this._duration) {
+            if (this._repeat > 0) {
+                var completeCount = Math.min(Math.trunc((elapsedTime - this._duration) / durationAndDelay) + 1, this._repeat);
+                if (isFinite(this._repeat)) {
+                    this._repeat -= completeCount;
+                }
+                // Reassign starting values, restart by making startTime = now
+                for (property in this._valuesStartRepeat) {
+                    if (!this._yoyo && typeof this._valuesEnd[property] === 'string') {
+                        this._valuesStartRepeat[property] =
+                            // eslint-disable-next-line
+                            // @ts-ignore FIXME?
+                            this._valuesStartRepeat[property] + parseFloat(this._valuesEnd[property]);
+                    }
+                    if (this._yoyo) {
+                        this._swapEndStartRepeatValues(property);
+                    }
+                    this._valuesStart[property] = this._valuesStartRepeat[property];
+                }
+                if (this._yoyo) {
+                    this._reversed = !this._reversed;
+                }
+                this._startTime += durationAndDelay * completeCount;
+                if (this._onRepeatCallback) {
+                    this._onRepeatCallback(this._object);
+                }
+                this._onEveryStartCallbackFired = false;
+                return true;
+            }
+            else {
+                if (this._onCompleteCallback) {
+                    this._onCompleteCallback(this._object);
+                }
+                for (var i = 0, numChainedTweens = this._chainedTweens.length; i < numChainedTweens; i++) {
+                    // Make the chained tweens start exactly at the time they should,
+                    // even if the `update()` method was called way past the duration of the tween
+                    this._chainedTweens[i].start(this._startTime + this._duration, false);
+                }
+                this._isPlaying = false;
+                return false;
+            }
+        }
+        return true;
+    };
+    Tween.prototype._updateProperties = function (_object, _valuesStart, _valuesEnd, value) {
+        for (var property in _valuesEnd) {
+            // Don't update properties that do not exist in the source object
+            if (_valuesStart[property] === undefined) {
+                continue;
+            }
+            var start = _valuesStart[property] || 0;
+            var end = _valuesEnd[property];
+            var startIsArray = Array.isArray(_object[property]);
+            var endIsArray = Array.isArray(end);
+            var isInterpolationList = !startIsArray && endIsArray;
+            if (isInterpolationList) {
+                _object[property] = this._interpolationFunction(end, value);
+            }
+            else if (typeof end === 'object' && end) {
+                // eslint-disable-next-line
+                // @ts-ignore FIXME?
+                this._updateProperties(_object[property], start, end, value);
+            }
+            else {
+                // Parses relative end values with start as base (e.g.: +10, -3)
+                end = this._handleRelativeValue(start, end);
+                // Protect against non numeric properties.
+                if (typeof end === 'number') {
+                    // eslint-disable-next-line
+                    // @ts-ignore FIXME?
+                    _object[property] = start + (end - start) * value;
+                }
+            }
+        }
+    };
+    Tween.prototype._handleRelativeValue = function (start, end) {
+        if (typeof end !== 'string') {
+            return end;
+        }
+        if (end.charAt(0) === '+' || end.charAt(0) === '-') {
+            return start + parseFloat(end);
+        }
+        return parseFloat(end);
+    };
+    Tween.prototype._swapEndStartRepeatValues = function (property) {
+        var tmp = this._valuesStartRepeat[property];
+        var endValue = this._valuesEnd[property];
+        if (typeof endValue === 'string') {
+            this._valuesStartRepeat[property] = this._valuesStartRepeat[property] + parseFloat(endValue);
+        }
+        else {
+            this._valuesStartRepeat[property] = this._valuesEnd[property];
+        }
+        this._valuesEnd[property] = tmp;
+    };
+    return Tween;
+}());
+
+var VERSION = '23.1.1';
+
+/**
+ * Tween.js - Licensed under the MIT license
+ * https://github.com/tweenjs/tween.js
+ * ----------------------------------------------
+ *
+ * See https://github.com/tweenjs/tween.js/graphs/contributors for the full list of contributors.
+ * Thank you all, you're awesome!
+ */
+var nextId = Sequence.nextId;
+/**
+ * Controlling groups of tweens
+ *
+ * Using the TWEEN singleton to manage your tweens can cause issues in large apps with many components.
+ * In these cases, you may want to create your own smaller groups of tweens.
+ */
+var TWEEN = mainGroup;
+// This is the best way to export things in a way that's compatible with both ES
+// Modules and CommonJS, without build hacks, and so as not to break the
+// existing API.
+// https://github.com/rollup/rollup/issues/1961#issuecomment-423037881
+var getAll = TWEEN.getAll.bind(TWEEN);
+var removeAll = TWEEN.removeAll.bind(TWEEN);
+var add = TWEEN.add.bind(TWEEN);
+var remove = TWEEN.remove.bind(TWEEN);
+var update = TWEEN.update.bind(TWEEN);
+var exports = {
+    Easing: Easing,
+    Group: Group,
+    Interpolation: Interpolation,
+    now: now,
+    Sequence: Sequence,
+    nextId: nextId,
+    Tween: Tween,
+    VERSION: VERSION,
+    getAll: getAll,
+    removeAll: removeAll,
+    add: add,
+    remove: remove,
+    update: update,
+};
+
+
+
 
 /***/ }),
 
