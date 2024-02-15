@@ -9324,8 +9324,6 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
     this.name = name;
     const dataMap = new Map(_data__WEBPACK_IMPORTED_MODULE_1__.Ammo);
     const ammo = dataMap.get(name);
-
-    // this.data = { ...ammo };
     const {
       color,
       wireColor,
@@ -9383,6 +9381,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
         object: group,
         collider: new three__WEBPACK_IMPORTED_MODULE_5__.Sphere(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, i * radius * 2 - 1000, 0), radius),
         velocity: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(),
+        radius,
         weight,
         speed,
         rotateSpeed
@@ -9612,7 +9611,8 @@ class CharacterManager {
       const character = list[i];
       const center = character.collider.getCenter(this.#vecA);
       const objectCenter = object.collider.center;
-      const weightRatio = object.weight / character.data.weight;
+      const weightRatio1 = object.weight / character.data.weight;
+      const weightRatio2 = character.data.weight / object.weight;
       const r = character.collider.radius + object.collider.radius;
       const r2 = r * r;
       const colliders = [character.collider.start, character.collider.end, center];
@@ -9622,7 +9622,7 @@ class CharacterManager {
         if (d2 < r2) {
           const normal = this.#vecA.subVectors(point, objectCenter).normalize();
           const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(character.velocity));
-          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(object.velocity) * weightRatio);
+          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(object.velocity));
           character.velocity.add(v2).sub(v1);
           object.velocity.add(v1).sub(v2);
           const d = (r - sqrt(d2)) / 2;
@@ -9706,6 +9706,7 @@ const addDamping = (component, damping, minValue) => {
 };
 class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #dir = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
+  #forward = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
   #side = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
   #vecA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
   #vecB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
@@ -9732,8 +9733,8 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     };
     this.ammoType = this.data.ammoTypes[0];
     this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
-    this.forwardComponent = 0;
-    this.sideComponent = 0;
+    //this.forwardComponent = 0;
+    //this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
@@ -9756,17 +9757,30 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   }
   moveForward(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.forwardComponent = deltaTime;
+    let multiplier = deltaTime;
     if (this.#onGround) {
-      this.forwardComponent *= this.data.speed;
+      multiplier *= this.data.speed;
       if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.sprint && deltaTime >= 0) {
-        this.forwardComponent *= this.data.sprint;
+        multiplier *= this.data.sprint;
       } else if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
+        multiplier *= this.data.urgencyMove;
+      }
+    } else {
+      multiplier *= this.data.airSpeed;
+    }
+    const direction = this.#forward.copy(this.direction).multiplyScalar(multiplier);
+    this.velocity.add(direction);
+    /*this.forwardComponent = deltaTime;
+     if (this.#onGround) {
+      this.forwardComponent *= this.data.speed;
+       if (state === States.sprint && deltaTime >= 0) {
+        this.forwardComponent *= this.data.sprint;
+      } else if (state === States.urgency) {
         this.forwardComponent *= this.data.urgencyMove;
       }
     } else {
       this.forwardComponent *= this.data.airSpeed;
-    }
+    }*/
   }
   rotate(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -9779,15 +9793,27 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   }
   moveSide(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.sideComponent = deltaTime * 0.7;
+    let multiplier = deltaTime;
     if (this.#onGround) {
-      this.sideComponent *= this.data.speed;
+      multiplier *= this.data.speed;
       if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
+        multiplier *= this.data.urgencyMove;
+      }
+    } else {
+      multiplier *= this.data.airSpeed;
+    }
+    const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
+    direction.normalize();
+    this.velocity.add(direction.multiplyScalar(multiplier));
+    /*this.sideComponent = deltaTime * 0.7;
+     if (this.#onGround) {
+      this.sideComponent *= this.data.speed;
+       if (state === States.urgency) {
         this.sideComponent *= this.data.urgencyMove;
       }
     } else {
       this.sideComponent *= this.data.airSpeed;
-    }
+    }*/
   }
   setPovRotation(povRotation) {
     this.povRotation = povRotation.clone();
@@ -9799,7 +9825,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
     bullet.object.rotation.copy(this.#euler);
-    bullet.collider.center.copy(this.collider.end).addScaledVector(dir, this.collider.radius * 1.5);
+    bullet.collider.center.copy(this.collider.end).addScaledVector(dir, this.collider.radius * bullet.radius);
     bullet.velocity.copy(dir).multiplyScalar(bullet.speed);
     bullet.velocity.addScaledVector(this.velocity, 2);
     ammo.index = (ammo.index + 1) % ammo.list.length;
@@ -9954,23 +9980,34 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      this.direction.normalize();
+      //this.direction.normalize();
+
       this.rotation.phi += this.rotateComponent;
       this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
     }
-    if (this.forwardComponent !== 0) {
-      const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
+
+    /*if (this.forwardComponent !== 0) {
+      const direction = this.direction
+        .clone()
+        .multiplyScalar(this.forwardComponent);
       this.velocity.add(direction);
-      this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
-    }
-    if (this.sideComponent !== 0) {
+       this.forwardComponent = addDamping(
+        this.forwardComponent,
+        damping,
+        minMovement,
+      );
+    }*/
+
+    /*if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
-      this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    }
+       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
+    }*/
+
     this.velocity.addScaledVector(this.velocity, damping);
-    this.collider.translate(this.velocity);
+    const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+    this.collider.translate(deltaPosition);
     this.position.copy(this.collider.start);
   }
 }
@@ -10106,10 +10143,10 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
         collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
         collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {
-        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime * 100;
+        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime /* * 100*/;
       }
       collidable.object.position.copy(collidable.collider.center);
-      const damping = exp(-0.2 * deltaTime) - 1;
+      const damping = exp(-1 * deltaTime) - 1;
       collidable.velocity.addScaledVector(collidable.velocity, damping);
       this.publish('collideWith', collidable);
     }
@@ -10661,7 +10698,8 @@ const Ammo = [['small-bullet', {
   detail: 0,
   numAmmo: 5,
   // dev 5, prod 50
-  speed: 1600,
+  speed: 2000,
+  //1600,
   rotateSpeed: 8,
   weight: 1,
   fireInterval: 500,
@@ -10676,7 +10714,8 @@ const Characters = [['hero1', {
   height: 40,
   radius: 5,
   weight: 100,
-  speed: 3,
+  speed: 300,
+  //3,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
   sprint: 2.5,
@@ -10684,8 +10723,8 @@ const Characters = [['hero1', {
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
   urgencyTurn: PI * 2 * (15.8 / 16),
   // PI * 2 * (13.8 / 16),
-  airSpeed: 3,
-  jumpPower: 2,
+  airSpeed: 100,
+  jumpPower: 200,
   ammoTypes: ['small-bullet']
 }]];
 const Tweeners = [['rolling-stone-position', position => {
@@ -12054,7 +12093,8 @@ class Player extends _character__WEBPACK_IMPORTED_MODULE_0__["default"] {
   constructor(camera, name, ammo) {
     super(name, ammo);
     this.camera = camera;
-    this.camera.rotation.x = -RAD_30;
+
+    //this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
   }
   setPosition(checkPoint) {
@@ -12685,7 +12725,7 @@ const PlayerSettings = {
   sprint: 2.5,
   urgencyMove: 8,
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15.8 / 16),
+  urgencyTurn: PI * 2 * (15.7 / 16),
   // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2
@@ -12802,9 +12842,11 @@ const Controls = {
   inputDuration: 120
 };
 const World = {
-  gravity: 6,
-  resistance: 10,
-  airResistance: 2
+  gravity: 800,
+  //6,
+  resistance: 4,
+  //10,
+  airResistance: 1
 };
 const Screen = {
   normalColor: 0xffffff,
