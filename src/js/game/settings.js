@@ -20,7 +20,7 @@ export const PlayerSettings = {
   urgencyMove: 8,
 
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15.8 / 16), // PI * 2 * (13.8 / 16),
+  urgencyTurn: PI * 2 * (15.7 / 16), // PI * 2 * (13.8 / 16),
   airSpeed: 3,
   jumpPower: 2,
 };
@@ -141,9 +141,9 @@ export const Controls = {
 };
 
 export const World = {
-  gravity: 6,
-  resistance: 10,
-  airResistance: 2,
+  gravity: 800,//6,
+  resistance: 4,//10,
+  airResistance: 1,
 };
 
 export const Screen = {

@@ -36,6 +36,8 @@ const addDamping = (component, damping, minValue) => {
 class Character extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
+  #forward = new Vector3();
+
   #side = new Vector3();
 
   #vecA = new Vector3();
@@ -75,11 +77,11 @@ class Character extends Publisher {
     this.ammos = ammos;
 
     this.data = { ...character };
-    
+
     this.ammoType = this.data.ammoTypes[0];
     this.position = new Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
-    this.forwardComponent = 0;
-    this.sideComponent = 0;
+    //this.forwardComponent = 0;
+    //this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new Spherical();
     this.rotation = new Spherical(); // phi and theta
@@ -106,7 +108,23 @@ class Character extends Publisher {
   }
 
   moveForward(deltaTime, state = States.idle) {
-    this.forwardComponent = deltaTime;
+    let multiplier = deltaTime;
+
+    if (this.#onGround) {
+      multiplier *= this.data.speed;
+
+      if (state === States.sprint && deltaTime >= 0) {
+        multiplier *= this.data.sprint;
+      } else if (state === States.urgency) {
+        multiplier *= this.data.urgencyMove;
+      }
+    } else {
+      multiplier *= this.data.airSpeed;
+    }
+
+    const direction = this.#forward.copy(this.direction).multiplyScalar(multiplier);
+    this.velocity.add(direction);
+    /*this.forwardComponent = deltaTime;
 
     if (this.#onGround) {
       this.forwardComponent *= this.data.speed;
@@ -118,7 +136,7 @@ class Character extends Publisher {
       }
     } else {
       this.forwardComponent *= this.data.airSpeed;
-    }
+    }*/
   }
 
   rotate(deltaTime, state = States.idle) {
@@ -132,7 +150,22 @@ class Character extends Publisher {
   }
 
   moveSide(deltaTime, state = States.idle) {
-    this.sideComponent = deltaTime * 0.7;
+    let multiplier = deltaTime;
+
+    if (this.#onGround) {
+      multiplier *= this.data.speed;
+
+      if (state === States.urgency) {
+        multiplier *= this.data.urgencyMove;
+      }
+    } else {
+      multiplier *= this.data.airSpeed;
+    }
+
+    const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
+    direction.normalize();
+    this.velocity.add(direction.multiplyScalar(multiplier));
+    /*this.sideComponent = deltaTime * 0.7;
 
     if (this.#onGround) {
       this.sideComponent *= this.data.speed;
@@ -142,7 +175,7 @@ class Character extends Publisher {
       }
     } else {
       this.sideComponent *= this.data.airSpeed;
-    }
+    }*/
   }
 
   setPovRotation(povRotation) {
@@ -160,7 +193,7 @@ class Character extends Publisher {
 
     bullet.collider.center
       .copy(this.collider.end)
-      .addScaledVector(dir, this.collider.radius * 1.5);
+      .addScaledVector(dir, this.collider.radius * bullet.radius);
 
     bullet.velocity.copy(dir).multiplyScalar(bullet.speed);
     bullet.velocity.addScaledVector(this.velocity, 2);
@@ -341,7 +374,7 @@ class Character extends Publisher {
 
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      this.direction.normalize();
+      //this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
 
@@ -352,7 +385,7 @@ class Character extends Publisher {
       );
     }
 
-    if (this.forwardComponent !== 0) {
+    /*if (this.forwardComponent !== 0) {
       const direction = this.direction
         .clone()
         .multiplyScalar(this.forwardComponent);
@@ -363,19 +396,19 @@ class Character extends Publisher {
         damping,
         minMovement,
       );
-    }
+    }*/
 
-    if (this.sideComponent !== 0) {
+    /*if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
 
       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    }
+    }*/
 
     this.velocity.addScaledVector(this.velocity, damping);
-
-    this.collider.translate(this.velocity);
+    const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+    this.collider.translate(deltaPosition);
     this.position.copy(this.collider.start);
   }
 }

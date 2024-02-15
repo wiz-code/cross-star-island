@@ -156,7 +156,7 @@ class CollidableManager extends Publisher {
       const collidable = list[i];
       collidable.collider.center.addScaledVector(
         collidable.velocity,
-        deltaTime,
+        deltaTime
       );
       const result = this.worldOctree.sphereIntersect(collidable.collider);
 
@@ -169,12 +169,12 @@ class CollidableManager extends Publisher {
           result.normal.multiplyScalar(result.depth),
         );
       } else {
-        collidable.velocity.y -= World.gravity * deltaTime * 100;
+        collidable.velocity.y -= World.gravity * deltaTime/* * 100*/;
       }
 
       collidable.object.position.copy(collidable.collider.center);
 
-      const damping = exp(-0.2 * deltaTime) - 1;
+      const damping = exp(-1 * deltaTime) - 1;
       collidable.velocity.addScaledVector(collidable.velocity, damping);
 
       this.publish('collideWith', collidable);

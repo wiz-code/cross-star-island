@@ -47,7 +47,6 @@ class Ammo extends Publisher {
     const dataMap = new Map(AmmoData);
     const ammo = dataMap.get(name);
 
-    // this.data = { ...ammo };
     const {
       color,
       wireColor,
@@ -116,6 +115,7 @@ class Ammo extends Publisher {
           radius,
         ),
         velocity: new Vector3(),
+        radius,
         weight,
         speed,
         rotateSpeed,

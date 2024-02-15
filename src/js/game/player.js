@@ -71,7 +71,7 @@ class Player extends Character {
 
     this.camera = camera;
 
-    this.camera.rotation.x = -RAD_30;
+    //this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
   }
 

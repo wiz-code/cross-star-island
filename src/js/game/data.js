@@ -104,7 +104,7 @@ export const Ammo = [
       radius: 7,
       detail: 0,
       numAmmo: 5, // dev 5, prod 50
-      speed: 1600,
+      speed: 2000, //1600,
       rotateSpeed: 8,
       weight: 1,
       fireInterval: 500,
@@ -125,15 +125,15 @@ export const Characters = [
       radius: 5,
       weight: 100,
 
-      speed: 3,
+      speed: 300,//3,
       turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
       sprint: 2.5,
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
       urgencyTurn: PI * 2 * (15.8 / 16), // PI * 2 * (13.8 / 16),
-      airSpeed: 3,
-      jumpPower: 2,
+      airSpeed: 100,
+      jumpPower: 200,
 
       ammoTypes: ['small-bullet'],
     },
