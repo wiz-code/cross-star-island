@@ -9378,6 +9378,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
       //this.scene.add(group);
 
       const bullet = {
+        type: 'ammo',
         object: group,
         collider: new three__WEBPACK_IMPORTED_MODULE_5__.Sphere(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, i * radius * 2 - 1000, 0), radius),
         velocity: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(),
@@ -9647,11 +9648,11 @@ class CharacterManager {
       }
     }
   }
-  update(deltaTime) {
+  update(deltaTime, damping) {
     const list = Array.from(this.list.values());
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
-      character.update(deltaTime);
+      character.update(deltaTime, damping);
     }
     this.collisions();
   }
@@ -9668,11 +9669,13 @@ class CharacterManager {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
 /* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
 /* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _player__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./player */ "./src/js/game/player.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+
 
 
 
@@ -9705,20 +9708,23 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
-  #dir = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
-  #forward = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #side = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #euler = new three__WEBPACK_IMPORTED_MODULE_3__.Euler(0, 0, 0, 'YXZ');
-  #yawAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 1, 0);
-  #pitchAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 0, 0);
+  #dir = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1);
+  #vel = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0);
+  #forward = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #side = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #euler = new three__WEBPACK_IMPORTED_MODULE_4__.Euler(0, 0, 0, 'YXZ');
+  #yawAxis = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0);
+  #pitchAxis = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 0, 0);
   #onGround = false;
   #actions = new Set();
   #states = new Set();
   #urgencyRemainingTime = 0;
   #stunningRemainingTime = 0;
+  #test = 0; //////////
+
   constructor(name, ammos) {
     super();
     const dataMap = new Map(_data__WEBPACK_IMPORTED_MODULE_0__.Characters);
@@ -9732,15 +9738,15 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       ...character
     };
     this.ammoType = this.data.ammoTypes[0];
-    this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
+    this.position = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
     //this.forwardComponent = 0;
     //this.sideComponent = 0;
     this.rotateComponent = 0;
-    this.povRotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
-    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule();
+    this.povRotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical(); // phi and theta
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+    this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1);
+    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_5__.Capsule();
     const start = this.position;
     const end = this.position.clone();
     end.y += this.data.height;
@@ -9816,7 +9822,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }*/
   }
   setPovRotation(povRotation) {
-    this.povRotation = povRotation.clone();
+    this.povRotation.copy(povRotation);
   }
   fire() {
     const ammo = this.ammos.get(this.ammoType);
@@ -9913,7 +9919,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight);
     }
   }
-  update(deltaTime) {
+  update(deltaTime, damping) {
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
       this.#stunningRemainingTime -= deltaTime;
@@ -9922,20 +9928,23 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         this.#stunningRemainingTime = 0;
       }
     } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) && this.#urgencyRemainingTime === 0 && this.#onGround) {
-      this.#urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.urgencyDuration;
+      this.#test = 0;
+      this.#urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_3__.Controls.urgencyDuration;
     }
     if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump)) {
       this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
       this.jump();
     }
     if (this.#urgencyRemainingTime > 0) {
+      this.#test += this.rotateComponent;
       this.#urgencyRemainingTime -= deltaTime;
       if (this.#urgencyRemainingTime <= 0) {
+        console.log(this.#test / (PI * 2) * 360);
         this.#actions.clear();
         this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
         this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
         this.#urgencyRemainingTime = 0;
-        this.#stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.stunningDuration;
+        this.#stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_3__.Controls.stunningDuration;
       }
       if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveForward)) {
         this.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
@@ -9973,17 +9982,19 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
 
     // 移動の減衰処理
-    const resistance = this.#onGround ? _settings__WEBPACK_IMPORTED_MODULE_2__.World.resistance : _settings__WEBPACK_IMPORTED_MODULE_2__.World.airResistance;
-    const damping = exp(-resistance * deltaTime) - 1;
+    const deltaDamping = this.#onGround ? damping.ground : damping.air;
     if (!this.#onGround) {
-      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime;
+      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_3__.World.gravity * deltaTime;
     }
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
       //this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
-      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
+      if (this instanceof _player__WEBPACK_IMPORTED_MODULE_2__["default"]) {
+        this.publish('onChangeRotateComponent', this.rotateComponent);
+      }
+      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping.spin, minRotateAngle);
     }
 
     /*if (this.forwardComponent !== 0) {
@@ -10005,8 +10016,8 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
        this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }*/
 
-    this.velocity.addScaledVector(this.velocity, damping);
-    const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+    this.velocity.addScaledVector(this.velocity, deltaDamping);
+    const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
     this.position.copy(this.collider.start);
   }
@@ -10133,7 +10144,7 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
       }
     } */
   }
-  update(deltaTime) {
+  update(deltaTime, damping) {
     const list = Array.from(this.list.values()).flat();
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
@@ -10146,8 +10157,7 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
         collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime /* * 100*/;
       }
       collidable.object.position.copy(collidable.collider.center);
-      const damping = exp(-1 * deltaTime) - 1;
-      collidable.velocity.addScaledVector(collidable.velocity, damping);
+      collidable.velocity.addScaledVector(collidable.velocity, damping[collidable.type]);
       this.publish('collideWith', collidable);
     }
     this.collisions();
@@ -10201,7 +10211,7 @@ const indicatorColor = {
 const onContextmenu = event => {
   event.preventDefault();
 };
-const ActionKeys = new Set(['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRigh', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyZ', 'KeyX', 'KeyC']);
+const ActionKeys = new Set(['KeyW', 'ArrowUp', 'KeyA', 'ArrowLeft', 'KeyS', 'ArrowDown', 'KeyD', 'ArrowRight', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyZ', 'KeyX', 'KeyC']);
 class FirstPersonControls {
   #vectorA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
   #vectorB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
@@ -10721,10 +10731,10 @@ const Characters = [['hero1', {
   sprint: 2.5,
   urgencyMove: 8,
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15.8 / 16),
+  urgencyTurn: PI * 2 * (11 / 16),
   // PI * 2 * (13.8 / 16),
   airSpeed: 100,
-  jumpPower: 200,
+  jumpPower: 300,
   ammoTypes: ['small-bullet']
 }]];
 const Tweeners = [['rolling-stone-position', position => {
@@ -10910,8 +10920,19 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const {
-  floor
+  floor,
+  exp
 } = Math;
+const resistances = Object.entries(_settings__WEBPACK_IMPORTED_MODULE_1__.World.Resistance);
+const damping = {};
+const getDamping = delta => {
+  for (let i = 0, l = resistances.length; i < l; i += 1) {
+    const [key, value] = resistances[i];
+    const result = exp(-value * delta) - 1;
+    damping[key] = result;
+  }
+  return damping;
+};
 class Game {
   constructor() {
     this.clock = new three__WEBPACK_IMPORTED_MODULE_12__.Clock();
@@ -11097,10 +11118,14 @@ class Game {
       return;
     }
     const deltaTime = this.clock.getDelta() / _settings__WEBPACK_IMPORTED_MODULE_1__.Game.stepsPerFrame;
+    /*this.#damping.ground = exp(-World.Resistance.ground * deltaTime) - 1;
+    this.#damping.air = exp(-World.Resistance.air * deltaTime) - 1;
+    this.#damping.obstacle = exp(-World.Resistance.object * deltaTime) - 1;*/
+    const damping = getDamping(deltaTime);
     for (let i = 0; i < _settings__WEBPACK_IMPORTED_MODULE_1__.Game.stepsPerFrame; i += 1) {
       this.controls.update(deltaTime);
-      this.characters.update(deltaTime);
-      this.objects.update(deltaTime);
+      this.characters.update(deltaTime, damping);
+      this.objects.update(deltaTime, damping);
     }
     this.scenes.update();
     this.stats.update();
@@ -11980,6 +12005,7 @@ class Obstacle {
       ...opts
     };
     this.name = name;
+    this.type = 'obstacle';
     this.rotateSpeed = rotateSpeed;
     this.weight = weight;
     this.collider = new three__WEBPACK_IMPORTED_MODULE_3__.Sphere(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(), size);
@@ -12093,8 +12119,7 @@ class Player extends _character__WEBPACK_IMPORTED_MODULE_0__["default"] {
   constructor(camera, name, ammo) {
     super(name, ammo);
     this.camera = camera;
-
-    //this.camera.rotation.x = -RAD_30;
+    this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
   }
   setPosition(checkPoint) {
@@ -12105,8 +12130,8 @@ class Player extends _character__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.collider.end.copy(checkPoint.position);
     this.collider.end.y += this.data.height;
   }
-  update(deltaTime) {
-    super.update(deltaTime);
+  update(deltaTime, damping) {
+    super.update(deltaTime, damping);
     this.camera.rotation.x = this.povRotation.theta;
     this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
     this.camera.position.copy(this.collider.end);
@@ -12846,7 +12871,14 @@ const World = {
   //6,
   resistance: 4,
   //10,
-  airResistance: 1
+  airResistance: 1,
+  Resistance: {
+    ground: 4,
+    air: 1,
+    spin: 10,
+    ammo: 1.2,
+    obstacle: 0.1
+  }
 };
 const Screen = {
   normalColor: 0xffffff,
