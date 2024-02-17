@@ -149,7 +149,7 @@ class CollidableManager extends Publisher {
     } */
   }
 
-  update(deltaTime) {
+  update(deltaTime, damping) {
     const list = Array.from(this.list.values()).flat();
 
     for (let i = 0, l = list.length; i < l; i += 1) {
@@ -174,8 +174,7 @@ class CollidableManager extends Publisher {
 
       collidable.object.position.copy(collidable.collider.center);
 
-      const damping = exp(-1 * deltaTime) - 1;
-      collidable.velocity.addScaledVector(collidable.velocity, damping);
+      collidable.velocity.addScaledVector(collidable.velocity, damping[collidable.type]);
 
       this.publish('collideWith', collidable);
     }

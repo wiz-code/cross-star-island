@@ -3,6 +3,7 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States, Characters, Stages } from './data';
 import Publisher from './publisher';
+import Player from './player';
 import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
 
 const { exp, sqrt, cos, PI } = Math;
@@ -36,6 +37,8 @@ const addDamping = (component, damping, minValue) => {
 class Character extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
+  #vel = new Vector3(0, 0, 0);
+
   #forward = new Vector3();
 
   #side = new Vector3();
@@ -61,6 +64,8 @@ class Character extends Publisher {
   #urgencyRemainingTime = 0;
 
   #stunningRemainingTime = 0;
+
+  #test = 0;//////////
 
   constructor(name, ammos) {
     super();
@@ -179,7 +184,7 @@ class Character extends Publisher {
   }
 
   setPovRotation(povRotation) {
-    this.povRotation = povRotation.clone();
+    this.povRotation.copy(povRotation);
   }
 
   fire() {
@@ -294,7 +299,7 @@ class Character extends Publisher {
     }
   }
 
-  update(deltaTime) {
+  update(deltaTime, damping) {
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
       this.#stunningRemainingTime -= deltaTime;
@@ -307,7 +312,7 @@ class Character extends Publisher {
       this.#states.has(States.urgency) &&
       this.#urgencyRemainingTime === 0 &&
       this.#onGround
-    ) {
+    ) {this.#test = 0;
       this.#urgencyRemainingTime = Controls.urgencyDuration;
     }
 
@@ -316,10 +321,10 @@ class Character extends Publisher {
       this.jump();
     }
 
-    if (this.#urgencyRemainingTime > 0) {
+    if (this.#urgencyRemainingTime > 0) {this.#test += this.rotateComponent;
       this.#urgencyRemainingTime -= deltaTime;
 
-      if (this.#urgencyRemainingTime <= 0) {
+      if (this.#urgencyRemainingTime <= 0) {console.log(this.#test / (PI * 2) * 360);
         this.#actions.clear();
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);
@@ -365,8 +370,7 @@ class Character extends Publisher {
     }
 
     // 移動の減衰処理
-    const resistance = this.#onGround ? World.resistance : World.airResistance;
-    const damping = exp(-resistance * deltaTime) - 1;
+    const deltaDamping = this.#onGround ? damping.ground : damping.air;
 
     if (!this.#onGround) {
       this.velocity.y -= World.gravity * deltaTime;
@@ -378,9 +382,13 @@ class Character extends Publisher {
 
       this.rotation.phi += this.rotateComponent;
 
+      if (this instanceof Player) {
+        this.publish('onChangeRotateComponent', this.rotateComponent);
+      }
+
       this.rotateComponent = addDamping(
         this.rotateComponent,
-        dampingCoef * damping,
+        dampingCoef * damping.spin,
         minRotateAngle,
       );
     }
@@ -406,8 +414,8 @@ class Character extends Publisher {
       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
     }*/
 
-    this.velocity.addScaledVector(this.velocity, damping);
-    const deltaPosition = this.velocity.clone().multiplyScalar(deltaTime);
+    this.velocity.addScaledVector(this.velocity, deltaDamping);
+    const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
     this.position.copy(this.collider.start);
   }

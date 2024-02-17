@@ -109,6 +109,7 @@ class Ammo extends Publisher {
       //this.scene.add(group);
 
       const bullet = {
+        type: 'ammo',
         object: group,
         collider: new Sphere(
           new Vector3(0, i * radius * 2 - 1000, 0),

@@ -76,6 +76,7 @@ class Obstacle {
     } = { ...Obstacle.defaults, ...this.data.obstacle.get(name), ...opts };
 
     this.name = name;
+    this.type = 'obstacle';
     this.rotateSpeed = rotateSpeed;
     this.weight = weight;
     this.collider = new Sphere(new Vector3(), size);

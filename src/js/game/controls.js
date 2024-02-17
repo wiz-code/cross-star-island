@@ -34,7 +34,7 @@ const ActionKeys = new Set([
   'ArrowDown',
 
   'KeyD',
-  'ArrowRigh',
+  'ArrowRight',
 
   'KeyQ',
   'KeyE',

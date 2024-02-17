@@ -21,6 +21,7 @@ import {
   PlayerSettings,
   Grid,
   Ground,
+  World,
 } from './settings';
 
 import FirstPersonControls from './controls';
@@ -34,7 +35,19 @@ import Ammo from './ammo';
 import Obstacle from './obstacle';
 import { createStage } from './stages';
 
-const { floor } = Math;
+const { floor, exp } = Math;
+
+const resistances = Object.entries(World.Resistance);
+const damping = {};
+const getDamping = (delta) => {
+  for (let i = 0, l = resistances.length; i < l; i += 1) {
+    const [key, value] = resistances[i];
+    const result = exp(-value * delta) - 1;
+    damping[key] = result;
+  }
+
+  return damping;
+};
 
 class Game {
   constructor() {
@@ -288,11 +301,15 @@ class Game {
     }
 
     const deltaTime = this.clock.getDelta() / GameSettings.stepsPerFrame;
+    /*this.#damping.ground = exp(-World.Resistance.ground * deltaTime) - 1;
+    this.#damping.air = exp(-World.Resistance.air * deltaTime) - 1;
+    this.#damping.obstacle = exp(-World.Resistance.object * deltaTime) - 1;*/
+    const damping = getDamping(deltaTime);
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
       this.controls.update(deltaTime);
-      this.characters.update(deltaTime);
-      this.objects.update(deltaTime);
+      this.characters.update(deltaTime, damping);
+      this.objects.update(deltaTime, damping);
     }
 
     this.scenes.update();

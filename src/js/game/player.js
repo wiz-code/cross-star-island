@@ -71,7 +71,7 @@ class Player extends Character {
 
     this.camera = camera;
 
-    //this.camera.rotation.x = -RAD_30;
+    this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
   }
 
@@ -85,8 +85,8 @@ class Player extends Character {
     this.collider.end.y += this.data.height;
   }
 
-  update(deltaTime) {
-    super.update(deltaTime);
+  update(deltaTime, damping) {
+    super.update(deltaTime, damping);
 
     this.camera.rotation.x = this.povRotation.theta;
     this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;

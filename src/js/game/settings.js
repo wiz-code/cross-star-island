@@ -144,6 +144,13 @@ export const World = {
   gravity: 800,//6,
   resistance: 4,//10,
   airResistance: 1,
+  Resistance: {
+    ground: 4,
+    air: 1,
+    spin: 10,
+    ammo: 1.2,
+    obstacle: 0.1,
+  },
 };
 
 export const Screen = {

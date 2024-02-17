@@ -157,12 +157,12 @@ class CharacterManager {
     }
   }
 
-  update(deltaTime) {
+  update(deltaTime, damping) {
     const list = Array.from(this.list.values());
 
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
-      character.update(deltaTime);
+      character.update(deltaTime, damping);
     }
 
     this.collisions();
