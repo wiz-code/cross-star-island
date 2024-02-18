@@ -10011,7 +10011,6 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         this.#stunningRemainingTime = 0;
       }
     } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) && this.#urgencyRemainingTime === 0 && this.#onGround) {
-      this.#test = 0;
       this.#urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_3__.Controls.urgencyDuration;
     }
     if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump)) {
@@ -10019,10 +10018,8 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.jump();
     }
     if (this.#urgencyRemainingTime > 0) {
-      this.#test += this.rotateComponent;
       this.#urgencyRemainingTime -= deltaTime;
       if (this.#urgencyRemainingTime <= 0) {
-        console.log(this.#test / (PI * 2) * 360);
         this.#actions.clear();
         this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
         this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
@@ -10427,7 +10424,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    //this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -10821,9 +10818,9 @@ const Characters = [['hero1', {
   sprint: 2.5,
   urgencyMove: 8,
   // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-  urgencyTurn: PI * 2 * (15 / 16),
+  urgencyTurn: PI * 2,
   airSpeed: 100,
-  jumpPower: 300,
+  jumpPower: 350,
   ammoTypes: ['small-bullet']
 }]];
 const Tweeners = [['rolling-stone-position', target => {

@@ -314,7 +314,7 @@ class Character extends Publisher {
       this.#states.has(States.urgency) &&
       this.#urgencyRemainingTime === 0 &&
       this.#onGround
-    ) {this.#test = 0;
+    ) {
       this.#urgencyRemainingTime = Controls.urgencyDuration;
     }
 
@@ -323,10 +323,10 @@ class Character extends Publisher {
       this.jump();
     }
 
-    if (this.#urgencyRemainingTime > 0) {this.#test += this.rotateComponent;
+    if (this.#urgencyRemainingTime > 0) {
       this.#urgencyRemainingTime -= deltaTime;
 
-      if (this.#urgencyRemainingTime <= 0) {console.log(this.#test / (PI * 2) * 360);
+      if (this.#urgencyRemainingTime <= 0) {
         this.#actions.clear();
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);
