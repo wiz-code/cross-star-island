@@ -10194,6 +10194,7 @@ class FirstPersonControls {
   #moved = false;
   #timeout = false;
   #st = 0;
+  #resetPointer = false;
   #resetWheel = false;
   constructor(screen, camera, player, domElement) {
     this.screen = screen;
@@ -10246,8 +10247,8 @@ class FirstPersonControls {
     this.setOrientation();
   }
   onChangeRotateComponent(rotateComponent) {
-    if (this.povLock) {
-      this.#rotation.phi -= rotateComponent;
+    if (this.#rotation.theta !== 0 || this.#rotation.phi !== 0) {
+      //this.#rotation.phi -= rotateComponent;
     }
   }
   setOrientation() {
@@ -10287,16 +10288,31 @@ class FirstPersonControls {
   unlock() {
     this.domElement.ownerDocument.exitPointerLock();
   }
-  dispatchAction(button) {
-    if (button === 0) {
-      this.#moved = true;
-      this.player.fire();
-    }
-    if (button === 1) {
-      this.#resetWheel = true;
-    }
-    if (button === 2) {
-      this.povLock = true;
+  dispatchAction(type, button) {
+    switch (type) {
+      case 'pointerdown':
+        {
+          if (button === 0) {
+            this.#moved = true;
+            this.player.fire();
+          }
+          if (button === 1) {
+            this.#resetWheel = true;
+          }
+          if (button === 2) {
+            this.#resetPointer = true;
+          }
+          break;
+        }
+      case 'pointerup':
+        {
+          //
+          break;
+        }
+      default:
+        {
+          //
+        }
     }
   }
   onWheel(event) {
@@ -10312,7 +10328,7 @@ class FirstPersonControls {
     if (this.#pointers.has(_data__WEBPACK_IMPORTED_MODULE_1__.Pointers.right)) {
       if (event.button === _data__WEBPACK_IMPORTED_MODULE_1__.Pointers.left) {
         if (this.#count % 2 === 0) {
-          this.dispatchAction(event.button);
+          this.dispatchAction('pointerdown', event.button);
         }
         this.#count += 1;
       }
@@ -10325,18 +10341,13 @@ class FirstPersonControls {
     this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
-      this.dispatchAction(event.button);
+      this.dispatchAction(event.type, event.button);
     }
   }
   onPointerUp(event) {
     this.#pointers.delete(event.button);
     if (this.activeLook) {
-      if (event.button === 0) {
-        //
-      }
-      if (event.button === 2) {
-        this.povLock = false;
-      }
+      this.dispatchAction(event.type, event.button);
     }
   }
   onKeyDown(event) {
@@ -10505,26 +10516,24 @@ class FirstPersonControls {
     if (!this.activeLook) {
       actualLookSpeed = 0;
     }
-    if (this.#timeout || this.povLock) {
-      if (this.#timeout) {
-        if (this.povSight.material.color !== sightColor.pov) {
-          this.povSight.material.color = sightColor.pov;
-        }
-        if (!this.povIndicator.horizontal.visible) {
-          this.povIndicator.horizontal.visible = true;
-        }
-        if (!this.povIndicator.virtical.visible) {
-          this.povIndicator.virtical.visible = true;
-        }
-        const degX = 90 * this.#dy / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
-        const radX = degX * degToRadCoef;
-        this.#rotation.theta -= radX * actualLookSpeed;
-        const degY = 135 * this.#dx / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
-        const radY = degY * degToRadCoef;
-        this.#rotation.phi -= radY * actualLookSpeed;
-        this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
-        this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
+    if (!this.#resetPointer) {
+      if (this.povSight.material.color !== sightColor.pov) {
+        this.povSight.material.color = sightColor.pov;
       }
+      if (!this.povIndicator.horizontal.visible) {
+        this.povIndicator.horizontal.visible = true;
+      }
+      if (!this.povIndicator.virtical.visible) {
+        this.povIndicator.virtical.visible = true;
+      }
+      const degX = 90 * this.#dy / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+      const radX = degX * degToRadCoef;
+      this.#rotation.theta -= radX * actualLookSpeed;
+      const degY = 135 * this.#dx / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+      const radY = degY * degToRadCoef;
+      this.#rotation.phi -= radY * actualLookSpeed;
+      this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
+      this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       let posX = this.gaugeHalfX * -this.#rotation.phi / PI;
       let posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
       if (posX <= -this.gaugeHalfX) {
@@ -10548,17 +10557,6 @@ class FirstPersonControls {
       this.povIndicator.horizontal.position.x = posX;
       this.povIndicator.virtical.position.y = posY;
     } else {
-      if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
-        if (this.povSight.material.color !== sightColor.front) {
-          this.povSight.material.color = sightColor.front;
-        }
-        if (this.povIndicator.horizontal.visible) {
-          this.povIndicator.horizontal.visible = false;
-        }
-        if (this.povIndicator.virtical.visible) {
-          this.povIndicator.virtical.visible = false;
-        }
-      }
       if (this.#rotation.theta !== 0) {
         if (abs(this.#rotation.theta) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
           this.#rotation.theta = 0;
@@ -10566,6 +10564,11 @@ class FirstPersonControls {
           const rx = -this.#rotation.theta * deltaTime * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreSpeed + sign(-this.#rotation.theta) * _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle;
           this.#rotation.theta += rx;
         }
+        if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
+          this.povIndicator.virtical.material.color = indicatorColor.normal;
+        }
+        const posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
+        this.povIndicator.virtical.position.y = posY;
       }
       if (this.#rotation.phi !== 0) {
         if (abs(this.#rotation.phi) < _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.restoreMinAngle) {
@@ -10577,13 +10580,22 @@ class FirstPersonControls {
         if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
           this.povIndicator.horizontal.material.color = indicatorColor.normal;
         }
-        if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
-          this.povIndicator.virtical.material.color = indicatorColor.normal;
-        }
         const posX = this.gaugeHalfX * -this.#rotation.phi / PI;
         this.povIndicator.horizontal.position.x = posX;
-        const posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
-        this.povIndicator.virtical.position.y = posY;
+      }
+    }
+    if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
+      if (this.#resetPointer) {
+        this.#resetPointer = false;
+      }
+      if (this.povSight.material.color !== sightColor.front) {
+        this.povSight.material.color = sightColor.front;
+      }
+      if (this.povIndicator.horizontal.visible) {
+        this.povIndicator.horizontal.visible = false;
+      }
+      if (this.povIndicator.virtical.visible) {
+        this.povIndicator.virtical.visible = false;
       }
     }
     if (this.#resetWheel) {
