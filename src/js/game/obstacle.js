@@ -18,8 +18,9 @@ import {
   NormalBlending,
 } from 'three';
 
+import Publisher from './publisher';
 import { World, Grid, ObjectSettings } from './settings';
-import { Obstacles, Tweeners, Stages } from './data';
+import { Obstacles, Stages } from './data';
 import textures from './textures';
 
 const { exp, sqrt, PI } = Math;
@@ -50,10 +51,13 @@ class Obstacle {
     update: noop,
   };
 
+  #active = false;
+  #startTime = 0;
+  #elapsedTime = 0;
+
   constructor(name, opts = {}) {
     this.data = {};
     this.data.obstacle = new Map(Obstacles);
-    this.data.tweeners = new Map(Tweeners);
     this.data.stage = new Map(Stages);
 
     if (!this.data.obstacle.has(name)) {
@@ -71,7 +75,8 @@ class Obstacle {
       weight,
       rotateSpeed,
 
-      tweens,
+      tweens,/////
+      init,
       update,
     } = { ...Obstacle.defaults, ...this.data.obstacle.get(name), ...opts };
 
@@ -81,9 +86,8 @@ class Obstacle {
     this.weight = weight;
     this.collider = new Sphere(new Vector3(), size);
     this.velocity = new Vector3();
-    this.update = update.bind(this);
-
-    this.tweens = new Map();
+    this.onUpdate = update.bind(this);
+    this.updater = new Publisher();
 
     const geom = new IcosahedronGeometry(size, detail);
     const wireframeGeom = new WireframeGeometry(geom);
@@ -121,22 +125,30 @@ class Obstacle {
     this.object.add(mesh);
     this.object.add(wireMesh);
     this.object.add(pointsMesh);
+
+    this.setActive(true);
   }
 
-  setTweeners(tweeners) {
-    tweeners.forEach((tweenName) => {
-      const tweener = this.data.tweeners.get(tweenName);
-      const tween = tweener(this.object.position);
-      this.tweens.set(tweenName, tween.start());
-    });
+  isActive() {
+    return this.#active();
   }
 
-  tween() {
-    const list = Array.from(this.tweens.values());
+  setActive(bool) {
+    this.#active = bool;
+  }
 
-    for (let i = 0, l = list.length; i < l; i += 1) {
-      const tween = list[i];
-      tween.update();
+  addTweener(tweener) {
+    this.tweener = tweener(this);
+    this.tweener = this.tweener.update.bind(this.tweener);
+    this.updater.subscribe('update', this.tweener);
+  }
+
+  update(deltaTime) {
+    if (this.#active) {
+      this.#elapsedTime += deltaTime;
+
+      this.updater.publish('update');
+      this.onUpdate(deltaTime);
     }
   }
 }

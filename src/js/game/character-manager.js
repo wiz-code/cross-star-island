@@ -95,9 +95,6 @@ class CharacterManager {
       const character = list[i];
       const center = character.collider.getCenter(this.#vecA);
       const objectCenter = object.collider.center;
-      const weightRatio1 = object.weight / character.data.weight;
-      const weightRatio2 = character.data.weight / object.weight;
-
       const r = character.collider.radius + object.collider.radius;
       const r2 = r * r;
 
@@ -119,9 +116,13 @@ class CharacterManager {
           const v2 = this.#vecC
             .copy(normal)
             .multiplyScalar(normal.dot(object.velocity));
+          const vec1 = this.#vecB.subVectors(v2, v1);
+          const vec2 = this.#vecC.subVectors(v1, v2);
 
-          character.velocity.add(v2).sub(v1);
-          object.velocity.add(v1).sub(v2);
+          character.velocity.addScaledVector(vec1, object.weight);
+          object.velocity.addScaledVector(vec2, character.data.weight);
+          //character.velocity.add(v2).sub(v1);
+          //object.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
           objectCenter.addScaledVector(normal, -d);

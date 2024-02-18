@@ -104,8 +104,13 @@ class CollidableManager extends Publisher {
             .copy(normal)
             .multiplyScalar(normal.dot(a2.velocity));
 
-          a1.velocity.add(v2).sub(v1);
-          a2.velocity.add(v1).sub(v2);
+          const vec1 = this.#vecB.subVectors(v2, v1);
+          const vec2 = this.#vecC.subVectors(v1, v2);
+
+          a1.velocity.addScaledVector(vec1, a2.weight);
+          a2.velocity.addScaledVector(vec2, a1.weight);
+          //a1.velocity.add(v2).sub(v1);
+          //a2.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
 
@@ -184,9 +189,7 @@ class CollidableManager extends Publisher {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
       // オブジェクト固有の挙動をupdate()に記述する
-      if (typeof collidable.update === 'function') {
-        collidable.update(deltaTime);
-      }
+      collidable.update(deltaTime);
     }
   }
 }

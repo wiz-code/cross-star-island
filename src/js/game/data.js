@@ -70,7 +70,7 @@ export const Obstacles = [
     {
       size: 80,
       detail: 1,
-      weight: 10,
+      weight: 5,
 
       color: 0x203b33,
       wireframeColor: 0x4c625b,
@@ -79,7 +79,7 @@ export const Obstacles = [
 
       update(deltaTime) {
         this.object.rotation.z -= deltaTime * this.rotateSpeed;
-        this.tween();
+        //this.tween();
       },
     },
   ],
@@ -104,11 +104,12 @@ export const Ammo = [
       radius: 7,
       detail: 0,
       numAmmo: 5, // dev 5, prod 50
-      speed: 2000, //1600,
+      speed: 2000,
       rotateSpeed: 8,
-      weight: 1,
-      fireInterval: 500,
-      accuracy: 1, //////
+      weight: 0.1,
+      fireInterval: 500,/////////////
+      accuracy: 1, //////////////////
+      duration: 3,
 
       update(deltaTime) {
         this.object.rotation.z -= deltaTime * this.rotateSpeed;
@@ -123,7 +124,7 @@ export const Characters = [
     {
       height: 40,
       radius: 5,
-      weight: 100,
+      weight: 1,
 
       speed: 300,//3,
       turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
@@ -131,7 +132,7 @@ export const Characters = [
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 2 * (11 / 16), // PI * 2 * (13.8 / 16),
+      urgencyTurn: PI * 2 * (15 / 16),
       airSpeed: 100,
       jumpPower: 300,
 
@@ -143,12 +144,15 @@ export const Characters = [
 export const Tweeners = [
   [
     'rolling-stone-position',
-    (position) => {
-      const tween = new TWEEN.Tween(position);
-      tween.delay(3000).to({ x: -2000, y: 300, z: 0 }, 100).repeat(Infinity);
-      tween.onUpdate((object) => {
-        console.log(object.x, object.y, object.z)
-      });
+    (target) => {
+      const tween = new TWEEN.Tween(target.collider.center);
+      tween.onEveryStart(
+        () => target.velocity = new Vector3(0, 0, 0)
+      ).to(
+        { x: -2000, y: 300, z: 0 },
+        100
+      ).delay(10000).repeat(Infinity).start();
+
       return tween;
     },
   ],

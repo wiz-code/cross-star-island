@@ -191,6 +191,8 @@ class Character extends Publisher {
     const ammo = this.ammos.get(this.ammoType);
     const bullet = ammo.list[ammo.index];
 
+    bullet.setActive(true);
+
     this.#euler.x = this.povRotation.theta + this.rotation.theta;
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
@@ -329,7 +331,17 @@ class Character extends Publisher {
         this.#states.delete(States.urgency);
         this.#states.add(States.stunning);
         this.#urgencyRemainingTime = 0;
-        this.#stunningRemainingTime = Controls.stunningDuration;
+
+        let duratiion = Controls.stunningDuration;
+
+        if (
+          this.#actions.has(Actions.quickTurnLeft) ||
+          this.#actions.has(Actions.quickTurnRight)
+        ) {
+          duratiion *= 0.5;
+        }
+
+        this.#stunningRemainingTime = duratiion;
       }
 
       if (this.#actions.has(Actions.quickMoveForward)) {

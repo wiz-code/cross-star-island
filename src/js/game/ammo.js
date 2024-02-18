@@ -18,12 +18,17 @@ import {
   NormalBlending,
 } from 'three';
 
+import Bullet from './bullet';
 import { Ammo as AmmoData } from './data';
 import Publisher from './publisher';
 import { World, AmmoSettings } from './settings';
 import textures from './textures';
 
 const { exp, sqrt } = Math;
+
+const setVisible = (object, bool = true) => {
+  object.children.forEach((mesh) => mesh = bool);
+};
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -41,8 +46,6 @@ class Ammo extends Publisher {
 
   constructor(name) {
     super();
-
-    this.name = name;
 
     const dataMap = new Map(AmmoData);
     const ammo = dataMap.get(name);
@@ -108,7 +111,10 @@ class Ammo extends Publisher {
       group.add(pointsMesh);
       //this.scene.add(group);
 
-      const bullet = {
+      const bullet = new Bullet(i, group, ammo);
+
+      /*const bullet = {
+        name,
         type: 'ammo',
         object: group,
         collider: new Sphere(
@@ -121,10 +127,16 @@ class Ammo extends Publisher {
         speed,
         rotateSpeed,
       };
-      bullet.update = update.bind(bullet);
+      bullet.update = update.bind(bullet);*/
 
       this.list.push(bullet);
     }
+  }
+
+  setActive(bool) {
+    this.list.forEach((bullet) => {
+      bullet.setActive(bool);
+    });
   }
 }
 

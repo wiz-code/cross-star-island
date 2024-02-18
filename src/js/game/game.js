@@ -25,7 +25,7 @@ import {
 } from './settings';
 
 import FirstPersonControls from './controls';
-import { Characters, Stages, Compositions, Ammo as AmmoData } from './data';
+import { Characters, Stages, Compositions, Tweeners, Ammo as AmmoData } from './data';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
@@ -48,6 +48,8 @@ const getDamping = (delta) => {
 
   return damping;
 };
+
+
 
 class Game {
   constructor() {
@@ -109,6 +111,7 @@ class Game {
     this.data.characters = new Map(Characters);
     this.data.compositions = new Map(Compositions);
     this.data.ammos = new Map(AmmoData);
+    this.data.tweeners = new Map(Tweeners);
 
     this.objects = new CollidableManager(this.scene.field, this.worldOctree);
     this.characters = new CharacterManager(
@@ -154,24 +157,24 @@ class Game {
     this.checkPointIndex = 0;
 
 //////////////////
-    const data = this.data.stages.get('firstStage');
-    const [checkPoint] = data.checkPoints;
+    const stageNameList = this.data.compositions.get('stage');
+    const stageName = stageNameList[this.stageIndex];
+    const stageData = this.data.stages.get(stageName);
+    const [checkPoint] = stageData.checkPoints;
 
     const player = new Player(this.camera.field, 'hero1', this.ammos);
     player.setPosition(checkPoint);
 
-    const stone = new Obstacle('round-stone');
+    const [stone] = this.createObstacle(stageData);
+    /*const stone = new Obstacle('round-stone');
+    const { obstacles } = data;
+    const obstacle = obstacles.find((object) => object.name === 'round-stone')*/
+    /////////////////
+
 
     this.objects.add('ammo', this.ammos.get('small-bullet'));
     this.objects.add('obstacle', stone);
-    stone.collider.center = new Vector3(-2200, 300, 0);
-    const [behavior] = data.obstacles;
-    //stone.setTweeners(behavior.tweeners);
-
-    setInterval(() => {
-      stone.velocity = new Vector3(0, 0, 0);
-      stone.collider.center = new Vector3(-2200, 300, 0);
-    }, 10000);
+    //stone.collider.center = new Vector3(-2200, 300, 0);
 
     this.setPlayer(player);
     this.setMode('play');
@@ -209,6 +212,20 @@ class Game {
     this.stats.domElement.style.top = 'auto';
     this.stats.domElement.style.bottom = 0;
     this.container.appendChild(this.stats.domElement);
+  }
+
+  createObstacle(stageData) {
+    const list = [];
+    const { obstacles } = stageData;
+    obstacles.forEach((obstacleData) => {
+      const obstacle = new Obstacle(obstacleData.name);
+      obstacle.collider.center.copy(obstacleData.position);
+      obstacleData.tweeners.forEach((tweenerName) => {
+        obstacle.addTweener(this.data.tweeners.get(tweenerName));
+      });
+      list.push(obstacle);
+    });
+    return list;
   }
 
   setPlayer(character) {

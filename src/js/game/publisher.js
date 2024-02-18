@@ -7,7 +7,8 @@ class Publisher {
     if (this.listeners.has(eventName)) {
       const list = this.listeners.get(eventName);
 
-      for (const listener of list) {
+      for (let i = 0, l = list.length; i < l; i += 1) {
+        const listener = list[i];
         listener(...args);
       }
     }
