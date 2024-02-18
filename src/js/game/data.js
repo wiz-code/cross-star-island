@@ -98,7 +98,7 @@ export const Ammo = [
 
       radius: 7,
       detail: 0,
-      numAmmo: 5, // dev 5, prod 50
+      numAmmo: 10, // dev 10, prod 50
       speed: 2000,
       rotateSpeed: 8,
       weight: 0.03,

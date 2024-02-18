@@ -20,6 +20,11 @@ const indicatorColor = {
   beyondFov: new Color(Screen.warnColor),
 };
 
+const sightLinesColor = {
+  normal: new Color(Screen.sightLinesColor),
+  wheel: new Color(Screen.sightPovColor),
+};
+
 const onContextmenu = (event) => {
   event.preventDefault();
 };
@@ -612,6 +617,16 @@ class FirstPersonControls {
 
       if (this.povIndicator.virtical.visible) {
         this.povIndicator.virtical.visible = false;
+      }
+    }
+
+    if (this.#wheel === 0) {
+      if (this.povSightLines.material.color !== sightLinesColor.normal) {
+        this.povSightLines.material.color = sightLinesColor.normal;
+      }
+    } else {
+      if (this.povSightLines.material.color !== sightLinesColor.wheel) {
+        this.povSightLines.material.color = sightLinesColor.wheel;
       }
     }
 

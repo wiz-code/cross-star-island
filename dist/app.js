@@ -10171,6 +10171,10 @@ const indicatorColor = {
   normal: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
   beyondFov: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.warnColor)
 };
+const sightLinesColor = {
+  normal: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightLinesColor),
+  wheel: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovColor)
+};
 const onContextmenu = event => {
   event.preventDefault();
 };
@@ -10598,6 +10602,15 @@ class FirstPersonControls {
         this.povIndicator.virtical.visible = false;
       }
     }
+    if (this.#wheel === 0) {
+      if (this.povSightLines.material.color !== sightLinesColor.normal) {
+        this.povSightLines.material.color = sightLinesColor.normal;
+      }
+    } else {
+      if (this.povSightLines.material.color !== sightLinesColor.wheel) {
+        this.povSightLines.material.color = sightLinesColor.wheel;
+      }
+    }
     if (this.#resetWheel) {
       if (this.#wheel >= 0) {
         this.#wheel -= deltaTime;
@@ -10720,8 +10733,8 @@ const Ammo = [['small-bullet', {
   pointSize: 10,
   radius: 7,
   detail: 0,
-  numAmmo: 5,
-  // dev 5, prod 50
+  numAmmo: 10,
+  // dev 10, prod 50
   speed: 2000,
   rotateSpeed: 8,
   weight: 0.03,
