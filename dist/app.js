@@ -10194,10 +10194,7 @@ class FirstPersonControls {
   #moved = false;
   #timeout = false;
   #st = 0;
-  #urgencyRemainingTime = 0; /// ///
-
-  #stunningRemainingTime = 0; /// //
-
+  #resetWheel = false;
   constructor(screen, camera, player, domElement) {
     this.screen = screen;
     this.camera = camera;
@@ -10292,7 +10289,11 @@ class FirstPersonControls {
   }
   dispatchAction(button) {
     if (button === 0) {
+      this.#moved = true;
       this.player.fire();
+    }
+    if (button === 1) {
+      this.#resetWheel = true;
     }
     if (button === 2) {
       this.povLock = true;
@@ -10300,7 +10301,7 @@ class FirstPersonControls {
   }
   onWheel(event) {
     event.preventDefault();
-    const delta = sign(event.deltaY) * Rad_1;
+    const delta = sign(event.deltaY) * 2 * Rad_1;
     const rot = this.#rotation.theta + this.#wheel + delta;
     if (halfPI - this.minPolarAngle.virtical >= rot && halfPI - this.maxPolarAngle.virtical <= rot) {
       this.#wheel += delta;
@@ -10321,7 +10322,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -10332,9 +10333,6 @@ class FirstPersonControls {
     if (this.activeLook) {
       if (event.button === 0) {
         //
-      }
-      if (event.button === 1) {
-        this.#wheel = 0;
       }
       if (event.button === 2) {
         this.povLock = false;
@@ -10586,6 +10584,21 @@ class FirstPersonControls {
         this.povIndicator.horizontal.position.x = posX;
         const posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
         this.povIndicator.virtical.position.y = posY;
+      }
+    }
+    if (this.#resetWheel) {
+      if (this.#wheel >= 0) {
+        this.#wheel -= deltaTime;
+        if (this.#wheel <= 0) {
+          this.#wheel = 0;
+          this.#resetWheel = false;
+        }
+      } else {
+        this.#wheel += deltaTime;
+        if (this.#wheel >= 0) {
+          this.#wheel = 0;
+          this.#resetWheel = false;
+        }
       }
     }
     const posY = -this.#wheel / halfPI * this.viewHalfY * 2.3;
