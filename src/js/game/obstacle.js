@@ -52,7 +52,9 @@ class Obstacle {
   };
 
   #active = false;
+
   #startTime = 0;
+
   #elapsedTime = 0;
 
   constructor(name, opts = {}) {
@@ -75,7 +77,7 @@ class Obstacle {
       weight,
       rotateSpeed,
 
-      tweens,/////
+      tweens, /// //
       init,
       update,
     } = { ...Obstacle.defaults, ...this.data.obstacle.get(name), ...opts };

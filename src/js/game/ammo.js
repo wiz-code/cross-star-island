@@ -27,7 +27,7 @@ import textures from './textures';
 const { exp, sqrt } = Math;
 
 const setVisible = (object, bool = true) => {
-  object.children.forEach((mesh) => mesh = bool);
+  object.children.forEach((mesh) => (mesh = bool));
 };
 
 const canvas = document.createElement('canvas');
@@ -109,11 +109,11 @@ class Ammo extends Publisher {
       group.add(mesh);
       group.add(wireMesh);
       group.add(pointsMesh);
-      //this.scene.add(group);
+      // this.scene.add(group);
 
       const bullet = new Bullet(i, group, ammo);
 
-      /*const bullet = {
+      /* const bullet = {
         name,
         type: 'ammo',
         object: group,
@@ -127,7 +127,7 @@ class Ammo extends Publisher {
         speed,
         rotateSpeed,
       };
-      bullet.update = update.bind(bullet);*/
+      bullet.update = update.bind(bullet); */
 
       this.list.push(bullet);
     }

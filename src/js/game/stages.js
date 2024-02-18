@@ -5,7 +5,7 @@ import {
   Scene,
   Camera,
   Renderer,
-  //Stages,
+  // Stages,
   Light,
   PlayerSettings,
   ResizeDelayTime,
@@ -18,7 +18,7 @@ import { createGround } from './ground';
 const data = new Map(Stages);
 
 export const createStage = (name) => {
-  //const { components } = Stages[name];
+  // const { components } = Stages[name];
   const { components } = data.get(name);
   const stage = new Group();
 

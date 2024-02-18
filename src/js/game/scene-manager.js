@@ -26,7 +26,7 @@ class SceneManager {
     this.renderer.clear();
 
     const list = Array.from(this.list.values());
-    //for (const params of this.list) {
+    // for (const params of this.list) {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const params = list[i];
       this.renderer.render(...params);

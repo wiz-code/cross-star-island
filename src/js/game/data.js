@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import TWEEN from '@tweenjs/tween.js'
+import TWEEN from '@tweenjs/tween.js';
 
 const { PI } = Math;
 
@@ -79,18 +79,13 @@ export const Obstacles = [
 
       update(deltaTime) {
         this.object.rotation.z -= deltaTime * this.rotateSpeed;
-        //this.tween();
+        // this.tween();
       },
     },
   ],
 ];
 
-export const Compositions = [
-  [
-    'stage',
-    ['firstStage'],
-  ]
-];
+export const Compositions = [['stage', ['firstStage']]];
 
 export const Ammo = [
   [
@@ -106,9 +101,9 @@ export const Ammo = [
       numAmmo: 5, // dev 5, prod 50
       speed: 2000,
       rotateSpeed: 8,
-      weight: 0.1,
-      fireInterval: 500,/////////////
-      accuracy: 1, //////////////////
+      weight: 0.03,
+      fireInterval: 500, /// //////////
+      accuracy: 1, /// ///////////////
       duration: 3,
 
       update(deltaTime) {
@@ -126,7 +121,7 @@ export const Characters = [
       radius: 5,
       weight: 1,
 
-      speed: 300,//3,
+      speed: 300, // 3,
       turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
       sprint: 2.5,
       urgencyMove: 8,
@@ -146,12 +141,12 @@ export const Tweeners = [
     'rolling-stone-position',
     (target) => {
       const tween = new TWEEN.Tween(target.collider.center);
-      tween.onEveryStart(
-        () => target.velocity = new Vector3(0, 0, 0)
-      ).to(
-        { x: -2000, y: 300, z: 0 },
-        100
-      ).delay(10000).repeat(Infinity).start();
+      tween
+        .onEveryStart(() => (target.velocity = new Vector3(0, 0, 0)))
+        .to({ x: -2000, y: 300, z: 0 }, 100)
+        .delay(10000)
+        .repeat(Infinity)
+        .start();
 
       return tween;
     },

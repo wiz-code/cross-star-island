@@ -3,6 +3,27 @@ import * as THREE from 'three';
 const { PI } = Math;
 
 const textures = {
+  sightLines(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.rect(4, 56, 1, 16);
+    context.rect(16, 56, 1, 16);
+    context.rect(28, 56, 1, 16);
+
+    context.rect(99, 56, 1, 16);
+    context.rect(111, 56, 1, 16);
+    context.rect(123, 56, 1, 16);
+    context.fill();
+
+    return context;
+  },
+
   crossStar(context) {
     const { canvas } = context;
     canvas.width = 128;
@@ -132,6 +153,7 @@ const textures = {
     context.translate(64, 64);
     context.rotate(PI * 0.25);
     context.beginPath();
+    context.arc(0, 0, 4, 0, 2 * PI);
 
     for (let i = 0; i < 4; i += 1) {
       context.moveTo(-2, -62);

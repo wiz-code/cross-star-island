@@ -47,6 +47,10 @@ class CharacterManager {
 
   #vecC = new Vector3();
 
+  #vecD = new Vector3();
+
+  #vecE = new Vector3();
+
   #euler = new Euler(0, 0, 0, 'YXZ');
 
   #yawAxis = new Vector3(0, 1, 0);
@@ -73,7 +77,7 @@ class CharacterManager {
 
   add(character) {
     if (!this.list.has(character.name)) {
-      if (!character instanceof Player) {
+      if ((!character) instanceof Player) {
         this.scene.add(character.object);
       }
 
@@ -116,13 +120,13 @@ class CharacterManager {
           const v2 = this.#vecC
             .copy(normal)
             .multiplyScalar(normal.dot(object.velocity));
-          const vec1 = this.#vecB.subVectors(v2, v1);
-          const vec2 = this.#vecC.subVectors(v1, v2);
+          const vec1 = this.#vecD.subVectors(v2, v1);
+          const vec2 = this.#vecE.subVectors(v1, v2);
 
           character.velocity.addScaledVector(vec1, object.weight);
           object.velocity.addScaledVector(vec2, character.data.weight);
-          //character.velocity.add(v2).sub(v1);
-          //object.velocity.add(v1).sub(v2);
+          // character.velocity.add(v2).sub(v1);
+          // object.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
           objectCenter.addScaledVector(normal, -d);

@@ -39,6 +39,10 @@ class CollidableManager extends Publisher {
 
   #vecC = new Vector3();
 
+  #vecD = new Vector3();
+
+  #vecE = new Vector3();
+
   constructor(scene, worldOctree) {
     super();
 
@@ -104,13 +108,13 @@ class CollidableManager extends Publisher {
             .copy(normal)
             .multiplyScalar(normal.dot(a2.velocity));
 
-          const vec1 = this.#vecB.subVectors(v2, v1);
-          const vec2 = this.#vecC.subVectors(v1, v2);
+          const vec1 = this.#vecD.subVectors(v2, v1);
+          const vec2 = this.#vecE.subVectors(v1, v2);
 
           a1.velocity.addScaledVector(vec1, a2.weight);
           a2.velocity.addScaledVector(vec2, a1.weight);
-          //a1.velocity.add(v2).sub(v1);
-          //a2.velocity.add(v1).sub(v2);
+          // a1.velocity.add(v2).sub(v1);
+          // a2.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
 
@@ -161,7 +165,7 @@ class CollidableManager extends Publisher {
       const collidable = list[i];
       collidable.collider.center.addScaledVector(
         collidable.velocity,
-        deltaTime
+        deltaTime,
       );
       const result = this.worldOctree.sphereIntersect(collidable.collider);
 
@@ -174,12 +178,15 @@ class CollidableManager extends Publisher {
           result.normal.multiplyScalar(result.depth),
         );
       } else {
-        collidable.velocity.y -= World.gravity * deltaTime/* * 100*/;
+        collidable.velocity.y -= World.gravity * deltaTime /* * 100 */;
       }
 
       collidable.object.position.copy(collidable.collider.center);
 
-      collidable.velocity.addScaledVector(collidable.velocity, damping[collidable.type]);
+      collidable.velocity.addScaledVector(
+        collidable.velocity,
+        damping[collidable.type],
+      );
 
       this.publish('collideWith', collidable);
     }

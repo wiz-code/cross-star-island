@@ -48,6 +48,12 @@ textures.sight(context.sight);
 texture.sight = new Texture(canvas.sight);
 texture.sight.needsUpdate = true;
 
+canvas.sightLines = document.createElement('canvas');
+context.sightLines = canvas.sightLines.getContext('2d');
+textures.sightLines(context.sightLines);
+texture.sightLines = new Texture(canvas.sightLines);
+texture.sightLines.needsUpdate = true;
+
 export const createSight = () => {
   const material = new SpriteMaterial({
     color: 0xffffff,
@@ -56,6 +62,19 @@ export const createSight = () => {
 
   const sprite = new Sprite(material);
   sprite.scale.set(Screen.sightSize, Screen.sightSize, 0);
+  sprite.position.set(0, 0, -10);
+
+  return sprite;
+};
+
+export const sightLines = () => {
+  const material = new SpriteMaterial({
+    color: Screen.sightLinesColor,
+    map: texture.sightLines,
+  });
+
+  const sprite = new Sprite(material);
+  sprite.scale.set(Screen.sightLinesSize, Screen.sightLinesSize, 0);
   sprite.position.set(0, 0, -10);
 
   return sprite;

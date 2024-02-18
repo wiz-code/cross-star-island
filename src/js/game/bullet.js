@@ -1,13 +1,12 @@
-import {
-  Sphere,
-  Vector3,
-} from 'three';
+import { Sphere, Vector3 } from 'three';
 
 import { Ammo as AmmoData } from './data';
 
 class Bullet {
   #active = false;
+
   #startTime = 0;
+
   #elapsedTime = 0;
 
   constructor(index, object, data) {
@@ -15,11 +14,11 @@ class Bullet {
     this.name = data.name;
     this.type = 'ammo';
     this.object = object;
-    this.collider = new Sphere(
+    (this.collider = new Sphere(
       new Vector3(0, this.index * data.radius * 2 - 1000, 0),
       data.radius,
-    ),
-    this.velocity = new Vector3();
+    )),
+      (this.velocity = new Vector3());
     this.radius = data.radius;
     this.weight = data.weight;
     this.speed = data.speed;

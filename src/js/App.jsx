@@ -14,7 +14,6 @@ import {
 
 import * as THREE from 'three'; /// //////////////
 import Game from './game/game';
-import init from './game/init';
 import Loop from './game/loop';
 import { StepsPerFrame } from './game/settings';
 

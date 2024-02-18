@@ -88,7 +88,7 @@ class Player extends Character {
   update(deltaTime, damping) {
     super.update(deltaTime, damping);
 
-    this.camera.rotation.x = this.povRotation.theta;
+    this.camera.rotation.x = this.povRotation.theta + this.deltaY;
     this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
     this.camera.position.copy(this.collider.end);
   }

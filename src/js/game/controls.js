@@ -2,11 +2,12 @@ import { Spherical, Vector3, Color } from 'three';
 
 import { Camera, Controls, Screen } from './settings';
 import { Keys, Pointers } from './data';
-import { createSight, createPovIndicator, createCenterMark } from './screen';
+import { createSight, sightLines, createPovIndicator, createCenterMark } from './screen';
 
 const { abs, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
+const Rad_1 = 1 / 360 * PI * 2;
 
 const lerp = (x, y, p) => x + (y - x) * p;
 
@@ -61,6 +62,8 @@ class FirstPersonControls {
 
   #rotation = new Spherical();
 
+  #wheel = 0;
+
   #dx = 0;
 
   #dy = 0;
@@ -94,6 +97,9 @@ class FirstPersonControls {
     this.povSight = createSight();
     this.screen.add(this.povSight);
 
+    this.povSightLines = sightLines();
+    this.screen.add(this.povSightLines);
+
     this.povIndicator = createPovIndicator();
     this.screen.add(this.povIndicator.horizontal);
     this.screen.add(this.povIndicator.virtical);
@@ -119,13 +125,18 @@ class FirstPersonControls {
     this.viewHalfX = 0;
     this.viewHalfY = 0;
 
+    this.gaugeHalfX = 0;
+    this.gaugeHalfY = 0;
+
+    this.onWheel = this.onWheel.bind(this);
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerDown = this.onPointerDown.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
 
-    this.domElement.addEventListener('contextmenu', onContextmenu);
+    document.addEventListener('contextmenu', onContextmenu);
+    this.domElement.addEventListener('wheel', this.onWheel, { passive: false });
     this.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.domElement.addEventListener('pointermove', this.onPointerMove);
     this.domElement.addEventListener('pointerup', this.onPointerUp);
@@ -159,6 +170,9 @@ class FirstPersonControls {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
 
+    this.gaugeHalfX = this.viewHalfX - 32;
+    this.gaugeHalfY = this.viewHalfY - 32;
+
     this.povIndicator.horizontal.position.setY(
       this.viewHalfY - Screen.sightPovSize / 2,
     );
@@ -171,6 +185,8 @@ class FirstPersonControls {
     this.centerMark.virtical.position.setX(
       this.viewHalfX - Screen.sightPovSize / 2 + 7,
     );
+    this.povSightLines.position.setX(0);
+    this.povSightLines.position.setY(0);
   }
 
   lookAt(x, y, z) {
@@ -206,6 +222,20 @@ class FirstPersonControls {
     }
   }
 
+  onWheel(event) {
+    event.preventDefault();
+
+    const delta = sign(event.deltaY) * Rad_1;
+    const rot = this.#rotation.theta + this.#wheel + delta;
+
+    if (
+      halfPI - this.minPolarAngle.virtical >= rot &&
+      halfPI - this.maxPolarAngle.virtical <= rot
+    ) {
+      this.#wheel += delta;
+    }
+  }
+
   onPointerMove(event) {
     this.#moved = true;
 
@@ -231,7 +261,7 @@ class FirstPersonControls {
 
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -244,6 +274,10 @@ class FirstPersonControls {
     if (this.activeLook) {
       if (event.button === 0) {
         //
+      }
+
+      if (event.button === 1) {
+        this.#wheel = 0;
       }
 
       if (event.button === 2) {
@@ -407,7 +441,7 @@ class FirstPersonControls {
   }
 
   dispose() {
-    this.domElement.removeEventListener('contextmenu', onContextmenu);
+    document.removeEventListener('contextmenu', onContextmenu);
     this.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
@@ -466,11 +500,11 @@ class FirstPersonControls {
           this.povIndicator.virtical.visible = true;
         }
 
-        const degX = (90 * this.#dy) / this.viewHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const degX = (90 * this.#dy) / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
         const radX = degX * degToRadCoef;
         this.#rotation.theta -= radX * actualLookSpeed;
 
-        const degY = (135 * this.#dx) / this.viewHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const degY = (135 * this.#dx) / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
         const radY = degY * degToRadCoef;
         this.#rotation.phi -= radY * actualLookSpeed;
 
@@ -484,14 +518,14 @@ class FirstPersonControls {
         );
       }
 
-      let posX = (this.viewHalfX * -this.#rotation.phi) / PI;
-      let posY = (this.viewHalfY * this.#rotation.theta) / halfPI;
+      let posX = (this.gaugeHalfX * -this.#rotation.phi) / PI;
+      let posY = (this.gaugeHalfY * this.#rotation.theta) / halfPI;
 
-      if (posX <= -this.viewHalfX) {
-        posX = -this.viewHalfX;
+      if (posX <= -this.gaugeHalfX) {
+        posX = -this.gaugeHalfX;
         this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
-      } else if (posX >= this.viewHalfX) {
-        posX = this.viewHalfX;
+      } else if (posX >= this.gaugeHalfX) {
+        posX = this.gaugeHalfX;
         this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
       } else if (
         this.povIndicator.horizontal.material.color !== indicatorColor.normal
@@ -499,11 +533,11 @@ class FirstPersonControls {
         this.povIndicator.horizontal.material.color = indicatorColor.normal;
       }
 
-      if (posY <= -this.viewHalfY) {
-        posY = -this.viewHalfY;
+      if (posY <= -this.gaugeHalfY) {
+        posY = -this.gaugeHalfY;
         this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
-      } else if (posY >= this.viewHalfY) {
-        posY = this.viewHalfY;
+      } else if (posY >= this.gaugeHalfY) {
+        posY = this.gaugeHalfY;
         this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
       } else if (
         this.povIndicator.virtical.material.color !== indicatorColor.normal
@@ -561,15 +595,17 @@ class FirstPersonControls {
           this.povIndicator.virtical.material.color = indicatorColor.normal;
         }
 
-        const posX = (this.viewHalfX * -this.#rotation.phi) / PI;
+        const posX = (this.gaugeHalfX * -this.#rotation.phi) / PI;
         this.povIndicator.horizontal.position.x = posX;
 
-        const posY = (this.viewHalfY * this.#rotation.theta) / halfPI;
+        const posY = (this.gaugeHalfY * this.#rotation.theta) / halfPI;
         this.povIndicator.virtical.position.y = posY;
       }
     }
 
-    this.player.setPovRotation(this.#rotation);
+    const posY = -this.#wheel / halfPI * this.viewHalfY * 2.3;
+    this.povSightLines.position.setY(posY);
+    this.player.setPovRotation(this.#rotation, this.#wheel);
 
     this.#dx = 0;
     this.#dy = 0;

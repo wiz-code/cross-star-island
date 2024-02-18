@@ -141,8 +141,8 @@ export const Controls = {
 };
 
 export const World = {
-  gravity: 800,//6,
-  resistance: 4,//10,
+  gravity: 800, // 6,
+  resistance: 4, // 10,
   airResistance: 1,
   Resistance: {
     ground: 4,
@@ -156,9 +156,11 @@ export const World = {
 export const Screen = {
   normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
+  sightLinesColor: 0x9e9e9e,
   warnColor: 0xffc107,
   sightSize: 48,
   sightPovSize: 48,
+  sightLinesSize: 128,
 };
 
 export const AmmoSettings = {

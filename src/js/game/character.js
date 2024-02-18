@@ -65,7 +65,7 @@ class Character extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  #test = 0;//////////
+  #test = 0; /// ///////
 
   constructor(name, ammos) {
     super();
@@ -85,10 +85,11 @@ class Character extends Publisher {
 
     this.ammoType = this.data.ammoTypes[0];
     this.position = new Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
-    //this.forwardComponent = 0;
-    //this.sideComponent = 0;
+    // this.forwardComponent = 0;
+    // this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new Spherical();
+    this.deltaY = 0;
     this.rotation = new Spherical(); // phi and theta
     this.velocity = new Vector3();
     this.direction = new Vector3(0, 0, -1);
@@ -127,9 +128,11 @@ class Character extends Publisher {
       multiplier *= this.data.airSpeed;
     }
 
-    const direction = this.#forward.copy(this.direction).multiplyScalar(multiplier);
+    const direction = this.#forward
+      .copy(this.direction)
+      .multiplyScalar(multiplier);
     this.velocity.add(direction);
-    /*this.forwardComponent = deltaTime;
+    /* this.forwardComponent = deltaTime;
 
     if (this.#onGround) {
       this.forwardComponent *= this.data.speed;
@@ -141,7 +144,7 @@ class Character extends Publisher {
       }
     } else {
       this.forwardComponent *= this.data.airSpeed;
-    }*/
+    } */
   }
 
   rotate(deltaTime, state = States.idle) {
@@ -170,7 +173,7 @@ class Character extends Publisher {
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
-    /*this.sideComponent = deltaTime * 0.7;
+    /* this.sideComponent = deltaTime * 0.7;
 
     if (this.#onGround) {
       this.sideComponent *= this.data.speed;
@@ -180,11 +183,7 @@ class Character extends Publisher {
       }
     } else {
       this.sideComponent *= this.data.airSpeed;
-    }*/
-  }
-
-  setPovRotation(povRotation) {
-    this.povRotation.copy(povRotation);
+    } */
   }
 
   fire() {
@@ -193,7 +192,7 @@ class Character extends Publisher {
 
     bullet.setActive(true);
 
-    this.#euler.x = this.povRotation.theta + this.rotation.theta;
+    this.#euler.x = this.povRotation.theta + this.rotation.theta + this.deltaY;
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
     bullet.object.rotation.copy(this.#euler);
@@ -206,6 +205,11 @@ class Character extends Publisher {
     bullet.velocity.addScaledVector(this.velocity, 2);
 
     ammo.index = (ammo.index + 1) % ammo.list.length;
+  }
+
+  setPovRotation(povRotation, deltaY) {
+    this.deltaY = deltaY;
+    this.povRotation.copy(povRotation);
   }
 
   input(keys, lastKey, mashed) {
@@ -390,7 +394,7 @@ class Character extends Publisher {
 
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      //this.direction.normalize();
+      // this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
 
@@ -405,7 +409,7 @@ class Character extends Publisher {
       );
     }
 
-    /*if (this.forwardComponent !== 0) {
+    /* if (this.forwardComponent !== 0) {
       const direction = this.direction
         .clone()
         .multiplyScalar(this.forwardComponent);
@@ -416,18 +420,20 @@ class Character extends Publisher {
         damping,
         minMovement,
       );
-    }*/
+    } */
 
-    /*if (this.sideComponent !== 0) {
+    /* if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
 
       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    }*/
+    } */
 
     this.velocity.addScaledVector(this.velocity, deltaDamping);
-    const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
+    const deltaPosition = this.#vel
+      .copy(this.velocity)
+      .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
     this.position.copy(this.collider.start);
   }
