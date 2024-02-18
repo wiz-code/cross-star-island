@@ -9111,15 +9111,14 @@ function useIsFocusVisible() {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/createTheme.js");
-/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
-/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
+/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/createTheme.js");
+/* harmony import */ var _mui_material_styles__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @mui/material/styles */ "./node_modules/@mui/material/styles/ThemeProvider.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/CssBaseline/CssBaseline.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Box/Box.js");
+/* harmony import */ var _mui_material__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @mui/material */ "./node_modules/@mui/material/Button/Button.js");
 /* harmony import */ var _game_game__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./game/game */ "./src/js/game/game.js");
-/* harmony import */ var _game_init__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./game/init */ "./src/js/game/init.js");
-/* harmony import */ var _game_loop__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./game/loop */ "./src/js/game/loop.js");
-/* harmony import */ var _game_settings__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./game/settings */ "./src/js/game/settings.js");
+/* harmony import */ var _game_loop__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./game/loop */ "./src/js/game/loop.js");
+/* harmony import */ var _game_settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./game/settings */ "./src/js/game/settings.js");
 
 // import propTypes from 'prop-types';
 
@@ -9129,8 +9128,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_5__["default"])({
+const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"])({
   typography: {
     fontFamily: ['"Helvetica Neue"', 'Arial', '"メイリオ"', 'Meiryo', '"ヒラギノ角ゴ ProN W3"', '"Hiragino Kaku Gothic ProN"', '"ヒラギノ角ゴシック"', '"Hiragino Sans"', '"Roboto"', 'sans-serif'].join(','),
     h1: {
@@ -9227,7 +9225,7 @@ function App() {
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     if (game != null) {
       // const loop = new Loop(update, objects);
-      const loop = new _game_loop__WEBPACK_IMPORTED_MODULE_3__["default"](game.update, game);
+      const loop = new _game_loop__WEBPACK_IMPORTED_MODULE_2__["default"](game.update, game);
       setRendering(loop);
     }
   }, [game]);
@@ -9255,14 +9253,14 @@ function App() {
       document.exitFullscreen();
     }
   }, [document.fullscreenElement]);
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_6__["default"], {
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material_styles__WEBPACK_IMPORTED_MODULE_5__["default"], {
     theme: theme
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_6__["default"], null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     id: "container",
     sx: {
       position: 'relative'
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_7__["default"], {
     sx: {
       display: 'flex',
       gap: theme.spacing(1),
@@ -9270,10 +9268,10 @@ function App() {
       bottom: theme.spacing(2),
       right: theme.spacing(2)
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_9__["default"], {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
     variant: "contained",
     onClick: togglePlay
-  }, started ? '停止する' : '開始する'), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_9__["default"], {
+  }, started ? '停止する' : '開始する'), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_mui_material__WEBPACK_IMPORTED_MODULE_8__["default"], {
     variant: "contained",
     onClick: toggleFullScreen
   }, !isFullscreen ? '全画面にする' : '全画面を解除'))));
@@ -9380,11 +9378,11 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default"] {
       group.add(mesh);
       group.add(wireMesh);
       group.add(pointsMesh);
-      //this.scene.add(group);
+      // this.scene.add(group);
 
       const bullet = new _bullet__WEBPACK_IMPORTED_MODULE_1__["default"](i, group, ammo);
 
-      /*const bullet = {
+      /* const bullet = {
         name,
         type: 'ammo',
         object: group,
@@ -9398,7 +9396,7 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default"] {
         speed,
         rotateSpeed,
       };
-      bullet.update = update.bind(bullet);*/
+      bullet.update = update.bind(bullet); */
 
       this.list.push(bullet);
     }
@@ -9407,135 +9405,6 @@ class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default"] {
     this.list.forEach(bullet => {
       bullet.setActive(bool);
     });
-  }
-}
-/* harmony default export */ __webpack_exports__["default"] = (Ammo);
-
-/***/ }),
-
-/***/ "./src/js/game/ammo.old.js":
-/*!*********************************!*\
-  !*** ./src/js/game/ammo.old.js ***!
-  \*********************************/
-/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
-
-
-
-
-
-const {
-  exp,
-  sqrt
-} = Math;
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
-const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
-texture.needsUpdate = true;
-class Ammo extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  constructor(scene, worldOctree) {
-    super();
-    this.scene = scene;
-    this.worldOctree = worldOctree;
-    const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius, 0);
-    const geomWire = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
-    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.OctahedronGeometry(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius + 4, 0);
-    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
-    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
-    bufferGeom.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.color
-    });
-    /* const wireMat = new MeshBasicMaterial({
-      color: AmmoSettings.wireColor,
-      wireframe: true,
-    }); */
-    const wireMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.wireColor
-    });
-    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.pointColor,
-      size: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.pointSize,
-      map: texture,
-      blending: three__WEBPACK_IMPORTED_MODULE_4__.NormalBlending,
-      alphaTest: 0.5
-    });
-    this.list = [];
-    this.index = 0;
-    for (let i = 0; i < _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.numAmmo; i += 1) {
-      const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
-      const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geomWire, wireMat);
-      const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
-      const group = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
-      group.add(mesh);
-      group.add(wireMesh);
-      group.add(pointsMesh);
-      this.scene.add(group);
-      const object = {
-        mesh: group,
-        collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, i * _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius * 2 - 1000, 0), _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.radius),
-        velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
-        weight: _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.weight
-      };
-      this.list.push(object);
-    }
-  }
-  collisions() {
-    for (let i = 0, l = this.list.length; i < l; i += 1) {
-      const a1 = this.list[i];
-      for (let j = i + 1; j < l; j += 1) {
-        const a2 = this.list[j];
-        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-        const r = a1.collider.radius + a2.collider.radius;
-        const r2 = r * r;
-        if (d2 < r2) {
-          const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
-          const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
-          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
-          a1.velocity.add(v2).sub(v1);
-          a2.velocity.add(v1).sub(v2);
-          const d = (r - sqrt(d2)) / 2;
-          a1.collider.center.addScaledVector(normal, d);
-          a2.collider.center.addScaledVector(normal, -d);
-        }
-      }
-    }
-  }
-  update(deltaTime) {
-    const len = this.list.length;
-    for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i]; // console.log(i, ammo.collider.center)
-      ammo.collider.center.addScaledVector(ammo.velocity, deltaTime);
-      const result = this.worldOctree.sphereIntersect(ammo.collider);
-      if (result) {
-        ammo.velocity.addScaledVector(result.normal, -result.normal.dot(ammo.velocity) * 1.5);
-        ammo.collider.center.add(result.normal.multiplyScalar(result.depth));
-      } else {
-        ammo.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime * 100;
-      }
-      const damping = exp(-0.2 * deltaTime) - 1;
-      ammo.velocity.addScaledVector(ammo.velocity, damping);
-      this.publish('collideWith', ammo);
-    }
-    this.collisions();
-    for (let i = 0; i < len; i += 1) {
-      const ammo = this.list[i];
-      ammo.mesh.rotation.z -= deltaTime * _settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.rotateSpeed;
-      ammo.mesh.position.copy(ammo.collider.center);
-    }
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Ammo);
@@ -9656,6 +9525,8 @@ class CharacterManager {
   #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecD = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+  #vecE = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
   #euler = new three__WEBPACK_IMPORTED_MODULE_4__.Euler(0, 0, 0, 'YXZ');
   #yawAxis = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0);
   #pitchAxis = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 0, 0);
@@ -9701,12 +9572,12 @@ class CharacterManager {
           const normal = this.#vecA.subVectors(point, objectCenter).normalize();
           const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(character.velocity));
           const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(object.velocity));
-          const vec1 = this.#vecB.subVectors(v2, v1);
-          const vec2 = this.#vecC.subVectors(v1, v2);
+          const vec1 = this.#vecD.subVectors(v2, v1);
+          const vec2 = this.#vecE.subVectors(v1, v2);
           character.velocity.addScaledVector(vec1, object.weight);
           object.velocity.addScaledVector(vec2, character.data.weight);
-          //character.velocity.add(v2).sub(v1);
-          //object.velocity.add(v1).sub(v2);
+          // character.velocity.add(v2).sub(v1);
+          // object.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
           objectCenter.addScaledVector(normal, -d);
@@ -9805,7 +9676,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #states = new Set();
   #urgencyRemainingTime = 0;
   #stunningRemainingTime = 0;
-  #test = 0; //////////
+  #test = 0; /// ///////
 
   constructor(name, ammos) {
     super();
@@ -9821,10 +9692,11 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     };
     this.ammoType = this.data.ammoTypes[0];
     this.position = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
-    //this.forwardComponent = 0;
-    //this.sideComponent = 0;
+    // this.forwardComponent = 0;
+    // this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
+    this.deltaY = 0;
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical(); // phi and theta
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
     this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1);
@@ -9858,7 +9730,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     const direction = this.#forward.copy(this.direction).multiplyScalar(multiplier);
     this.velocity.add(direction);
-    /*this.forwardComponent = deltaTime;
+    /* this.forwardComponent = deltaTime;
      if (this.#onGround) {
       this.forwardComponent *= this.data.speed;
        if (state === States.sprint && deltaTime >= 0) {
@@ -9868,7 +9740,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       }
     } else {
       this.forwardComponent *= this.data.airSpeed;
-    }*/
+    } */
   }
   rotate(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -9893,7 +9765,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
-    /*this.sideComponent = deltaTime * 0.7;
+    /* this.sideComponent = deltaTime * 0.7;
      if (this.#onGround) {
       this.sideComponent *= this.data.speed;
        if (state === States.urgency) {
@@ -9901,16 +9773,13 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       }
     } else {
       this.sideComponent *= this.data.airSpeed;
-    }*/
-  }
-  setPovRotation(povRotation) {
-    this.povRotation.copy(povRotation);
+    } */
   }
   fire() {
     const ammo = this.ammos.get(this.ammoType);
     const bullet = ammo.list[ammo.index];
     bullet.setActive(true);
-    this.#euler.x = this.povRotation.theta + this.rotation.theta;
+    this.#euler.x = this.povRotation.theta + this.rotation.theta + this.deltaY;
     this.#euler.y = this.povRotation.phi + this.rotation.phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
     bullet.object.rotation.copy(this.#euler);
@@ -9918,6 +9787,10 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     bullet.velocity.copy(dir).multiplyScalar(bullet.speed);
     bullet.velocity.addScaledVector(this.velocity, 2);
     ammo.index = (ammo.index + 1) % ammo.list.length;
+  }
+  setPovRotation(povRotation, deltaY) {
+    this.deltaY = deltaY;
+    this.povRotation.copy(povRotation);
   }
   input(keys, lastKey, mashed) {
     // 入力操作の処理
@@ -10072,7 +9945,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      //this.direction.normalize();
+      // this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
       if (this instanceof _player__WEBPACK_IMPORTED_MODULE_2__["default"]) {
@@ -10081,7 +9954,7 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping.spin, minRotateAngle);
     }
 
-    /*if (this.forwardComponent !== 0) {
+    /* if (this.forwardComponent !== 0) {
       const direction = this.direction
         .clone()
         .multiplyScalar(this.forwardComponent);
@@ -10091,14 +9964,14 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
         damping,
         minMovement,
       );
-    }*/
+    } */
 
-    /*if (this.sideComponent !== 0) {
+    /* if (this.sideComponent !== 0) {
       const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
       direction.normalize();
       this.velocity.add(direction.multiplyScalar(this.sideComponent));
        this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    }*/
+    } */
 
     this.velocity.addScaledVector(this.velocity, deltaDamping);
     const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
@@ -10145,6 +10018,8 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
   #vecA = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
   #vecB = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
   #vecC = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
+  #vecD = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
+  #vecE = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
   constructor(scene, worldOctree) {
     super();
     this.scene = scene;
@@ -10192,12 +10067,12 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
           const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
           const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
           const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
-          const vec1 = this.#vecB.subVectors(v2, v1);
-          const vec2 = this.#vecC.subVectors(v1, v2);
+          const vec1 = this.#vecD.subVectors(v2, v1);
+          const vec2 = this.#vecE.subVectors(v1, v2);
           a1.velocity.addScaledVector(vec1, a2.weight);
           a2.velocity.addScaledVector(vec2, a1.weight);
-          //a1.velocity.add(v2).sub(v1);
-          //a2.velocity.add(v1).sub(v2);
+          // a1.velocity.add(v2).sub(v1);
+          // a2.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
           a1.collider.center.addScaledVector(normal, d);
@@ -10243,7 +10118,7 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
         collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
         collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
       } else {
-        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime /* * 100*/;
+        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime /* * 100 */;
       }
       collidable.object.position.copy(collidable.collider.center);
       collidable.velocity.addScaledVector(collidable.velocity, damping[collidable.type]);
@@ -10286,6 +10161,7 @@ const {
 } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
+const Rad_1 = 1 / 360 * PI * 2;
 const lerp = (x, y, p) => x + (y - x) * p;
 const sightColor = {
   front: new three__WEBPACK_IMPORTED_MODULE_3__.Color(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.normalColor),
@@ -10307,6 +10183,7 @@ class FirstPersonControls {
   #actions = new Set();
   #states = new Set();
   #rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
+  #wheel = 0;
   #dx = 0;
   #dy = 0;
   #count = 0;
@@ -10328,6 +10205,8 @@ class FirstPersonControls {
     this.domElement = domElement;
     this.povSight = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createSight)();
     this.screen.add(this.povSight);
+    this.povSightLines = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.sightLines)();
+    this.screen.add(this.povSightLines);
     this.povIndicator = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createPovIndicator)();
     this.screen.add(this.povIndicator.horizontal);
     this.screen.add(this.povIndicator.virtical);
@@ -10347,12 +10226,18 @@ class FirstPersonControls {
     };
     this.viewHalfX = 0;
     this.viewHalfY = 0;
+    this.gaugeHalfX = 0;
+    this.gaugeHalfY = 0;
+    this.onWheel = this.onWheel.bind(this);
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerDown = this.onPointerDown.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
-    this.domElement.addEventListener('contextmenu', onContextmenu);
+    document.addEventListener('contextmenu', onContextmenu);
+    this.domElement.addEventListener('wheel', this.onWheel, {
+      passive: false
+    });
     this.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.domElement.addEventListener('pointermove', this.onPointerMove);
     this.domElement.addEventListener('pointerup', this.onPointerUp);
@@ -10378,10 +10263,14 @@ class FirstPersonControls {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
+    this.gaugeHalfX = this.viewHalfX - 32;
+    this.gaugeHalfY = this.viewHalfY - 32;
     this.povIndicator.horizontal.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
     this.povIndicator.virtical.position.setX(this.viewHalfX - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2);
     this.centerMark.horizontal.position.setY(this.viewHalfY - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2 + 7);
     this.centerMark.virtical.position.setX(this.viewHalfX - _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightPovSize / 2 + 7);
+    this.povSightLines.position.setX(0);
+    this.povSightLines.position.setY(0);
   }
   lookAt(x, y, z) {
     if (x.isVector3) {
@@ -10409,6 +10298,14 @@ class FirstPersonControls {
       this.povLock = true;
     }
   }
+  onWheel(event) {
+    event.preventDefault();
+    const delta = sign(event.deltaY) * Rad_1;
+    const rot = this.#rotation.theta + this.#wheel + delta;
+    if (halfPI - this.minPolarAngle.virtical >= rot && halfPI - this.maxPolarAngle.virtical <= rot) {
+      this.#wheel += delta;
+    }
+  }
   onPointerMove(event) {
     this.#moved = true;
     if (this.#pointers.has(_data__WEBPACK_IMPORTED_MODULE_1__.Pointers.right)) {
@@ -10424,7 +10321,7 @@ class FirstPersonControls {
   }
   onPointerDown(event) {
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     if (this.activeLook) {
       this.dispatchAction(event.button);
@@ -10435,6 +10332,9 @@ class FirstPersonControls {
     if (this.activeLook) {
       if (event.button === 0) {
         //
+      }
+      if (event.button === 1) {
+        this.#wheel = 0;
       }
       if (event.button === 2) {
         this.povLock = false;
@@ -10574,7 +10474,7 @@ class FirstPersonControls {
     }
   }
   dispose() {
-    this.domElement.removeEventListener('contextmenu', onContextmenu);
+    document.removeEventListener('contextmenu', onContextmenu);
     this.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
     this.domElement.removeEventListener('pointerup', this.onPointerUp);
@@ -10618,31 +10518,31 @@ class FirstPersonControls {
         if (!this.povIndicator.virtical.visible) {
           this.povIndicator.virtical.visible = true;
         }
-        const degX = 90 * this.#dy / this.viewHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+        const degX = 90 * this.#dy / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
         const radX = degX * degToRadCoef;
         this.#rotation.theta -= radX * actualLookSpeed;
-        const degY = 135 * this.#dx / this.viewHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+        const degY = 135 * this.#dx / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
         const radY = degY * degToRadCoef;
         this.#rotation.phi -= radY * actualLookSpeed;
         this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
         this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       }
-      let posX = this.viewHalfX * -this.#rotation.phi / PI;
-      let posY = this.viewHalfY * this.#rotation.theta / halfPI;
-      if (posX <= -this.viewHalfX) {
-        posX = -this.viewHalfX;
+      let posX = this.gaugeHalfX * -this.#rotation.phi / PI;
+      let posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
+      if (posX <= -this.gaugeHalfX) {
+        posX = -this.gaugeHalfX;
         this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
-      } else if (posX >= this.viewHalfX) {
-        posX = this.viewHalfX;
+      } else if (posX >= this.gaugeHalfX) {
+        posX = this.gaugeHalfX;
         this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
       } else if (this.povIndicator.horizontal.material.color !== indicatorColor.normal) {
         this.povIndicator.horizontal.material.color = indicatorColor.normal;
       }
-      if (posY <= -this.viewHalfY) {
-        posY = -this.viewHalfY;
+      if (posY <= -this.gaugeHalfY) {
+        posY = -this.gaugeHalfY;
         this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
-      } else if (posY >= this.viewHalfY) {
-        posY = this.viewHalfY;
+      } else if (posY >= this.gaugeHalfY) {
+        posY = this.gaugeHalfY;
         this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
       } else if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
         this.povIndicator.virtical.material.color = indicatorColor.normal;
@@ -10682,13 +10582,15 @@ class FirstPersonControls {
         if (this.povIndicator.virtical.material.color !== indicatorColor.normal) {
           this.povIndicator.virtical.material.color = indicatorColor.normal;
         }
-        const posX = this.viewHalfX * -this.#rotation.phi / PI;
+        const posX = this.gaugeHalfX * -this.#rotation.phi / PI;
         this.povIndicator.horizontal.position.x = posX;
-        const posY = this.viewHalfY * this.#rotation.theta / halfPI;
+        const posY = this.gaugeHalfY * this.#rotation.theta / halfPI;
         this.povIndicator.virtical.position.y = posY;
       }
     }
-    this.player.setPovRotation(this.#rotation);
+    const posY = -this.#wheel / halfPI * this.viewHalfY * 2.3;
+    this.povSightLines.position.setY(posY);
+    this.player.setPovRotation(this.#rotation, this.#wheel);
     this.#dx = 0;
     this.#dy = 0;
   }
@@ -10782,7 +10684,7 @@ const Obstacles = [['round-stone', {
   rotateSpeed: 2,
   update(deltaTime) {
     this.object.rotation.z -= deltaTime * this.rotateSpeed;
-    //this.tween();
+    // this.tween();
   }
 }]];
 const Compositions = [['stage', ['firstStage']]];
@@ -10797,11 +10699,11 @@ const Ammo = [['small-bullet', {
   // dev 5, prod 50
   speed: 2000,
   rotateSpeed: 8,
-  weight: 0.1,
+  weight: 0.03,
   fireInterval: 500,
-  /////////////
+  /// //////////
   accuracy: 1,
-  //////////////////
+  /// ///////////////
   duration: 3,
   update(deltaTime) {
     this.object.rotation.z -= deltaTime * this.rotateSpeed;
@@ -10812,7 +10714,7 @@ const Characters = [['hero1', {
   radius: 5,
   weight: 1,
   speed: 300,
-  //3,
+  // 3,
   turnSpeed: PI * 2 * (1 / 6),
   // 1秒間に1/6周する
   sprint: 2.5,
@@ -11091,7 +10993,7 @@ class Game {
     this.stageIndex = 0;
     this.checkPointIndex = 0;
 
-    //////////////////
+    /// ///////////////
     const stageNameList = this.data.compositions.get('stage');
     const stageName = stageNameList[this.stageIndex];
     const stageData = this.data.stages.get(stageName);
@@ -11099,19 +11001,19 @@ class Game {
     const player = new _player__WEBPACK_IMPORTED_MODULE_9__["default"](this.camera.field, 'hero1', this.ammos);
     player.setPosition(checkPoint);
     const [stone] = this.createObstacle(stageData);
-    /*const stone = new Obstacle('round-stone');
+    /* const stone = new Obstacle('round-stone');
     const { obstacles } = data;
-    const obstacle = obstacles.find((object) => object.name === 'round-stone')*/
-    /////////////////
+    const obstacle = obstacles.find((object) => object.name === 'round-stone') */
+    /// //////////////
 
     this.objects.add('ammo', this.ammos.get('small-bullet'));
     this.objects.add('obstacle', stone);
-    //stone.collider.center = new Vector3(-2200, 300, 0);
+    // stone.collider.center = new Vector3(-2200, 300, 0);
 
     this.setPlayer(player);
     this.setMode('play');
     this.ready = true;
-    //////////////
+    /// ///////////
 
     const onResize = function onResize() {
       const iw = window.innerWidth;
@@ -11221,9 +11123,9 @@ class Game {
       return;
     }
     const deltaTime = this.clock.getDelta() / _settings__WEBPACK_IMPORTED_MODULE_2__.Game.stepsPerFrame;
-    /*this.#damping.ground = exp(-World.Resistance.ground * deltaTime) - 1;
+    /* this.#damping.ground = exp(-World.Resistance.ground * deltaTime) - 1;
     this.#damping.air = exp(-World.Resistance.air * deltaTime) - 1;
-    this.#damping.obstacle = exp(-World.Resistance.object * deltaTime) - 1;*/
+    this.#damping.obstacle = exp(-World.Resistance.object * deltaTime) - 1; */
     const damping = getDamping(deltaTime);
     for (let i = 0; i < _settings__WEBPACK_IMPORTED_MODULE_2__.Game.stepsPerFrame; i += 1) {
       this.controls.update(deltaTime);
@@ -11692,172 +11594,6 @@ const createGround = function () {
 
 /***/ }),
 
-/***/ "./src/js/game/init.js":
-/*!*****************************!*\
-  !*** ./src/js/game/init.js ***!
-  \*****************************/
-/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
-/* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
-/* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _grid__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./grid */ "./src/js/game/grid.js");
-/* harmony import */ var _ground__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ground */ "./src/js/game/ground.js");
-/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
-/* harmony import */ var _object__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./object */ "./src/js/game/object.js");
-/* harmony import */ var _ammo_old__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./ammo.old */ "./src/js/game/ammo.old.js");
-/* harmony import */ var _player_old__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./player.old */ "./src/js/game/player.old.js");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const {
-  floor
-} = Math;
-const init = () => {
-  const clock = new three__WEBPACK_IMPORTED_MODULE_9__.Clock();
-  let windowHalfX = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width / 2);
-  let windowHalfY = floor(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height / 2);
-  const scene = {};
-  scene.field = new three__WEBPACK_IMPORTED_MODULE_9__.Scene();
-  scene.field.background = new three__WEBPACK_IMPORTED_MODULE_9__.Color(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.background);
-  scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_9__.Fog(_settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Scene.Fog.far);
-  scene.screen = new three__WEBPACK_IMPORTED_MODULE_9__.Scene();
-  const camera = {};
-  camera.field = new three__WEBPACK_IMPORTED_MODULE_9__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_2__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.far);
-  camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_2__.Camera.order;
-  camera.field.position.set(0, 0, 0);
-  camera.screen = new three__WEBPACK_IMPORTED_MODULE_9__.OrthographicCamera(-windowHalfX, windowHalfX, windowHalfY, -windowHalfY, 0.1, 1000);
-  const container = document.getElementById('container');
-  const renderer = new three__WEBPACK_IMPORTED_MODULE_9__.WebGLRenderer({
-    antialias: false
-  });
-  renderer.autoClear = false;
-  renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_9__.Color(0x000000));
-  renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.pixelRatio);
-  renderer.setSize(_settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.width, _settings__WEBPACK_IMPORTED_MODULE_2__.Renderer.Size.height);
-  // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
-  // renderer.shadowMap.type = Renderer.ShadowMap.type;
-  // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
-  container.appendChild(renderer.domElement);
-  const light = {};
-
-  /* light.fill = new THREE.HemisphereLight(
-    Light.Hemisphere.groundColor,
-    Light.Hemisphere.color,
-    Light.Hemisphere.intensity,
-  );
-  light.fill.position.set(2, 1, 1);
-  scene.add(light.fill);
-   light.directional = new THREE.DirectionalLight(
-    Light.Directional.color,
-    Light.Directional.intensity,
-  );
-   light.directional.castShadow = Light.Directional.castShadow;
-  light.directional.shadow.camera.near = Light.Directional.near;
-  light.directional.shadow.camera.far = Light.Directional.Shadow.far;
-  light.directional.shadow.camera.right = Light.Directional.Shadow.right;
-  light.directional.shadow.camera.left = Light.Directional.Shadow.left;
-  light.directional.shadow.camera.top = Light.Directional.Shadow.top;
-  light.directional.shadow.camera.bottom = Light.Directional.Shadow.bottom;
-  light.directional.shadow.mapSize.width =
-    Light.Directional.Shadow.MapSize.width;
-  light.directional.shadow.mapSize.height =
-    Light.Directional.Shadow.MapSize.height;
-  light.directional.shadow.radius = Light.Directional.Shadow.radius;
-  light.directional.shadow.bias = Light.Directional.Shadow.bias;
-   light.directional.position.set(
-    Light.Directional.Position.x,
-    Light.Directional.Position.y,
-    Light.Directional.Position.z,
-  );
-  scene.add(light.directional); */
-
-  const worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_10__.Octree();
-  const stage = (0,_stages__WEBPACK_IMPORTED_MODULE_5__.createStage)('firstStage');
-  scene.field.add(stage);
-  worldOctree.fromGraphNode(stage);
-  const collisionObject = new _object__WEBPACK_IMPORTED_MODULE_6__["default"](scene.field, worldOctree);
-  const stone = _object__WEBPACK_IMPORTED_MODULE_6__["default"].createStone(80, 1, 15);
-  stone.object.position.set(-2200, 300, 0);
-  stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(-2200, 300, 0);
-  collisionObject.add(stone);
-  const ammo = new _ammo_old__WEBPACK_IMPORTED_MODULE_7__["default"](scene.field, worldOctree);
-  const player = new _player_old__WEBPACK_IMPORTED_MODULE_8__["default"](camera.field, ammo, collisionObject, worldOctree);
-  setInterval(() => {
-    stone.object.position.set(-2000, 300, 0);
-    stone.velocity = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0);
-    stone.collider.center = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(-2200, 300, 0);
-  }, 10000);
-  player.init('firstStage');
-  const controls = new _controls__WEBPACK_IMPORTED_MODULE_1__["default"](scene.screen, camera.field, player, renderer.domElement);
-
-  /* let helper = new THREE.Box3Helper(worldBox, 0xffff00);
-  scene.add(helper);
-  const helper = new OctreeHelper(worldOctree);
-  helper.visible = false;
-  scene.field.add(helper); */
-
-  // helpers
-  const axesHelper = new three__WEBPACK_IMPORTED_MODULE_9__.AxesHelper(180);
-  scene.field.add(axesHelper);
-  const stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_11__["default"]();
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.top = 'auto';
-  stats.domElement.style.bottom = 0;
-  container.appendChild(stats.domElement);
-  const onWindowResize = () => {
-    const iw = window.innerWidth;
-    const ih = window.innerHeight;
-    windowHalfX = floor(iw / 2);
-    windowHalfY = floor(ih / 2);
-    camera.field.aspect = iw / ih;
-    camera.field.updateProjectionMatrix();
-    camera.screen.left = -windowHalfX;
-    camera.screen.right = windowHalfX;
-    camera.screen.top = windowHalfY;
-    camera.screen.bottom = -windowHalfY;
-    camera.screen.updateProjectionMatrix();
-    renderer.setSize(iw, ih);
-    controls.handleResize();
-  };
-  const onResize = (0,throttle_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(_settings__WEBPACK_IMPORTED_MODULE_2__.Game.ResizeDelayTime, onWindowResize);
-  window.addEventListener('resize', onResize);
-  return {
-    container,
-    scene,
-    camera,
-    controls,
-    light,
-    renderer,
-    clock,
-    collisionObject,
-    ammo,
-    player,
-    stats
-  };
-};
-/* harmony default export */ __webpack_exports__["default"] = (init);
-
-/***/ }),
-
 /***/ "./src/js/game/loop.js":
 /*!*****************************!*\
   !*** ./src/js/game/loop.js ***!
@@ -11902,144 +11638,6 @@ class Loop {
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Loop);
-
-/***/ }),
-
-/***/ "./src/js/game/object.js":
-/*!*******************************!*\
-  !*** ./src/js/game/object.js ***!
-  \*******************************/
-/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
-
-
-
-
-
-const {
-  exp,
-  sqrt,
-  PI
-} = Math;
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
-const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
-texture.needsUpdate = true;
-class CollisionObject extends _publisher__WEBPACK_IMPORTED_MODULE_2__["default"] {
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
-  constructor(scene, worldOctree) {
-    super();
-    this.scene = scene;
-    this.worldOctree = worldOctree;
-    this.list = [];
-  }
-  add(collisionObject) {
-    this.scene.add(collisionObject.object);
-    this.list.push(collisionObject);
-  }
-  remove(object) {}
-  collisions() {
-    for (let i = 0, l = this.list.length; i < l; i += 1) {
-      const a1 = this.list[i];
-      for (let j = i + 1; j < l; j += 1) {
-        const a2 = this.list[j];
-        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-        const r = a1.collider.radius + a2.collider.radius;
-        const r2 = r * r;
-        if (d2 < r2) {
-          const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
-          const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
-          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
-          a1.velocity.add(v2).sub(v1);
-          a2.velocity.add(v1).sub(v2);
-          const d = (r - sqrt(d2)) / 2;
-          a1.collider.center.addScaledVector(normal, d);
-          a2.collider.center.addScaledVector(normal, -d);
-        }
-      }
-    }
-  }
-  update(deltaTime) {
-    const len = this.list.length;
-    for (let i = 0; i < len; i += 1) {
-      const collisionObject = this.list[i];
-      collisionObject.collider.center.addScaledVector(collisionObject.velocity, deltaTime);
-      const result = this.worldOctree.sphereIntersect(collisionObject.collider);
-      if (result) {
-        collisionObject.velocity.addScaledVector(result.normal, -result.normal.dot(collisionObject.velocity) * 1.5);
-        collisionObject.collider.center.add(result.normal.multiplyScalar(result.depth));
-      } else {
-        collisionObject.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime * 100;
-      }
-      const damping = exp(-0.2 * deltaTime) - 1;
-      collisionObject.velocity.addScaledVector(collisionObject.velocity, damping);
-      this.publish('collideWith', collisionObject);
-    }
-    this.collisions();
-    for (let i = 0; i < len; i += 1) {
-      const collisionObject = this.list[i];
-      // オブジェクト固有の挙動をupdate()に記述するようにしたい
-      collisionObject.update();
-
-      // collisionObject.object.rotation.x +=
-      // deltaTime * ObjectSettings.rotateSpeed;
-      collisionObject.object.rotation.z -= deltaTime * _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.rotateSpeed;
-      collisionObject.object.position.copy(collisionObject.collider.center);
-    }
-  }
-  static createStone() {
-    let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-    let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    let weight = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-    const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(size, detail);
-    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
-    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.OctahedronGeometry(size + 4, detail);
-    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
-    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
-    bufferGeom.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.color
-    });
-    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.wireframeColor
-    });
-    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_1__.ObjectSettings.pointsColor,
-      size: _settings__WEBPACK_IMPORTED_MODULE_1__.Grid.size,
-      map: texture,
-      blending: three__WEBPACK_IMPORTED_MODULE_4__.NormalBlending,
-      alphaTest: 0.5
-    });
-    const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
-    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(wireframeGeom, wireframeMat);
-    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
-    const object = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
-    object.add(mesh);
-    object.add(wireMesh);
-    object.add(pointsMesh);
-    const collisionObject = {
-      object,
-      collider: new three__WEBPACK_IMPORTED_MODULE_4__.Sphere(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(), size),
-      velocity: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(),
-      weight,
-      update() {}
-    };
-    return collisionObject;
-  }
-}
-/* harmony default export */ __webpack_exports__["default"] = (CollisionObject);
 
 /***/ }),
 
@@ -12105,7 +11703,7 @@ class Obstacle {
       weight,
       rotateSpeed,
       tweens,
-      /////
+      /// //
       init,
       update
     } = {
@@ -12246,375 +11844,9 @@ class Player extends _character__WEBPACK_IMPORTED_MODULE_0__["default"] {
   }
   update(deltaTime, damping) {
     super.update(deltaTime, damping);
-    this.camera.rotation.x = this.povRotation.theta;
+    this.camera.rotation.x = this.povRotation.theta + this.deltaY;
     this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
     this.camera.position.copy(this.collider.end);
-  }
-}
-/* harmony default export */ __webpack_exports__["default"] = (Player);
-
-/***/ }),
-
-/***/ "./src/js/game/player.old.js":
-/*!***********************************!*\
-  !*** ./src/js/game/player.old.js ***!
-  \***********************************/
-/***/ (function(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/addons/math/Capsule.js */ "./node_modules/three/examples/jsm/math/Capsule.js");
-/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-
-
-
-
-
-const {
-  exp,
-  sqrt,
-  cos,
-  PI
-} = Math;
-const RAD_30 = 30 / 360 * PI * 2;
-const COS_30 = cos(RAD_30);
-const dampingCoef = PI / 180;
-const minRotateAngle = PI / 720;
-const minMovement = 0.01;
-const addDamping = (component, damping, minValue) => {
-  let value = component;
-  if (value >= 0) {
-    value += damping;
-    if (value < minValue) {
-      value = 0;
-    }
-  } else {
-    value -= damping;
-    if (value >= -minValue) {
-      value = 0;
-    }
-  }
-  return value;
-};
-class Player extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
-  #dir = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, -1);
-  #side = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecA = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecB = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #vecC = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-  #euler = new three__WEBPACK_IMPORTED_MODULE_3__.Euler(0, 0, 0, 'YXZ');
-  #yawAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 1, 0);
-  #pitchAxis = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 0, 0);
-  #onGround = false;
-  #actions = new Set();
-  #states = new Set();
-  #urgencyRemainingTime = 0;
-  #stunningRemainingTime = 0;
-  constructor(camera, ammo, object, worldOctree) {
-    super();
-    this.camera = camera;
-    this.worldOctree = worldOctree;
-    this.ammo = ammo;
-    this.object = object;
-    this.position = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
-    this.forwardComponent = 0;
-    this.sideComponent = 0;
-    this.rotateComponent = 0;
-    this.povRotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical();
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_3__.Spherical(); // phi and theta
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-
-    // this.rotation.phi = PlayerSettings.direction;
-    // this.camera.rotation.y = PlayerSettings.direction;
-
-    this.direction = new three__WEBPACK_IMPORTED_MODULE_3__.Vector3();
-    // this.camera.getWorldDirection(this.direction);
-
-    // this.fire = this.fire.bind(this);
-    this.collideWith = this.collideWith.bind(this);
-    this.ammo.subscribe('collideWith', this.collideWith);
-    this.object.subscribe('collideWith', this.collideWith);
-    this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_4__.Capsule();
-  }
-  init(name) {
-    const {
-      player
-    } = _settings__WEBPACK_IMPORTED_MODULE_2__.Stages[name];
-    this.rotation.phi = player.direction;
-    this.camera.rotation.y = player.direction;
-    this.camera.rotation.x = -RAD_30;
-    this.camera.getWorldDirection(this.direction);
-    const start = player.position.clone();
-    const end = start.clone();
-    end.y += _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.height + _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius;
-    this.collider.set(start, end, _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.radius);
-  }
-  getRotateDiff() {
-    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft) || this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight)) {
-      return this.rotateComponent;
-    }
-    return 0;
-  }
-  jump() {
-    this.velocity.y = _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.jumpPower;
-  }
-  moveForward(deltaTime) {
-    let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.forwardComponent = deltaTime;
-    if (this.#onGround) {
-      this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.speed;
-      if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.sprint && deltaTime >= 0) {
-        this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.sprint;
-      } else if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-        this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyMove;
-      }
-    } else {
-      this.forwardComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.airSpeed;
-    }
-  }
-  rotate(deltaTime) {
-    let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.rotateComponent = deltaTime;
-    if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-      this.rotateComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyTurn;
-    } else {
-      this.rotateComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.turnSpeed;
-    }
-  }
-  moveSide(deltaTime) {
-    let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
-    this.sideComponent = deltaTime * 0.7;
-    if (this.#onGround) {
-      this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.speed;
-      if (state === _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) {
-        this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.urgencyMove;
-      }
-    } else {
-      this.sideComponent *= _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.airSpeed;
-    }
-  }
-  setPovRotation(povRotation) {
-    this.povRotation = povRotation.clone();
-  }
-  fire() {
-    const ammo = this.ammo.list[this.ammo.index];
-    this.#euler.x = this.povRotation.theta + this.rotation.theta;
-    this.#euler.y = this.povRotation.phi + this.rotation.phi;
-    const dir = this.#dir.clone().applyEuler(this.#euler);
-    ammo.mesh.rotation.copy(this.#euler);
-    ammo.collider.center.copy(this.collider.end).addScaledVector(dir, this.collider.radius * 1.5);
-    ammo.velocity.copy(dir).multiplyScalar(_settings__WEBPACK_IMPORTED_MODULE_2__.AmmoSettings.speed);
-    ammo.velocity.addScaledVector(this.velocity, 2);
-    this.ammo.index = (this.ammo.index + 1) % this.ammo.list.length;
-  }
-  collideWith(object) {
-    const center = this.collider.getCenter(this.#vecA);
-    const objectCenter = object.collider.center;
-    const weightRatio = object.weight / _settings__WEBPACK_IMPORTED_MODULE_2__.PlayerSettings.weight;
-    const r = this.collider.radius + object.collider.radius;
-    const r2 = r * r;
-    const colliders = [this.collider.start, this.collider.end, center];
-    for (let i = 0, l = colliders.length; i < l; i += 1) {
-      const point = colliders[i];
-      const d2 = point.distanceToSquared(objectCenter);
-      if (d2 < r2) {
-        const normal = this.#vecA.subVectors(point, objectCenter).normalize();
-        const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(this.velocity));
-        const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(object.velocity) * weightRatio);
-        this.velocity.add(v2).sub(v1);
-        object.velocity.add(v1).sub(v2);
-        const d = (r - sqrt(d2)) / 2;
-        objectCenter.addScaledVector(normal, -d);
-      }
-    }
-  }
-  collisions() {
-    const result = this.worldOctree.capsuleIntersect(this.collider);
-    this.#onGround = false;
-    if (result) {
-      const onGround = result.normal.y > COS_30;
-      this.#onGround = onGround;
-      if (!this.#onGround) {
-        this.velocity.addScaledVector(result.normal, -result.normal.dot(this.velocity));
-      }
-      this.collider.translate(result.normal.multiplyScalar(result.depth));
-    }
-  }
-  input(keys, lastKey, mashed) {
-    // 入力操作の処理
-
-    // update()で一度だけアクションを発動する
-    // 緊急行動中はonGroundがfalseでもジャンプ可にする
-    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.Space) && this.#onGround) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
-    }
-
-    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
-    // ジャンプ中は緊急行動のコマンド受け付けは停止
-    if (mashed) {
-      if (!this.#onGround) {
-        return;
-      }
-      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-    }
-
-    // 緊急回避中は一部アクションを制限、スタン中はすべてのアクションを更新しない
-    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency)) {
-      if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveForward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveBackward);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnRight);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveLeft);
-      } else if (_data__WEBPACK_IMPORTED_MODULE_0__.Keys[lastKey] === _data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE) {
-        this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveRight);
-      }
-      return;
-    }
-    if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning)) {
-      return;
-    }
-    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.shift)) {
-      this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
-    } else {
-      this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
-    }
-
-    // 前進と後退
-    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward);
-    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyW)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyS)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward);
-    }
-
-    // 左右回転
-    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft);
-    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyA)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyD)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight);
-    }
-
-    // 左右平行移動
-    if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft);
-    } else if (keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE) && !keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ)) {
-      this.#actions.add(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyQ)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft);
-    }
-    if (!keys.has(_data__WEBPACK_IMPORTED_MODULE_0__.Keys.KeyE)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight);
-    }
-  }
-  update(deltaTime) {
-    // 自機の動き制御
-    if (this.#stunningRemainingTime > 0) {
-      this.#stunningRemainingTime -= deltaTime;
-      if (this.#stunningRemainingTime <= 0) {
-        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
-        this.#stunningRemainingTime = 0;
-      }
-    } else if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency) && this.#urgencyRemainingTime === 0 && this.#onGround) {
-      this.#urgencyRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.urgencyDuration;
-    }
-    if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump)) {
-      this.#actions.delete(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.jump);
-      this.jump();
-    }
-    if (this.#urgencyRemainingTime > 0) {
-      this.#urgencyRemainingTime -= deltaTime;
-      if (this.#urgencyRemainingTime <= 0) {
-        this.#actions.clear();
-        this.#states.delete(_data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-        this.#states.add(_data__WEBPACK_IMPORTED_MODULE_0__.States.stunning);
-        this.#urgencyRemainingTime = 0;
-        this.#stunningRemainingTime = _settings__WEBPACK_IMPORTED_MODULE_2__.Controls.stunningDuration;
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveForward)) {
-        this.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveBackward)) {
-        this.moveForward(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnLeft)) {
-        this.rotate(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickTurnRight)) {
-        this.rotate(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveLeft)) {
-        this.moveSide(-deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.quickMoveRight)) {
-        this.moveSide(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.urgency);
-      }
-    } else {
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateLeft)) {
-        this.rotate(deltaTime);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.rotateRight)) {
-        this.rotate(-deltaTime);
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveForward)) {
-        if (this.#states.has(_data__WEBPACK_IMPORTED_MODULE_0__.States.sprint)) {
-          this.moveForward(deltaTime, _data__WEBPACK_IMPORTED_MODULE_0__.States.sprint);
-        } else {
-          this.moveForward(deltaTime);
-        }
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveBackward)) {
-        this.moveForward(-deltaTime);
-      }
-      if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveLeft)) {
-        this.moveSide(-deltaTime);
-      } else if (this.#actions.has(_data__WEBPACK_IMPORTED_MODULE_0__.Actions.moveRight)) {
-        this.moveSide(deltaTime);
-      }
-    }
-
-    // 移動の減衰処理
-    const resistance = this.#onGround ? _settings__WEBPACK_IMPORTED_MODULE_2__.World.resistance : _settings__WEBPACK_IMPORTED_MODULE_2__.World.airResistance;
-    const damping = exp(-resistance * deltaTime) - 1;
-    if (!this.#onGround) {
-      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_2__.World.gravity * deltaTime;
-    }
-    if (this.rotateComponent !== 0) {
-      this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      this.direction.normalize();
-      this.rotation.phi += this.rotateComponent;
-      this.publish('onChangeRotateComponent', this.rotateComponent);
-      this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping, minRotateAngle);
-    }
-    if (this.forwardComponent !== 0) {
-      const direction = this.direction.clone().multiplyScalar(this.forwardComponent);
-      this.velocity.add(direction);
-      this.forwardComponent = addDamping(this.forwardComponent, damping, minMovement);
-    }
-    if (this.sideComponent !== 0) {
-      const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
-      direction.normalize();
-      this.velocity.add(direction.multiplyScalar(this.sideComponent));
-      this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    }
-    this.velocity.addScaledVector(this.velocity, damping);
-    this.camera.rotation.x = this.povRotation.theta;
-    this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
-    this.collider.translate(this.velocity);
-    this.camera.position.copy(this.collider.end);
-    this.collisions();
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Player);
@@ -12698,7 +11930,7 @@ class SceneManager {
   update() {
     this.renderer.clear();
     const list = Array.from(this.list.values());
-    //for (const params of this.list) {
+    // for (const params of this.list) {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const params = list[i];
       this.renderer.render(...params);
@@ -12720,7 +11952,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   createCenterMark: function() { return /* binding */ createCenterMark; },
 /* harmony export */   createPovIndicator: function() { return /* binding */ createPovIndicator; },
-/* harmony export */   createSight: function() { return /* binding */ createSight; }
+/* harmony export */   createSight: function() { return /* binding */ createSight; },
+/* harmony export */   sightLines: function() { return /* binding */ sightLines; }
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
@@ -12766,6 +11999,11 @@ context.sight = canvas.sight.getContext('2d');
 _textures__WEBPACK_IMPORTED_MODULE_1__["default"].sight(context.sight);
 texture.sight = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.sight);
 texture.sight.needsUpdate = true;
+canvas.sightLines = document.createElement('canvas');
+context.sightLines = canvas.sightLines.getContext('2d');
+_textures__WEBPACK_IMPORTED_MODULE_1__["default"].sightLines(context.sightLines);
+texture.sightLines = new three__WEBPACK_IMPORTED_MODULE_2__.Texture(canvas.sightLines);
+texture.sightLines.needsUpdate = true;
 const createSight = () => {
   const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
     color: 0xffffff,
@@ -12773,6 +12011,16 @@ const createSight = () => {
   });
   const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
   sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightSize, 0);
+  sprite.position.set(0, 0, -10);
+  return sprite;
+};
+const sightLines = () => {
+  const material = new three__WEBPACK_IMPORTED_MODULE_2__.SpriteMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightLinesColor,
+    map: texture.sightLines
+  });
+  const sprite = new three__WEBPACK_IMPORTED_MODULE_2__.Sprite(material);
+  sprite.scale.set(_settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightLinesSize, _settings__WEBPACK_IMPORTED_MODULE_0__.Screen.sightLinesSize, 0);
   sprite.position.set(0, 0, -10);
   return sprite;
 };
@@ -12983,9 +12231,9 @@ const Controls = {
 };
 const World = {
   gravity: 800,
-  //6,
+  // 6,
   resistance: 4,
-  //10,
+  // 10,
   airResistance: 1,
   Resistance: {
     ground: 4,
@@ -12998,9 +12246,11 @@ const World = {
 const Screen = {
   normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
+  sightLinesColor: 0x9e9e9e,
   warnColor: 0xffc107,
   sightSize: 48,
-  sightPovSize: 48
+  sightPovSize: 48,
+  sightLinesSize: 128
 };
 const AmmoSettings = {
   color: 0xffe870,
@@ -13166,7 +12416,7 @@ __webpack_require__.r(__webpack_exports__);
 
 const data = new Map(_data__WEBPACK_IMPORTED_MODULE_0__.Stages);
 const createStage = name => {
-  //const { components } = Stages[name];
+  // const { components } = Stages[name];
   const {
     components
   } = data.get(name);
@@ -13236,6 +12486,25 @@ const {
   PI
 } = Math;
 const textures = {
+  sightLines(context) {
+    const {
+      canvas
+    } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.rect(4, 56, 1, 16);
+    context.rect(16, 56, 1, 16);
+    context.rect(28, 56, 1, 16);
+    context.rect(99, 56, 1, 16);
+    context.rect(111, 56, 1, 16);
+    context.rect(123, 56, 1, 16);
+    context.fill();
+    return context;
+  },
   crossStar(context) {
     const {
       canvas
@@ -13362,6 +12631,7 @@ const textures = {
     context.translate(64, 64);
     context.rotate(PI * 0.25);
     context.beginPath();
+    context.arc(0, 0, 4, 0, 2 * PI);
     for (let i = 0; i < 4; i += 1) {
       context.moveTo(-2, -62);
       context.arc(0, -62, 2, PI, 0, false);
