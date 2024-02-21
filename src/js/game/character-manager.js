@@ -3,7 +3,6 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States, Characters, Stages } from './data';
 import Publisher from './publisher';
-import Player from './player';
 import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
 
 const { exp, sqrt, cos, PI } = Math;
@@ -67,8 +66,8 @@ class CharacterManager {
 
   constructor(scene, collidableManager, worldOctree) {
     this.scene = scene;
-    this.worldOctree = worldOctree;
     this.collidableManager = collidableManager;
+    this.worldOctree = worldOctree;
     this.list = new Map();
 
     this.collideWith = this.collideWith.bind(this);
@@ -76,19 +75,19 @@ class CharacterManager {
   }
 
   add(character) {
-    if (!this.list.has(character.name)) {
-      if ((!character) instanceof Player) {
+    if (!this.list.has(character.id)) {
+      if (!character.isFPV()) {
         this.scene.add(character.object);
       }
 
-      this.list.set(character.name, character);
+      this.list.set(character.id, character);
     }
   }
 
   remove(character) {
-    if (this.list.has(character.name)) {
+    if (this.list.has(character.id)) {
       this.scene.remove(character.object);
-      this.list.delete(character.name);
+      this.list.delete(character.id);
     }
   }
 
@@ -164,8 +163,20 @@ class CharacterManager {
 
   update(deltaTime, damping) {
     const list = Array.from(this.list.values());
+    const len = list.length;
 
-    for (let i = 0, l = list.length; i < l; i += 1) {
+    if (len >= 2) {
+      for (let i = 0; i < len; i += 1) {
+        const c1 = list[i];
+
+        for (let j = i + 1; j < len; j += 1) {
+          const c2 = list[j];
+          c1.collideWith(c2);
+        }
+      }
+    }
+
+    for (let i = 0; i < len; i += 1) {
       const character = list[i];
       character.update(deltaTime, damping);
     }

@@ -19,7 +19,7 @@ import {
 } from 'three';
 
 import Publisher from './publisher';
-import { World, Grid, ObjectSettings } from './settings';
+import { World, Grid } from './settings';
 import { Obstacles, Stages } from './data';
 import textures from './textures';
 
@@ -41,8 +41,10 @@ class Obstacle {
     weight: 1,
 
     color: 0xffffff,
-    wireframeColor: 0x000000,
-    pointsColor: 0xffffff,
+    wireColor: 0x000000,
+    pointColor: 0xffffff,
+    pointSize: 10,
+    
     rotateSpeed: 1,
 
     collider: new Sphere(new Vector3(), 1),
@@ -71,8 +73,9 @@ class Obstacle {
       detail,
 
       color,
-      wireframeColor,
-      pointsColor,
+      wireColor,
+      pointColor,
+      pointSize,
 
       weight,
       rotateSpeed,
@@ -105,15 +108,15 @@ class Obstacle {
     bufferGeom.computeBoundingSphere();
 
     const mat = new MeshBasicMaterial({
-      color: ObjectSettings.color,
+      color,
     });
     const wireframeMat = new LineBasicMaterial({
-      color: ObjectSettings.wireframeColor,
+      color: wireColor,
     });
 
     const pointsMat = new PointsMaterial({
-      color: ObjectSettings.pointsColor,
-      size: Grid.size,
+      color: pointColor,
+      size: pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,

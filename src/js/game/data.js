@@ -73,8 +73,9 @@ export const Obstacles = [
       weight: 5,
 
       color: 0x203b33,
-      wireframeColor: 0x4c625b,
-      pointsColor: 0xf4e511,
+      wireColor: 0x4c625b,
+      pointColor: 0xf4e511,
+      pointSize: 10,
       rotateSpeed: 2,
 
       update(deltaTime) {
@@ -117,8 +118,13 @@ export const Characters = [
   [
     'hero1',
     {
-      height: 40,
-      radius: 5,
+      color: 0x007399,
+      wireColor: 0x004d66,
+      pointColor: 0xeb4b2f,
+      pointSize: 10,
+
+      height: 20,
+      radius: 10,
       weight: 1,
 
       speed: 300, // 3,

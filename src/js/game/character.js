@@ -1,18 +1,43 @@
-import { Vector3, Spherical, Euler } from 'three';
+import {
+  Vector3,
+  Spherical,
+  Euler,
+  CapsuleGeometry,
+  ConeGeometry,
+  WireframeGeometry,
+  BufferGeometry,
+  Float32BufferAttribute,
+  MeshBasicMaterial,
+  LineBasicMaterial,
+  PointsMaterial,
+  NormalBlending,
+  Texture,
+  Mesh,
+  LineSegments,
+  Points,
+  Group,
+} from 'three';
 import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States, Characters, Stages } from './data';
 import Publisher from './publisher';
-import Player from './player';
 import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
+import textures from './textures';
 
-const { exp, sqrt, cos, PI } = Math;
+const { floor, exp, sqrt, cos, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
 const minMovement = 0.01;
+
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+textures.crossStar(context);
+
+const texture = new Texture(canvas);
+texture.needsUpdate = true;
 
 const addDamping = (component, damping, minValue) => {
   let value = component;
@@ -49,13 +74,17 @@ class Character extends Publisher {
 
   #vecC = new Vector3();
 
+  #vecD = new Vector3();
+
+  #vecE = new Vector3();
+
   #euler = new Euler(0, 0, 0, 'YXZ');
 
   #yawAxis = new Vector3(0, 1, 0);
 
   #pitchAxis = new Vector3(1, 0, 0);
 
-  #onGround = false;
+  #isGrounded = false;
 
   #actions = new Set();
 
@@ -67,7 +96,59 @@ class Character extends Publisher {
 
   #test = 0; /// ///////
 
-  constructor(name, ammos) {
+  static createObject(data) {
+    const geom = new CapsuleGeometry(data.radius, data.height, 2, 8);
+    const wireframeGeom = new WireframeGeometry(geom);
+
+    const geomSize = data.radius + floor(data.pointSize / 2);
+    //const pointsGeom = new CapsuleGeometry(geomSize, data.height, 1, 3);
+    const pointsGeom = new ConeGeometry(geomSize, geomSize, 3);
+    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
+
+    const bufferGeom = new BufferGeometry();
+    bufferGeom.setAttribute(
+      'position',
+      new Float32BufferAttribute(pointsVertices, 3),
+    );
+    bufferGeom.computeBoundingSphere();
+
+    const mat = new MeshBasicMaterial({
+      color: data.color,
+    });
+    const wireframeMat = new LineBasicMaterial({
+      color: data.wireColor,
+    });
+
+    const pointsMat = new PointsMaterial({
+      color: data.pointColor,
+      size: data.pointSize,
+      map: texture,
+      blending: NormalBlending,
+      alphaTest: 0.5,
+    });
+
+    const mesh = new Mesh(geom, mat);
+    const wireMesh = new LineSegments(wireframeGeom, wireframeMat);
+    ////
+
+    const pointsMesh1 = new Points(bufferGeom, pointsMat);
+    const pointsMesh2 = new Points(bufferGeom, pointsMat);
+    pointsMesh2.rotateX(PI);
+
+    const pointsMesh = new Group();
+    pointsMesh.add(pointsMesh1, pointsMesh2);
+    pointsMesh1.position.setY((data.height + data.radius) / 2 + data.pointSize / 4);
+    pointsMesh2.position.setY((-data.height - data.radius) / 2 - data.pointSize / 4);
+
+    const object = new Group();
+    object.add(mesh);
+    object.add(wireMesh);
+    object.add(pointsMesh);
+
+    return object;
+  }
+
+  constructor(id, name, ammos) {
     super();
 
     const dataMap = new Map(Characters);
@@ -78,7 +159,7 @@ class Character extends Publisher {
 
     const character = dataMap.get(name);
 
-    this.name = name;
+    this.id = id;
     this.ammos = ammos;
 
     this.data = { ...character };
@@ -94,19 +175,59 @@ class Character extends Publisher {
     this.velocity = new Vector3();
     this.direction = new Vector3(0, 0, -1);
 
+    this.camera = null;
+
+    this.object = Character.createObject(this.data);
+    this.halfHeight = floor(this.data.height / 2);
+
     this.collider = new Capsule();
-    const start = this.position;
-    const end = this.position.clone();
-    end.y += this.data.height;
+    const start = new Vector3(0, this.data.radius, 0);
+    const end = start.clone();
+    end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
   }
 
+  isFPV() {
+    return this.camera != null;
+  }
+
+  setFPV(camera) {
+    this.camera = camera;
+
+    this.camera.rotation.x = -RAD_30;
+    this.camera.getWorldDirection(this.direction);
+  }
+
+  unsetFPV() {
+    if (this.isFPV()) {
+      this.camera = null;
+    }
+  }
+
+  setPosition(checkPoint) {
+    if (!this.isFPV()) {
+      return;
+    }
+
+    this.rotation.phi = checkPoint.direction;
+    this.camera.rotation.y = checkPoint.direction;
+    this.camera.getWorldDirection(this.direction);
+
+    this.collider.start.copy(checkPoint.position);
+    this.collider.end.copy(checkPoint.position);
+    this.collider.end.y += this.data.height;
+
+    this.object.position.copy(this.collider.start);
+    this.object.position.y += this.halfHeight;
+    this.object.rotation.y = checkPoint.direction;
+  }
+
   isGrounded() {
-    return this.#onGround;
+    return this.#isGrounded;
   }
 
   setGrounded(bool) {
-    this.#onGround = bool;
+    this.#isGrounded = bool;
   }
 
   jump() {
@@ -116,7 +237,7 @@ class Character extends Publisher {
   moveForward(deltaTime, state = States.idle) {
     let multiplier = deltaTime;
 
-    if (this.#onGround) {
+    if (this.#isGrounded) {
       multiplier *= this.data.speed;
 
       if (state === States.sprint && deltaTime >= 0) {
@@ -134,7 +255,7 @@ class Character extends Publisher {
     this.velocity.add(direction);
     /* this.forwardComponent = deltaTime;
 
-    if (this.#onGround) {
+    if (this.#isGrounded) {
       this.forwardComponent *= this.data.speed;
 
       if (state === States.sprint && deltaTime >= 0) {
@@ -160,7 +281,7 @@ class Character extends Publisher {
   moveSide(deltaTime, state = States.idle) {
     let multiplier = deltaTime;
 
-    if (this.#onGround) {
+    if (this.#isGrounded) {
       multiplier *= this.data.speed;
 
       if (state === States.urgency) {
@@ -175,7 +296,7 @@ class Character extends Publisher {
     this.velocity.add(direction.multiplyScalar(multiplier));
     /* this.sideComponent = deltaTime * 0.7;
 
-    if (this.#onGround) {
+    if (this.#isGrounded) {
       this.sideComponent *= this.data.speed;
 
       if (state === States.urgency) {
@@ -199,7 +320,7 @@ class Character extends Publisher {
 
     bullet.collider.center
       .copy(this.collider.end)
-      .addScaledVector(dir, this.collider.radius * bullet.radius);
+      .addScaledVector(dir, this.collider.radius + bullet.radius);
 
     bullet.velocity.copy(dir).multiplyScalar(bullet.speed);
     bullet.velocity.addScaledVector(this.velocity, 2);
@@ -216,15 +337,15 @@ class Character extends Publisher {
     // 入力操作の処理
 
     // update()で一度だけアクションを発動する
-    // 緊急行動中はonGroundがfalseでもジャンプ可にする
-    if (keys.has(Keys.Space) && this.#onGround) {
+    // 緊急行動中はisGroundedがfalseでもジャンプ可にする
+    if (keys.has(Keys.Space) && this.#isGrounded) {
       this.#actions.add(Actions.jump);
     }
 
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
     if (mashed) {
-      if (!this.#onGround) {
+      if (!this.#isGrounded) {
         return;
       }
 
@@ -305,6 +426,43 @@ class Character extends Publisher {
     }
   }
 
+  collideWith(character) {
+    const center = this.collider.getCenter(this.#vecA);
+    const charaCenter = character.collider.getCenter(this.#vecB);
+    const r = this.collider.radius + character.collider.radius;
+    const r2 = r * r;
+
+    const colliders = [
+      character.collider.start,
+      character.collider.end,
+      charaCenter,
+    ];
+
+    for (let j = 0, m = colliders.length; j < m; j += 1) {
+      const point = colliders[j];
+      const d2 = point.distanceToSquared(center);
+
+      if (d2 < r2) {
+        const normal = this.#vecA.subVectors(point, center).normalize();
+        const v1 = this.#vecB
+          .copy(normal)
+          .multiplyScalar(normal.dot(character.velocity));
+        const v2 = this.#vecC
+          .copy(normal)
+          .multiplyScalar(normal.dot(this.velocity));
+        const vec1 = this.#vecD.subVectors(v2, v1);
+        const vec2 = this.#vecE.subVectors(v1, v2);
+
+        character.velocity.addScaledVector(vec1, this.data.weight);
+        this.velocity.addScaledVector(vec2, character.data.weight);
+
+        const d = (r - sqrt(d2)) / 2;
+        const deltaPosition = normal.multiplyScalar(-d);
+        this.collider.translate(deltaPosition);
+      }
+    }
+  }
+
   update(deltaTime, damping) {
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
@@ -317,7 +475,7 @@ class Character extends Publisher {
     } else if (
       this.#states.has(States.urgency) &&
       this.#urgencyRemainingTime === 0 &&
-      this.#onGround
+      this.#isGrounded
     ) {
       this.#urgencyRemainingTime = Controls.urgencyDuration;
     }
@@ -386,9 +544,9 @@ class Character extends Publisher {
     }
 
     // 移動の減衰処理
-    const deltaDamping = this.#onGround ? damping.ground : damping.air;
+    const deltaDamping = this.#isGrounded ? damping.ground : damping.air;
 
-    if (!this.#onGround) {
+    if (!this.#isGrounded) {
       this.velocity.y -= World.gravity * deltaTime;
     }
 
@@ -398,7 +556,7 @@ class Character extends Publisher {
 
       this.rotation.phi += this.rotateComponent;
 
-      if (this instanceof Player) {
+      if (this.isFPV()) {
         this.publish('onChangeRotateComponent', this.rotateComponent);
       }
 
@@ -435,7 +593,15 @@ class Character extends Publisher {
       .copy(this.velocity)
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
-    this.position.copy(this.collider.start);
+    this.object.position.copy(this.collider.start);
+    this.object.position.y += this.halfHeight;
+    this.object.rotation.y = this.rotation.phi;
+
+    if (this.isFPV()) {
+      this.camera.rotation.x = this.povRotation.theta + this.deltaY;
+      this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
+      this.camera.position.copy(this.collider.end);
+    }
   }
 }
 

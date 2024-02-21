@@ -36,7 +36,6 @@ import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import Character from './character';
-import Player from './player';
 import Ammo from './ammo';
 import Obstacle from './obstacle';
 import { createStage } from './stages';
@@ -166,13 +165,17 @@ class Game {
     const stageData = this.data.stages.get(stageName);
     const [checkPoint] = stageData.checkPoints;
 
-    const player = new Player(this.camera.field, 'hero1', this.ammos);
+    const player = new Character('player1', 'hero1', this.ammos);
+    player.setFPV(this.camera.field);
     player.setPosition(checkPoint);
 
     const [stone] = this.createObstacle(stageData);
     /* const stone = new Obstacle('round-stone');
     const { obstacles } = data;
     const obstacle = obstacles.find((object) => object.name === 'round-stone') */
+    const anotherPlayer = new Character('player2', 'hero1', this.ammos);
+    anotherPlayer.collider.translate(new Vector3(40, 0, 40));
+    this.characters.add(anotherPlayer);
     /// //////////////
 
     this.objects.add('ammo', this.ammos.get('small-bullet'));

@@ -146,7 +146,7 @@ export const World = {
   airResistance: 1,
   Resistance: {
     ground: 4,
-    air: 1,
+    air: 0.4,
     spin: 12,
     ammo: 1.2,
     obstacle: 0.1,
