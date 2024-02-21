@@ -1,6 +1,6 @@
 {
   "name": "fps-game",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "Three.jsフレームワークを用いたFPSゲームのデモ",
   "main": "./dist/index.html",
   "author": "masa <wizcode.jp@gmail.com>",
@@ -10,7 +10,8 @@
     "build:dev": "webpack",
     "lint": "eslint './src/**/*' -c ./.eslintrc.json --fix",
     "build": "webpack --mode production",
-    "test": "jest"
+    "test": "jest",
+    "start": "http-server ./dist"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.4",
@@ -28,6 +29,7 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "html-webpack-plugin": "^5.5.4",
+    "http-server": "^14.1.1",
     "jest": "^29.7.0",
     "prettier": "^3.1.1",
     "terser-webpack-plugin": "^5.3.9",
