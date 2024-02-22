@@ -31,12 +31,14 @@ import {
   Compositions,
   Tweeners,
   Ammo as AmmoData,
+  Guns,
 } from './data';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import Character from './character';
 import Ammo from './ammo';
+import Gun from './gun';
 import Obstacle from './obstacle';
 import { createStage } from './stages';
 
@@ -109,17 +111,22 @@ class Game {
       1000,
     );
 
+    this.scenes.clear();
+    this.scenes.add('field', this.scene.field, this.camera.field);
+    this.scenes.add('screen', this.scene.screen, this.camera.screen);
+
     this.data = {};
     this.data.stages = new Map(Stages);
     this.data.characters = new Map(Characters);
     this.data.compositions = new Map(Compositions);
     this.data.ammos = new Map(AmmoData);
+    this.data.guns = new Map(Guns);
     this.data.tweeners = new Map(Tweeners);
 
-    this.objects = new CollidableManager(this.scene.field, this.worldOctree);
-    this.characters = new CharacterManager(
+    this.objectManager = new CollidableManager(this.scene.field, this.worldOctree);
+    this.characterManager = new CharacterManager(
       this.scene.field,
-      this.objects,
+      this.objectManager,
       this.worldOctree,
     );
 
@@ -128,30 +135,26 @@ class Game {
     ammoNames.forEach((name) => {
       const ammo = new Ammo(name);
       this.ammos.set(name, ammo);
+      this.objectManager.add('ammo', ammo);
     });
+
+    this.guns = new Map();
+    const gunNames = Array.from(this.data.guns.keys());
+    gunNames.forEach((name) => {
+      const gun = new Gun(name);
+      const [ammoType] = gun.data.ammoTypes;
+      const ammo = this.ammos.get(ammoType);
+      gun.setAmmo(ammo);
+      this.guns.set(name, gun);
+    });
+
+    // これらはステージごとに毎回生成破棄を実行する
+    this.characters = new Map();
+    this.obstacles = new Map();
 
     this.controls = null;
     this.player = null;
     this.stage = null;
-
-    // const stage = createStage('firstStage');
-    // scene.field.add(stage);
-
-    /* const collisionObject = new CollisionObject(scene.field, worldOctree);
-    const stone = CollisionObject.createStone(80, 1, 15);
-    stone.object.position.set(-2200, 300, 0);
-    stone.collider.center = new Vector3(-2200, 300, 0);
-    collisionObject.add(stone);
-    const ammo = new Ammo(scene.field, worldOctree);
-    const player = new Player(camera.field, ammo, collisionObject, worldOctree);
-
-    setInterval(() => {
-      stone.object.position.set(-2000, 300, 0);
-      stone.velocity = new Vector3(0, 0, 0);
-      stone.collider.center = new Vector3(-2200, 300, 0);
-    }, 10000);
-
-    player.init('firstStage'); */
 
     // ゲーム管理変数
     this.ready = false;
@@ -160,30 +163,11 @@ class Game {
     this.checkPointIndex = 0;
 
     /// ///////////////
-    const stageNameList = this.data.compositions.get('stage');
-    const stageName = stageNameList[this.stageIndex];
-    const stageData = this.data.stages.get(stageName);
-    const [checkPoint] = stageData.checkPoints;
-
-    const player = new Character('player1', 'hero1', this.ammos);
-    player.setFPV(this.camera.field);
-    player.setPosition(checkPoint);
-
-    const [stone] = this.createObstacle(stageData);
-    /* const stone = new Obstacle('round-stone');
-    const { obstacles } = data;
-    const obstacle = obstacles.find((object) => object.name === 'round-stone') */
-    const anotherPlayer = new Character('player2', 'hero1', this.ammos);
-    anotherPlayer.collider.translate(new Vector3(40, 0, 40));
-    this.characters.add(anotherPlayer);
-    /// //////////////
-
-    this.objects.add('ammo', this.ammos.get('small-bullet'));
-    this.objects.add('obstacle', stone);
-    // stone.collider.center = new Vector3(-2200, 300, 0);
+    const player = new Character('player1', 'hero-1');
 
     this.setPlayer(player);
     this.setMode('play');
+
     this.ready = true;
     /// ///////////
 
@@ -220,40 +204,27 @@ class Game {
     this.container.appendChild(this.stats.domElement);
   }
 
-  createObstacle(stageData) {
-    const list = [];
-    const { obstacles } = stageData;
-    obstacles.forEach((obstacleData) => {
-      const obstacle = new Obstacle(obstacleData.name);
-      obstacle.collider.center.copy(obstacleData.position);
-      obstacleData.tweeners.forEach((tweenerName) => {
-        obstacle.addTweener(this.data.tweeners.get(tweenerName));
-      });
-      list.push(obstacle);
-    });
-    return list;
-  }
-
   setPlayer(character) {
-    if (this.player == null) {
-      this.player = character;
-      this.characters.add(this.player);
+    this.player = character;
+    this.player.setFPV(this.camera.field);
 
-      this.controls = new FirstPersonControls(
-        this.scene.screen,
-        this.camera.field,
-        this.player,
-        this.renderer.domElement,
-      );
-    }
+    const [gunType] = this.player.data.gunTypes;
+    const gun = this.guns.get(gunType);
+    this.player.setGun(gun);
+
+    this.controls = new FirstPersonControls(
+      this.scene.screen,
+      this.camera.field,
+      this.player,
+      this.renderer.domElement,
+    );
   }
 
   removePlayer(character) {
     if (this.player != null) {
+      this.player.unsetFPV();
       this.player = null;
       this.controls.dispose();
-
-      this.characters.remove(character);
     }
   }
 
@@ -276,19 +247,55 @@ class Game {
     }
   }
 
-  setStage() {
-    this.scenes.clear();
-    this.scenes.add('field', this.scene.field, this.camera.field);
-    this.scenes.add('screen', this.scene.screen, this.camera.screen);
+  setStage(stageIndex) {
+    const stageNameList = this.data.compositions.get('stage');
 
-    const stageNames = this.data.compositions.get('stage');
-    const stageName = stageNames[this.stageIndex];
+    const stageName = typeof stageIndex === 'number' ? stageNameList[stageIndex] : stageNameList[this.stageIndex];
+
+    if (stageName == null) {
+      return;
+    }
+
+    const stageData = this.data.stages.get(stageName);
+
+    const { characters, obstacles } = stageData;
+    const checkPoint = stageData.checkPoints[this.stageIndex];
+
+    this.characters.clear();
+    this.characterManager.clear();
+    this.obstacles.clear();
+    this.objectManager.clear('obstacle');
+
+    characters.forEach((data, index) => {
+      const id = `character-${index}`;
+      const character = new Character(id, data.name, this.ammos);
+      const [gunType] = character.data.gunTypes;
+      const gun = this.guns.get(gunType);
+      character.setGun(gun);
+      character.setOnUpdate(data.update);
+      character.setPosition(data.position, data.direction);
+      this.characters.set(id, character);
+      this.characterManager.add(character);
+    });
+
+    obstacles.forEach((data, index) => {
+      const id = `obstacle-${index}`;
+      const obstacle = new Obstacle(data.name);
+      obstacle.collider.center.copy(data.position);
+      data.tweeners.forEach((tweenerName) => {
+        obstacle.addTweener(this.data.tweeners.get(tweenerName));
+      });
+      this.obstacles.set(id, obstacle);
+      this.objectManager.add('obstacle', obstacle);
+    });
+
+    this.player.setPosition(checkPoint.position, checkPoint.direction);
+    this.characterManager.add(this.player);
 
     this.clearStage();
 
     this.stage = createStage(stageName);
     this.scene.field.add(this.stage);
-
     this.worldOctree.fromGraphNode(this.stage);
   }
 
@@ -327,15 +334,12 @@ class Game {
     }
 
     const deltaTime = this.clock.getDelta() / GameSettings.stepsPerFrame;
-    /* this.#damping.ground = exp(-World.Resistance.ground * deltaTime) - 1;
-    this.#damping.air = exp(-World.Resistance.air * deltaTime) - 1;
-    this.#damping.obstacle = exp(-World.Resistance.object * deltaTime) - 1; */
     const damping = getDamping(deltaTime);
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
       this.controls.update(deltaTime);
-      this.characters.update(deltaTime, damping);
-      this.objects.update(deltaTime, damping);
+      this.characterManager.update(deltaTime, damping);
+      this.objectManager.update(deltaTime, damping);
     }
 
     this.scenes.update();

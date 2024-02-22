@@ -1,7 +1,11 @@
 import { Vector3 } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
-const { PI } = Math;
+const { sin, PI } = Math;
+
+const easeOutSine = (x) => sin((x * PI) / 2);
+
+const easeOutCubic = (x) => 1 - (1 - x) * (1 - x) * (1 - x);
 
 export const Keys = {
   // event.codeで取得する
@@ -68,7 +72,7 @@ export const Obstacles = [
   [
     'round-stone',
     {
-      size: 80,
+      radius: 80,
       detail: 1,
       weight: 5,
 
@@ -79,14 +83,27 @@ export const Obstacles = [
       rotateSpeed: 2,
 
       update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.rotateSpeed;
-        // this.tween();
+        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
       },
     },
   ],
 ];
 
 export const Compositions = [['stage', ['firstStage']]];
+
+export const Guns = [
+  [
+    'normal-gun',
+    {
+      speed: 2000,
+      fireInterval: 300,
+      accuracy: 3,
+      recoil: 1,////////
+
+      ammoTypes: ['small-bullet', 'hop-bullet'],
+    },
+  ],
+];
 
 export const Ammo = [
   [
@@ -97,18 +114,48 @@ export const Ammo = [
       pointColor: 0xf45c41,
       pointSize: 10,
 
-      radius: 7,
+      radius: 6,
       detail: 0,
-      numAmmo: 10, // dev 10, prod 50
-      speed: 2000,
-      rotateSpeed: 8,
+      numAmmo: 20, // dev 10, prod 50
+
       weight: 0.03,
-      fireInterval: 500, /// //////////
-      accuracy: 1, /// ///////////////
-      duration: 3,
+      lifetime: 3,
+
+      rotateSpeed: 10,
 
       update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.rotateSpeed;
+        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+      },
+    },
+  ],
+  [
+    'hop-bullet',
+    {
+      color: 0xffe870,
+      wireColor: 0xfffbe6,
+      pointColor: 0xf45c41,
+      pointSize: 10,
+
+      radius: 6,
+      detail: 0,
+      numAmmo: 10, // dev 10, prod 50
+
+      weight: 0.03,
+      lifetime: 3,
+
+      rotateSpeed: 10,
+
+      hopValue: 350,
+      hopDuration: 0.5,
+
+      update(deltaTime) {
+        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+        const elapsedTime = this.getElapsedTime();
+
+        if (!this.isBounced() && elapsedTime <= this.data.hopDuration) {
+          const ratio = easeOutCubic(elapsedTime);
+          this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+        }
       },
     },
   ],
@@ -116,7 +163,7 @@ export const Ammo = [
 
 export const Characters = [
   [
-    'hero1',
+    'hero-1',
     {
       color: 0x007399,
       wireColor: 0x004d66,
@@ -138,6 +185,7 @@ export const Characters = [
       jumpPower: 350,
 
       ammoTypes: ['small-bullet'],
+      gunTypes: ['normal-gun'],
     },
   ],
 ];
@@ -149,10 +197,10 @@ export const Tweeners = [
       const tween = new TWEEN.Tween(target.collider.center);
       tween
         .onEveryStart(() => (target.velocity = new Vector3(0, 0, 0)))
-        .to({ x: -2000, y: 300, z: 0 }, 100)
+        .to({ x: -2200, y: 300, z: 0 }, 0)
         .delay(10000)
         .repeat(Infinity)
-        .start();
+        .start(0);
 
       return tween;
     },
@@ -165,8 +213,25 @@ export const Stages = [
     {
       checkPoints: [
         {
-          position: new Vector3(-650, 0, 0),
+          //position: new Vector3(-650, 0, 0),
+          position: new Vector3(-1600, 100, 0),
+          //position: new Vector3(-38 * 80, 1000, -6.5 * 80),
           direction: PI / 2,
+        },
+      ],
+      characters: [
+        {
+          name: 'hero-1',
+          position: new Vector3(-38 * 80, 1000, 3 * 80),
+          direction: -25 * PI / 180,
+          update(deltaTime) {
+            const time = this.getElapsedTime();
+
+            if (time > 2) {
+              this.resetTime();
+              this.fire();
+            }
+          },
         },
       ],
       obstacles: [
@@ -178,16 +243,24 @@ export const Stages = [
       ],
       components: [
         {
-          grid: [24, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
-          ground: [
-            20,
-            6,
-            80,
-            80,
-            0,
-            { grid: { x: 0, y: 0, z: 0, spacing: 80 } },
-            { x: 0, y: 0, z: 0 },
-          ],
+          grid: {
+            widthSegments: 24,
+            depthSegments: 6,
+            depthSegments: 8,
+            widthSpacing: 80,
+            heightSpacing: 80,
+            depthSpacing: 80,
+            position: { sx: 0, sy: -0.2, sz: 0 },
+          },
+          ground: {
+            widthSegments: 20,
+            depthSegments: 6,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 0,
+            position: { sx: 0, sy: 0, sz: 0, heightSpacing: 80 },
+            rotation: { x: 0, y: 0, z: 0 },
+          },
           arrow: {
             direction: new Vector3(-1, 0, 0),
             position: new Vector3(400, 200, 0),
@@ -196,77 +269,134 @@ export const Stages = [
           },
         },
         {
-          ground: [
-            20,
-            6,
-            80,
-            80,
-            0,
-            { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } },
-            { x: -PI / 2, y: 0, z: 0 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 6,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 0,
+            position: { sx: 0, sy: 1.9, sz: 2.1, heightSpacing: 80 },
+            rotation: { x: -PI / 2, y: 0, z: 0 },
+          },
         },
         {
-          ground: [
-            20,
-            8,
-            80,
-            80,
-            0,
-            { grid: { x: 0, y: 4.8, z: 0, spacing: 80 } },
-            { x: -PI, y: 0, z: 0 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 8,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 0,
+            position: { sx: 0, sy: 4.8, sz: 0, heightSpacing: 80 },
+            rotation: { x: -PI, y: 0, z: 0 },
+          },
         },
         {
-          ground: [
-            20,
-            6,
-            80,
-            80,
-            0,
-            { grid: { x: 0, y: 1.9, z: -2.1, spacing: 80 } },
-            { x: PI / 2, y: 0, z: 0 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 6,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 0,
+            position: { sx: 0, sy: 1.9, sz: -2.1, heightSpacing: 80 },
+            rotation: { x: PI / 2, y: 0, z: 0 },
+          },
         },
         {
-          grid: [20, 6, 8, 80, 80, 80, { grid: { x: -22, y: -0.2, z: 0 } }],
+          grid: {
+            widthSegments: 20,
+            depthSegments: 6,
+            depthSegments: 8,
+            widthSpacing: 80,
+            heightSpacing: 80,
+            depthSpacing: 80,
+            position: { sx: -22, sy: -0.2, sz: 0 },
+          },
           arrow: {
             direction: new Vector3(0, -1, 0),
             position: new Vector3(-960, 300, 0),
             length: 200,
             color: 0xffffff,
           },
-          ground: [
-            20,
-            5,
-            80,
-            80,
-            2,
-            { grid: { x: -19.5, y: -1, z: 0, spacing: 80 } },
-            { x: 0, y: 0, z: -0.2 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 5,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 2,
+            position: { sx: -19.5, sy: -1, sz: 0, heightSpacing: 80 },
+            rotation: { x: 0, y: 0, z: -0.2 },
+          }
         },
         {
-          ground: [
-            20,
-            8,
-            80,
-            80,
-            4,
-            { grid: { x: -19.5, y: -2, z: 2.1, spacing: 80 } },
-            { x: -1.4, y: 0, z: 0 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 8,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 4,
+            position: { sx: -19.5, sy: -1, sz: 2.1, heightSpacing: 80 },
+            rotation: { x: -1.4, y: 1, z: -1 },
+          },
         },
         {
-          ground: [
-            20,
-            8,
-            80,
-            80,
-            4,
-            { grid: { x: -19.5, y: -2, z: -2.1, spacing: 80 } },
-            { x: 1.4, y: 0, z: 0 },
-          ],
+          ground: {
+            widthSegments: 20,
+            depthSegments: 8,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 4,
+            position: { sx: -19.5, sy: -1, sz: -2.1, heightSpacing: 80 },
+            rotation: { x: 1.4, y: -1, z: -1 },
+          },
+        },
+        {
+          grid: {
+            widthSegments: 20,
+            depthSegments: 6,
+            depthSegments: 8,
+            widthSpacing: 80,
+            heightSpacing: 80,
+            depthSpacing: 80,
+            position: { sx: -42, sy: -2.2, sz: 0 },
+          },
+          cylinder: {
+            radiusTop: 80,
+            radiusBottom: 80,
+            height: 20,
+            radialSegments: 9,
+            heightSegments: 1,
+            position: { sx: -31, sy: 0.5, sz: -0.5, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 40,
+            radiusBottom: 40,
+            height: 20,
+            radialSegments: 7,
+            heightSegments: 1,
+            position: { sx: -33, sy: 0.9, sz: -1.5, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 80,
+            radiusBottom: 80,
+            height: 20,
+            radialSegments: 9,
+            heightSegments: 1,
+            position: { sx: -35, sy: 0, sz: -3.5, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 40,
+            radiusBottom: 40,
+            height: 20,
+            radialSegments: 7,
+            heightSegments: 1,
+            position: { sx: -38, sy: 0.5, sz: 3, spacing: 80 },
+          },
         },
       ],
     },

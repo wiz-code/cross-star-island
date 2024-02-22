@@ -22,7 +22,7 @@ textures.crossStarThin(context.fineGrid);
 texture.fineGrid = new THREE.Texture(canvas.fineGrid);
 texture.fineGrid.needsUpdate = true;
 
-export const createGrid = (
+export const createGrid = ({
   widthSegments = 10,
   heightSegments = 10,
   depthSegments = 10,
@@ -31,7 +31,7 @@ export const createGrid = (
   depthSpacing = 80,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-) => {
+} = {}) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -69,14 +69,14 @@ export const createGrid = (
 
   const grid = new THREE.Points(geometry, material);
 
-  if (position.grid == null) {
-    grid.position.set(position.x, position.y, position.z);
-  } else {
+  if (position.sx != null) {
     grid.position.set(
-      position.grid.x * widthSpacing,
-      position.grid.y * heightSpacing,
-      position.grid.z * depthSpacing,
+      position.sx * widthSpacing,
+      position.sy * heightSpacing,
+      position.sz * depthSpacing,
     );
+  } else {
+    grid.position.set(position.x, position.y, position.z);
   }
 
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
@@ -84,7 +84,7 @@ export const createGrid = (
   return grid;
 };
 
-export const createFineGrid = (
+export const createFineGrid = ({
   widthSegments = 10,
   heightSegments = 10,
   depthSegments = 10,
@@ -93,7 +93,7 @@ export const createFineGrid = (
   depthSpacing = 80,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-) => {
+} = {}) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -139,14 +139,14 @@ export const createFineGrid = (
 
   const grid = new THREE.Points(geometry, material);
 
-  if (position.grid == null) {
-    grid.position.set(position.x, position.y, position.z);
-  } else {
+  if (position.sx != null) {
     grid.position.set(
-      position.grid.x * widthSpacing,
-      position.grid.y * heightSpacing,
-      position.grid.z * depthSpacing,
+      position.sx * widthSpacing,
+      position.sy * heightSpacing,
+      position.sz * depthSpacing,
     );
+  } else {
+    grid.position.set(position.x, position.y, position.z);
   }
 
   grid.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');

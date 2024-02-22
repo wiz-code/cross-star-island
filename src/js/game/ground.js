@@ -1,10 +1,17 @@
 import * as THREE from 'three';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
-import { Grid, Ground } from './settings';
+import { Grid, Ground, Cylinder } from './settings';
 import textures from './textures';
 
 const { random, sin, floor, abs, PI } = Math;
+
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+textures.crossStar(context);
+
+const texture = new THREE.Texture(canvas);
+texture.needsUpdate = true;
 
 let seed = PI / 4;
 const customRandom = () => {
@@ -62,13 +69,6 @@ const createStage = (radius = 100) => {
     wireframe: true,
   });
 
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  textures.crossStar(context);
-
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
-
   const pointsMat = new THREE.PointsMaterial({
     color: Ground.Object.pointsColor,
     size: Grid.size,
@@ -112,13 +112,6 @@ const createStone = (size = 1, detail = 0) => {
     wireframe: true,
   });
 
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  textures.crossStar(context);
-
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
-
   const pointsMat = new THREE.PointsMaterial({
     color: Ground.Object.pointsColor,
     size: Grid.size,
@@ -145,13 +138,6 @@ export const createWalls = () => {
   const height = Grid.Spacing.height * Ground.wallHeightSize + 1;
 
   const walls = [];
-
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  textures.crossStar(context);
-
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
 
   for (let i = 0; i < 4; i += 1) {
     let geom;
@@ -238,7 +224,7 @@ export const createWalls = () => {
   return walls;
 };
 
-export const createGround = (
+export const createGround = ({
   widthSegments = 10,
   depthSegments = 10,
   widthSpacing = 80,
@@ -246,7 +232,7 @@ export const createGround = (
   bumpHeight = 1,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-) => {
+} = {}) => {
   const width = widthSegments * widthSpacing;
   const depth = depthSegments * depthSpacing;
 
@@ -289,21 +275,10 @@ export const createGround = (
     color: Ground.wireframeColor,
   });
 
-  const canvas = {};
-  const context = {};
-  const texture = {};
-
-  canvas.ground = document.createElement('canvas');
-  context.ground = canvas.ground.getContext('2d');
-  textures.crossStar(context.ground);
-
-  texture.ground = new THREE.Texture(canvas.ground);
-  texture.ground.needsUpdate = true;
-
   mat.points = new THREE.PointsMaterial({
     color: Ground.pointsColor,
     size: Grid.size,
-    map: texture.ground,
+    map: texture,
     blending: THREE.NormalBlending,
     alphaTest: 0.5,
   });
@@ -321,35 +296,101 @@ export const createGround = (
   ground.add(mesh.wireframe);
   ground.add(mesh.points);
 
-  if (position.grid == null) {
-    ground.position.set(position.x, position.y, position.z);
-  } else {
-    const spacing = position.grid.spacing ?? 10;
+  if (position.sx != null) {
+    const heightSpacing = position.heightSpacing ?? 80;
     ground.position.set(
-      position.grid.x * spacing,
-      position.grid.y * spacing,
-      position.grid.z * spacing,
+      position.sx * widthSpacing,
+      position.sy * heightSpacing,
+      position.sz * depthSpacing,
     );
+  } else {
+    ground.position.set(position.x, position.y, position.z);
   }
 
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
-  /* geom.stones = [];
-  const stone = createStone(60);
-  geom.stones.push(stone);
+  return ground;
+};
 
-  geom.stones.forEach((ms) => {
-    ms.rotation.y = PI / 10;
-    ms.position.set(80, 100, -300);
-    group.add(ms);
+export const createCylinder = ({
+  radiusTop = 5,
+  radiusBottom = 5,
+  height = 10,
+  radialSegments = 8,
+  heightSegments = 1,
+  position = { x: 0, y: 0, z: 0 },
+  rotation = { x: 0, y: 0, z: 0 },
+} = {}) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  geom.surface = new THREE.CylinderGeometry(
+    radiusTop,
+    radiusBottom,
+    height,
+    radialSegments,
+    heightSegments
+  );
+  //geom.surface.rotateX(-PI / 2);
+  geom.points = new THREE.CylinderGeometry(
+    radiusTop,
+    radiusBottom,
+    height + 4,
+    radialSegments,
+    heightSegments
+  );
+
+  const vertices = geom.points.attributes.position.array.slice(0);
+  geom.wireframe = new THREE.WireframeGeometry(geom.surface);
+
+  geom.points = new THREE.BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(vertices, 3),
+  );
+  geom.points.computeBoundingSphere();
+
+  mat.surface = new THREE.MeshBasicMaterial({
+    color: Cylinder.color,
+    // side: THREE.DoubleSide,
+  });
+  mat.wireframe = new THREE.LineBasicMaterial({
+    color: Cylinder.wireColor,
   });
 
-  const stage = createStage();
-  stage.position.set(200, 150, -100);
-  group.add(stage); */
+  mat.points = new THREE.PointsMaterial({
+    color: Cylinder.pointColor,
+    size: Grid.size,
+    map: texture,
+    blending: THREE.NormalBlending,
+    alphaTest: 0.5,
+  });
 
-  /* const walls = createWalls();
-  walls.forEach((wall) => group.add(wall)); */
+  mesh.surface = new THREE.Mesh(geom.surface, mat.surface);
+  mesh.surface.name = 'surface';
+  mesh.wireframe = new THREE.LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe.name = 'wireframe';
+  mesh.points = new THREE.Points(geom.points, mat.points);
+  mesh.points.name = 'points';
 
-  return ground;
+  const group = new THREE.Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  if (position.sx != null) {
+    const spacing = position.spacing ?? 80;
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+  }
+
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+
+  return group;
 };

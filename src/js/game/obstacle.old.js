@@ -19,7 +19,6 @@ import {
 } from 'three';
 
 import Publisher from './publisher';
-import Collidable from './collidable';
 import { World, Grid } from './settings';
 import { Obstacles, Stages } from './data';
 import textures from './textures';
@@ -35,22 +34,40 @@ texture.needsUpdate = true;
 
 function noop() {}
 
-const obstacleData = new Map(Obstacles);
+class Obstacle {
+  static defaults = {
+    size: 1,
+    detail: 0,
+    weight: 1,
 
-class Obstacle extends Collidable {
-  constructor(name) {
-    super(name, 'obstacle');
+    color: 0xffffff,
+    wireColor: 0x000000,
+    pointColor: 0xffffff,
+    pointSize: 10,
 
-    if (!obstacleData.has(name)) {
-      throw new Error('obstacle data not found');
+    rotateSpeed: 1,
+
+    collider: new Sphere(new Vector3(), 1),
+    velocity: new Vector3(),
+
+    update: noop,
+  };
+
+  #active = false;
+
+  #elapsedTime = 0;
+
+  constructor(name, opts = {}) {
+    const data = new Map(Obstacles);
+
+    if (!data.has(name)) {
+      throw new Error('data not found');
     }
 
-    this.name = name;
-    this.type = 'obstacle';
-    this.data = obstacleData.get(name);
+    this.data = data.get(name);
 
     const {
-      radius,
+      size,
       detail,
 
       color,
@@ -64,17 +81,20 @@ class Obstacle extends Collidable {
       tweens, /// //
       init,
       update,
-    } = this.data;
+    } = { ...Obstacle.defaults, ...this.data, ...opts };
 
-    this.collider.set(new Vector3(), radius);
+    this.name = name;
+    this.type = 'obstacle';
+
+    this.collider = new Sphere(new Vector3(), size);
     this.velocity = new Vector3();
-    this.onUpdate = this.data.update.bind(this);
+    this.onUpdate = update.bind(this);
     this.updater = new Publisher();
 
-    const geom = new IcosahedronGeometry(radius, detail);
+    const geom = new IcosahedronGeometry(size, detail);
     const wireframeGeom = new WireframeGeometry(geom);
 
-    const pointsGeom = new OctahedronGeometry(radius + 4, detail);
+    const pointsGeom = new OctahedronGeometry(size + 4, detail);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();
@@ -103,13 +123,20 @@ class Obstacle extends Collidable {
     const wireMesh = new LineSegments(wireframeGeom, wireframeMat);
     const pointsMesh = new Points(bufferGeom, pointsMat);
 
-    const object = new Group();
-    object.add(mesh);
-    object.add(wireMesh);
-    object.add(pointsMesh);
+    this.object = new Group();
+    this.object.add(mesh);
+    this.object.add(wireMesh);
+    this.object.add(pointsMesh);
 
-    this.setObject(object);
     this.setActive(true);
+  }
+
+  isActive() {
+    return this.#active();
+  }
+
+  setActive(bool) {
+    this.#active = bool;
   }
 
   addTweener(tweener) {
@@ -119,9 +146,12 @@ class Obstacle extends Collidable {
   }
 
   update(deltaTime) {
-    super.update(deltaTime);
+    if (this.#active) {
+      this.#elapsedTime += deltaTime;
 
-    this.updater.publish('update');
+      this.updater.publish('update');
+      this.onUpdate(deltaTime);
+    }
   }
 }
 

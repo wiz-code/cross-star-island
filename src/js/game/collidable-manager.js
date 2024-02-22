@@ -84,6 +84,15 @@ class CollidableManager extends Publisher {
     this.list.set(type, list);
   }
 
+  clear(type = null) {
+    if (type == null) {
+      this.list.clear();
+      return;
+    }
+    
+    this.list.delete(type);
+  }
+
   collisions() {
     const list = Array.from(this.list.values()).flat();
 
@@ -94,10 +103,18 @@ class CollidableManager extends Publisher {
         const a2 = list[j];
 
         const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-        const r = a1.collider.radius + a2.collider.radius;
+        const r = a1.data.radius + a2.data.radius;
         const r2 = r * r;
 
         if (d2 < r2) {
+          if (!a1.isBounced()) {
+            a1.setBounced(true);
+          }
+
+          if (!a2.isBounced()) {
+            a2.setBounced(true);
+          }
+
           const normal = this.#vecA
             .subVectors(a1.collider.center, a2.collider.center)
             .normalize();
@@ -111,8 +128,8 @@ class CollidableManager extends Publisher {
           const vec1 = this.#vecD.subVectors(v2, v1);
           const vec2 = this.#vecE.subVectors(v1, v2);
 
-          a1.velocity.addScaledVector(vec1, a2.weight);
-          a2.velocity.addScaledVector(vec2, a1.weight);
+          a1.velocity.addScaledVector(vec1, a2.data.weight);
+          a2.velocity.addScaledVector(vec2, a1.data.weight);
           // a1.velocity.add(v2).sub(v1);
           // a2.velocity.add(v1).sub(v2);
 
@@ -170,6 +187,10 @@ class CollidableManager extends Publisher {
       const result = this.worldOctree.sphereIntersect(collidable.collider);
 
       if (result) {
+        if (!collidable.isBounced()) {
+          collidable.setBounced(true);
+        }
+
         collidable.velocity.addScaledVector(
           result.normal,
           -result.normal.dot(collidable.velocity) * 1.5,

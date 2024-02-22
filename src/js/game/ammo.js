@@ -50,6 +50,8 @@ class Ammo extends Publisher {
     const dataMap = new Map(AmmoData);
     const ammo = dataMap.get(name);
 
+    this.name = name;
+
     const {
       color,
       wireColor,
@@ -59,8 +61,6 @@ class Ammo extends Publisher {
       radius,
       detail,
       numAmmo,
-      speed,
-      rotateSpeed,
       weight,
       fireInterval,
       accuracy,
@@ -111,7 +111,7 @@ class Ammo extends Publisher {
       group.add(pointsMesh);
       // this.scene.add(group);
 
-      const bullet = new Bullet(i, group, ammo);
+      const bullet = new Bullet(i, name, group);
 
       /* const bullet = {
         name,

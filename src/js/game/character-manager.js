@@ -91,6 +91,10 @@ class CharacterManager {
     }
   }
 
+  clear() {
+    this.list.forEach((character) => this.remove(character));
+  }
+
   collideWith(object) {
     const list = Array.from(this.list.values());
 
@@ -112,6 +116,10 @@ class CharacterManager {
         const d2 = point.distanceToSquared(objectCenter);
 
         if (d2 < r2) {
+          if (!object.isBounced()) {
+            object.setBounced(true);
+          }
+
           const normal = this.#vecA.subVectors(point, objectCenter).normalize();
           const v1 = this.#vecB
             .copy(normal)
@@ -122,7 +130,7 @@ class CharacterManager {
           const vec1 = this.#vecD.subVectors(v2, v1);
           const vec2 = this.#vecE.subVectors(v1, v2);
 
-          character.velocity.addScaledVector(vec1, object.weight);
+          character.velocity.addScaledVector(vec1, object.data.weight);
           object.velocity.addScaledVector(vec2, character.data.weight);
           // character.velocity.add(v2).sub(v1);
           // object.velocity.add(v1).sub(v2);

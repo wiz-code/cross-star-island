@@ -111,6 +111,13 @@ export const ObjectSettings = {
   rotateSpeed: 2,
 };
 
+export const Cylinder = {
+
+  color: 0x4d4136,
+  wireColor: 0x332000,
+  pointColor: 0xf4e511, // 0xffff00,
+};
+
 export const Ground = {
   Object: {
     color: 0x203b33, // 0x1955a6,

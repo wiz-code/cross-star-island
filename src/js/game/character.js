@@ -94,6 +94,8 @@ class Character extends Publisher {
 
   #stunningRemainingTime = 0;
 
+  #elapsedTime = 0;
+
   #test = 0; /// ///////
 
   static createObject(data) {
@@ -148,7 +150,11 @@ class Character extends Publisher {
     return object;
   }
 
-  constructor(id, name, ammos) {
+  static defaultParams = [
+    ['hp', 100],
+  ];
+
+  constructor(id, name/*, ammos*/) {
     super();
 
     const dataMap = new Map(Characters);
@@ -157,15 +163,13 @@ class Character extends Publisher {
       throw new Error('character data not found');
     }
 
-    const character = dataMap.get(name);
-
     this.id = id;
-    this.ammos = ammos;
+    //this.ammos = ammos;
+    this.data = dataMap.get(name);
 
-    this.data = { ...character };
+    this.params = new Map(Character.defaultParams);
 
-    this.ammoType = this.data.ammoTypes[0];
-    this.position = new Vector3(); // 位置情報の保持はcolliderが実質兼ねているので現状不使用
+    this.ammoType = this.data.ammoTypes[0];///////
     // this.forwardComponent = 0;
     // this.sideComponent = 0;
     this.rotateComponent = 0;
@@ -175,7 +179,9 @@ class Character extends Publisher {
     this.velocity = new Vector3();
     this.direction = new Vector3(0, 0, -1);
 
+    this.gun = null;
     this.camera = null;
+    this.onUpdate = null;
 
     this.object = Character.createObject(this.data);
     this.halfHeight = floor(this.data.height / 2);
@@ -185,6 +191,10 @@ class Character extends Publisher {
     const end = start.clone();
     end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
+  }
+
+  setOnUpdate(update) {
+    this.onUpdate = update.bind(this);
   }
 
   isFPV() {
@@ -204,22 +214,22 @@ class Character extends Publisher {
     }
   }
 
-  setPosition(checkPoint) {
-    if (!this.isFPV()) {
-      return;
+  setPosition(position, direction) {
+    if (this.isFPV()) {
+      this.camera.rotation.y = direction;
     }
 
-    this.rotation.phi = checkPoint.direction;
-    this.camera.rotation.y = checkPoint.direction;
-    this.camera.getWorldDirection(this.direction);
+    this.rotation.phi = direction;
+    this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, direction));
+    //this.camera.getWorldDirection(this.direction);
 
-    this.collider.start.copy(checkPoint.position);
-    this.collider.end.copy(checkPoint.position);
+    this.collider.start.copy(position);
+    this.collider.end.copy(position);
     this.collider.end.y += this.data.height;
 
     this.object.position.copy(this.collider.start);
     this.object.position.y += this.halfHeight;
-    this.object.rotation.y = checkPoint.direction;
+    this.object.rotation.y = direction;
   }
 
   isGrounded() {
@@ -307,8 +317,25 @@ class Character extends Publisher {
     } */
   }
 
+  setGun(gun) {
+    if (!this.data.gunTypes.includes(gun.name)) {
+      return;
+    }
+
+    this.gun = gun;
+  }
+
+  setAmmo(ammo) {
+    if (this.gun != null) {
+      this.gun.setAmmo(ammo);
+    }
+  }
+
   fire() {
-    const ammo = this.ammos.get(this.ammoType);
+    if (this.gun != null) {
+      this.gun.fire(this);
+    }
+    /*const ammo = this.ammos.get(this.ammoType);
     const bullet = ammo.list[ammo.index];
 
     bullet.setActive(true);
@@ -320,12 +347,12 @@ class Character extends Publisher {
 
     bullet.collider.center
       .copy(this.collider.end)
-      .addScaledVector(dir, this.collider.radius + bullet.radius);
+      .addScaledVector(dir, this.data.radius + bullet.data.radius);
 
-    bullet.velocity.copy(dir).multiplyScalar(bullet.speed);
+    bullet.velocity.copy(dir).multiplyScalar(bullet.data.speed);
     bullet.velocity.addScaledVector(this.velocity, 2);
 
-    ammo.index = (ammo.index + 1) % ammo.list.length;
+    ammo.index = (ammo.index + 1) % ammo.list.length;*/
   }
 
   setPovRotation(povRotation, deltaY) {
@@ -429,7 +456,7 @@ class Character extends Publisher {
   collideWith(character) {
     const center = this.collider.getCenter(this.#vecA);
     const charaCenter = character.collider.getCenter(this.#vecB);
-    const r = this.collider.radius + character.collider.radius;
+    const r = this.data.radius + character.data.radius;
     const r2 = r * r;
 
     const colliders = [
@@ -463,7 +490,17 @@ class Character extends Publisher {
     }
   }
 
+  getElapsedTime() {
+    return this.#elapsedTime;
+  }
+
+  resetTime() {
+    this.#elapsedTime = 0;
+  }
+
   update(deltaTime, damping) {
+    this.#elapsedTime += deltaTime;
+
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
       this.#stunningRemainingTime -= deltaTime;
@@ -601,6 +638,10 @@ class Character extends Publisher {
       this.camera.rotation.x = this.povRotation.theta + this.deltaY;
       this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
       this.camera.position.copy(this.collider.end);
+    }
+
+    if (this.onUpdate != null) {
+      this.onUpdate(deltaTime);
     }
   }
 }

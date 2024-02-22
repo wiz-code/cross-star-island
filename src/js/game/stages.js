@@ -13,7 +13,7 @@ import {
   Ground,
 } from './settings';
 import { createGrid, createFineGrid } from './grid';
-import { createGround } from './ground';
+import { createGround, createCylinder } from './ground';
 
 const data = new Map(Stages);
 
@@ -27,15 +27,20 @@ export const createStage = (name) => {
     const block = new Group();
 
     if (component.grid != null) {
-      const grid = createGrid(...component.grid);
-      const fineGrid = createFineGrid(...component.grid);
+      const grid = createGrid(component.grid);
+      const fineGrid = createFineGrid(component.grid);
       block.add(grid);
       block.add(fineGrid);
     }
 
     if (component.ground != null) {
-      const ground = createGround(...component.ground);
+      const ground = createGround(component.ground);
       block.add(ground);
+    }
+
+    if (component.cylinder != null) {
+      const sylinder = createCylinder(component.cylinder);
+      block.add(sylinder);
     }
 
     if (component.arrow != null) {
@@ -61,32 +66,5 @@ export const createStage = (name) => {
 
     stage.add(block);
   }
-
   return stage;
 };
-
-const stages = {
-  firstStage() {
-    const grid = createGrid(20, 12, 10, 80, 80, 80);
-    const fineGrid = createFineGrid(20, 12, 10, 80, 80, 80);
-
-    const ground = createGround(
-      20,
-      3,
-      80,
-      80,
-      2,
-      { x: 0, y: -200, z: 0 },
-      { x: 0, y: 0, z: 0.3 },
-    );
-
-    const stage = new Group();
-    stage.add(grid);
-    stage.add(fineGrid);
-    stage.add(ground);
-
-    return stage;
-  },
-};
-
-export default stages;
