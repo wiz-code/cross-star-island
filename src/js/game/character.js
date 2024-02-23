@@ -5,6 +5,8 @@ import {
   CapsuleGeometry,
   ConeGeometry,
   WireframeGeometry,
+  EdgesGeometry,
+  SphereGeometry,
   BufferGeometry,
   Float32BufferAttribute,
   MeshBasicMaterial,
@@ -59,6 +61,13 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 
+let id = 0;
+
+function genId() {
+  id += 1;
+  return id;
+}
+
 class Character extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
@@ -94,34 +103,51 @@ class Character extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  #elapsedTime = 0;
+  #active = false;
 
   #test = 0; /// ///////
 
   static createObject(data) {
-    const geom = new CapsuleGeometry(data.radius, data.height, 2, 8);
-    const wireframeGeom = new WireframeGeometry(geom);
+    const geometry = {};
+    const material = {};
+    const mesh = {};
+
+    const faceSize = data.radius * 0.7;
+    const faceOffset = data.radius * 0.6;
+
+    geometry.body = new CapsuleGeometry(data.radius, data.height, 2, 8);
+    geometry.wire = new EdgesGeometry(geometry.body);
+    geometry.face = new SphereGeometry(faceSize, 8, 4, undefined, undefined, undefined, PI / 2);
+    geometry.faceWire = new EdgesGeometry(geometry.face);
+    geometry.face.rotateX(-PI / 2);
+    geometry.faceWire.rotateX(-PI / 2);
 
     const geomSize = data.radius + floor(data.pointSize / 2);
-    //const pointsGeom = new CapsuleGeometry(geomSize, data.height, 1, 3);
-    const pointsGeom = new ConeGeometry(geomSize, geomSize, 3);
-    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
-    const bufferGeom = new BufferGeometry();
-    bufferGeom.setAttribute(
+    geometry.points = new ConeGeometry(geomSize, geomSize, 3);
+    const vertices = geometry.points.attributes.position.array.slice(0);
+
+    geometry.points = new BufferGeometry();
+    geometry.points.setAttribute(
       'position',
-      new Float32BufferAttribute(pointsVertices, 3),
+      new Float32BufferAttribute(vertices, 3),
     );
-    bufferGeom.computeBoundingSphere();
+    geometry.points.computeBoundingSphere();
 
-    const mat = new MeshBasicMaterial({
+    material.body = new MeshBasicMaterial({
       color: data.color,
     });
-    const wireframeMat = new LineBasicMaterial({
+    material.wire = new LineBasicMaterial({
       color: data.wireColor,
     });
+    material.face = new MeshBasicMaterial({
+      color: 0xdc143c,
+    });
+    material.faceWire = new LineBasicMaterial({
+      color: 0xdb6e84
+    });
 
-    const pointsMat = new PointsMaterial({
+    material.points = new PointsMaterial({
       color: data.pointColor,
       size: data.pointSize,
       map: texture,
@@ -129,32 +155,41 @@ class Character extends Publisher {
       alphaTest: 0.5,
     });
 
-    const mesh = new Mesh(geom, mat);
-    const wireMesh = new LineSegments(wireframeGeom, wireframeMat);
-    ////
+    mesh.body = new Mesh(geometry.body, material.body);
+    mesh.wire = new LineSegments(geometry.wire, material.wire);
+    mesh.face = new Mesh(geometry.face, material.face);
+    mesh.faceWire = new LineSegments(geometry.faceWire, material.faceWire);
+    mesh.face.position.setZ(-faceOffset);
+    mesh.faceWire.position.setZ(-faceOffset);
+    mesh.face.position.setY(faceOffset);
+    mesh.faceWire.position.setY(faceOffset);
 
-    const pointsMesh1 = new Points(bufferGeom, pointsMat);
-    const pointsMesh2 = new Points(bufferGeom, pointsMat);
-    pointsMesh2.rotateX(PI);
+    mesh.points1 = new Points(geometry.points, material.points);
+    mesh.points2 = new Points(geometry.points, material.points);
+    mesh.points2.rotateX(PI);
 
-    const pointsMesh = new Group();
-    pointsMesh.add(pointsMesh1, pointsMesh2);
-    pointsMesh1.position.setY((data.height + data.radius) / 2 + data.pointSize / 4);
-    pointsMesh2.position.setY((-data.height - data.radius) / 2 - data.pointSize / 4);
+    mesh.points = new Group();
+    mesh.points.add(mesh.points1, mesh.points2);
+    mesh.points1.position.setY(
+      (data.height + data.radius) / 2 + data.pointSize / 4,
+    );
+    mesh.points2.position.setY(
+      (-data.height - data.radius) / 2 - data.pointSize / 4,
+    );
 
     const object = new Group();
-    object.add(mesh);
-    object.add(wireMesh);
-    object.add(pointsMesh);
+    object.add(mesh.body);
+    object.add(mesh.wire);
+    object.add(mesh.face);
+    object.add(mesh.faceWire);
+    object.add(mesh.points);
 
     return object;
   }
 
-  static defaultParams = [
-    ['hp', 100],
-  ];
+  static defaultParams = [['hp', 100]];
 
-  constructor(id, name/*, ammos*/) {
+  constructor(name) {
     super();
 
     const dataMap = new Map(Characters);
@@ -163,15 +198,11 @@ class Character extends Publisher {
       throw new Error('character data not found');
     }
 
-    this.id = id;
-    //this.ammos = ammos;
+    this.id = `character-${genId()}`;
     this.data = dataMap.get(name);
 
     this.params = new Map(Character.defaultParams);
 
-    this.ammoType = this.data.ammoTypes[0];///////
-    // this.forwardComponent = 0;
-    // this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new Spherical();
     this.deltaY = 0;
@@ -179,9 +210,11 @@ class Character extends Publisher {
     this.velocity = new Vector3();
     this.direction = new Vector3(0, 0, -1);
 
-    this.gun = null;
+    this.gunType = '';
+    this.guns = new Map();
     this.camera = null;
     this.onUpdate = null;
+    this.elapsedTime = 0;
 
     this.object = Character.createObject(this.data);
     this.halfHeight = floor(this.data.height / 2);
@@ -191,6 +224,20 @@ class Character extends Publisher {
     const end = start.clone();
     end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
+
+    this.setActive(false);
+  }
+
+  isActive() {
+    return this.#active;
+  }
+
+  setActive(bool = true) {
+    this.#active = bool;
+
+    if (!this.isFPV()) {
+      this.visible(bool);
+    }
   }
 
   setOnUpdate(update) {
@@ -220,8 +267,9 @@ class Character extends Publisher {
     }
 
     this.rotation.phi = direction;
-    this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, direction));
-    //this.camera.getWorldDirection(this.direction);
+    this.direction.copy(
+      this.#dir.clone().applyAxisAngle(this.#yawAxis, direction),
+    );
 
     this.collider.start.copy(position);
     this.collider.end.copy(position);
@@ -238,6 +286,19 @@ class Character extends Publisher {
 
   setGrounded(bool) {
     this.#isGrounded = bool;
+  }
+
+  visible(bool) {
+    this.object.children.forEach((object) => {
+      if (object.isGroup) {
+        object.children.forEach((mesh) => {
+          mesh.visible = bool;
+        });
+        return;
+      }
+
+      object.visible = bool;
+    });
   }
 
   jump() {
@@ -263,19 +324,6 @@ class Character extends Publisher {
       .copy(this.direction)
       .multiplyScalar(multiplier);
     this.velocity.add(direction);
-    /* this.forwardComponent = deltaTime;
-
-    if (this.#isGrounded) {
-      this.forwardComponent *= this.data.speed;
-
-      if (state === States.sprint && deltaTime >= 0) {
-        this.forwardComponent *= this.data.sprint;
-      } else if (state === States.urgency) {
-        this.forwardComponent *= this.data.urgencyMove;
-      }
-    } else {
-      this.forwardComponent *= this.data.airSpeed;
-    } */
   }
 
   rotate(deltaTime, state = States.idle) {
@@ -304,55 +352,36 @@ class Character extends Publisher {
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
-    /* this.sideComponent = deltaTime * 0.7;
-
-    if (this.#isGrounded) {
-      this.sideComponent *= this.data.speed;
-
-      if (state === States.urgency) {
-        this.sideComponent *= this.data.urgencyMove;
-      }
-    } else {
-      this.sideComponent *= this.data.airSpeed;
-    } */
   }
 
-  setGun(gun) {
+  setGunType(name) {
+    if (!this.data.gunTypes.includes(name)) {
+      return;
+    }
+
+    this.gunType = name;
+  }
+
+  addGun(gun) {
     if (!this.data.gunTypes.includes(gun.name)) {
       return;
     }
 
-    this.gun = gun;
+    this.guns.set(gun.name, gun);
   }
 
   setAmmo(ammo) {
-    if (this.gun != null) {
-      this.gun.setAmmo(ammo);
+    if (this.guns.has(this.gunType)) {
+      const gun = this.guns.get(this.gunType);
+      gun.setAmmo(ammo);
     }
   }
 
   fire() {
-    if (this.gun != null) {
-      this.gun.fire(this);
+    if (this.guns.has(this.gunType)) {
+      const gun = this.guns.get(this.gunType);
+      gun.fire(this);
     }
-    /*const ammo = this.ammos.get(this.ammoType);
-    const bullet = ammo.list[ammo.index];
-
-    bullet.setActive(true);
-
-    this.#euler.x = this.povRotation.theta + this.rotation.theta + this.deltaY;
-    this.#euler.y = this.povRotation.phi + this.rotation.phi;
-    const dir = this.#dir.clone().applyEuler(this.#euler);
-    bullet.object.rotation.copy(this.#euler);
-
-    bullet.collider.center
-      .copy(this.collider.end)
-      .addScaledVector(dir, this.data.radius + bullet.data.radius);
-
-    bullet.velocity.copy(dir).multiplyScalar(bullet.data.speed);
-    bullet.velocity.addScaledVector(this.velocity, 2);
-
-    ammo.index = (ammo.index + 1) % ammo.list.length;*/
   }
 
   setPovRotation(povRotation, deltaY) {
@@ -490,16 +519,10 @@ class Character extends Publisher {
     }
   }
 
-  getElapsedTime() {
-    return this.#elapsedTime;
-  }
-
-  resetTime() {
-    this.#elapsedTime = 0;
-  }
-
-  update(deltaTime, damping) {
-    this.#elapsedTime += deltaTime;
+  update(deltaTime, elapsedTime, damping) {
+    if (!this.#active) {
+      return;
+    }
 
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
@@ -604,27 +627,6 @@ class Character extends Publisher {
       );
     }
 
-    /* if (this.forwardComponent !== 0) {
-      const direction = this.direction
-        .clone()
-        .multiplyScalar(this.forwardComponent);
-      this.velocity.add(direction);
-
-      this.forwardComponent = addDamping(
-        this.forwardComponent,
-        damping,
-        minMovement,
-      );
-    } */
-
-    /* if (this.sideComponent !== 0) {
-      const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
-      direction.normalize();
-      this.velocity.add(direction.multiplyScalar(this.sideComponent));
-
-      this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    } */
-
     this.velocity.addScaledVector(this.velocity, deltaDamping);
     const deltaPosition = this.#vel
       .copy(this.velocity)
@@ -638,10 +640,14 @@ class Character extends Publisher {
       this.camera.rotation.x = this.povRotation.theta + this.deltaY;
       this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
       this.camera.position.copy(this.collider.end);
+
+      if (this.collider.start.y < World.oob) {
+        this.publish('oob', this);
+      }
     }
 
     if (this.onUpdate != null) {
-      this.onUpdate(deltaTime);
+      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }

@@ -1,9 +1,13 @@
 import { Vector3 } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
-const { sin, PI } = Math;
+const { floor, random, sin, PI } = Math;
+
+const getRandomInclusive = (min, max) => random() * (max - min) + min;
 
 const easeOutSine = (x) => sin((x * PI) / 2);
+
+const easeInQuad = (x) => x * x;
 
 const easeOutCubic = (x) => 1 - (1 - x) * (1 - x) * (1 - x);
 
@@ -81,10 +85,6 @@ export const Obstacles = [
       pointColor: 0xf4e511,
       pointSize: 10,
       rotateSpeed: 2,
-
-      update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-      },
     },
   ],
 ];
@@ -98,9 +98,9 @@ export const Guns = [
       speed: 2000,
       fireInterval: 300,
       accuracy: 3,
-      recoil: 1,////////
+      recoil: 1, /// /////
 
-      ammoTypes: ['small-bullet', 'hop-bullet'],
+      ammoTypes: [/*'small-bullet', */'hop-bullet'],
     },
   ],
 ];
@@ -148,13 +148,21 @@ export const Ammo = [
       hopValue: 350,
       hopDuration: 0.5,
 
-      update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-        const elapsedTime = this.getElapsedTime();
 
-        if (!this.isBounced() && elapsedTime <= this.data.hopDuration) {
-          const ratio = easeOutCubic(elapsedTime);
-          this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+      update(deltaTime, elapsedTime) {
+        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+
+        if (!this.isBounced()) {
+          if (this.elapsedTime <= this.data.hopDuration) {
+            const ratio = easeOutCubic(this.elapsedTime);
+            this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+          } else {
+            const ratio = 1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
+
+            if (ratio >= 0) {
+              this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+            }
+          }
         }
       },
     },
@@ -184,23 +192,53 @@ export const Characters = [
       airSpeed: 100,
       jumpPower: 350,
 
-      ammoTypes: ['small-bullet'],
       gunTypes: ['normal-gun'],
+    },
+  ],
+];
+
+export const Items = [
+  [
+    'weapon-upgrade',
+    {
+      method: 'createRing',
+
+      radius : 10,
+      tube : 2,
+      radialSegments: 6,
+      tubularSegments: 12,
+
+      color: 0x007399,
+      wireColor: 0x004d66,
+      pointColor: 0xeb4b2f,
+      pointSize: 10,
+
+      effect: ['weapon-upgrade'],
+
+      collide() {},
+      update(deltaTime) {
+        //
+      }
     },
   ],
 ];
 
 export const Tweeners = [
   [
-    'rolling-stone-position',
-    (target) => {
+    'rolling-stone-1',
+    (target, arg) => {
+      const time = arg ?? 0;
+
       const tween = new TWEEN.Tween(target.collider.center);
       tween
-        .onEveryStart(() => (target.velocity = new Vector3(0, 0, 0)))
-        .to({ x: -2200, y: 300, z: 0 }, 0)
-        .delay(10000)
+        .onEveryStart(() => {
+          const posZ = getRandomInclusive(-80, 80);
+          target.collider.center.set(-2100, 300, posZ);
+          target.velocity.copy(new Vector3(0, 0, 0));
+        })
+        .delay(8000)
         .repeat(Infinity)
-        .start(0);
+        .start(time);
 
       return tween;
     },
@@ -213,9 +251,11 @@ export const Stages = [
     {
       checkPoints: [
         {
-          //position: new Vector3(-650, 0, 0),
-          position: new Vector3(-1600, 100, 0),
-          //position: new Vector3(-38 * 80, 1000, -6.5 * 80),
+          //position: new Vector3(-35 * 80, 0, -3.5 * 80),
+          position: new Vector3(-650, 0, 0),
+          //position: new Vector3(-2200, 100, 0),
+          //position: new Vector3(-40 * 80, 200, -1 * 80),
+          // position: new Vector3(-38 * 80, 1000, -6.5 * 80),
           direction: PI / 2,
         },
       ],
@@ -223,12 +263,13 @@ export const Stages = [
         {
           name: 'hero-1',
           position: new Vector3(-38 * 80, 1000, 3 * 80),
-          direction: -25 * PI / 180,
-          update(deltaTime) {
-            const time = this.getElapsedTime();
+          direction: (-25 * PI) / 180,
+          spawnedAt: 5,
+          update(deltaTime, elapsedTime) {
+            this.elapsedTime += deltaTime;
 
-            if (time > 2) {
-              this.resetTime();
+            if (this.elapsedTime > 2) {
+              this.elapsedTime = 0;
               this.fire();
             }
           },
@@ -237,15 +278,28 @@ export const Stages = [
       obstacles: [
         {
           name: 'round-stone',
-          position: new Vector3(-2000, 300, 0),
-          tweeners: ['rolling-stone-position'],
+          position: new Vector3(-2100, 300, 0),
+          tweeners: [{ name: 'rolling-stone-1' }],
+          spawnedAt: 0,
+          update(deltaTime) {
+            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          },
+        },
+        {
+          name: 'round-stone',
+          position: new Vector3(-2100, 300, 0),
+          tweeners: [{ name: 'rolling-stone-1', arg: 5000 }],
+          spawnedAt: 5,
+          update(deltaTime) {
+            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          },
         },
       ],
       components: [
         {
           grid: {
             widthSegments: 24,
-            depthSegments: 6,
+            heightSegments: 6,
             depthSegments: 8,
             widthSpacing: 80,
             heightSpacing: 80,
@@ -304,7 +358,7 @@ export const Stages = [
         {
           grid: {
             widthSegments: 20,
-            depthSegments: 6,
+            heightSegments: 6,
             depthSegments: 8,
             widthSpacing: 80,
             heightSpacing: 80,
@@ -325,7 +379,7 @@ export const Stages = [
             bumpHeight: 2,
             position: { sx: -19.5, sy: -1, sz: 0, heightSpacing: 80 },
             rotation: { x: 0, y: 0, z: -0.2 },
-          }
+          },
         },
         {
           ground: {
@@ -352,17 +406,17 @@ export const Stages = [
         {
           grid: {
             widthSegments: 20,
-            depthSegments: 6,
-            depthSegments: 8,
+            heightSegments: 6,
+            depthSegments: 12,
             widthSpacing: 80,
             heightSpacing: 80,
             depthSpacing: 80,
-            position: { sx: -42, sy: -2.2, sz: 0 },
+            position: { sx: -42, sy: 0, sz: 0 },
           },
           cylinder: {
             radiusTop: 80,
             radiusBottom: 80,
-            height: 20,
+            height: 10,
             radialSegments: 9,
             heightSegments: 1,
             position: { sx: -31, sy: 0.5, sz: -0.5, spacing: 80 },
@@ -372,30 +426,71 @@ export const Stages = [
           cylinder: {
             radiusTop: 40,
             radiusBottom: 40,
-            height: 20,
+            height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -33, sy: 0.9, sz: -1.5, spacing: 80 },
+            position: { sx: -33, sy: 0.8, sz: -1.5, spacing: 80 },
           },
         },
         {
           cylinder: {
             radiusTop: 80,
             radiusBottom: 80,
-            height: 20,
+            height: 10,
             radialSegments: 9,
             heightSegments: 1,
-            position: { sx: -35, sy: 0, sz: -3.5, spacing: 80 },
+            position: { sx: -34.5, sy: 0, sz: -3.8, spacing: 80 },
           },
         },
         {
           cylinder: {
             radiusTop: 40,
             radiusBottom: 40,
-            height: 20,
+            height: 10,
             radialSegments: 7,
             heightSegments: 1,
             position: { sx: -38, sy: 0.5, sz: 3, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 40,
+            radiusBottom: 40,
+            height: 10,
+            radialSegments: 7,
+            heightSegments: 1,
+            position: { sx: -35.8, sy: 0.3, sz: -2, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 40,
+            radiusBottom: 40,
+            height: 10,
+            radialSegments: 7,
+            heightSegments: 1,
+            position: { sx: -37.5, sy: 0.6, sz: -1, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 100,
+            radiusBottom: 100,
+            height: 10,
+            radialSegments: 10,
+            heightSegments: 1,
+            position: { sx: -40, sy: 0.62, sz: -1, spacing: 80 },
+          },
+        },
+        {
+          ground: {
+            widthSegments: 10,
+            depthSegments: 1,
+            widthSpacing: 80,
+            depthSpacing: 80,
+            bumpHeight: 0,
+            position: { sx: -46, sy: 0.2, sz: -1, heightSpacing: 80 },
+            rotation: { x: 0, y: 0, z: 0 },
           },
         },
       ],

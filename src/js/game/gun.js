@@ -15,8 +15,6 @@ class Gun extends Publisher {
 
   #euler = new Euler(0, 0, 0, 'YXZ');
 
-  #fireAt = performance.now();
-
   constructor(name) {
     super();
 
@@ -28,6 +26,7 @@ class Gun extends Publisher {
     this.type = 'gun';
     this.data = gunData.get(name);
     this.ammo = null;
+    this.fireAt = performance.now();
   }
 
   setAmmo(ammo) {
@@ -45,17 +44,17 @@ class Gun extends Publisher {
 
     const now = performance.now();
 
-    if (now - this.#fireAt < this.data.fireInterval) {
+    if (now - this.fireAt < this.data.fireInterval) {
       return;
     }
 
-    this.#fireAt = now;
+    this.fireAt = now;
 
     const { rotation, povRotation, deltaY } = character;
     const bullet = this.ammo.list[this.ammo.index];
     bullet.setActive(true);
 
-    const halfRad = this.data.accuracy / 2 * Rad_1;
+    const halfRad = (this.data.accuracy / 2) * Rad_1;
     const theta = getRandomInclusive(-halfRad, halfRad);
     const phi = getRandomInclusive(-halfRad, halfRad);
 

@@ -1,21 +1,7 @@
 import {
-  IcosahedronGeometry,
-  OctahedronGeometry,
-  BufferGeometry,
-  WireframeGeometry,
-  MeshBasicMaterial,
-  MeshNormalMaterial,
-  LineBasicMaterial,
-  PointsMaterial,
-  Mesh,
-  LineSegments,
-  Points,
-  Group,
-  Float32BufferAttribute,
   Texture,
   Sphere,
   Vector3,
-  NormalBlending,
 } from 'three';
 
 import { World, Grid, ObjectSettings } from './settings';
@@ -49,10 +35,11 @@ class CollidableManager extends Publisher {
     this.scene = scene;
     this.worldOctree = worldOctree;
     this.list = new Map();
+    this.schedules = new Map();
   }
 
   // type = 'ammo', 'obstacle'
-  add(type, collidable) {
+  add(type, collidable, data = null) {
     if (type === 'ammo') {
       const { name, list } = collidable;
 
@@ -74,6 +61,7 @@ class CollidableManager extends Publisher {
 
     const list = this.list.get(type);
     list.push(collidable);
+    this.schedules.set(collidable, data.spawnedAt);
   }
 
   remove(type, collidable) {
@@ -89,7 +77,7 @@ class CollidableManager extends Publisher {
       this.list.clear();
       return;
     }
-    
+
     this.list.delete(type);
   }
 
@@ -140,46 +128,30 @@ class CollidableManager extends Publisher {
         }
       }
     }
-    /* for (const list of this.list) {
-      for (let i = 0, l = list.length; i < l; i += 1) {
-        const a1 = list[i];
-
-        for (let j = i + 1; j < l; j += 1) {
-          const a2 = list[j];
-
-          const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-          const r = a1.collider.radius + a2.collider.radius;
-          const r2 = r * r;
-
-          if (d2 < r2) {
-            const normal = this.#vecA
-              .subVectors(a1.collider.center, a2.collider.center)
-              .normalize();
-            const v1 = this.#vecB
-              .copy(normal)
-              .multiplyScalar(normal.dot(a1.velocity));
-            const v2 = this.#vecC
-              .copy(normal)
-              .multiplyScalar(normal.dot(a2.velocity));
-
-            a1.velocity.add(v2).sub(v1);
-            a2.velocity.add(v1).sub(v2);
-
-            const d = (r - sqrt(d2)) / 2;
-
-            a1.collider.center.addScaledVector(normal, d);
-            a2.collider.center.addScaledVector(normal, -d);
-          }
-        }
-      }
-    } */
   }
 
-  update(deltaTime, damping) {
+  update(deltaTime, elapsedTime, damping) {
+    const schedules = Array.from(this.schedules.entries());
+
+    for (let i = 0, l = schedules.length; i < l; i += 1) {
+      const [object, spawnedAt] = schedules[i];
+
+      if (elapsedTime > spawnedAt) {
+        if (!object.isActive()) {
+          object.setActive(true);
+        }
+      }
+    }
+
     const list = Array.from(this.list.values()).flat();
 
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
+
+      if (!collidable.isActive()) {
+        continue;
+      }
+
       collidable.collider.center.addScaledVector(
         collidable.velocity,
         deltaTime,
@@ -217,7 +189,9 @@ class CollidableManager extends Publisher {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
       // オブジェクト固有の挙動をupdate()に記述する
-      collidable.update(deltaTime);
+      if (collidable.isActive()) {
+        collidable.update(deltaTime, elapsedTime);
+      }
     }
   }
 }

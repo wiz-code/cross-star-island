@@ -112,7 +112,6 @@ export const ObjectSettings = {
 };
 
 export const Cylinder = {
-
   color: 0x4d4136,
   wireColor: 0x332000,
   pointColor: 0xf4e511, // 0xffff00,
@@ -148,6 +147,7 @@ export const Controls = {
 };
 
 export const World = {
+  oob: -600,
   gravity: 800, // 6,
   resistance: 4, // 10,
   airResistance: 1,

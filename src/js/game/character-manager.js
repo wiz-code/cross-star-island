@@ -69,15 +69,17 @@ class CharacterManager {
     this.collidableManager = collidableManager;
     this.worldOctree = worldOctree;
     this.list = new Map();
+    this.schedules = new Map();
 
     this.collideWith = this.collideWith.bind(this);
     this.collidableManager.subscribe('collideWith', this.collideWith);
   }
 
-  add(character) {
+  add(character, data) {
     if (!this.list.has(character.id)) {
       if (!character.isFPV()) {
         this.scene.add(character.object);
+        this.schedules.set(character, data.spawnedAt);
       }
 
       this.list.set(character.id, character);
@@ -86,7 +88,11 @@ class CharacterManager {
 
   remove(character) {
     if (this.list.has(character.id)) {
-      this.scene.remove(character.object);
+      if (!character.isFPV()) {
+        this.scene.remove(character.object);
+        this.schedules.delete(character.id);
+      }
+
       this.list.delete(character.id);
     }
   }
@@ -148,6 +154,10 @@ class CharacterManager {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
 
+      if (!character.isActive()) {
+        continue;
+      }
+
       const result = this.worldOctree.capsuleIntersect(character.collider);
       character.setGrounded(false);
 
@@ -169,7 +179,19 @@ class CharacterManager {
     }
   }
 
-  update(deltaTime, damping) {
+  update(deltaTime, elapsedTime, damping) {
+    const schedules = Array.from(this.schedules.entries());
+
+    for (let i = 0, l = schedules.length; i < l; i += 1) {
+      const [character, spawnedAt] = schedules[i];
+
+      if (elapsedTime > spawnedAt) {
+        if (!character.isActive()) {
+          character.setActive(true);
+        }
+      }
+    }
+
     const list = Array.from(this.list.values());
     const len = list.length;
 
@@ -186,7 +208,10 @@ class CharacterManager {
 
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      character.update(deltaTime, damping);
+
+      if (character.isActive()) {
+        character.update(deltaTime, elapsedTime, damping);
+      }
     }
 
     this.collisions();

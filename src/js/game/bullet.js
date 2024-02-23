@@ -14,18 +14,28 @@ class Bullet extends Collidable {
     this.index = index;
     this.collider.set(
       new Vector3(0, this.index * this.data.radius * 2 - 1000, 0),
-      this.data.radius
+      this.data.radius,
     );
+    this.elapsedTime = 0;
 
-    this.onUpdate = this.data.update.bind(this);
+    this.setOnUpdate(this.data.update);
     this.setActive(false);
   }
 
-  update(deltaTime) {
-    super.update(deltaTime);
+  setActive(bool) {
+    super.setActive(bool);
+    this.elapsedTime = 0;
+  }
 
-    if (this.getElapsedTime() > this.data.lifetime) {
-      this.setActive(false);
+  update(deltaTime, elapsedTime) {
+    super.update(deltaTime, elapsedTime);
+
+    if (this.isActive()) {
+      this.elapsedTime += deltaTime;
+
+      if (this.elapsedTime > this.data.lifetime) {
+        this.setActive(false);
+      }
     }
   }
 }

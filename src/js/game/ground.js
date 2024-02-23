@@ -1,4 +1,22 @@
-import * as THREE from 'three';
+import {
+  Texture,
+  CylinderGeometry,
+  BufferGeometry,
+  WireframeGeometry,
+  EdgesGeometry,
+  Float32BufferAttribute,
+  MeshBasicMaterial,
+  PointsMaterial,
+  NormalBlending,
+  LineBasicMaterial,
+  Mesh,
+  Points,
+  Group,
+  OctahedronGeometry,
+  PlaneGeometry,
+  LineSegments,
+  DoubleSide,
+} from 'three';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { Grid, Ground, Cylinder } from './settings';
@@ -10,7 +28,7 @@ const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
 textures.crossStar(context);
 
-const texture = new THREE.Texture(canvas);
+const texture = new Texture(canvas);
 texture.needsUpdate = true;
 
 let seed = PI / 4;
@@ -43,187 +61,6 @@ const generateHeight = (width, height) => {
   return data;
 };
 
-const createStage = (radius = 100) => {
-  const geom = new THREE.CylinderGeometry(radius, radius, 10, 12);
-
-  const pointsGeom = new THREE.CylinderGeometry(
-    radius + 2.5,
-    radius + 2.5,
-    20,
-    12,
-  );
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-
-  const bufferGeom = new THREE.BufferGeometry();
-  bufferGeom.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(pointsVertices, 3),
-  );
-  bufferGeom.computeBoundingSphere();
-
-  const mat = new THREE.MeshBasicMaterial({
-    color: Ground.Object.color,
-  });
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: Ground.wireframeColor,
-    wireframe: true,
-  });
-
-  const pointsMat = new THREE.PointsMaterial({
-    color: Ground.Object.pointsColor,
-    size: Grid.size,
-    map: texture,
-    blending: THREE.NormalBlending,
-    alphaTest: 0.5,
-  });
-
-  const mesh = new THREE.Mesh(geom, mat);
-  const wireMesh = new THREE.Mesh(geom, wireMat);
-  const pointsMesh = new THREE.Points(bufferGeom, pointsMat);
-
-  const group = new THREE.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
-
-  return group;
-};
-
-const createStone = (size = 1, detail = 0) => {
-  const geom = new THREE.OctahedronGeometry(size, detail);
-  geom.scale(0.2, 1, 0.2);
-
-  const pointsGeom = new THREE.OctahedronGeometry(size + 4, detail);
-  pointsGeom.scale(0.26, 1, 0.26);
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-
-  const bufferGeom = new THREE.BufferGeometry();
-  bufferGeom.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(pointsVertices, 3),
-  );
-  bufferGeom.computeBoundingSphere();
-
-  const mat = new THREE.MeshBasicMaterial({
-    color: Ground.Object.color,
-  });
-  const wireMat = new THREE.MeshBasicMaterial({
-    color: Ground.wireframeColor,
-    wireframe: true,
-  });
-
-  const pointsMat = new THREE.PointsMaterial({
-    color: Ground.Object.pointsColor,
-    size: Grid.size,
-    map: texture,
-    blending: THREE.NormalBlending,
-    alphaTest: 0.5,
-  });
-
-  const mesh = new THREE.Mesh(geom, mat);
-  const wireMesh = new THREE.Mesh(geom, wireMat);
-  const pointsMesh = new THREE.Points(bufferGeom, pointsMat);
-
-  const group = new THREE.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
-
-  return group;
-};
-
-export const createWalls = () => {
-  const width = (Grid.Segments.width - 2) * Grid.Spacing.width;
-  const depth = (Grid.Segments.depth - 2) * Grid.Spacing.depth;
-  const height = Grid.Spacing.height * Ground.wallHeightSize + 1;
-
-  const walls = [];
-
-  for (let i = 0; i < 4; i += 1) {
-    let geom;
-    let data;
-
-    if (i % 2 === 0) {
-      data = generateHeight(width, height);
-      geom = new THREE.PlaneGeometry(
-        width,
-        height,
-        Grid.Segments.width - 1,
-        Ground.wallHeightSize,
-      );
-    } else {
-      data = generateHeight(depth, height);
-      geom = new THREE.PlaneGeometry(
-        depth,
-        height,
-        Grid.Segments.depth - 1,
-        Ground.wallHeightSize,
-      );
-    }
-
-    const vertices = geom.attributes.position.array;
-    const pointsVertices = vertices.slice(0);
-
-    for (let j = 0, k = 0, l = vertices.length; j < l; j += 1, k += 3) {
-      vertices[k + 2] = (data[j] * Ground.heightCoef) / 2;
-      pointsVertices[k + 2] = vertices[k + 2] + Grid.size / 2;
-    }
-
-    const geomPoints = new THREE.BufferGeometry();
-    geomPoints.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(pointsVertices, 3),
-    );
-    geomPoints.computeBoundingSphere();
-
-    const mat = new THREE.MeshBasicMaterial({
-      color: Ground.wallColor,
-    });
-    const matWire = new THREE.MeshBasicMaterial({
-      color: Ground.wireframeColor,
-      wireframe: true,
-    });
-
-    const matPoints = new THREE.PointsMaterial({
-      color: Ground.pointsColor,
-      size: Grid.size,
-      map: texture,
-      blending: THREE.NormalBlending,
-      alphaTest: 0.5,
-    });
-
-    const mesh = new THREE.Mesh(geom, mat);
-    const meshWire = new THREE.Mesh(geom, matWire);
-    const meshPoints = new THREE.Points(geomPoints, matPoints);
-
-    const group = new THREE.Group();
-    group.add(mesh);
-    group.add(meshWire);
-    group.add(meshPoints);
-
-    group.position.setY((Grid.Spacing.height * Ground.wallHeightSize) / 2);
-
-    if (i % 2 === 0) {
-      if (i === 0) {
-        group.position.setZ(-depth / 2 + 50);
-      } else {
-        group.rotation.y = PI;
-        group.position.setZ(depth / 2 - 50);
-      }
-    } else if (i === 1) {
-      group.rotation.y = PI / 2;
-      group.position.setX(-width / 2 + 50);
-    } else {
-      group.rotation.y = -PI / 2;
-      group.position.setX(width / 2 - 50);
-    }
-
-    walls.push(group);
-  }
-
-  return walls;
-};
-
 export const createGround = ({
   widthSegments = 10,
   depthSegments = 10,
@@ -242,12 +79,7 @@ export const createGround = ({
   const mat = {};
   const mesh = {};
 
-  geom.surface = new THREE.PlaneGeometry(
-    width,
-    depth,
-    widthSegments,
-    depthSegments,
-  );
+  geom.surface = new PlaneGeometry(width, depth, widthSegments, depthSegments);
   geom.surface.rotateX(-PI / 2);
 
   const vertices = geom.surface.attributes.position.array;
@@ -258,40 +90,40 @@ export const createGround = ({
     pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
   }
 
-  geom.wireframe = new THREE.WireframeGeometry(geom.surface);
+  geom.wireframe = new WireframeGeometry(geom.surface);
 
-  geom.points = new THREE.BufferGeometry();
+  geom.points = new BufferGeometry();
   geom.points.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(pointsVertices, 3),
+    new Float32BufferAttribute(pointsVertices, 3),
   );
   geom.points.computeBoundingSphere();
 
-  mat.surface = new THREE.MeshBasicMaterial({
+  mat.surface = new MeshBasicMaterial({
     color: Ground.color,
-    // side: THREE.DoubleSide,
+    // side: DoubleSide,
   });
-  mat.wireframe = new THREE.LineBasicMaterial({
+  mat.wireframe = new LineBasicMaterial({
     color: Ground.wireframeColor,
   });
 
-  mat.points = new THREE.PointsMaterial({
+  mat.points = new PointsMaterial({
     color: Ground.pointsColor,
     size: Grid.size,
     map: texture,
-    blending: THREE.NormalBlending,
+    blending: NormalBlending,
     alphaTest: 0.5,
   });
 
-  mesh.surface = new THREE.Mesh(geom.surface, mat.surface);
+  mesh.surface = new Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  // mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
-  mesh.wireframe = new THREE.LineSegments(geom.wireframe, mat.wireframe);
+  // mesh.wireframe = new Mesh(geom.surface, mat.wireframe);
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
-  mesh.points = new THREE.Points(geom.points, mat.points);
+  mesh.points = new Points(geom.points, mat.points);
   mesh.points.name = 'points';
 
-  const ground = new THREE.Group();
+  const ground = new Group();
   ground.add(mesh.surface);
   ground.add(mesh.wireframe);
   ground.add(mesh.points);
@@ -325,56 +157,53 @@ export const createCylinder = ({
   const mat = {};
   const mesh = {};
 
-  geom.surface = new THREE.CylinderGeometry(
+  geom.surface = new CylinderGeometry(
     radiusTop,
     radiusBottom,
     height,
     radialSegments,
-    heightSegments
+    heightSegments,
   );
-  //geom.surface.rotateX(-PI / 2);
-  geom.points = new THREE.CylinderGeometry(
+  // geom.surface.rotateX(-PI / 2);
+  geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,
     height + 4,
     radialSegments,
-    heightSegments
+    heightSegments,
   );
 
   const vertices = geom.points.attributes.position.array.slice(0);
-  geom.wireframe = new THREE.WireframeGeometry(geom.surface);
+  geom.wireframe = new WireframeGeometry(geom.surface);
 
-  geom.points = new THREE.BufferGeometry();
-  geom.points.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(vertices, 3),
-  );
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geom.points.computeBoundingSphere();
 
-  mat.surface = new THREE.MeshBasicMaterial({
+  mat.surface = new MeshBasicMaterial({
     color: Cylinder.color,
-    // side: THREE.DoubleSide,
+    // side: DoubleSide,
   });
-  mat.wireframe = new THREE.LineBasicMaterial({
+  mat.wireframe = new LineBasicMaterial({
     color: Cylinder.wireColor,
   });
 
-  mat.points = new THREE.PointsMaterial({
+  mat.points = new PointsMaterial({
     color: Cylinder.pointColor,
     size: Grid.size,
     map: texture,
-    blending: THREE.NormalBlending,
+    blending: NormalBlending,
     alphaTest: 0.5,
   });
 
-  mesh.surface = new THREE.Mesh(geom.surface, mat.surface);
+  mesh.surface = new Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  mesh.wireframe = new THREE.LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
-  mesh.points = new THREE.Points(geom.points, mat.points);
+  mesh.points = new Points(geom.points, mat.points);
   mesh.points.name = 'points';
 
-  const group = new THREE.Group();
+  const group = new Group();
   group.add(mesh.surface);
   group.add(mesh.wireframe);
   group.add(mesh.points);

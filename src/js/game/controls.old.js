@@ -2,12 +2,17 @@ import { Spherical, Vector3, Color } from 'three';
 
 import { Camera, Controls, Screen } from './settings';
 import { Keys, Pointers } from './data';
-import { createSight, sightLines, createPovIndicator, createCenterMark } from './screen';
+import {
+  createSight,
+  sightLines,
+  createPovIndicator,
+  createCenterMark,
+} from './screen';
 
 const { abs, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
-const Rad_1 = 1 / 360 * PI * 2;
+const Rad_1 = (1 / 360) * PI * 2;
 
 const lerp = (x, y, p) => x + (y - x) * p;
 
@@ -620,7 +625,7 @@ class FirstPersonControls {
       }
     }
 
-    const posY = -this.#wheel / halfPI * this.viewHalfY * 2.3;
+    const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.3;
     this.povSightLines.position.setY(posY);
     this.player.setPovRotation(this.#rotation, this.#wheel);
 

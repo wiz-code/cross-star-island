@@ -33,6 +33,7 @@ import {
   Ammo as AmmoData,
   Guns,
 } from './data';
+import Loop from './loop';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
@@ -57,6 +58,8 @@ const getDamping = (delta) => {
 };
 
 class Game {
+  #elapsedTime = 0;
+
   constructor() {
     this.clock = new Clock();
     this.worldOctree = new Octree();
@@ -123,7 +126,10 @@ class Game {
     this.data.guns = new Map(Guns);
     this.data.tweeners = new Map(Tweeners);
 
-    this.objectManager = new CollidableManager(this.scene.field, this.worldOctree);
+    this.objectManager = new CollidableManager(
+      this.scene.field,
+      this.worldOctree,
+    );
     this.characterManager = new CharacterManager(
       this.scene.field,
       this.objectManager,
@@ -138,20 +144,6 @@ class Game {
       this.objectManager.add('ammo', ammo);
     });
 
-    this.guns = new Map();
-    const gunNames = Array.from(this.data.guns.keys());
-    gunNames.forEach((name) => {
-      const gun = new Gun(name);
-      const [ammoType] = gun.data.ammoTypes;
-      const ammo = this.ammos.get(ammoType);
-      gun.setAmmo(ammo);
-      this.guns.set(name, gun);
-    });
-
-    // これらはステージごとに毎回生成破棄を実行する
-    this.characters = new Map();
-    this.obstacles = new Map();
-
     this.controls = null;
     this.player = null;
     this.stage = null;
@@ -163,12 +155,14 @@ class Game {
     this.checkPointIndex = 0;
 
     /// ///////////////
-    const player = new Character('player1', 'hero-1');
+    const player = new Character('hero-1');
 
     this.setPlayer(player);
     this.setMode('play');
 
     this.ready = true;
+    this.loop = new Loop(this.update, this);
+
     /// ///////////
 
     const onResize = function onResize() {
@@ -204,13 +198,34 @@ class Game {
     this.container.appendChild(this.stats.domElement);
   }
 
+  getElapsedTime() {
+    return this.#elapsedTime;
+  }
+
+  resetTime() {
+    this.#elapsedTime = 0;
+  }
+
   setPlayer(character) {
     this.player = character;
     this.player.setFPV(this.camera.field);
 
-    const [gunType] = this.player.data.gunTypes;
-    const gun = this.guns.get(gunType);
-    this.player.setGun(gun);
+    this.teleportCharacter = this.teleportCharacter.bind(this);
+    this.player.subscribe('oob', this.teleportCharacter);
+
+    const gunTypes = this.player.data.gunTypes;
+
+    gunTypes.forEach((name, index) => {
+      const gun = new Gun(name);
+      const [ammoType] = gun.data.ammoTypes;
+      const ammo = this.ammos.get(ammoType);
+      gun.setAmmo(ammo);
+      this.player.addGun(gun);
+
+      if (index === 0) {
+        this.player.setGunType(name);
+      }
+    });
 
     this.controls = new FirstPersonControls(
       this.scene.screen,
@@ -225,6 +240,18 @@ class Game {
       this.player.unsetFPV();
       this.player = null;
       this.controls.dispose();
+    }
+  }
+
+  teleportCharacter(character) {
+    const stageNameList = this.data.compositions.get('stage');
+    const stageName = stageNameList[this.stageIndex];
+    const stageData = this.data.stages.get(stageName);
+
+    if (character.isFPV()) {
+      const checkPoint = stageData.checkPoints[this.checkPointIndex];
+      character.setPosition(checkPoint.position, checkPoint.direction);
+      character.velocity.copy(new Vector3(0, 0, 0));
     }
   }
 
@@ -250,7 +277,10 @@ class Game {
   setStage(stageIndex) {
     const stageNameList = this.data.compositions.get('stage');
 
-    const stageName = typeof stageIndex === 'number' ? stageNameList[stageIndex] : stageNameList[this.stageIndex];
+    const stageName =
+      typeof stageIndex === 'number'
+        ? stageNameList[stageIndex]
+        : stageNameList[this.stageIndex];
 
     if (stageName == null) {
       return;
@@ -259,35 +289,43 @@ class Game {
     const stageData = this.data.stages.get(stageName);
 
     const { characters, obstacles } = stageData;
-    const checkPoint = stageData.checkPoints[this.stageIndex];
+    const checkPoint = stageData.checkPoints[this.checkPointIndex];
 
-    this.characters.clear();
     this.characterManager.clear();
-    this.obstacles.clear();
     this.objectManager.clear('obstacle');
 
-    characters.forEach((data, index) => {
-      const id = `character-${index}`;
-      const character = new Character(id, data.name, this.ammos);
-      const [gunType] = character.data.gunTypes;
-      const gun = this.guns.get(gunType);
-      character.setGun(gun);
+    characters.forEach((data) => {
+      const character = new Character(data.name);
+      const gunTypes = character.data.gunTypes;
+
+      gunTypes.forEach((name, index) => {
+        const gun = new Gun(name);
+        const [ammoType] = gun.data.ammoTypes;
+        const ammo = this.ammos.get(ammoType);
+        gun.setAmmo(ammo);
+        character.addGun(gun);
+
+        if (index === 0) {
+          character.setGunType(name);
+        }
+      });
+
       character.setOnUpdate(data.update);
       character.setPosition(data.position, data.direction);
-      this.characters.set(id, character);
-      this.characterManager.add(character);
+      this.characterManager.add(character, data);
     });
 
-    obstacles.forEach((data, index) => {
-      const id = `obstacle-${index}`;
+    obstacles.forEach((data) => {
       const obstacle = new Obstacle(data.name);
       obstacle.collider.center.copy(data.position);
-      data.tweeners.forEach((tweenerName) => {
-        obstacle.addTweener(this.data.tweeners.get(tweenerName));
+      data.tweeners.forEach(({ name, arg }) => {
+        const tweener = this.data.tweeners.get(name);
+        obstacle.addTweener(tweener, arg);
       });
-      this.obstacles.set(id, obstacle);
-      this.objectManager.add('obstacle', obstacle);
+      obstacle.setOnUpdate(data.update);
+      this.objectManager.add('obstacle', obstacle, data);
     });
+
 
     this.player.setPosition(checkPoint.position, checkPoint.direction);
     this.characterManager.add(this.player);
@@ -321,7 +359,23 @@ class Game {
   }
 
   start() {
-    this.checkPointIndex = 0;
+    if (this.player != null) {
+      this.player.setActive(true);
+      this.controls.enable(true);
+    }
+
+    this.clock.start();
+    this.loop.start()
+  }
+
+  stop() {
+    if (this.player != null) {
+      this.player.setActive(false);
+      this.controls.enable(false);
+    }
+
+    this.clock.stop();
+    this.loop.stop()
   }
 
   restart(checkPoint) {}
@@ -337,9 +391,10 @@ class Game {
     const damping = getDamping(deltaTime);
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
+      this.#elapsedTime += deltaTime;
       this.controls.update(deltaTime);
-      this.characterManager.update(deltaTime, damping);
-      this.objectManager.update(deltaTime, damping);
+      this.characterManager.update(deltaTime, this.#elapsedTime, damping);
+      this.objectManager.update(deltaTime, this.#elapsedTime, damping);
     }
 
     this.scenes.update();

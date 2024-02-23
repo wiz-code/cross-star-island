@@ -1,15 +1,26 @@
 import { Sphere, Vector3 } from 'three';
 
+import Publisher from './publisher';
+
 function noop() {}
 
-class Collidable {
+let id = 0;
+
+function genId() {
+  id += 1;
+  return id;
+}
+
+class Collidable extends Publisher {
   #active = false;
 
   #bounced = false;
 
-  #elapsedTime = 0;
-
   constructor(name, type, object = null) {
+    super();
+
+    this.id = `${type}-${genId()}`;
+
     this.name = name;
     this.type = type;
 
@@ -21,16 +32,16 @@ class Collidable {
     this.velocity = new Vector3();
 
     this.onUpdate = null;
-
-    this.setActive(false);
   }
+
+
 
   setObject(object) {
     this.object = object;
   }
 
-  getElapsedTime() {
-    return this.#elapsedTime;
+  setOnUpdate(update) {
+    this.onUpdate = update.bind(this);
   }
 
   isBounced() {
@@ -49,7 +60,6 @@ class Collidable {
     this.#active = bool;
 
     if (bool) {
-      this.#elapsedTime = 0;
       this.#bounced = false;
     }
 
@@ -60,13 +70,9 @@ class Collidable {
     }
   }
 
-  update(deltaTime) {
-    if (this.#active) {
-      this.#elapsedTime += deltaTime;
-
-      if (this.onUpdate != null) {
-        this.onUpdate(deltaTime);
-      }
+  update(deltaTime, elapsedTime) {
+    if (this.#active && this.onUpdate != null) {
+      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }

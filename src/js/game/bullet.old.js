@@ -16,7 +16,7 @@ class Bullet {
     this.object = object;
     this.collider = new Sphere(
       new Vector3(0, this.index * data.radius * 2 - 1000, 0),
-      data.radius
+      data.radius,
     );
     this.velocity = new Vector3();
 

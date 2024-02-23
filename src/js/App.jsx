@@ -107,7 +107,7 @@ const theme = createTheme({
 
 function App() {
   const [game, setGame] = useState(null);
-  const [rendering, setRendering] = useState(null);
+  const [ready, setReady] = useState(false);
   const [started, setStarted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -130,29 +130,25 @@ function App() {
     if (game != null) {
       // const loop = new Loop(update, objects);
       const loop = new Loop(game.update, game);
-      setRendering(loop);
+      setReady(true);
     }
   }, [game]);
 
   const togglePlay = useCallback(() => {
-    if (rendering != null) {
+    if (ready) {
       if (!started) {
         if (game != null) {
-          game.clock.start();
+          game.start();
+          setStarted(true);
         }
-
-        rendering.start();
-        setStarted(true);
       } else {
         if (game != null) {
-          game.clock.stop();
+          game.stop();
+          setStarted(false);
         }
-
-        rendering.stop();
-        setStarted(false);
       }
     }
-  }, [rendering, started, game]);
+  }, [ready, started, game]);
 
   const toggleFullScreen = useCallback(() => {
     if (document.fullscreenElement == null) {

@@ -3,6 +3,7 @@ import {
   OctahedronGeometry,
   BufferGeometry,
   WireframeGeometry,
+  EdgesGeometry,
   MeshBasicMaterial,
   MeshNormalMaterial,
   LineBasicMaterial,
@@ -18,7 +19,6 @@ import {
   NormalBlending,
 } from 'three';
 
-import Publisher from './publisher';
 import Collidable from './collidable';
 import { World, Grid } from './settings';
 import { Obstacles, Stages } from './data';
@@ -63,13 +63,12 @@ class Obstacle extends Collidable {
 
       tweens, /// //
       init,
-      update,
     } = this.data;
 
     this.collider.set(new Vector3(), radius);
     this.velocity = new Vector3();
-    this.onUpdate = this.data.update.bind(this);
-    this.updater = new Publisher();
+    //this.onUpdate = this.data.update.bind(this);
+    //this.updater = new Publisher();
 
     const geom = new IcosahedronGeometry(radius, detail);
     const wireframeGeom = new WireframeGeometry(geom);
@@ -109,19 +108,21 @@ class Obstacle extends Collidable {
     object.add(pointsMesh);
 
     this.setObject(object);
-    this.setActive(true);
+    this.setActive(false);
   }
 
-  addTweener(tweener) {
-    this.tweener = tweener(this);
-    this.tweener = this.tweener.update.bind(this.tweener);
-    this.updater.subscribe('update', this.tweener);
+  addTweener(tweener, arg) {
+    const tween = tweener(this, arg);
+    const updater = tween.update.bind(tween);
+    this.subscribe('tween', updater);
   }
 
-  update(deltaTime) {
-    super.update(deltaTime);
+  update(deltaTime, elapsedTime) {
+    super.update(deltaTime, elapsedTime);
 
-    this.updater.publish('update');
+    if (this.isActive()) {
+      this.publish('tween', elapsedTime * 1000);
+    }
   }
 }
 
