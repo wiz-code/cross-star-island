@@ -9207,7 +9207,7 @@ const theme = (0,_mui_material_styles__WEBPACK_IMPORTED_MODULE_4__["default"])({
 
 function App() {
   const [game, setGame] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
-  const [rendering, setRendering] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
+  const [ready, setReady] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [started, setStarted] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   const [isFullscreen, setIsFullscreen] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -9226,26 +9226,24 @@ function App() {
     if (game != null) {
       // const loop = new Loop(update, objects);
       const loop = new _game_loop__WEBPACK_IMPORTED_MODULE_2__["default"](game.update, game);
-      setRendering(loop);
+      setReady(true);
     }
   }, [game]);
   const togglePlay = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
-    if (rendering != null) {
+    if (ready) {
       if (!started) {
         if (game != null) {
-          game.clock.start();
+          game.start();
+          setStarted(true);
         }
-        rendering.start();
-        setStarted(true);
       } else {
         if (game != null) {
-          game.clock.stop();
+          game.stop();
+          setStarted(false);
         }
-        rendering.stop();
-        setStarted(false);
       }
     }
-  }, [rendering, started, game]);
+  }, [ready, started, game]);
   const toggleFullScreen = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(() => {
     if (document.fullscreenElement == null) {
       document.documentElement.requestFullscreen();
@@ -9431,13 +9429,21 @@ class Bullet extends _collidable__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.data = ammoData.get(name);
     this.index = index;
     this.collider.set(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, this.index * this.data.radius * 2 - 1000, 0), this.data.radius);
-    this.onUpdate = this.data.update.bind(this);
+    this.elapsedTime = 0;
+    this.setOnUpdate(this.data.update);
     this.setActive(false);
   }
-  update(deltaTime) {
-    super.update(deltaTime);
-    if (this.getElapsedTime() > this.data.lifetime) {
-      this.setActive(false);
+  setActive(bool) {
+    super.setActive(bool);
+    this.elapsedTime = 0;
+  }
+  update(deltaTime, elapsedTime) {
+    super.update(deltaTime, elapsedTime);
+    if (this.isActive()) {
+      this.elapsedTime += deltaTime;
+      if (this.elapsedTime > this.data.lifetime) {
+        this.setActive(false);
+      }
     }
   }
 }
@@ -9509,20 +9515,25 @@ class CharacterManager {
     this.collidableManager = collidableManager;
     this.worldOctree = worldOctree;
     this.list = new Map();
+    this.schedules = new Map();
     this.collideWith = this.collideWith.bind(this);
     this.collidableManager.subscribe('collideWith', this.collideWith);
   }
-  add(character) {
+  add(character, data) {
     if (!this.list.has(character.id)) {
       if (!character.isFPV()) {
         this.scene.add(character.object);
+        this.schedules.set(character, data.spawnedAt);
       }
       this.list.set(character.id, character);
     }
   }
   remove(character) {
     if (this.list.has(character.id)) {
-      this.scene.remove(character.object);
+      if (!character.isFPV()) {
+        this.scene.remove(character.object);
+        this.schedules.delete(character.id);
+      }
       this.list.delete(character.id);
     }
   }
@@ -9565,6 +9576,9 @@ class CharacterManager {
     const list = Array.from(this.list.values());
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
+      if (!character.isActive()) {
+        continue;
+      }
       const result = this.worldOctree.capsuleIntersect(character.collider);
       character.setGrounded(false);
       if (result) {
@@ -9577,7 +9591,16 @@ class CharacterManager {
       }
     }
   }
-  update(deltaTime, damping) {
+  update(deltaTime, elapsedTime, damping) {
+    const schedules = Array.from(this.schedules.entries());
+    for (let i = 0, l = schedules.length; i < l; i += 1) {
+      const [character, spawnedAt] = schedules[i];
+      if (elapsedTime > spawnedAt) {
+        if (!character.isActive()) {
+          character.setActive(true);
+        }
+      }
+    }
     const list = Array.from(this.list.values());
     const len = list.length;
     if (len >= 2) {
@@ -9591,7 +9614,9 @@ class CharacterManager {
     }
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      character.update(deltaTime, damping);
+      if (character.isActive()) {
+        character.update(deltaTime, elapsedTime, damping);
+      }
     }
     this.collisions();
   }
@@ -9652,6 +9677,11 @@ const addDamping = (component, damping, minValue) => {
   }
   return value;
 };
+let id = 0;
+function genId() {
+  id += 1;
+  return id;
+}
 class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #dir = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1);
   #vel = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0);
@@ -9670,72 +9700,90 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #states = new Set();
   #urgencyRemainingTime = 0;
   #stunningRemainingTime = 0;
-  #elapsedTime = 0;
+  #active = false;
   #test = 0; /// ///////
 
   static createObject(data) {
-    const geom = new three__WEBPACK_IMPORTED_MODULE_4__.CapsuleGeometry(data.radius, data.height, 2, 8);
-    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
+    const geometry = {};
+    const material = {};
+    const mesh = {};
+    const faceSize = data.radius * 0.7;
+    const faceOffset = data.radius * 0.6;
+    geometry.body = new three__WEBPACK_IMPORTED_MODULE_4__.CapsuleGeometry(data.radius, data.height, 2, 8);
+    geometry.wire = new three__WEBPACK_IMPORTED_MODULE_4__.EdgesGeometry(geometry.body);
+    geometry.face = new three__WEBPACK_IMPORTED_MODULE_4__.SphereGeometry(faceSize, 8, 4, undefined, undefined, undefined, PI / 2);
+    geometry.faceWire = new three__WEBPACK_IMPORTED_MODULE_4__.EdgesGeometry(geometry.face);
+    geometry.face.rotateX(-PI / 2);
+    geometry.faceWire.rotateX(-PI / 2);
     const geomSize = data.radius + floor(data.pointSize / 2);
-    //const pointsGeom = new CapsuleGeometry(geomSize, data.height, 1, 3);
-    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.ConeGeometry(geomSize, geomSize, 3);
-    const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
-    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
-    bufferGeom.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
+    geometry.points = new three__WEBPACK_IMPORTED_MODULE_4__.ConeGeometry(geomSize, geomSize, 3);
+    const vertices = geometry.points.attributes.position.array.slice(0);
+    geometry.points = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
+    geometry.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(vertices, 3));
+    geometry.points.computeBoundingSphere();
+    material.body = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
       color: data.color
     });
-    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
+    material.wire = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
       color: data.wireColor
     });
-    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
+    material.face = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
+      color: 0xdc143c
+    });
+    material.faceWire = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
+      color: 0xdb6e84
+    });
+    material.points = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
       color: data.pointColor,
       size: data.pointSize,
       map: texture,
       blending: three__WEBPACK_IMPORTED_MODULE_4__.NormalBlending,
       alphaTest: 0.5
     });
-    const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
-    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(wireframeGeom, wireframeMat);
-    ////
-
-    const pointsMesh1 = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
-    const pointsMesh2 = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
-    pointsMesh2.rotateX(PI);
-    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
-    pointsMesh.add(pointsMesh1, pointsMesh2);
-    pointsMesh1.position.setY((data.height + data.radius) / 2 + data.pointSize / 4);
-    pointsMesh2.position.setY((-data.height - data.radius) / 2 - data.pointSize / 4);
+    mesh.body = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geometry.body, material.body);
+    mesh.wire = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geometry.wire, material.wire);
+    mesh.face = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geometry.face, material.face);
+    mesh.faceWire = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geometry.faceWire, material.faceWire);
+    mesh.face.position.setZ(-faceOffset);
+    mesh.faceWire.position.setZ(-faceOffset);
+    mesh.face.position.setY(faceOffset);
+    mesh.faceWire.position.setY(faceOffset);
+    mesh.points1 = new three__WEBPACK_IMPORTED_MODULE_4__.Points(geometry.points, material.points);
+    mesh.points2 = new three__WEBPACK_IMPORTED_MODULE_4__.Points(geometry.points, material.points);
+    mesh.points2.rotateX(PI);
+    mesh.points = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
+    mesh.points.add(mesh.points1, mesh.points2);
+    mesh.points1.position.setY((data.height + data.radius) / 2 + data.pointSize / 4);
+    mesh.points2.position.setY((-data.height - data.radius) / 2 - data.pointSize / 4);
     const object = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
-    object.add(mesh);
-    object.add(wireMesh);
-    object.add(pointsMesh);
+    object.add(mesh.body);
+    object.add(mesh.wire);
+    object.add(mesh.face);
+    object.add(mesh.faceWire);
+    object.add(mesh.points);
     return object;
   }
   static defaultParams = [['hp', 100]];
-  constructor(id, name /*, ammos*/) {
+  constructor(name) {
     super();
     const dataMap = new Map(_data__WEBPACK_IMPORTED_MODULE_0__.Characters);
     if (!dataMap.has(name)) {
       throw new Error('character data not found');
     }
-    this.id = id;
-    //this.ammos = ammos;
+    this.id = `character-${genId()}`;
     this.data = dataMap.get(name);
     this.params = new Map(Character.defaultParams);
-    this.ammoType = this.data.ammoTypes[0]; ///////
-    // this.forwardComponent = 0;
-    // this.sideComponent = 0;
     this.rotateComponent = 0;
     this.povRotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical();
     this.deltaY = 0;
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_4__.Spherical(); // phi and theta
     this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
     this.direction = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1);
-    this.gun = null;
+    this.gunType = '';
+    this.guns = new Map();
     this.camera = null;
     this.onUpdate = null;
+    this.elapsedTime = 0;
     this.object = Character.createObject(this.data);
     this.halfHeight = floor(this.data.height / 2);
     this.collider = new three_addons_math_Capsule_js__WEBPACK_IMPORTED_MODULE_5__.Capsule();
@@ -9743,6 +9791,17 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const end = start.clone();
     end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
+    this.setActive(false);
+  }
+  isActive() {
+    return this.#active;
+  }
+  setActive() {
+    let bool = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    this.#active = bool;
+    if (!this.isFPV()) {
+      this.visible(bool);
+    }
   }
   setOnUpdate(update) {
     this.onUpdate = update.bind(this);
@@ -9766,8 +9825,6 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     this.rotation.phi = direction;
     this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, direction));
-    //this.camera.getWorldDirection(this.direction);
-
     this.collider.start.copy(position);
     this.collider.end.copy(position);
     this.collider.end.y += this.data.height;
@@ -9780,6 +9837,17 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   }
   setGrounded(bool) {
     this.#isGrounded = bool;
+  }
+  visible(bool) {
+    this.object.children.forEach(object => {
+      if (object.isGroup) {
+        object.children.forEach(mesh => {
+          mesh.visible = bool;
+        });
+        return;
+      }
+      object.visible = bool;
+    });
   }
   jump() {
     this.velocity.y = this.data.jumpPower;
@@ -9799,17 +9867,6 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
     const direction = this.#forward.copy(this.direction).multiplyScalar(multiplier);
     this.velocity.add(direction);
-    /* this.forwardComponent = deltaTime;
-     if (this.#isGrounded) {
-      this.forwardComponent *= this.data.speed;
-       if (state === States.sprint && deltaTime >= 0) {
-        this.forwardComponent *= this.data.sprint;
-      } else if (state === States.urgency) {
-        this.forwardComponent *= this.data.urgencyMove;
-      }
-    } else {
-      this.forwardComponent *= this.data.airSpeed;
-    } */
   }
   rotate(deltaTime) {
     let state = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _data__WEBPACK_IMPORTED_MODULE_0__.States.idle;
@@ -9834,44 +9891,30 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
-    /* this.sideComponent = deltaTime * 0.7;
-     if (this.#isGrounded) {
-      this.sideComponent *= this.data.speed;
-       if (state === States.urgency) {
-        this.sideComponent *= this.data.urgencyMove;
-      }
-    } else {
-      this.sideComponent *= this.data.airSpeed;
-    } */
   }
-  setGun(gun) {
+  setGunType(name) {
+    if (!this.data.gunTypes.includes(name)) {
+      return;
+    }
+    this.gunType = name;
+  }
+  addGun(gun) {
     if (!this.data.gunTypes.includes(gun.name)) {
       return;
     }
-    this.gun = gun;
+    this.guns.set(gun.name, gun);
   }
   setAmmo(ammo) {
-    if (this.gun != null) {
-      this.gun.setAmmo(ammo);
+    if (this.guns.has(this.gunType)) {
+      const gun = this.guns.get(this.gunType);
+      gun.setAmmo(ammo);
     }
   }
   fire() {
-    if (this.gun != null) {
-      this.gun.fire(this);
+    if (this.guns.has(this.gunType)) {
+      const gun = this.guns.get(this.gunType);
+      gun.fire(this);
     }
-    /*const ammo = this.ammos.get(this.ammoType);
-    const bullet = ammo.list[ammo.index];
-     bullet.setActive(true);
-     this.#euler.x = this.povRotation.theta + this.rotation.theta + this.deltaY;
-    this.#euler.y = this.povRotation.phi + this.rotation.phi;
-    const dir = this.#dir.clone().applyEuler(this.#euler);
-    bullet.object.rotation.copy(this.#euler);
-     bullet.collider.center
-      .copy(this.collider.end)
-      .addScaledVector(dir, this.data.radius + bullet.data.radius);
-     bullet.velocity.copy(dir).multiplyScalar(bullet.data.speed);
-    bullet.velocity.addScaledVector(this.velocity, 2);
-     ammo.index = (ammo.index + 1) % ammo.list.length;*/
   }
   setPovRotation(povRotation, deltaY) {
     this.deltaY = deltaY;
@@ -9983,14 +10026,10 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       }
     }
   }
-  getElapsedTime() {
-    return this.#elapsedTime;
-  }
-  resetTime() {
-    this.#elapsedTime = 0;
-  }
-  update(deltaTime, damping) {
-    this.#elapsedTime += deltaTime;
+  update(deltaTime, elapsedTime, damping) {
+    if (!this.#active) {
+      return;
+    }
 
     // 自機の動き制御
     if (this.#stunningRemainingTime > 0) {
@@ -10069,26 +10108,6 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       }
       this.rotateComponent = addDamping(this.rotateComponent, dampingCoef * damping.spin, minRotateAngle);
     }
-
-    /* if (this.forwardComponent !== 0) {
-      const direction = this.direction
-        .clone()
-        .multiplyScalar(this.forwardComponent);
-      this.velocity.add(direction);
-       this.forwardComponent = addDamping(
-        this.forwardComponent,
-        damping,
-        minMovement,
-      );
-    } */
-
-    /* if (this.sideComponent !== 0) {
-      const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
-      direction.normalize();
-      this.velocity.add(direction.multiplyScalar(this.sideComponent));
-       this.sideComponent = addDamping(this.sideComponent, damping, minMovement);
-    } */
-
     this.velocity.addScaledVector(this.velocity, deltaDamping);
     const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
@@ -10099,9 +10118,12 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.camera.rotation.x = this.povRotation.theta + this.deltaY;
       this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
       this.camera.position.copy(this.collider.end);
+      if (this.collider.start.y < _settings__WEBPACK_IMPORTED_MODULE_2__.World.oob) {
+        this.publish('oob', this);
+      }
     }
     if (this.onUpdate != null) {
-      this.onUpdate(deltaTime);
+      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }
@@ -10151,10 +10173,12 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
     this.scene = scene;
     this.worldOctree = worldOctree;
     this.list = new Map();
+    this.schedules = new Map();
   }
 
   // type = 'ammo', 'obstacle'
   add(type, collidable) {
+    let data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
     if (type === 'ammo') {
       const {
         name,
@@ -10173,6 +10197,7 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
     }
     const list = this.list.get(type);
     list.push(collidable);
+    this.schedules.set(collidable, data.spawnedAt);
   }
   remove(type, collidable) {
     this.scene.remove(collidable.object);
@@ -10220,38 +10245,23 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
         }
       }
     }
-    /* for (const list of this.list) {
-      for (let i = 0, l = list.length; i < l; i += 1) {
-        const a1 = list[i];
-         for (let j = i + 1; j < l; j += 1) {
-          const a2 = list[j];
-           const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-          const r = a1.collider.radius + a2.collider.radius;
-          const r2 = r * r;
-           if (d2 < r2) {
-            const normal = this.#vecA
-              .subVectors(a1.collider.center, a2.collider.center)
-              .normalize();
-            const v1 = this.#vecB
-              .copy(normal)
-              .multiplyScalar(normal.dot(a1.velocity));
-            const v2 = this.#vecC
-              .copy(normal)
-              .multiplyScalar(normal.dot(a2.velocity));
-             a1.velocity.add(v2).sub(v1);
-            a2.velocity.add(v1).sub(v2);
-             const d = (r - sqrt(d2)) / 2;
-             a1.collider.center.addScaledVector(normal, d);
-            a2.collider.center.addScaledVector(normal, -d);
-          }
+  }
+  update(deltaTime, elapsedTime, damping) {
+    const schedules = Array.from(this.schedules.entries());
+    for (let i = 0, l = schedules.length; i < l; i += 1) {
+      const [object, spawnedAt] = schedules[i];
+      if (elapsedTime > spawnedAt) {
+        if (!object.isActive()) {
+          object.setActive(true);
         }
       }
-    } */
-  }
-  update(deltaTime, damping) {
+    }
     const list = Array.from(this.list.values()).flat();
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
+      if (!collidable.isActive()) {
+        continue;
+      }
       collidable.collider.center.addScaledVector(collidable.velocity, deltaTime);
       const result = this.worldOctree.sphereIntersect(collidable.collider);
       if (result) {
@@ -10271,7 +10281,9 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
     for (let i = 0, l = list.length; i < l; i += 1) {
       const collidable = list[i];
       // オブジェクト固有の挙動をupdate()に記述する
-      collidable.update(deltaTime);
+      if (collidable.isActive()) {
+        collidable.update(deltaTime, elapsedTime);
+      }
     }
   }
 }
@@ -10287,30 +10299,37 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
+
 
 function noop() {}
-class Collidable {
+let id = 0;
+function genId() {
+  id += 1;
+  return id;
+}
+class Collidable extends _publisher__WEBPACK_IMPORTED_MODULE_0__["default"] {
   #active = false;
   #bounced = false;
-  #elapsedTime = 0;
   constructor(name, type) {
     let object = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+    super();
+    this.id = `${type}-${genId()}`;
     this.name = name;
     this.type = type;
     if (object != null) {
       this.object = object;
     }
-    this.collider = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+    this.collider = new three__WEBPACK_IMPORTED_MODULE_1__.Sphere();
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
     this.onUpdate = null;
-    this.setActive(false);
   }
   setObject(object) {
     this.object = object;
   }
-  getElapsedTime() {
-    return this.#elapsedTime;
+  setOnUpdate(update) {
+    this.onUpdate = update.bind(this);
   }
   isBounced() {
     return this.#bounced;
@@ -10325,7 +10344,6 @@ class Collidable {
     let bool = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
     this.#active = bool;
     if (bool) {
-      this.#elapsedTime = 0;
       this.#bounced = false;
     }
     if (this.object != null) {
@@ -10334,12 +10352,9 @@ class Collidable {
       });
     }
   }
-  update(deltaTime) {
-    if (this.#active) {
-      this.#elapsedTime += deltaTime;
-      if (this.onUpdate != null) {
-        this.onUpdate(deltaTime);
-      }
+  update(deltaTime, elapsedTime) {
+    if (this.#active && this.onUpdate != null) {
+      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }
@@ -10411,6 +10426,7 @@ class FirstPersonControls {
   #st = 0;
   #resetPointer = false;
   #resetWheel = false;
+  #enabled = false;
   constructor(screen, camera, player, domElement) {
     this.screen = screen;
     this.camera = camera;
@@ -10426,8 +10442,6 @@ class FirstPersonControls {
     this.centerMark = (0,_screen__WEBPACK_IMPORTED_MODULE_2__.createCenterMark)();
     this.screen.add(this.centerMark.horizontal);
     this.screen.add(this.centerMark.virtical);
-    this.enabled = true;
-    this.activeLook = true;
     this.povLock = false;
     this.minPolarAngle = {
       virtical: 0,
@@ -10461,9 +10475,16 @@ class FirstPersonControls {
     this.handleResize();
     this.setOrientation();
   }
+  isEnabled() {
+    return this.#enabled;
+  }
+  enable() {
+    let bool = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    this.#enabled = bool;
+  }
   onChangeRotateComponent(rotateComponent) {
     if (this.#rotation.theta !== 0 || this.#rotation.phi !== 0) {
-      //this.#rotation.phi -= rotateComponent;
+      // this.#rotation.phi -= rotateComponent;
     }
   }
   setOrientation() {
@@ -10499,7 +10520,9 @@ class FirstPersonControls {
       await this.domElement.requestPointerLock();
     }
   }
-  dispose() {}
+  dispose() {
+    // TODO
+  }
   unlock() {
     this.domElement.ownerDocument.exitPointerLock();
   }
@@ -10532,6 +10555,9 @@ class FirstPersonControls {
   }
   onWheel(event) {
     event.preventDefault();
+    if (!this.#enabled) {
+      return;
+    }
     const delta = sign(event.deltaY) * 2 * Rad_1;
     const rot = this.#rotation.theta + this.#wheel + delta;
     if (halfPI - this.minPolarAngle.virtical >= rot && halfPI - this.maxPolarAngle.virtical <= rot) {
@@ -10539,6 +10565,9 @@ class FirstPersonControls {
     }
   }
   onPointerMove(event) {
+    if (!this.#enabled) {
+      return;
+    }
     this.#moved = true;
     if (this.#pointers.has(_data__WEBPACK_IMPORTED_MODULE_1__.Pointers.right)) {
       if (event.button === _data__WEBPACK_IMPORTED_MODULE_1__.Pointers.left) {
@@ -10552,21 +10581,26 @@ class FirstPersonControls {
     this.#dy = max(-_settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove, min(event.movementY, _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.pointerMaxMove));
   }
   onPointerDown(event) {
-    this.#pointers.add(event.button);
-    //this.lock(); // 開発中はコメントアウト
-
-    if (this.activeLook) {
-      this.dispatchAction(event.type, event.button);
+    if (!this.#enabled) {
+      return;
     }
+    this.#pointers.add(event.button);
+    // this.lock(); // 開発中はコメントアウト
+
+    this.dispatchAction(event.type, event.button);
   }
   onPointerUp(event) {
-    this.#pointers.delete(event.button);
-    if (this.activeLook) {
-      this.dispatchAction(event.type, event.button);
+    if (!this.#enabled) {
+      return;
     }
+    this.#pointers.delete(event.button);
+    this.dispatchAction(event.type, event.button);
   }
   onKeyDown(event) {
     event.preventDefault();
+    if (!this.#enabled) {
+      return;
+    }
     if (event.repeat) {
       return;
     }
@@ -10634,6 +10668,9 @@ class FirstPersonControls {
   }
   onKeyUp(event) {
     event.preventDefault();
+    if (!this.#enabled) {
+      return;
+    }
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
@@ -10707,6 +10744,9 @@ class FirstPersonControls {
     this.player.unsubscribe('onChangeRotateComponent', this.onChangeRotateComponent);
   }
   update(deltaTime) {
+    if (!this.#enabled) {
+      return;
+    }
     this.player.input(this.#keys, this.#lastKey, this.#mashed);
     if (this.#mashed) {
       this.#mashed = false;
@@ -10727,10 +10767,7 @@ class FirstPersonControls {
         this.#timeout = false;
       }
     }
-    let actualLookSpeed = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.lookSpeed;
-    if (!this.activeLook) {
-      actualLookSpeed = 0;
-    }
+    const lookSpeed = _settings__WEBPACK_IMPORTED_MODULE_0__.Controls.lookSpeed;
     if (!this.#resetPointer) {
       if (this.povSight.material.color !== sightColor.pov) {
         this.povSight.material.color = sightColor.pov;
@@ -10743,10 +10780,10 @@ class FirstPersonControls {
       }
       const degX = 90 * this.#dy / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
       const radX = degX * degToRadCoef;
-      this.#rotation.theta -= radX * actualLookSpeed;
+      this.#rotation.theta -= radX * lookSpeed;
       const degY = 135 * this.#dx / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
       const radY = degY * degToRadCoef;
-      this.#rotation.phi -= radY * actualLookSpeed;
+      this.#rotation.phi -= radY * lookSpeed;
       this.#rotation.theta = max(halfPI - this.maxPolarAngle.virtical, min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta));
       this.#rotation.phi = max(PI - this.maxPolarAngle.horizontal, min(PI - this.minPolarAngle.horizontal, this.#rotation.phi));
       let posX = this.gaugeHalfX * -this.#rotation.phi / PI;
@@ -10817,10 +10854,8 @@ class FirstPersonControls {
       if (this.povSightLines.material.color !== sightLinesColor.normal) {
         this.povSightLines.material.color = sightLinesColor.normal;
       }
-    } else {
-      if (this.povSightLines.material.color !== sightLinesColor.wheel) {
-        this.povSightLines.material.color = sightLinesColor.wheel;
-      }
+    } else if (this.povSightLines.material.color !== sightLinesColor.wheel) {
+      this.povSightLines.material.color = sightLinesColor.wheel;
     }
     if (this.#resetWheel) {
       if (this.#wheel >= 0) {
@@ -10862,6 +10897,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Characters: function() { return /* binding */ Characters; },
 /* harmony export */   Compositions: function() { return /* binding */ Compositions; },
 /* harmony export */   Guns: function() { return /* binding */ Guns; },
+/* harmony export */   Items: function() { return /* binding */ Items; },
 /* harmony export */   Keys: function() { return /* binding */ Keys; },
 /* harmony export */   Obstacles: function() { return /* binding */ Obstacles; },
 /* harmony export */   Pointers: function() { return /* binding */ Pointers; },
@@ -10874,10 +10910,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const {
+  floor,
+  random,
   sin,
   PI
 } = Math;
+const getRandomInclusive = (min, max) => random() * (max - min) + min;
 const easeOutSine = x => sin(x * PI / 2);
+const easeInQuad = x => x * x;
 const easeOutCubic = x => 1 - (1 - x) * (1 - x) * (1 - x);
 const Keys = {
   // event.codeで取得する
@@ -10935,10 +10975,7 @@ const Obstacles = [['round-stone', {
   wireColor: 0x4c625b,
   pointColor: 0xf4e511,
   pointSize: 10,
-  rotateSpeed: 2,
-  update(deltaTime) {
-    this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-  }
+  rotateSpeed: 2
 }]];
 const Compositions = [['stage', ['firstStage']]];
 const Guns = [['normal-gun', {
@@ -10946,9 +10983,9 @@ const Guns = [['normal-gun', {
   fireInterval: 300,
   accuracy: 3,
   recoil: 1,
-  ////////
+  /// /////
 
-  ammoTypes: ['small-bullet', 'hop-bullet']
+  ammoTypes: [/*'small-bullet', */'hop-bullet']
 }]];
 const Ammo = [['small-bullet', {
   color: 0xffe870,
@@ -10981,12 +11018,18 @@ const Ammo = [['small-bullet', {
   rotateSpeed: 10,
   hopValue: 350,
   hopDuration: 0.5,
-  update(deltaTime) {
+  update(deltaTime, elapsedTime) {
     this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-    const elapsedTime = this.getElapsedTime();
-    if (!this.isBounced() && elapsedTime <= this.data.hopDuration) {
-      const ratio = easeOutCubic(elapsedTime);
-      this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+    if (!this.isBounced()) {
+      if (this.elapsedTime <= this.data.hopDuration) {
+        const ratio = easeOutCubic(this.elapsedTime);
+        this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+      } else {
+        const ratio = 1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
+        if (ratio >= 0) {
+          this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+        }
+      }
     }
   }
 }]];
@@ -11008,46 +11051,82 @@ const Characters = [['hero-1', {
   urgencyTurn: PI * 2,
   airSpeed: 100,
   jumpPower: 350,
-  ammoTypes: ['small-bullet'],
   gunTypes: ['normal-gun']
 }]];
-const Tweeners = [['rolling-stone-position', target => {
+const Items = [['weapon-upgrade', {
+  method: 'createRing',
+  radius: 10,
+  tube: 2,
+  radialSegments: 6,
+  tubularSegments: 12,
+  color: 0x007399,
+  wireColor: 0x004d66,
+  pointColor: 0xeb4b2f,
+  pointSize: 10,
+  effect: ['weapon-upgrade'],
+  collide() {},
+  update(deltaTime) {
+    //
+  }
+}]];
+const Tweeners = [['rolling-stone-1', (target, arg) => {
+  const time = arg ?? 0;
   const tween = new _tweenjs_tween_js__WEBPACK_IMPORTED_MODULE_0__["default"].Tween(target.collider.center);
-  tween.onEveryStart(() => target.velocity = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)).to({
-    x: -2200,
-    y: 300,
-    z: 0
-  }, 0).delay(10000).repeat(Infinity).start(0);
+  tween.onEveryStart(() => {
+    const posZ = getRandomInclusive(-80, 80);
+    target.collider.center.set(-2100, 300, posZ);
+    target.velocity.copy(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0));
+  }).delay(8000).repeat(Infinity).start(time);
   return tween;
 }]];
 const Stages = [['firstStage', {
   checkPoints: [{
-    //position: new Vector3(-650, 0, 0),
-    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-1600, 100, 0),
-    //position: new Vector3(-38 * 80, 1000, -6.5 * 80),
+    //position: new Vector3(-35 * 80, 0, -3.5 * 80),
+    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-650, 0, 0),
+    //position: new Vector3(-2200, 100, 0),
+    //position: new Vector3(-40 * 80, 200, -1 * 80),
+    // position: new Vector3(-38 * 80, 1000, -6.5 * 80),
     direction: PI / 2
   }],
   characters: [{
     name: 'hero-1',
     position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-38 * 80, 1000, 3 * 80),
     direction: -25 * PI / 180,
-    update(deltaTime) {
-      const time = this.getElapsedTime();
-      if (time > 2) {
-        this.resetTime();
+    spawnedAt: 5,
+    update(deltaTime, elapsedTime) {
+      this.elapsedTime += deltaTime;
+      if (this.elapsedTime > 2) {
+        this.elapsedTime = 0;
         this.fire();
       }
     }
   }],
   obstacles: [{
     name: 'round-stone',
-    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-2000, 300, 0),
-    tweeners: ['rolling-stone-position']
+    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-2100, 300, 0),
+    tweeners: [{
+      name: 'rolling-stone-1'
+    }],
+    spawnedAt: 0,
+    update(deltaTime) {
+      this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+    }
+  }, {
+    name: 'round-stone',
+    position: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(-2100, 300, 0),
+    tweeners: [{
+      name: 'rolling-stone-1',
+      arg: 5000
+    }],
+    spawnedAt: 5,
+    update(deltaTime) {
+      this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+    }
   }],
   components: [{
     grid: {
       widthSegments: 24,
-      depthSegments: 6,
+      heightSegments: 6,
       depthSegments: 8,
       widthSpacing: 80,
       heightSpacing: 80,
@@ -11142,7 +11221,7 @@ const Stages = [['firstStage', {
   }, {
     grid: {
       widthSegments: 20,
-      depthSegments: 6,
+      heightSegments: 6,
       depthSegments: 8,
       widthSpacing: 80,
       heightSpacing: 80,
@@ -11218,21 +11297,21 @@ const Stages = [['firstStage', {
   }, {
     grid: {
       widthSegments: 20,
-      depthSegments: 6,
-      depthSegments: 8,
+      heightSegments: 6,
+      depthSegments: 12,
       widthSpacing: 80,
       heightSpacing: 80,
       depthSpacing: 80,
       position: {
         sx: -42,
-        sy: -2.2,
+        sy: 0,
         sz: 0
       }
     },
     cylinder: {
       radiusTop: 80,
       radiusBottom: 80,
-      height: 20,
+      height: 10,
       radialSegments: 9,
       heightSegments: 1,
       position: {
@@ -11246,12 +11325,12 @@ const Stages = [['firstStage', {
     cylinder: {
       radiusTop: 40,
       radiusBottom: 40,
-      height: 20,
+      height: 10,
       radialSegments: 7,
       heightSegments: 1,
       position: {
         sx: -33,
-        sy: 0.9,
+        sy: 0.8,
         sz: -1.5,
         spacing: 80
       }
@@ -11260,13 +11339,13 @@ const Stages = [['firstStage', {
     cylinder: {
       radiusTop: 80,
       radiusBottom: 80,
-      height: 20,
+      height: 10,
       radialSegments: 9,
       heightSegments: 1,
       position: {
-        sx: -35,
+        sx: -34.5,
         sy: 0,
-        sz: -3.5,
+        sz: -3.8,
         spacing: 80
       }
     }
@@ -11274,7 +11353,7 @@ const Stages = [['firstStage', {
     cylinder: {
       radiusTop: 40,
       radiusBottom: 40,
-      height: 20,
+      height: 10,
       radialSegments: 7,
       heightSegments: 1,
       position: {
@@ -11282,6 +11361,67 @@ const Stages = [['firstStage', {
         sy: 0.5,
         sz: 3,
         spacing: 80
+      }
+    }
+  }, {
+    cylinder: {
+      radiusTop: 40,
+      radiusBottom: 40,
+      height: 10,
+      radialSegments: 7,
+      heightSegments: 1,
+      position: {
+        sx: -35.8,
+        sy: 0.3,
+        sz: -2,
+        spacing: 80
+      }
+    }
+  }, {
+    cylinder: {
+      radiusTop: 40,
+      radiusBottom: 40,
+      height: 10,
+      radialSegments: 7,
+      heightSegments: 1,
+      position: {
+        sx: -37.5,
+        sy: 0.6,
+        sz: -1,
+        spacing: 80
+      }
+    }
+  }, {
+    cylinder: {
+      radiusTop: 100,
+      radiusBottom: 100,
+      height: 10,
+      radialSegments: 10,
+      heightSegments: 1,
+      position: {
+        sx: -40,
+        sy: 0.62,
+        sz: -1,
+        spacing: 80
+      }
+    }
+  }, {
+    ground: {
+      widthSegments: 10,
+      depthSegments: 1,
+      widthSpacing: 80,
+      depthSpacing: 80,
+      bumpHeight: 0,
+      position: {
+        sx: -46,
+        sy: 0.2,
+        sz: -1,
+        heightSpacing: 80
+      },
+      rotation: {
+        x: 0,
+        y: 0,
+        z: 0
       }
     }
   }]
@@ -11297,21 +11437,23 @@ const Stages = [['firstStage', {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
-/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! three/addons/libs/stats.module.js */ "./node_modules/three/examples/jsm/libs/stats.module.js");
+/* harmony import */ var three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! three/addons/math/Octree.js */ "./node_modules/three/examples/jsm/math/Octree.js");
 /* harmony import */ var throttle_debounce__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttle-debounce */ "./node_modules/throttle-debounce/esm/index.js");
 /* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
 /* harmony import */ var _controls__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./controls */ "./src/js/game/controls.js");
 /* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
-/* harmony import */ var _collidable_manager__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./collidable-manager */ "./src/js/game/collidable-manager.js");
-/* harmony import */ var _character_manager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./character-manager */ "./src/js/game/character-manager.js");
-/* harmony import */ var _scene_manager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./scene-manager */ "./src/js/game/scene-manager.js");
-/* harmony import */ var _character__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./character */ "./src/js/game/character.js");
-/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
-/* harmony import */ var _gun__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./gun */ "./src/js/game/gun.js");
-/* harmony import */ var _obstacle__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./obstacle */ "./src/js/game/obstacle.js");
-/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
+/* harmony import */ var _loop__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./loop */ "./src/js/game/loop.js");
+/* harmony import */ var _collidable_manager__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./collidable-manager */ "./src/js/game/collidable-manager.js");
+/* harmony import */ var _character_manager__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./character-manager */ "./src/js/game/character-manager.js");
+/* harmony import */ var _scene_manager__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./scene-manager */ "./src/js/game/scene-manager.js");
+/* harmony import */ var _character__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./character */ "./src/js/game/character.js");
+/* harmony import */ var _ammo__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./ammo */ "./src/js/game/ammo.js");
+/* harmony import */ var _gun__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./gun */ "./src/js/game/gun.js");
+/* harmony import */ var _obstacle__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./obstacle */ "./src/js/game/obstacle.js");
+/* harmony import */ var _stages__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./stages */ "./src/js/game/stages.js");
+
 
 
 
@@ -11342,36 +11484,37 @@ const getDamping = delta => {
   return damping;
 };
 class Game {
+  #elapsedTime = 0;
   constructor() {
-    this.clock = new three__WEBPACK_IMPORTED_MODULE_12__.Clock();
-    this.worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_13__.Octree();
+    this.clock = new three__WEBPACK_IMPORTED_MODULE_13__.Clock();
+    this.worldOctree = new three_addons_math_Octree_js__WEBPACK_IMPORTED_MODULE_14__.Octree();
     this.windowHalf = {
       width: floor(window.innerWidth / 2),
       height: floor(window.innerHeight / 2)
     };
     this.container = document.getElementById('container');
-    this.renderer = new three__WEBPACK_IMPORTED_MODULE_12__.WebGLRenderer({
+    this.renderer = new three__WEBPACK_IMPORTED_MODULE_13__.WebGLRenderer({
       antialias: false
     });
     this.renderer.autoClear = false;
-    this.renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_12__.Color(0x000000));
+    this.renderer.setClearColor(new three__WEBPACK_IMPORTED_MODULE_13__.Color(0x000000));
     this.renderer.setPixelRatio(_settings__WEBPACK_IMPORTED_MODULE_1__.Renderer.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
     // renderer.shadowMap.type = Renderer.ShadowMap.type;
     // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
     this.container.appendChild(this.renderer.domElement);
-    this.scenes = new _scene_manager__WEBPACK_IMPORTED_MODULE_6__["default"](this.renderer);
+    this.scenes = new _scene_manager__WEBPACK_IMPORTED_MODULE_7__["default"](this.renderer);
     this.scene = {};
     this.camera = {};
-    this.scene.field = new three__WEBPACK_IMPORTED_MODULE_12__.Scene();
-    this.scene.field.background = new three__WEBPACK_IMPORTED_MODULE_12__.Color(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.background);
-    this.scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_12__.Fog(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.far);
-    this.scene.screen = new three__WEBPACK_IMPORTED_MODULE_12__.Scene();
-    this.camera.field = new three__WEBPACK_IMPORTED_MODULE_12__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_1__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.far);
+    this.scene.field = new three__WEBPACK_IMPORTED_MODULE_13__.Scene();
+    this.scene.field.background = new three__WEBPACK_IMPORTED_MODULE_13__.Color(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.background);
+    this.scene.field.fog = new three__WEBPACK_IMPORTED_MODULE_13__.Fog(_settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.color, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Scene.Fog.far);
+    this.scene.screen = new three__WEBPACK_IMPORTED_MODULE_13__.Scene();
+    this.camera.field = new three__WEBPACK_IMPORTED_MODULE_13__.PerspectiveCamera(_settings__WEBPACK_IMPORTED_MODULE_1__.Camera.FOV, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.Aspect, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.near, _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.far);
     this.camera.field.rotation.order = _settings__WEBPACK_IMPORTED_MODULE_1__.Camera.order;
     this.camera.field.position.set(0, 0, 0);
-    this.camera.screen = new three__WEBPACK_IMPORTED_MODULE_12__.OrthographicCamera(-this.windowHalf.width, this.windowHalf.width, this.windowHalf.height, -this.windowHalf.height, 0.1, 1000);
+    this.camera.screen = new three__WEBPACK_IMPORTED_MODULE_13__.OrthographicCamera(-this.windowHalf.width, this.windowHalf.width, this.windowHalf.height, -this.windowHalf.height, 0.1, 1000);
     this.scenes.clear();
     this.scenes.add('field', this.scene.field, this.camera.field);
     this.scenes.add('screen', this.scene.screen, this.camera.screen);
@@ -11382,28 +11525,15 @@ class Game {
     this.data.ammos = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Ammo);
     this.data.guns = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Guns);
     this.data.tweeners = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Tweeners);
-    this.objectManager = new _collidable_manager__WEBPACK_IMPORTED_MODULE_4__["default"](this.scene.field, this.worldOctree);
-    this.characterManager = new _character_manager__WEBPACK_IMPORTED_MODULE_5__["default"](this.scene.field, this.objectManager, this.worldOctree);
+    this.objectManager = new _collidable_manager__WEBPACK_IMPORTED_MODULE_5__["default"](this.scene.field, this.worldOctree);
+    this.characterManager = new _character_manager__WEBPACK_IMPORTED_MODULE_6__["default"](this.scene.field, this.objectManager, this.worldOctree);
     this.ammos = new Map();
     const ammoNames = Array.from(this.data.ammos.keys());
     ammoNames.forEach(name => {
-      const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_8__["default"](name);
+      const ammo = new _ammo__WEBPACK_IMPORTED_MODULE_9__["default"](name);
       this.ammos.set(name, ammo);
       this.objectManager.add('ammo', ammo);
     });
-    this.guns = new Map();
-    const gunNames = Array.from(this.data.guns.keys());
-    gunNames.forEach(name => {
-      const gun = new _gun__WEBPACK_IMPORTED_MODULE_9__["default"](name);
-      const [ammoType] = gun.data.ammoTypes;
-      const ammo = this.ammos.get(ammoType);
-      gun.setAmmo(ammo);
-      this.guns.set(name, gun);
-    });
-
-    // これらはステージごとに毎回生成破棄を実行する
-    this.characters = new Map();
-    this.obstacles = new Map();
     this.controls = null;
     this.player = null;
     this.stage = null;
@@ -11415,10 +11545,12 @@ class Game {
     this.checkPointIndex = 0;
 
     /// ///////////////
-    const player = new _character__WEBPACK_IMPORTED_MODULE_7__["default"]('player1', 'hero-1');
+    const player = new _character__WEBPACK_IMPORTED_MODULE_8__["default"]('hero-1');
     this.setPlayer(player);
     this.setMode('play');
     this.ready = true;
+    this.loop = new _loop__WEBPACK_IMPORTED_MODULE_4__["default"](this.update, this);
+
     /// ///////////
 
     const onResize = function onResize() {
@@ -11440,18 +11572,34 @@ class Game {
     };
     this.onResize = (0,throttle_debounce__WEBPACK_IMPORTED_MODULE_0__.debounce)(_settings__WEBPACK_IMPORTED_MODULE_1__.Game.resizeDelayTime, onResize.bind(this));
     window.addEventListener('resize', this.onResize);
-    this.stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_14__["default"]();
+    this.stats = new three_addons_libs_stats_module_js__WEBPACK_IMPORTED_MODULE_15__["default"]();
     this.stats.domElement.style.position = 'absolute';
     this.stats.domElement.style.top = 'auto';
     this.stats.domElement.style.bottom = 0;
     this.container.appendChild(this.stats.domElement);
   }
+  getElapsedTime() {
+    return this.#elapsedTime;
+  }
+  resetTime() {
+    this.#elapsedTime = 0;
+  }
   setPlayer(character) {
     this.player = character;
     this.player.setFPV(this.camera.field);
-    const [gunType] = this.player.data.gunTypes;
-    const gun = this.guns.get(gunType);
-    this.player.setGun(gun);
+    this.teleportCharacter = this.teleportCharacter.bind(this);
+    this.player.subscribe('oob', this.teleportCharacter);
+    const gunTypes = this.player.data.gunTypes;
+    gunTypes.forEach((name, index) => {
+      const gun = new _gun__WEBPACK_IMPORTED_MODULE_10__["default"](name);
+      const [ammoType] = gun.data.ammoTypes;
+      const ammo = this.ammos.get(ammoType);
+      gun.setAmmo(ammo);
+      this.player.addGun(gun);
+      if (index === 0) {
+        this.player.setGunType(name);
+      }
+    });
     this.controls = new _controls__WEBPACK_IMPORTED_MODULE_2__["default"](this.scene.screen, this.camera.field, this.player, this.renderer.domElement);
   }
   removePlayer(character) {
@@ -11459,6 +11607,16 @@ class Game {
       this.player.unsetFPV();
       this.player = null;
       this.controls.dispose();
+    }
+  }
+  teleportCharacter(character) {
+    const stageNameList = this.data.compositions.get('stage');
+    const stageName = stageNameList[this.stageIndex];
+    const stageData = this.data.stages.get(stageName);
+    if (character.isFPV()) {
+      const checkPoint = stageData.checkPoints[this.checkPointIndex];
+      character.setPosition(checkPoint.position, checkPoint.direction);
+      character.velocity.copy(new three__WEBPACK_IMPORTED_MODULE_13__.Vector3(0, 0, 0));
     }
   }
   setMode(mode) {
@@ -11488,36 +11646,44 @@ class Game {
       characters,
       obstacles
     } = stageData;
-    const checkPoint = stageData.checkPoints[this.stageIndex];
-    this.characters.clear();
+    const checkPoint = stageData.checkPoints[this.checkPointIndex];
     this.characterManager.clear();
-    this.obstacles.clear();
     this.objectManager.clear('obstacle');
-    characters.forEach((data, index) => {
-      const id = `character-${index}`;
-      const character = new _character__WEBPACK_IMPORTED_MODULE_7__["default"](id, data.name, this.ammos);
-      const [gunType] = character.data.gunTypes;
-      const gun = this.guns.get(gunType);
-      character.setGun(gun);
+    characters.forEach(data => {
+      const character = new _character__WEBPACK_IMPORTED_MODULE_8__["default"](data.name);
+      const gunTypes = character.data.gunTypes;
+      gunTypes.forEach((name, index) => {
+        const gun = new _gun__WEBPACK_IMPORTED_MODULE_10__["default"](name);
+        const [ammoType] = gun.data.ammoTypes;
+        const ammo = this.ammos.get(ammoType);
+        gun.setAmmo(ammo);
+        character.addGun(gun);
+        if (index === 0) {
+          character.setGunType(name);
+        }
+      });
       character.setOnUpdate(data.update);
       character.setPosition(data.position, data.direction);
-      this.characters.set(id, character);
-      this.characterManager.add(character);
+      this.characterManager.add(character, data);
     });
-    obstacles.forEach((data, index) => {
-      const id = `obstacle-${index}`;
-      const obstacle = new _obstacle__WEBPACK_IMPORTED_MODULE_10__["default"](data.name);
+    obstacles.forEach(data => {
+      const obstacle = new _obstacle__WEBPACK_IMPORTED_MODULE_11__["default"](data.name);
       obstacle.collider.center.copy(data.position);
-      data.tweeners.forEach(tweenerName => {
-        obstacle.addTweener(this.data.tweeners.get(tweenerName));
+      data.tweeners.forEach(_ref => {
+        let {
+          name,
+          arg
+        } = _ref;
+        const tweener = this.data.tweeners.get(name);
+        obstacle.addTweener(tweener, arg);
       });
-      this.obstacles.set(id, obstacle);
-      this.objectManager.add('obstacle', obstacle);
+      obstacle.setOnUpdate(data.update);
+      this.objectManager.add('obstacle', obstacle, data);
     });
     this.player.setPosition(checkPoint.position, checkPoint.direction);
     this.characterManager.add(this.player);
     this.clearStage();
-    this.stage = (0,_stages__WEBPACK_IMPORTED_MODULE_11__.createStage)(stageName);
+    this.stage = (0,_stages__WEBPACK_IMPORTED_MODULE_12__.createStage)(stageName);
     this.scene.field.add(this.stage);
     this.worldOctree.fromGraphNode(this.stage);
   }
@@ -11539,7 +11705,20 @@ class Game {
     window.removeEventListener('resize', this.onResize);
   }
   start() {
-    this.checkPointIndex = 0;
+    if (this.player != null) {
+      this.player.setActive(true);
+      this.controls.enable(true);
+    }
+    this.clock.start();
+    this.loop.start();
+  }
+  stop() {
+    if (this.player != null) {
+      this.player.setActive(false);
+      this.controls.enable(false);
+    }
+    this.clock.stop();
+    this.loop.stop();
   }
   restart(checkPoint) {}
   clear() {}
@@ -11550,9 +11729,10 @@ class Game {
     const deltaTime = this.clock.getDelta() / _settings__WEBPACK_IMPORTED_MODULE_1__.Game.stepsPerFrame;
     const damping = getDamping(deltaTime);
     for (let i = 0; i < _settings__WEBPACK_IMPORTED_MODULE_1__.Game.stepsPerFrame; i += 1) {
+      this.#elapsedTime += deltaTime;
       this.controls.update(deltaTime);
-      this.characterManager.update(deltaTime, damping);
-      this.objectManager.update(deltaTime, damping);
+      this.characterManager.update(deltaTime, this.#elapsedTime, damping);
+      this.objectManager.update(deltaTime, this.#elapsedTime, damping);
     }
     this.scenes.update();
     this.stats.update();
@@ -11730,8 +11910,7 @@ const createFineGrid = function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   createCylinder: function() { return /* binding */ createCylinder; },
-/* harmony export */   createGround: function() { return /* binding */ createGround; },
-/* harmony export */   createWalls: function() { return /* binding */ createWalls; }
+/* harmony export */   createGround: function() { return /* binding */ createGround; }
 /* harmony export */ });
 /* harmony import */ var core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.typed-array.to-reversed.js */ "./node_modules/core-js/modules/es.typed-array.to-reversed.js");
 /* harmony import */ var core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_to_reversed_js__WEBPACK_IMPORTED_MODULE_0__);
@@ -11739,13 +11918,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var core_js_modules_es_typed_array_to_sorted_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_to_sorted_js__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! core-js/modules/es.typed-array.with.js */ "./node_modules/core-js/modules/es.typed-array.with.js");
 /* harmony import */ var core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_typed_array_with_js__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/addons/math/ImprovedNoise.js */ "./node_modules/three/examples/jsm/math/ImprovedNoise.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/addons/math/ImprovedNoise.js */ "./node_modules/three/examples/jsm/math/ImprovedNoise.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
 
 
 
@@ -11762,8 +11938,8 @@ const {
 } = Math;
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-_textures__WEBPACK_IMPORTED_MODULE_5__["default"].crossStar(context);
-const texture = new three__WEBPACK_IMPORTED_MODULE_6__.Texture(canvas);
+_textures__WEBPACK_IMPORTED_MODULE_4__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_5__.Texture(canvas);
 texture.needsUpdate = true;
 let seed = PI / 4;
 const customRandom = () => {
@@ -11774,7 +11950,7 @@ const customRandom = () => {
 const generateHeight = (width, height) => {
   const size = width * height;
   const data = new Uint8Array(size);
-  const perlin = new three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_7__.ImprovedNoise();
+  const perlin = new three_addons_math_ImprovedNoise_js__WEBPACK_IMPORTED_MODULE_6__.ImprovedNoise();
   const z = customRandom() * 100;
   let quality = 1;
   for (let j = 0; j < 4; j += 1) {
@@ -11786,135 +11962,6 @@ const generateHeight = (width, height) => {
     quality *= 2;
   }
   return data;
-};
-const createStage = function () {
-  let radius = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 100;
-  const geom = new three__WEBPACK_IMPORTED_MODULE_6__.CylinderGeometry(radius, radius, 10, 12);
-  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_6__.CylinderGeometry(radius + 2.5, radius + 2.5, 20, 12);
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
-  bufferGeom.computeBoundingSphere();
-  const mat = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
-  });
-  const wireMat = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-    wireframe: true
-  });
-  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
-    map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
-    alphaTest: 0.5
-  });
-  const mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, mat);
-  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, wireMat);
-  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Points(bufferGeom, pointsMat);
-  const group = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
-  return group;
-};
-const createStone = function () {
-  let size = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-  let detail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-  const geom = new three__WEBPACK_IMPORTED_MODULE_6__.OctahedronGeometry(size, detail);
-  geom.scale(0.2, 1, 0.2);
-  const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_6__.OctahedronGeometry(size + 4, detail);
-  pointsGeom.scale(0.26, 1, 0.26);
-  const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-  const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
-  bufferGeom.computeBoundingSphere();
-  const mat = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.color
-  });
-  const wireMat = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-    wireframe: true
-  });
-  const pointsMat = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.Object.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
-    map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
-    alphaTest: 0.5
-  });
-  const mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, mat);
-  const wireMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, wireMat);
-  const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Points(bufferGeom, pointsMat);
-  const group = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
-  group.add(mesh);
-  group.add(wireMesh);
-  group.add(pointsMesh);
-  return group;
-};
-const createWalls = () => {
-  const width = (_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 2) * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.width;
-  const depth = (_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 2) * _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.depth;
-  const height = _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.height * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize + 1;
-  const walls = [];
-  for (let i = 0; i < 4; i += 1) {
-    let geom;
-    let data;
-    if (i % 2 === 0) {
-      data = generateHeight(width, height);
-      geom = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(width, height, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.width - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize);
-    } else {
-      data = generateHeight(depth, height);
-      geom = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(depth, height, _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Segments.depth - 1, _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize);
-    }
-    const vertices = geom.attributes.position.array;
-    const pointsVertices = vertices.slice(0);
-    for (let j = 0, k = 0, l = vertices.length; j < l; j += 1, k += 3) {
-      vertices[k + 2] = data[j] * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.heightCoef / 2;
-      pointsVertices[k + 2] = vertices[k + 2] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
-    }
-    const geomPoints = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-    geomPoints.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
-    geomPoints.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallColor
-    });
-    const matWire = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor,
-      wireframe: true
-    });
-    const matPoints = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-      color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.pointsColor,
-      size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
-      map: texture,
-      blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
-      alphaTest: 0.5
-    });
-    const mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, mat);
-    const meshWire = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom, matWire);
-    const meshPoints = new three__WEBPACK_IMPORTED_MODULE_6__.Points(geomPoints, matPoints);
-    const group = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
-    group.add(mesh);
-    group.add(meshWire);
-    group.add(meshPoints);
-    group.position.setY(_settings__WEBPACK_IMPORTED_MODULE_4__.Grid.Spacing.height * _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wallHeightSize / 2);
-    if (i % 2 === 0) {
-      if (i === 0) {
-        group.position.setZ(-depth / 2 + 50);
-      } else {
-        group.rotation.y = PI;
-        group.position.setZ(depth / 2 - 50);
-      }
-    } else if (i === 1) {
-      group.rotation.y = PI / 2;
-      group.position.setX(-width / 2 + 50);
-    } else {
-      group.rotation.y = -PI / 2;
-      group.position.setX(width / 2 - 50);
-    }
-    walls.push(group);
-  }
-  return walls;
 };
 const createGround = function () {
   let {
@@ -11940,40 +11987,40 @@ const createGround = function () {
   const geom = {};
   const mat = {};
   const mesh = {};
-  geom.surface = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(width, depth, widthSegments, depthSegments);
+  geom.surface = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(width, depth, widthSegments, depthSegments);
   geom.surface.rotateX(-PI / 2);
   const vertices = geom.surface.attributes.position.array;
   const pointsVertices = vertices.slice(0);
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
     vertices[j + 1] = data[i] * bumpHeight;
-    pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size / 2;
+    pointsVertices[j + 1] = vertices[j + 1] + _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size / 2;
   }
-  geom.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.WireframeGeometry(geom.surface);
-  geom.points = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  geom.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(pointsVertices, 3));
+  geom.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.WireframeGeometry(geom.surface);
+  geom.points = new three__WEBPACK_IMPORTED_MODULE_5__.BufferGeometry();
+  geom.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_5__.Float32BufferAttribute(pointsVertices, 3));
   geom.points.computeBoundingSphere();
-  mat.surface = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.color
-    // side: THREE.DoubleSide,
+  mat.surface = new three__WEBPACK_IMPORTED_MODULE_5__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.color
+    // side: DoubleSide,
   });
-  mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.LineBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.wireframeColor
+  mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.LineBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.wireframeColor
   });
-  mat.points = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Ground.pointsColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+  mat.points = new three__WEBPACK_IMPORTED_MODULE_5__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Ground.pointsColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size,
     map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
+    blending: three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending,
     alphaTest: 0.5
   });
-  mesh.surface = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom.surface, mat.surface);
+  mesh.surface = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  // mesh.wireframe = new THREE.Mesh(geom.surface, mat.wireframe);
-  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.LineSegments(geom.wireframe, mat.wireframe);
+  // mesh.wireframe = new Mesh(geom.surface, mat.wireframe);
+  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
-  mesh.points = new three__WEBPACK_IMPORTED_MODULE_6__.Points(geom.points, mat.points);
+  mesh.points = new three__WEBPACK_IMPORTED_MODULE_5__.Points(geom.points, mat.points);
   mesh.points.name = 'points';
-  const ground = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
+  const ground = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
   ground.add(mesh.surface);
   ground.add(mesh.wireframe);
   ground.add(mesh.points);
@@ -12007,35 +12054,35 @@ const createCylinder = function () {
   const geom = {};
   const mat = {};
   const mesh = {};
-  geom.surface = new three__WEBPACK_IMPORTED_MODULE_6__.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments);
-  //geom.surface.rotateX(-PI / 2);
-  geom.points = new three__WEBPACK_IMPORTED_MODULE_6__.CylinderGeometry(radiusTop, radiusBottom, height + 4, radialSegments, heightSegments);
+  geom.surface = new three__WEBPACK_IMPORTED_MODULE_5__.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments);
+  // geom.surface.rotateX(-PI / 2);
+  geom.points = new three__WEBPACK_IMPORTED_MODULE_5__.CylinderGeometry(radiusTop, radiusBottom, height + 4, radialSegments, heightSegments);
   const vertices = geom.points.attributes.position.array.slice(0);
-  geom.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.WireframeGeometry(geom.surface);
-  geom.points = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-  geom.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_6__.Float32BufferAttribute(vertices, 3));
+  geom.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.WireframeGeometry(geom.surface);
+  geom.points = new three__WEBPACK_IMPORTED_MODULE_5__.BufferGeometry();
+  geom.points.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_5__.Float32BufferAttribute(vertices, 3));
   geom.points.computeBoundingSphere();
-  mat.surface = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Cylinder.color
-    // side: THREE.DoubleSide,
+  mat.surface = new three__WEBPACK_IMPORTED_MODULE_5__.MeshBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Cylinder.color
+    // side: DoubleSide,
   });
-  mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.LineBasicMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Cylinder.wireColor
+  mat.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.LineBasicMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Cylinder.wireColor
   });
-  mat.points = new three__WEBPACK_IMPORTED_MODULE_6__.PointsMaterial({
-    color: _settings__WEBPACK_IMPORTED_MODULE_4__.Cylinder.pointColor,
-    size: _settings__WEBPACK_IMPORTED_MODULE_4__.Grid.size,
+  mat.points = new three__WEBPACK_IMPORTED_MODULE_5__.PointsMaterial({
+    color: _settings__WEBPACK_IMPORTED_MODULE_3__.Cylinder.pointColor,
+    size: _settings__WEBPACK_IMPORTED_MODULE_3__.Grid.size,
     map: texture,
-    blending: three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending,
+    blending: three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending,
     alphaTest: 0.5
   });
-  mesh.surface = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom.surface, mat.surface);
+  mesh.surface = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_6__.LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe = new three__WEBPACK_IMPORTED_MODULE_5__.LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
-  mesh.points = new three__WEBPACK_IMPORTED_MODULE_6__.Points(geom.points, mat.points);
+  mesh.points = new three__WEBPACK_IMPORTED_MODULE_5__.Points(geom.points, mat.points);
   mesh.points.name = 'points';
-  const group = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
+  const group = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
   group.add(mesh.surface);
   group.add(mesh.wireframe);
   group.add(mesh.points);
@@ -12075,7 +12122,6 @@ const getRandomInclusive = (min, max) => random() * (max - min) + min;
 class Gun extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
   #dir = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, -1);
   #euler = new three__WEBPACK_IMPORTED_MODULE_2__.Euler(0, 0, 0, 'YXZ');
-  #fireAt = performance.now();
   constructor(name) {
     super();
     if (!gunData.has(name)) {
@@ -12085,6 +12131,7 @@ class Gun extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.type = 'gun';
     this.data = gunData.get(name);
     this.ammo = null;
+    this.fireAt = performance.now();
   }
   setAmmo(ammo) {
     if (!this.data.ammoTypes.includes(ammo.name)) {
@@ -12097,10 +12144,10 @@ class Gun extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       return;
     }
     const now = performance.now();
-    if (now - this.#fireAt < this.data.fireInterval) {
+    if (now - this.fireAt < this.data.fireInterval) {
       return;
     }
-    this.#fireAt = now;
+    this.fireAt = now;
     const {
       rotation,
       povRotation,
@@ -12183,13 +12230,11 @@ class Loop {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
-/* harmony import */ var _collidable__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./collidable */ "./src/js/game/collidable.js");
-/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
-/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
-/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _collidable__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./collidable */ "./src/js/game/collidable.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./data */ "./src/js/game/data.js");
+/* harmony import */ var _textures__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./textures */ "./src/js/game/textures.js");
 
 
 
@@ -12202,12 +12247,12 @@ const {
 } = Math;
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
-_textures__WEBPACK_IMPORTED_MODULE_4__["default"].crossStar(context);
-const texture = new three__WEBPACK_IMPORTED_MODULE_5__.Texture(canvas);
+_textures__WEBPACK_IMPORTED_MODULE_3__["default"].crossStar(context);
+const texture = new three__WEBPACK_IMPORTED_MODULE_4__.Texture(canvas);
 texture.needsUpdate = true;
 function noop() {}
-const obstacleData = new Map(_data__WEBPACK_IMPORTED_MODULE_3__.Obstacles);
-class Obstacle extends _collidable__WEBPACK_IMPORTED_MODULE_1__["default"] {
+const obstacleData = new Map(_data__WEBPACK_IMPORTED_MODULE_2__.Obstacles);
+class Obstacle extends _collidable__WEBPACK_IMPORTED_MODULE_0__["default"] {
   constructor(name) {
     super(name, 'obstacle');
     if (!obstacleData.has(name)) {
@@ -12227,51 +12272,53 @@ class Obstacle extends _collidable__WEBPACK_IMPORTED_MODULE_1__["default"] {
       rotateSpeed,
       tweens,
       /// //
-      init,
-      update
+      init
     } = this.data;
-    this.collider.set(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(), radius);
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
-    this.onUpdate = this.data.update.bind(this);
-    this.updater = new _publisher__WEBPACK_IMPORTED_MODULE_0__["default"]();
-    const geom = new three__WEBPACK_IMPORTED_MODULE_5__.IcosahedronGeometry(radius, detail);
-    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_5__.WireframeGeometry(geom);
-    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_5__.OctahedronGeometry(radius + 4, detail);
+    this.collider.set(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(), radius);
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3();
+    //this.onUpdate = this.data.update.bind(this);
+    //this.updater = new Publisher();
+
+    const geom = new three__WEBPACK_IMPORTED_MODULE_4__.IcosahedronGeometry(radius, detail);
+    const wireframeGeom = new three__WEBPACK_IMPORTED_MODULE_4__.WireframeGeometry(geom);
+    const pointsGeom = new three__WEBPACK_IMPORTED_MODULE_4__.OctahedronGeometry(radius + 4, detail);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
-    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_5__.BufferGeometry();
-    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_5__.Float32BufferAttribute(pointsVertices, 3));
+    const bufferGeom = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
+    bufferGeom.setAttribute('position', new three__WEBPACK_IMPORTED_MODULE_4__.Float32BufferAttribute(pointsVertices, 3));
     bufferGeom.computeBoundingSphere();
-    const mat = new three__WEBPACK_IMPORTED_MODULE_5__.MeshBasicMaterial({
+    const mat = new three__WEBPACK_IMPORTED_MODULE_4__.MeshBasicMaterial({
       color
     });
-    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_5__.LineBasicMaterial({
+    const wireframeMat = new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
       color: wireColor
     });
-    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_5__.PointsMaterial({
+    const pointsMat = new three__WEBPACK_IMPORTED_MODULE_4__.PointsMaterial({
       color: pointColor,
       size: pointSize,
       map: texture,
-      blending: three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending,
+      blending: three__WEBPACK_IMPORTED_MODULE_4__.NormalBlending,
       alphaTest: 0.5
     });
-    const mesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geom, mat);
-    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_5__.LineSegments(wireframeGeom, wireframeMat);
-    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Points(bufferGeom, pointsMat);
-    const object = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
+    const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geom, mat);
+    const wireMesh = new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(wireframeGeom, wireframeMat);
+    const pointsMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Points(bufferGeom, pointsMat);
+    const object = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
     object.add(mesh);
     object.add(wireMesh);
     object.add(pointsMesh);
     this.setObject(object);
-    this.setActive(true);
+    this.setActive(false);
   }
-  addTweener(tweener) {
-    this.tweener = tweener(this);
-    this.tweener = this.tweener.update.bind(this.tweener);
-    this.updater.subscribe('update', this.tweener);
+  addTweener(tweener, arg) {
+    const tween = tweener(this, arg);
+    const updater = tween.update.bind(tween);
+    this.subscribe('tween', updater);
   }
-  update(deltaTime) {
-    super.update(deltaTime);
-    this.updater.publish('update');
+  update(deltaTime, elapsedTime) {
+    super.update(deltaTime, elapsedTime);
+    if (this.isActive()) {
+      this.publish('tween', elapsedTime * 1000);
+    }
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Obstacle);
@@ -12286,37 +12333,36 @@ class Obstacle extends _collidable__WEBPACK_IMPORTED_MODULE_1__["default"] {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! core-js/modules/es.array.push.js */ "./node_modules/core-js/modules/es.array.push.js");
-/* harmony import */ var core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(core_js_modules_es_array_push_js__WEBPACK_IMPORTED_MODULE_0__);
-
 class Publisher {
   constructor() {
     this.listeners = new Map();
   }
   publish(eventName) {
+    for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
     if (this.listeners.has(eventName)) {
-      const list = this.listeners.get(eventName);
-      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        args[_key - 1] = arguments[_key];
-      }
-      for (let i = 0, l = list.length; i < l; i += 1) {
-        const listener = list[i];
-        listener(...args);
-      }
+      const listeners = this.listeners.get(eventName);
+      listeners.forEach(listener => listener(...args));
     }
   }
   subscribe(eventName, callback) {
     if (!this.listeners.has(eventName)) {
-      this.listeners.set(eventName, []);
+      this.listeners.set(eventName, new Set());
     }
-    const list = this.listeners.get(eventName);
-    list.push(callback);
+    const listeners = this.listeners.get(eventName);
+    listeners.add(callback);
   }
   unsubscribe(eventName, callback) {
     if (this.listeners.has(eventName)) {
-      let list = this.listeners.get(eventName);
-      list = list.filter(listener => listener !== callback);
-      this.listeners.set(eventName, list);
+      const listeners = this.listeners.get(eventName);
+      listeners.delete(callback);
+    }
+  }
+  clear(eventName) {
+    if (this.listeners.has(eventName)) {
+      const listeners = this.listeners.get(eventName);
+      listeners.clear();
     }
   }
 }
@@ -12661,6 +12707,7 @@ const Controls = {
   inputDuration: 120
 };
 const World = {
+  oob: -600,
   gravity: 800,
   // 6,
   resistance: 4,
