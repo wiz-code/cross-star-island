@@ -111,18 +111,10 @@ class Obstacle extends Collidable {
     this.setActive(false);
   }
 
-  addTweener(tweener, arg) {
-    const tween = tweener(this, arg);
-    const updater = tween.update.bind(tween);
-    this.subscribe('tween', updater);
-  }
+  update(deltaTime, elapsedTime, damping) {
+    super.update(deltaTime, elapsedTime, damping);
 
-  update(deltaTime, elapsedTime) {
-    super.update(deltaTime, elapsedTime);
-
-    if (this.isActive()) {
-      this.publish('tween', elapsedTime * 1000);
-    }
+    //
   }
 }
 

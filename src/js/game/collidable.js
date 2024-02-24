@@ -1,6 +1,7 @@
 import { Sphere, Vector3 } from 'three';
 
 import Publisher from './publisher';
+import { World } from './settings';
 
 function noop() {}
 
@@ -24,9 +25,7 @@ class Collidable extends Publisher {
     this.name = name;
     this.type = type;
 
-    if (object != null) {
-      this.object = object;
-    }
+    this.object = object;
 
     this.collider = new Sphere();
     this.velocity = new Vector3();
@@ -70,9 +69,30 @@ class Collidable extends Publisher {
     }
   }
 
-  update(deltaTime, elapsedTime) {
-    if (this.#active && this.onUpdate != null) {
-      this.onUpdate(deltaTime, elapsedTime);
+  addTweener(tweener, arg) {
+    const tween = tweener(this, arg);
+    const updater = tween.update.bind(tween);
+    this.subscribe('tween', updater);
+  }
+
+  update(deltaTime, elapsedTime, damping) {
+    if (this.#active) {
+      this.velocity.y -= World.gravity * deltaTime;
+      this.velocity.addScaledVector(
+        this.velocity,
+        damping[this.type],
+      );
+
+      this.collider.center.addScaledVector(
+        this.velocity,
+        deltaTime,
+      );
+
+      if (this.onUpdate != null) {
+        this.onUpdate(deltaTime, elapsedTime);
+      }
+
+      this.publish('tween', elapsedTime * 1000);
     }
   }
 }

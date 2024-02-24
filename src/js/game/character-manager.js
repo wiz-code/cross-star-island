@@ -138,8 +138,6 @@ class CharacterManager {
 
           character.velocity.addScaledVector(vec1, object.data.weight);
           object.velocity.addScaledVector(vec2, character.data.weight);
-          // character.velocity.add(v2).sub(v1);
-          // object.velocity.add(v1).sub(v2);
 
           const d = (r - sqrt(d2)) / 2;
           objectCenter.addScaledVector(normal, -d);
@@ -150,13 +148,10 @@ class CharacterManager {
 
   collisions() {
     const list = Array.from(this.list.values());
+    const len = list.length;
 
-    for (let i = 0, l = list.length; i < l; i += 1) {
+    for (let i = 0; i < len; i += 1) {
       const character = list[i];
-
-      if (!character.isActive()) {
-        continue;
-      }
 
       const result = this.worldOctree.capsuleIntersect(character.collider);
       character.setGrounded(false);
@@ -177,6 +172,22 @@ class CharacterManager {
         );
       }
     }
+
+    if (len >= 2) {
+      for (let i = 0; i < len; i += 1) {
+        const c1 = list[i];
+
+        if (c1.isActive()) {
+          for (let j = i + 1; j < len; j += 1) {
+            const c2 = list[j];
+
+            if (c2.isActive) {
+              c1.collideWith(c2);
+            }
+          }
+        }
+      }
+    }
   }
 
   update(deltaTime, elapsedTime, damping) {
@@ -195,26 +206,17 @@ class CharacterManager {
     const list = Array.from(this.list.values());
     const len = list.length;
 
-    if (len >= 2) {
-      for (let i = 0; i < len; i += 1) {
-        const c1 = list[i];
-
-        for (let j = i + 1; j < len; j += 1) {
-          const c2 = list[j];
-          c1.collideWith(c2);
-        }
-      }
-    }
-
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-
-      if (character.isActive()) {
-        character.update(deltaTime, elapsedTime, damping);
-      }
+      character.update(deltaTime, elapsedTime, damping);
     }
 
     this.collisions();
+
+    for (let i = 0; i < len; i += 1) {
+      const character = list[i];
+      character.postUpdate();
+    }
   }
 }
 

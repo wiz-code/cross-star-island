@@ -262,9 +262,9 @@ class Character extends Publisher {
   }
 
   setPosition(position, direction) {
-    if (this.isFPV()) {
+    /*if (this.isFPV()) {
       this.camera.rotation.y = direction;
-    }
+    }*/
 
     this.rotation.phi = direction;
     this.direction.copy(
@@ -275,9 +275,9 @@ class Character extends Publisher {
     this.collider.end.copy(position);
     this.collider.end.y += this.data.height;
 
-    this.object.position.copy(this.collider.start);
-    this.object.position.y += this.halfHeight;
-    this.object.rotation.y = direction;
+    /*this.object.position.copy(this.collider.start);/////
+    this.object.position.y += this.halfHeight;/////
+    this.object.rotation.y = direction;//////*/
   }
 
   isGrounded() {
@@ -632,6 +632,17 @@ class Character extends Publisher {
       .copy(this.velocity)
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
+
+    if (this.onUpdate != null) {
+      this.onUpdate(deltaTime, elapsedTime);
+    }
+
+    if (this.collider.start.y < World.oob) {
+      this.publish('oob', this);
+    }
+  }
+
+  postUpdate(deltaTime, elapsedTime) {
     this.object.position.copy(this.collider.start);
     this.object.position.y += this.halfHeight;
     this.object.rotation.y = this.rotation.phi;
@@ -640,14 +651,6 @@ class Character extends Publisher {
       this.camera.rotation.x = this.povRotation.theta + this.deltaY;
       this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
       this.camera.position.copy(this.collider.end);
-
-      if (this.collider.start.y < World.oob) {
-        this.publish('oob', this);
-      }
-    }
-
-    if (this.onUpdate != null) {
-      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }

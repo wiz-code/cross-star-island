@@ -27,8 +27,8 @@ class Bullet extends Collidable {
     this.elapsedTime = 0;
   }
 
-  update(deltaTime, elapsedTime) {
-    super.update(deltaTime, elapsedTime);
+  update(deltaTime, elapsedTime, damping) {
+    super.update(deltaTime, elapsedTime, damping);
 
     if (this.isActive()) {
       this.elapsedTime += deltaTime;

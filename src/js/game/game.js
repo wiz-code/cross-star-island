@@ -250,8 +250,9 @@ class Game {
 
     if (character.isFPV()) {
       const checkPoint = stageData.checkPoints[this.checkPointIndex];
-      character.setPosition(checkPoint.position, checkPoint.direction);
       character.velocity.copy(new Vector3(0, 0, 0));
+      character.setPosition(checkPoint.position, checkPoint.direction);
+
     }
   }
 
