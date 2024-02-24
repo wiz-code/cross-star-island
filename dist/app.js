@@ -9437,8 +9437,8 @@ class Bullet extends _collidable__WEBPACK_IMPORTED_MODULE_0__["default"] {
     super.setActive(bool);
     this.elapsedTime = 0;
   }
-  update(deltaTime, elapsedTime) {
-    super.update(deltaTime, elapsedTime);
+  update(deltaTime, elapsedTime, damping) {
+    super.update(deltaTime, elapsedTime, damping);
     if (this.isActive()) {
       this.elapsedTime += deltaTime;
       if (this.elapsedTime > this.data.lifetime) {
@@ -9563,9 +9563,6 @@ class CharacterManager {
           const vec2 = this.#vecE.subVectors(v1, v2);
           character.velocity.addScaledVector(vec1, object.data.weight);
           object.velocity.addScaledVector(vec2, character.data.weight);
-          // character.velocity.add(v2).sub(v1);
-          // object.velocity.add(v1).sub(v2);
-
           const d = (r - sqrt(d2)) / 2;
           objectCenter.addScaledVector(normal, -d);
         }
@@ -9574,11 +9571,9 @@ class CharacterManager {
   }
   collisions() {
     const list = Array.from(this.list.values());
-    for (let i = 0, l = list.length; i < l; i += 1) {
+    const len = list.length;
+    for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      if (!character.isActive()) {
-        continue;
-      }
       const result = this.worldOctree.capsuleIntersect(character.collider);
       character.setGrounded(false);
       if (result) {
@@ -9588,6 +9583,19 @@ class CharacterManager {
           character.velocity.addScaledVector(result.normal, -result.normal.dot(character.velocity));
         }
         character.collider.translate(result.normal.multiplyScalar(result.depth));
+      }
+    }
+    if (len >= 2) {
+      for (let i = 0; i < len; i += 1) {
+        const c1 = list[i];
+        if (c1.isActive()) {
+          for (let j = i + 1; j < len; j += 1) {
+            const c2 = list[j];
+            if (c2.isActive) {
+              c1.collideWith(c2);
+            }
+          }
+        }
       }
     }
   }
@@ -9603,22 +9611,15 @@ class CharacterManager {
     }
     const list = Array.from(this.list.values());
     const len = list.length;
-    if (len >= 2) {
-      for (let i = 0; i < len; i += 1) {
-        const c1 = list[i];
-        for (let j = i + 1; j < len; j += 1) {
-          const c2 = list[j];
-          c1.collideWith(c2);
-        }
-      }
-    }
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      if (character.isActive()) {
-        character.update(deltaTime, elapsedTime, damping);
-      }
+      character.update(deltaTime, elapsedTime, damping);
     }
     this.collisions();
+    for (let i = 0; i < len; i += 1) {
+      const character = list[i];
+      character.postUpdate();
+    }
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (CharacterManager);
@@ -9820,17 +9821,19 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     }
   }
   setPosition(position, direction) {
-    if (this.isFPV()) {
+    /*if (this.isFPV()) {
       this.camera.rotation.y = direction;
-    }
+    }*/
+
     this.rotation.phi = direction;
     this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, direction));
     this.collider.start.copy(position);
     this.collider.end.copy(position);
     this.collider.end.y += this.data.height;
-    this.object.position.copy(this.collider.start);
-    this.object.position.y += this.halfHeight;
-    this.object.rotation.y = direction;
+
+    /*this.object.position.copy(this.collider.start);/////
+    this.object.position.y += this.halfHeight;/////
+    this.object.rotation.y = direction;//////*/
   }
   isGrounded() {
     return this.#isGrounded;
@@ -10111,6 +10114,14 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
     this.velocity.addScaledVector(this.velocity, deltaDamping);
     const deltaPosition = this.#vel.copy(this.velocity).multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
+    if (this.onUpdate != null) {
+      this.onUpdate(deltaTime, elapsedTime);
+    }
+    if (this.collider.start.y < _settings__WEBPACK_IMPORTED_MODULE_2__.World.oob) {
+      this.publish('oob', this);
+    }
+  }
+  postUpdate(deltaTime, elapsedTime) {
     this.object.position.copy(this.collider.start);
     this.object.position.y += this.halfHeight;
     this.object.rotation.y = this.rotation.phi;
@@ -10118,12 +10129,6 @@ class Character extends _publisher__WEBPACK_IMPORTED_MODULE_1__["default"] {
       this.camera.rotation.x = this.povRotation.theta + this.deltaY;
       this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
       this.camera.position.copy(this.collider.end);
-      if (this.collider.start.y < _settings__WEBPACK_IMPORTED_MODULE_2__.World.oob) {
-        this.publish('oob', this);
-      }
-    }
-    if (this.onUpdate != null) {
-      this.onUpdate(deltaTime, elapsedTime);
     }
   }
 }
@@ -10215,33 +10220,49 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
   }
   collisions() {
     const list = Array.from(this.list.values()).flat();
-    for (let i = 0, l = list.length; i < l; i += 1) {
+    const len = list.length;
+    for (let i = 0; i < len; i += 1) {
+      const collidable = list[i];
+      const result = this.worldOctree.sphereIntersect(collidable.collider);
+      if (result) {
+        if (!collidable.isBounced()) {
+          collidable.setBounced(true);
+        }
+        collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
+        collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
+      }
+      if (collidable.isActive()) {
+        this.publish('collideWith', collidable);
+      }
+    }
+    for (let i = 0; i < len; i += 1) {
       const a1 = list[i];
-      for (let j = i + 1; j < l; j += 1) {
-        const a2 = list[j];
-        const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-        const r = a1.data.radius + a2.data.radius;
-        const r2 = r * r;
-        if (d2 < r2) {
-          if (!a1.isBounced()) {
-            a1.setBounced(true);
+      if (a1.isActive()) {
+        for (let j = i + 1; j < len; j += 1) {
+          const a2 = list[j];
+          if (a2.isActive()) {
+            const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
+            const r = a1.data.radius + a2.data.radius;
+            const r2 = r * r;
+            if (d2 < r2) {
+              if (!a1.isBounced()) {
+                a1.setBounced(true);
+              }
+              if (!a2.isBounced()) {
+                a2.setBounced(true);
+              }
+              const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
+              const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
+              const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
+              const vec1 = this.#vecD.subVectors(v2, v1);
+              const vec2 = this.#vecE.subVectors(v1, v2);
+              a1.velocity.addScaledVector(vec1, a2.data.weight);
+              a2.velocity.addScaledVector(vec2, a1.data.weight);
+              const d = (r - sqrt(d2)) / 2;
+              a1.collider.center.addScaledVector(normal, d);
+              a2.collider.center.addScaledVector(normal, -d);
+            }
           }
-          if (!a2.isBounced()) {
-            a2.setBounced(true);
-          }
-          const normal = this.#vecA.subVectors(a1.collider.center, a2.collider.center).normalize();
-          const v1 = this.#vecB.copy(normal).multiplyScalar(normal.dot(a1.velocity));
-          const v2 = this.#vecC.copy(normal).multiplyScalar(normal.dot(a2.velocity));
-          const vec1 = this.#vecD.subVectors(v2, v1);
-          const vec2 = this.#vecE.subVectors(v1, v2);
-          a1.velocity.addScaledVector(vec1, a2.data.weight);
-          a2.velocity.addScaledVector(vec2, a1.data.weight);
-          // a1.velocity.add(v2).sub(v1);
-          // a2.velocity.add(v1).sub(v2);
-
-          const d = (r - sqrt(d2)) / 2;
-          a1.collider.center.addScaledVector(normal, d);
-          a2.collider.center.addScaledVector(normal, -d);
         }
       }
     }
@@ -10257,33 +10278,16 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
       }
     }
     const list = Array.from(this.list.values()).flat();
-    for (let i = 0, l = list.length; i < l; i += 1) {
-      const collidable = list[i];
-      if (!collidable.isActive()) {
-        continue;
-      }
-      collidable.collider.center.addScaledVector(collidable.velocity, deltaTime);
-      const result = this.worldOctree.sphereIntersect(collidable.collider);
-      if (result) {
-        if (!collidable.isBounced()) {
-          collidable.setBounced(true);
-        }
-        collidable.velocity.addScaledVector(result.normal, -result.normal.dot(collidable.velocity) * 1.5);
-        collidable.collider.center.add(result.normal.multiplyScalar(result.depth));
-      } else {
-        collidable.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime /* * 100 */;
-      }
-      collidable.object.position.copy(collidable.collider.center);
-      collidable.velocity.addScaledVector(collidable.velocity, damping[collidable.type]);
-      this.publish('collideWith', collidable);
-    }
-    this.collisions();
-    for (let i = 0, l = list.length; i < l; i += 1) {
+    const len = list.length;
+    for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
       // オブジェクト固有の挙動をupdate()に記述する
-      if (collidable.isActive()) {
-        collidable.update(deltaTime, elapsedTime);
-      }
+      collidable.update(deltaTime, elapsedTime, damping);
+    }
+    this.collisions();
+    for (let i = 0; i < len; i += 1) {
+      const collidable = list[i];
+      collidable.object.position.copy(collidable.collider.center);
     }
   }
 }
@@ -10299,8 +10303,10 @@ class CollidableManager extends _publisher__WEBPACK_IMPORTED_MODULE_3__["default
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _publisher__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./publisher */ "./src/js/game/publisher.js");
+/* harmony import */ var _settings__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./settings */ "./src/js/game/settings.js");
+
 
 
 function noop() {}
@@ -10318,11 +10324,9 @@ class Collidable extends _publisher__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.id = `${type}-${genId()}`;
     this.name = name;
     this.type = type;
-    if (object != null) {
-      this.object = object;
-    }
-    this.collider = new three__WEBPACK_IMPORTED_MODULE_1__.Sphere();
-    this.velocity = new three__WEBPACK_IMPORTED_MODULE_1__.Vector3();
+    this.object = object;
+    this.collider = new three__WEBPACK_IMPORTED_MODULE_2__.Sphere();
+    this.velocity = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3();
     this.onUpdate = null;
   }
   setObject(object) {
@@ -10352,9 +10356,20 @@ class Collidable extends _publisher__WEBPACK_IMPORTED_MODULE_0__["default"] {
       });
     }
   }
-  update(deltaTime, elapsedTime) {
-    if (this.#active && this.onUpdate != null) {
-      this.onUpdate(deltaTime, elapsedTime);
+  addTweener(tweener, arg) {
+    const tween = tweener(this, arg);
+    const updater = tween.update.bind(tween);
+    this.subscribe('tween', updater);
+  }
+  update(deltaTime, elapsedTime, damping) {
+    if (this.#active) {
+      this.velocity.y -= _settings__WEBPACK_IMPORTED_MODULE_1__.World.gravity * deltaTime;
+      this.velocity.addScaledVector(this.velocity, damping[this.type]);
+      this.collider.center.addScaledVector(this.velocity, deltaTime);
+      if (this.onUpdate != null) {
+        this.onUpdate(deltaTime, elapsedTime);
+      }
+      this.publish('tween', elapsedTime * 1000);
     }
   }
 }
@@ -10585,7 +10600,7 @@ class FirstPersonControls {
       return;
     }
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }
@@ -11615,8 +11630,8 @@ class Game {
     const stageData = this.data.stages.get(stageName);
     if (character.isFPV()) {
       const checkPoint = stageData.checkPoints[this.checkPointIndex];
-      character.setPosition(checkPoint.position, checkPoint.direction);
       character.velocity.copy(new three__WEBPACK_IMPORTED_MODULE_13__.Vector3(0, 0, 0));
+      character.setPosition(checkPoint.position, checkPoint.direction);
     }
   }
   setMode(mode) {
@@ -12309,16 +12324,10 @@ class Obstacle extends _collidable__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.setObject(object);
     this.setActive(false);
   }
-  addTweener(tweener, arg) {
-    const tween = tweener(this, arg);
-    const updater = tween.update.bind(tween);
-    this.subscribe('tween', updater);
-  }
-  update(deltaTime, elapsedTime) {
-    super.update(deltaTime, elapsedTime);
-    if (this.isActive()) {
-      this.publish('tween', elapsedTime * 1000);
-    }
+  update(deltaTime, elapsedTime, damping) {
+    super.update(deltaTime, elapsedTime, damping);
+
+    //
   }
 }
 /* harmony default export */ __webpack_exports__["default"] = (Obstacle);
