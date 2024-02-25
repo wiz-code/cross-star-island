@@ -168,7 +168,7 @@ export const createCylinder = ({
   geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,
-    height + 4,
+    height + Cylinder.pointSize * 1.2,
     radialSegments,
     heightSegments,
   );
@@ -190,7 +190,7 @@ export const createCylinder = ({
 
   mat.points = new PointsMaterial({
     color: Cylinder.pointColor,
-    size: Grid.size,
+    size: Cylinder.pointSize,
     map: texture,
     blending: NormalBlending,
     alphaTest: 0.5,

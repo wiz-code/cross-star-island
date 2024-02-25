@@ -41,6 +41,7 @@ import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
+import Item from './item';
 import { createStage } from './stages';
 
 const { floor, exp } = Math;
@@ -141,7 +142,7 @@ class Game {
     ammoNames.forEach((name) => {
       const ammo = new Ammo(name);
       this.ammos.set(name, ammo);
-      this.objectManager.add('ammo', ammo);
+      this.objectManager.add(ammo.list);
     });
 
     this.controls = null;
@@ -152,7 +153,7 @@ class Game {
     this.ready = false;
     this.mode = 'loading'; // 'loading', 'opening', 'play', 'gameover'
     this.stageIndex = 0;
-    this.checkPointIndex = 0;
+    this.checkpointIndex = 0;
 
     /// ///////////////
     const player = new Character('hero-1');
@@ -190,6 +191,11 @@ class Game {
     this.onResize = debounce(GameSettings.resizeDelayTime, onResize.bind(this));
 
     window.addEventListener('resize', this.onResize);
+
+    this.nextCheckpoint = this.nextCheckpoint.bind(this);
+    this.weaponUpgrade = this.weaponUpgrade.bind(this);
+    this.objectManager.subscribe('nextCheckpoint', this.nextCheckpoint);
+    this.objectManager.subscribe('weaponUpgrade', this.weaponUpgrade);
 
     this.stats = new Stats();
     this.stats.domElement.style.position = 'absolute';
@@ -249,11 +255,35 @@ class Game {
     const stageData = this.data.stages.get(stageName);
 
     if (character.isFPV()) {
-      const checkPoint = stageData.checkPoints[this.checkPointIndex];
+      const checkpoint = stageData.checkpoints[this.checkpointIndex];
       character.velocity.copy(new Vector3(0, 0, 0));
-      character.setPosition(checkPoint.position, checkPoint.direction);
+      character.setPosition(checkpoint.position, checkpoint.phi, checkpoint.theta);
 
     }
+  }
+
+  weaponUpgrade() {
+    if (this.player != null) {
+      if (this.player.guns.has(this.player.gunType)) {
+        const gun = this.player.guns.get(this.player.gunType);
+        const { ammoTypes } = gun.data;
+        const { name } = gun.ammo;
+        const index = ammoTypes.indexOf(name);
+
+        if (index > -1) {
+          const ammoType = ammoTypes[index + 1];
+
+          if (ammoType != null) {
+            const ammo = this.ammos.get(ammoType);
+            this.player.setAmmo(ammo);
+          }
+        }
+      }
+    }
+  }
+
+  nextCheckpoint() {
+    this.checkpointIndex += 1;
   }
 
   setMode(mode) {
@@ -289,11 +319,12 @@ class Game {
 
     const stageData = this.data.stages.get(stageName);
 
-    const { characters, obstacles } = stageData;
-    const checkPoint = stageData.checkPoints[this.checkPointIndex];
+    const { characters, obstacles, items } = stageData;
+    const checkpoint = stageData.checkpoints[this.checkpointIndex];
 
     this.characterManager.clear();
-    this.objectManager.clear('obstacle');
+    this.objectManager.removeAll('type', 'obstacle');
+    this.objectManager.removeAll('type', 'item');
 
     characters.forEach((data) => {
       const character = new Character(data.name);
@@ -312,23 +343,50 @@ class Game {
       });
 
       character.setOnUpdate(data.update);
-      character.setPosition(data.position, data.direction);
+      character.setPosition(data.position, data.phi, data.theta);
+
+      if (data.tweeners != null) {
+        data.tweeners.forEach(({ name, arg }) => {
+          const tweener = this.data.tweeners.get(name);
+          character.addTweener(tweener, arg);
+        });
+      }
+
       this.characterManager.add(character, data);
+    });
+
+    items.forEach((data) => {
+      const item = new Item(data.name);
+      item.collider.center.copy(data.position);
+
+      if (item.tweeners != null) {
+        item.tweeners.forEach(({ name, arg }) => {
+          const tweener = this.data.tweeners.get(name);
+          item.addTweener(tweener, arg);
+        });
+      }
+
+      item.setOnUpdate(data.update);
+      this.objectManager.add(item, data);
     });
 
     obstacles.forEach((data) => {
       const obstacle = new Obstacle(data.name);
       obstacle.collider.center.copy(data.position);
-      data.tweeners.forEach(({ name, arg }) => {
-        const tweener = this.data.tweeners.get(name);
-        obstacle.addTweener(tweener, arg);
-      });
+
+      if (data.tweeners != null) {
+        data.tweeners.forEach(({ name, arg }) => {
+          const tweener = this.data.tweeners.get(name);
+          obstacle.addTweener(tweener, arg);
+        });
+      }
+
       obstacle.setOnUpdate(data.update);
-      this.objectManager.add('obstacle', obstacle, data);
+      this.objectManager.add(obstacle, data);
     });
 
 
-    this.player.setPosition(checkPoint.position, checkPoint.direction);
+    this.player.setPosition(checkpoint.position, checkpoint.phi, checkpoint.theta);
     this.characterManager.add(this.player);
 
     this.clearStage();
@@ -379,7 +437,7 @@ class Game {
     this.loop.stop()
   }
 
-  restart(checkPoint) {}
+  restart(checkpoint) {}
 
   clear() {}
 

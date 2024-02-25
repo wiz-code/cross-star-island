@@ -34,56 +34,52 @@ class CollidableManager extends Publisher {
 
     this.scene = scene;
     this.worldOctree = worldOctree;
-    this.list = new Map();
+    this.list = new Set();
     this.schedules = new Map();
   }
 
-  // type = 'ammo', 'obstacle'
-  add(type, collidable, data = null) {
-    if (type === 'ammo') {
-      const { name, list } = collidable;
+  removeAll(key, value) {
+    const list = Array.from(this.list.keys());
 
-      for (let i = 0, l = list.length; i < l; i += 1) {
-        const bullet = list[i];
-        this.scene.add(bullet.object);
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+
+      if (collidable[key] === value) {
+        this.scene.remove(collidable.object);
+        this.list.delete(collidable);
       }
+    }
+  }
 
-      this.list.set(name, list);
+  add(collidable, data = null) {
+    if (Array.isArray(collidable)) {
+      for (let i = 0, l = collidable.length; i < l; i += 1) {
+        const object = collidable[i];
+        this.scene.add(object.object);
+        this.list.add(object);
+      }
 
       return;
     }
 
     this.scene.add(collidable.object);
+    this.list.add(collidable);
 
-    if (!this.list.has(type)) {
-      this.list.set(type, []);
-    }
-
-    const list = this.list.get(type);
-    list.push(collidable);
     this.schedules.set(collidable, data.spawnedAt);
   }
 
-  remove(type, collidable) {
+  remove(collidable) {
     this.scene.remove(collidable.object);
-
-    let list = this.list.get(type);
-    list = list.filter((object) => object !== collidable);
-    this.list.set(type, list);
+    this.list.delete(collidable);
   }
 
-  clear(type = null) {
-    if (type == null) {
-      this.list.clear();
-      return;
-    }
-
-    this.list.delete(type);
+  clear(type) {
+    this.list.clear();
   }
 
   collisions() {
-    const list = Array.from(this.list.values()).flat();
-    const len = list.length;
+    const list = Array.from(this.list.keys());
+    const len = this.list.size;
 
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
@@ -112,11 +108,11 @@ class CollidableManager extends Publisher {
     for (let i = 0; i < len; i += 1) {
       const a1 = list[i];
 
-      if (a1.isActive()) {
+      if (a1.isActive() && a1.type !== 'item') {
         for (let j = i + 1; j < len; j += 1) {
           const a2 = list[j];
 
-          if (a2.isActive()) {
+          if (a2.isActive() && a2.type !== 'item') {
             const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
             const r = a1.data.radius + a2.data.radius;
             const r2 = r * r;
@@ -164,14 +160,13 @@ class CollidableManager extends Publisher {
       const [object, spawnedAt] = schedules[i];
 
       if (elapsedTime > spawnedAt) {
-        if (!object.isActive()) {
-          object.setActive(true);
-        }
+        object.setActive(true);
+        this.schedules.delete(object);
       }
     }
 
-    const list = Array.from(this.list.values()).flat();
-    const len = list.length;
+    const list = Array.from(this.list.keys());
+    const len = this.list.size;
 
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];

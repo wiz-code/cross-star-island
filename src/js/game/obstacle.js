@@ -45,8 +45,6 @@ class Obstacle extends Collidable {
       throw new Error('obstacle data not found');
     }
 
-    this.name = name;
-    this.type = 'obstacle';
     this.data = obstacleData.get(name);
 
     const {
@@ -57,23 +55,15 @@ class Obstacle extends Collidable {
       wireColor,
       pointColor,
       pointSize,
-
-      weight,
-      rotateSpeed,
-
-      tweens, /// //
-      init,
     } = this.data;
+    const pointsDetail = this.data.pointsDetail ?? detail;
 
     this.collider.set(new Vector3(), radius);
-    this.velocity = new Vector3();
-    //this.onUpdate = this.data.update.bind(this);
-    //this.updater = new Publisher();
-
+    
     const geom = new IcosahedronGeometry(radius, detail);
     const wireframeGeom = new WireframeGeometry(geom);
 
-    const pointsGeom = new OctahedronGeometry(radius + 4, detail);
+    const pointsGeom = new OctahedronGeometry(radius + 4, pointsDetail);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();

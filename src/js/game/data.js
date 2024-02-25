@@ -78,13 +78,28 @@ export const Obstacles = [
     {
       radius: 80,
       detail: 1,
-      weight: 5,
+      weight: 6,
 
       color: 0x203b33,
       wireColor: 0x4c625b,
       pointColor: 0xf4e511,
       pointSize: 10,
       rotateSpeed: 2,
+    },
+  ],
+  [
+    'small-round-stone',
+    {
+      radius: 40,
+      detail: 1,
+      pointsDetail: 0,
+      weight: 3,
+
+      color: 0x203b33,
+      wireColor: 0x4c625b,
+      pointColor: 0xf4e511,
+      pointSize: 10,
+      rotateSpeed: 3,
     },
   ],
 ];
@@ -100,7 +115,7 @@ export const Guns = [
       accuracy: 3,
       recoil: 1, /// /////
 
-      ammoTypes: [/*'small-bullet', */'hop-bullet'],
+      ammoTypes: ['small-bullet', 'hop-bullet'],
     },
   ],
 ];
@@ -109,30 +124,32 @@ export const Ammo = [
   [
     'small-bullet',
     {
-      color: 0xffe870,
-      wireColor: 0xfffbe6,
+      color: 0xFFFFE0,
+      wireColor: 0xA9A9A9,
       pointColor: 0xf45c41,
       pointSize: 10,
 
       radius: 6,
       detail: 0,
-      numAmmo: 20, // dev 10, prod 50
+      numAmmo: 30, // dev 10, prod 50
 
-      weight: 0.03,
+      weight: 0.08,
       lifetime: 3,
 
       rotateSpeed: 10,
 
       update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+        let rotateSpeed = !this.isBounced() ? this.data.rotateSpeed : this.data.rotateSpeed * 0.5;
+
+        this.object.rotation.z -= deltaTime * rotateSpeed;
       },
     },
   ],
   [
     'hop-bullet',
     {
-      color: 0xffe870,
-      wireColor: 0xfffbe6,
+      color: 0xFFFFE0,
+      wireColor: 0xA9A9A9,
       pointColor: 0xf45c41,
       pointSize: 10,
 
@@ -140,7 +157,7 @@ export const Ammo = [
       detail: 0,
       numAmmo: 10, // dev 10, prod 50
 
-      weight: 0.03,
+      weight: 0.08,
       lifetime: 3,
 
       rotateSpeed: 10,
@@ -199,23 +216,49 @@ export const Characters = [
 
 export const Items = [
   [
+    'checkpoint',
+    {
+      method: 'createRing',
+
+      radius : 20,
+      tube : 3,
+      radialSegments: 6,
+      tubularSegments: 12,
+      weight: 1,
+
+      color: 0xffe870,
+      wireColor: 0xfffbe6,
+      pointColor: 0xffffff,
+      pointSize: 10,
+
+      rotateSpeed: 2,
+
+      dispatchers: ['nextCheckpoint'],
+
+      update(deltaTime) {
+        //
+      }
+    },
+  ],
+  [
     'weapon-upgrade',
     {
       method: 'createRing',
 
-      radius : 10,
-      tube : 2,
+      radius : 20,
+      tube : 3,
       radialSegments: 6,
       tubularSegments: 12,
 
-      color: 0x007399,
-      wireColor: 0x004d66,
-      pointColor: 0xeb4b2f,
+      color: 0xADD8E6,
+      wireColor: 0xA9A9A9,
+      pointColor: 0x90EE90,
       pointSize: 10,
 
-      effect: ['weapon-upgrade'],
+      rotateSpeed: 2,
 
-      collide() {},
+      dispatchers: ['weaponUpgrade'],
+
       update(deltaTime) {
         //
       }
@@ -229,18 +272,46 @@ export const Tweeners = [
     (target, arg) => {
       const time = arg ?? 0;
 
-      const tween = new TWEEN.Tween(target.collider.center);
+      const group = new TWEEN.Group();
+      const tween = new TWEEN.Tween(target.collider.center, group);
       tween
         .onEveryStart(() => {
           const posZ = getRandomInclusive(-80, 80);
           target.collider.center.set(-2100, 300, posZ);
           target.velocity.copy(new Vector3(0, 0, 0));
         })
-        .delay(8000)
+        .delay(10000)
         .repeat(Infinity)
         .start(time);
 
-      return tween;
+      return group;
+    },
+  ],
+  [
+    'avoidance-1',
+    (target, arg) => {
+      const time = arg ?? 0;
+      let prevValue = 0;
+      const offset = { z: 0 };
+      const update = ({ z }) => {
+        target.collider.start.z += z - prevValue;
+        target.collider.end.copy(target.collider.start);
+        target.collider.end.y += target.data.height + target.data.radius;
+        prevValue = z;
+      };
+
+      const group = new TWEEN.Group();
+      const tween1 = new TWEEN.Tween(offset, group)
+        .to({ z: -40 }, 1000)
+        .onUpdate(update);
+      const tween2 = new TWEEN.Tween(offset, group)
+        .to({ z: 0 }, 1000)
+        .onUpdate(update);
+
+      tween1.chain(tween2).start(time);
+      tween2.chain(tween1);
+
+      return group;
     },
   ],
 ];
@@ -249,26 +320,95 @@ export const Stages = [
   [
     'firstStage',
     {
-      checkPoints: [
+      checkpoints: [
         {
+          position: new Vector3(8 * 80, 0, 0),
           //position: new Vector3(-35 * 80, 0, -3.5 * 80),
-          position: new Vector3(-650, 0, 0),
           //position: new Vector3(-2200, 100, 0),
           //position: new Vector3(-40 * 80, 200, -1 * 80),
-          // position: new Vector3(-38 * 80, 1000, -6.5 * 80),
-          direction: PI / 2,
+          //position: new Vector3(-34.5 * 80, 100, -3.8 * 80),
+          phi: PI / 2,
+        },
+        {
+          position: new Vector3(-8 * 80, 200, 0),
+          phi: PI / 2,
+        },
+        {
+          position: new Vector3(-31 * 80, 200, -0.5 * 80),
+          phi: PI / 2,
+        },
+        // 最終チェックポイント
+        {
+          position: new Vector3(-40 * 80, 200, -1 * 80),
+          phi: PI / 2,
         },
       ],
       characters: [
         {
           name: 'hero-1',
-          position: new Vector3(-38 * 80, 1000, 3 * 80),
-          direction: (-25 * PI) / 180,
-          spawnedAt: 5,
+          position: new Vector3(-43 * 80, 300, -0.8 * 80),
+          phi: -PI / 2,
+          theta: -0.1,
+          tweeners: [{ name: 'avoidance-1' }],
+          schedule: {
+            spawnedAt: 0,
+          },
           update(deltaTime, elapsedTime) {
             this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 2) {
+            if (this.elapsedTime > 0.5) {
+              this.elapsedTime = 0;
+              this.fire();
+            }
+          },
+        },
+        {
+          name: 'hero-1',
+          position: new Vector3(-45 * 80, 300, -0.8 * 80),
+          phi: (80 * -PI) / 180,
+          theta: -0.1,
+          tweeners: [{ name: 'avoidance-1' }],
+          schedule: {
+            spawnedAt: 2,
+          },
+          update(deltaTime, elapsedTime) {
+            this.elapsedTime += deltaTime;
+
+            if (this.elapsedTime > 0.8) {
+              this.elapsedTime = 0;
+              this.fire();
+            }
+          },
+        },
+        {
+          name: 'hero-1',
+          position: new Vector3(-47 * 80, 300, -0.8 * 80),
+          phi: (98 * -PI) / 180,
+          theta: -0.1,
+          tweeners: [{ name: 'avoidance-1' }],
+          schedule: {
+            spawnedAt: 4,
+          },
+          update(deltaTime, elapsedTime) {
+            this.elapsedTime += deltaTime;
+
+            if (this.elapsedTime > 0.8) {
+              this.elapsedTime = 0;
+              this.fire();
+            }
+          },
+        },
+        {
+          name: 'hero-1',
+          position: new Vector3(-38 * 80, 1000, 3 * 80),
+          phi: (-25 * PI) / 180,
+          schedule: {
+            spawnedAt: 5,
+          },
+          update(deltaTime, elapsedTime) {
+            this.elapsedTime += deltaTime;
+
+            if (this.elapsedTime > 1) {
               this.elapsedTime = 0;
               this.fire();
             }
@@ -292,6 +432,69 @@ export const Stages = [
           spawnedAt: 5,
           update(deltaTime) {
             this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          },
+        },
+        {
+          name: 'small-round-stone',
+          position: new Vector3(-2100, 300, 0),
+          tweeners: [{ name: 'rolling-stone-1', arg: 2500 }],
+          spawnedAt: 2.5,
+          update(deltaTime) {
+            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          },
+        },
+        {
+          name: 'small-round-stone',
+          position: new Vector3(-2100, 300, 0),
+          tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          spawnedAt: 7.5,
+          update(deltaTime) {
+            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          },
+        },
+      ],
+      items: [
+        {
+          name: 'checkpoint',
+          position: new Vector3(-8 * 80, 200, 0),
+          spawnedAt: 5,
+          update(deltaTime) {
+            const rotateSpeed = deltaTime * this.data.rotateSpeed;
+            this.object.rotation.y -= rotateSpeed;
+            this.object.rotation.z -= rotateSpeed * 2;
+          },
+        },
+        {
+          name: 'checkpoint',
+          position: new Vector3(-31 * 80, 200, -0.5 * 80),
+          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          spawnedAt: 5,
+          update(deltaTime) {
+            const rotateSpeed = deltaTime * this.data.rotateSpeed;
+            this.object.rotation.y -= rotateSpeed;
+            this.object.rotation.z -= rotateSpeed * 2;
+          },
+        },
+        {
+          name: 'checkpoint',
+          position: new Vector3(-40 * 80, 200, -1 * 80),
+          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          spawnedAt: 5,
+          update(deltaTime) {
+            const rotateSpeed = deltaTime * this.data.rotateSpeed;
+            this.object.rotation.y -= rotateSpeed;
+            this.object.rotation.z -= rotateSpeed * 2;
+          },
+        },
+        {
+          name: 'weapon-upgrade',
+          position: new Vector3(-35 * 80, -4 * 80, -7 * 80),
+          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          spawnedAt: 0,
+          update(deltaTime) {
+            const rotateSpeed = deltaTime * this.data.rotateSpeed;
+            this.object.rotation.y -= rotateSpeed;
+            this.object.rotation.z -= rotateSpeed * 2;
           },
         },
       ],
@@ -405,13 +608,13 @@ export const Stages = [
         },
         {
           grid: {
-            widthSegments: 20,
+            widthSegments: 24,
             heightSegments: 6,
             depthSegments: 12,
             widthSpacing: 80,
             heightSpacing: 80,
             depthSpacing: 80,
-            position: { sx: -42, sy: 0, sz: 0 },
+            position: { sx: -44, sy: 2.2, sz: 0 },
           },
           cylinder: {
             radiusTop: 80,
@@ -429,7 +632,7 @@ export const Stages = [
             height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -33, sy: 0.8, sz: -1.5, spacing: 80 },
+            position: { sx: -33, sy: 0.4, sz: -1.5, spacing: 80 },
           },
         },
         {
@@ -440,6 +643,16 @@ export const Stages = [
             radialSegments: 9,
             heightSegments: 1,
             position: { sx: -34.5, sy: 0, sz: -3.8, spacing: 80 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 80,
+            radiusBottom: 80,
+            height: 10,
+            radialSegments: 9,
+            heightSegments: 1,
+            position: { sx: -35, sy: -4, sz: -7, spacing: 80 },
           },
         },
         {
@@ -489,8 +702,18 @@ export const Stages = [
             widthSpacing: 80,
             depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: -46, sy: 0.2, sz: -1, heightSpacing: 80 },
-            rotation: { x: 0, y: 0, z: 0 },
+            position: { sx: -46, sy: 1.5, sz: -1, heightSpacing: 80 },
+            rotation: { x: 0, y: 0, z: -0.2 },
+          },
+        },
+        {
+          cylinder: {
+            radiusTop: 100,
+            radiusBottom: 100,
+            height: 10,
+            radialSegments: 10,
+            heightSegments: 1,
+            position: { sx: -53, sy: 2, sz: -1, spacing: 80 },
           },
         },
       ],

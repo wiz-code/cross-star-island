@@ -3,6 +3,10 @@ class Publisher {
     this.listeners = new Map();
   }
 
+  getSubscriberCount() {
+    return this.listeners.size;
+  }
+
   publish(eventName, ...args) {
     if (this.listeners.has(eventName)) {
       const listeners = this.listeners.get(eventName);

@@ -33,7 +33,9 @@ class Collidable extends Publisher {
     this.onUpdate = null;
   }
 
-
+  setPosition(position, phi = 0, theta = 0) {
+    //
+  }
 
   setObject(object) {
     this.object = object;
@@ -92,7 +94,9 @@ class Collidable extends Publisher {
         this.onUpdate(deltaTime, elapsedTime);
       }
 
-      this.publish('tween', elapsedTime * 1000);
+      if (this.getSubscriberCount() > 0) {
+        this.publish('tween', elapsedTime * 1000);
+      }
     }
   }
 }

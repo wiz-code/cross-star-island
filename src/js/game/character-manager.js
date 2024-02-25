@@ -68,7 +68,7 @@ class CharacterManager {
     this.scene = scene;
     this.collidableManager = collidableManager;
     this.worldOctree = worldOctree;
-    this.list = new Map();
+    this.list = new Set();
     this.schedules = new Map();
 
     this.collideWith = this.collideWith.bind(this);
@@ -76,24 +76,24 @@ class CharacterManager {
   }
 
   add(character, data) {
-    if (!this.list.has(character.id)) {
+    if (!this.list.has(character)) {
       if (!character.isFPV()) {
         this.scene.add(character.object);
-        this.schedules.set(character, data.spawnedAt);
+        this.schedules.set(character, data.schedule);
       }
 
-      this.list.set(character.id, character);
+      this.list.add(character);
     }
   }
 
   remove(character) {
-    if (this.list.has(character.id)) {
+    if (this.list.has(character)) {
       if (!character.isFPV()) {
         this.scene.remove(character.object);
-        this.schedules.delete(character.id);
+        this.schedules.delete(character);
       }
 
-      this.list.delete(character.id);
+      this.list.delete(character);
     }
   }
 
@@ -102,52 +102,64 @@ class CharacterManager {
   }
 
   collideWith(object) {
-    const list = Array.from(this.list.values());
+    const list = Array.from(this.list.keys());
 
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
-      const center = character.collider.getCenter(this.#vecA);
-      const objectCenter = object.collider.center;
-      const r = character.collider.radius + object.collider.radius;
-      const r2 = r * r;
 
-      const colliders = [
-        character.collider.start,
-        character.collider.end,
-        center,
-      ];
+      if (character.isActive()) {
+        const center = character.collider.getCenter(this.#vecA);
+        const objectCenter = object.collider.center;
+        const r = character.collider.radius + object.collider.radius;
+        const r2 = r * r;
 
-      for (let j = 0, m = colliders.length; j < m; j += 1) {
-        const point = colliders[j];
-        const d2 = point.distanceToSquared(objectCenter);
+        const colliders = [
+          character.collider.start,
+          character.collider.end,
+          center,
+        ];
 
-        if (d2 < r2) {
-          if (!object.isBounced()) {
-            object.setBounced(true);
+        for (let j = 0, m = colliders.length; j < m; j += 1) {
+          const point = colliders[j];
+          const d2 = point.distanceToSquared(objectCenter);
+
+          if (d2 < r2) {
+            if (!object.isBounced()) {
+              object.setBounced(true);
+            }
+
+            if (object.type === 'item') {
+              object.setActive(false);
+              object.data.dispatchers.forEach((dispatcher) => this.collidableManager.publish(dispatcher));
+            } else {
+              if (!character.isStunning()) {
+                character.setStunning(true, World.collisionShock);
+              }
+
+              const normal = this.#vecA.subVectors(point, objectCenter).normalize();
+              const v1 = this.#vecB
+                .copy(normal)
+                .multiplyScalar(normal.dot(character.velocity));
+              const v2 = this.#vecC
+                .copy(normal)
+                .multiplyScalar(normal.dot(object.velocity));
+              const vec1 = this.#vecD.subVectors(v2, v1);
+              const vec2 = this.#vecE.subVectors(v1, v2);
+
+              character.velocity.addScaledVector(vec1, object.data.weight);
+              object.velocity.addScaledVector(vec2, character.data.weight);
+
+              const d = (r - sqrt(d2)) / 2;
+              objectCenter.addScaledVector(normal, -d);
+            }
           }
-
-          const normal = this.#vecA.subVectors(point, objectCenter).normalize();
-          const v1 = this.#vecB
-            .copy(normal)
-            .multiplyScalar(normal.dot(character.velocity));
-          const v2 = this.#vecC
-            .copy(normal)
-            .multiplyScalar(normal.dot(object.velocity));
-          const vec1 = this.#vecD.subVectors(v2, v1);
-          const vec2 = this.#vecE.subVectors(v1, v2);
-
-          character.velocity.addScaledVector(vec1, object.data.weight);
-          object.velocity.addScaledVector(vec2, character.data.weight);
-
-          const d = (r - sqrt(d2)) / 2;
-          objectCenter.addScaledVector(normal, -d);
         }
       }
     }
   }
 
   collisions() {
-    const list = Array.from(this.list.values());
+    const list = Array.from(this.list.keys());
     const len = list.length;
 
     for (let i = 0; i < len; i += 1) {
@@ -182,7 +194,40 @@ class CharacterManager {
             const c2 = list[j];
 
             if (c2.isActive) {
-              c1.collideWith(c2);
+              const center = c1.collider.getCenter(this.#vecA);
+              const charaCenter = c2.collider.getCenter(this.#vecB);
+              const r = c1.data.radius + c2.data.radius;
+              const r2 = r * r;
+
+              const colliders = [
+                c2.collider.start,
+                c2.collider.end,
+                charaCenter,
+              ];
+
+              for (let j = 0, m = colliders.length; j < m; j += 1) {
+                const point = colliders[j];
+                const d2 = point.distanceToSquared(center);
+
+                if (d2 < r2) {
+                  const normal = this.#vecA.subVectors(point, center).normalize();
+                  const v1 = this.#vecB
+                    .copy(normal)
+                    .multiplyScalar(normal.dot(c2.velocity));
+                  const v2 = this.#vecC
+                    .copy(normal)
+                    .multiplyScalar(normal.dot(c1.velocity));
+                  const vec1 = this.#vecD.subVectors(v2, v1);
+                  const vec2 = this.#vecE.subVectors(v1, v2);
+
+                  c2.velocity.addScaledVector(vec1, c1.data.weight);
+                  c1.velocity.addScaledVector(vec2, c2.data.weight);
+
+                  const d = (r - sqrt(d2)) / 2;
+                  c1.collider.translate(normal.multiplyScalar(-d));
+                  c2.collider.translate(normal.multiplyScalar(d));
+                }
+              }
             }
           }
         }
@@ -194,9 +239,9 @@ class CharacterManager {
     const schedules = Array.from(this.schedules.entries());
 
     for (let i = 0, l = schedules.length; i < l; i += 1) {
-      const [character, spawnedAt] = schedules[i];
+      const [character, schedule] = schedules[i];
 
-      if (elapsedTime > spawnedAt) {
+      if (elapsedTime > schedule.spawnedAt) {
         if (!character.isActive()) {
           character.setActive(true);
         }
@@ -215,7 +260,15 @@ class CharacterManager {
 
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      character.postUpdate();
+      character.object.position.copy(character.collider.start);
+      character.object.position.y += character.halfHeight;
+      character.object.rotation.y = character.rotation.phi;
+
+      if (character.isFPV()) {
+        character.camera.rotation.x = character.povRotation.theta + character.deltaY;
+        character.camera.rotation.y = character.povRotation.phi + character.rotation.phi;
+        character.camera.position.copy(character.collider.end);
+      }
     }
   }
 }

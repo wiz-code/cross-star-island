@@ -115,6 +115,7 @@ export const Cylinder = {
   color: 0x4d4136,
   wireColor: 0x332000,
   pointColor: 0xf4e511, // 0xffff00,
+  pointSize: 10,
 };
 
 export const Ground = {
@@ -147,7 +148,7 @@ export const Controls = {
 };
 
 export const World = {
-  oob: -600,
+  oob: -1000,
   gravity: 800, // 6,
   resistance: 4, // 10,
   airResistance: 1,
@@ -157,7 +158,9 @@ export const World = {
     spin: 12,
     ammo: 1.2,
     obstacle: 0.1,
+    item: 0.1,
   },
+  collisionShock: 0.8,
 };
 
 export const Screen = {
@@ -181,112 +184,4 @@ export const AmmoSettings = {
   speed: 1600,
   rotateSpeed: 8,
   weight: 1,
-};
-
-export const Stages = {
-  firstStage: {
-    player: {
-      // position: new Vector3(650, 200, 0),
-      position: new Vector3(-650, 0, 0),
-      direction: PI / 2,
-    },
-    checkPoints: [
-      {
-        position: new Vector3(650, 0, 0),
-        direction: PI / 2,
-      },
-    ],
-    components: [
-      {
-        grid: [24, 6, 8, 80, 80, 80, { grid: { x: 0, y: -0.2, z: 0 } }],
-        ground: [
-          20,
-          6,
-          80,
-          80,
-          0,
-          { grid: { x: 0, y: 0, z: 0, spacing: 80 } },
-          { x: 0, y: 0, z: 0 },
-        ],
-        arrow: {
-          direction: new Vector3(-1, 0, 0),
-          position: new Vector3(400, 200, 0),
-          length: 200,
-          color: 0xffffff,
-        },
-      },
-      {
-        ground: [
-          20,
-          6,
-          80,
-          80,
-          0,
-          { grid: { x: 0, y: 1.9, z: 2.1, spacing: 80 } },
-          { x: -PI / 2, y: 0, z: 0 },
-        ],
-      },
-      {
-        ground: [
-          20,
-          8,
-          80,
-          80,
-          0,
-          { grid: { x: 0, y: 5.5, z: 0, spacing: 80 } },
-          { x: -PI, y: 0, z: 0 },
-        ],
-      },
-      {
-        ground: [
-          20,
-          6,
-          80,
-          80,
-          0,
-          { grid: { x: 0, y: 1.9, z: -2.1, spacing: 80 } },
-          { x: PI / 2, y: 0, z: 0 },
-        ],
-      },
-      {
-        arrow: {
-          direction: new Vector3(0, -1, 0),
-          position: new Vector3(-960, 300, 0),
-          length: 200,
-          color: 0xffffff,
-        },
-        ground: [
-          20,
-          5,
-          80,
-          80,
-          2,
-          { grid: { x: -19.5, y: -1, z: 0, spacing: 80 } },
-          { x: 0, y: 0, z: -0.2 },
-        ],
-      },
-      {
-        ground: [
-          20,
-          8,
-          80,
-          80,
-          4,
-          { grid: { x: -19.5, y: -2, z: 2.1, spacing: 80 } },
-          { x: -1.4, y: 0, z: 0 },
-        ],
-      },
-      {
-        ground: [
-          20,
-          8,
-          80,
-          80,
-          4,
-          { grid: { x: -19.5, y: -2, z: -2.1, spacing: 80 } },
-          { x: 1.4, y: 0, z: 0 },
-        ],
-      },
-    ],
-  },
 };

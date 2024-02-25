@@ -1,5 +1,6 @@
 import {
   TorusGeometry,
+  RingGeometry,
   EdgesGeometry,
   BufferGeometry,
   Float32BufferAttribute,
@@ -13,38 +14,45 @@ import {
   Group,
   Sphere,
   Vector3,
+  Texture,
 } from 'three';
 
-import Publisher from './publisher';
+import Collidable from './collidable';
 import { Items } from './data';
+import textures from './textures';
 
 const { floor } = Math;
 const itemData = new Map(Items);
 
-class Item extends Publisher {
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+textures.crossStar(context);
+
+const texture = new Texture(canvas);
+texture.needsUpdate = true;
+
+class Item extends Collidable {
   #active = false;
 
   #elapsedTime = 0;
 
   static createRing(data) {
     const halfValue = {
-      radius: floor(data.radius),
-      tube: floor(data.tube),
-      radialSegments: floor(data.radialSegments),
-      tubularSegments: floor(data.tubularSegment),
+      radialSegments: floor(data.radialSegments / 2),
+      tubularSegments: floor(data.tubularSegments / 2),
     };
     const geom = new TorusGeometry(data.radius, data.tube, data.radialSegments, data.tubularSegments);
     const wireGeom = new EdgesGeometry(geom);
-    let pointsGeom = new TorusGeometry(halfValue.radius, halfValue.tube, halfValue.radialSegments, halfValue.tubularSegment);
+    let pointsGeom = new RingGeometry(data.radius - 6, data.radius + 6, 4, 0);
     const vertices = pointsGeom.attributes.position.array.slice(0);
-    pointsGeom = new BufferGeometry();
+    pointsGeom = new BufferGeometry(pointsGeom);
     pointsGeom.setAttribute(
       'position',
       new Float32BufferAttribute(vertices, 3),
     );
     pointsGeom.computeBoundingSphere();
 
-    const mat = new MeshBasicMaterial({ color });
+    const mat = new MeshBasicMaterial({ color: data.color });
     const wireMat = new LineBasicMaterial({
       color: data.wireColor,
     });
@@ -58,7 +66,7 @@ class Item extends Publisher {
     });
 
     const mesh = new Mesh(geom, mat);
-    const wireMesh = new LineSegments(wireGeom, wireframeMat);
+    const wireMesh = new LineSegments(wireGeom, wireMat);
     const pointsMesh = new Points(pointsGeom, pointsMat);
 
     const object = new Group();
@@ -70,66 +78,26 @@ class Item extends Publisher {
   }
 
   constructor(name) {
-    super();
+    super(name, 'item');
 
-    this.name = name;
+    if (!itemData.has(name)) {
+      throw new Error('item data not found');
+    }
+
     this.data = itemData.get(name);
-
-    this.onCollide = null;
+    this.collider.set(new Vector3(), this.data.radius);
     this.object = Item[this.data.method](this.data);
 
+    this.setObject(this.object);
     this.setOnUpdate(this.data.update);
-    this.setOnCollide(this.data.collide);
     this.setActive(false);
   }
 
-  setObject(object) {
-    this.object = object;
-  }
+  update(deltaTime, elapsedTime, damping) {
+    super.update(deltaTime, elapsedTime, damping);
 
-  setOnCollide(onCollide) {
-    this.onCollide = onCollide;
-  }
-
-  isActive() {
-    return this.#active;
-  }
-
-  setActive(bool = true) {
-    this.#active = bool;
-
-    if (bool) {
-      this.#elapsedTime = 0;
-    }
-
-    if (this.object != null) {
-      this.visible(bool);
-    }
-  }
-
-  visible(bool) {
-    this.object.children.forEach((mesh) => {
-      mesh.visible = bool;
-    });
-  }
-
-  setOnUpdate(update) {
-    this.onUpdate = update.bind(this);
-  }
-
-  getElapsedTime() {
-    return this.#elapsedTime;
-  }
-
-  update(deltaTime) {
-    if (this.#active) {
-      this.#elapsedTime += deltaTime;
-
-      if (this.onUpdate != null) {
-        this.onUpdate(deltaTime);
-      }
-    }
+    //
   }
 }
 
-export default Bullet;
+export default Item;

@@ -105,7 +105,7 @@ class Character extends Publisher {
 
   #active = false;
 
-  #test = 0; /// ///////
+  #pausedDuration = 0;
 
   static createObject(data) {
     const geometry = {};
@@ -228,6 +228,30 @@ class Character extends Publisher {
     this.setActive(false);
   }
 
+  isStunning() {
+    return this.#stunningRemainingTime > 0;
+  }
+
+  setStunning(bool, remainingTime = Controls.stunningDuration) {
+    if (bool) {
+      this.#states.add(States.stunning);
+
+      if (
+        this.#actions.has(Actions.quickTurnLeft) ||
+        this.#actions.has(Actions.quickTurnRight)
+      ) {
+        this.#stunningRemainingTime = remainingTime * 0.5;
+      } else {
+        this.#stunningRemainingTime = remainingTime;
+      }
+
+      return;
+    }
+
+    this.#states.delete(States.stunning);
+    this.#stunningRemainingTime = 0;
+  }
+
   isActive() {
     return this.#active;
   }
@@ -261,23 +285,16 @@ class Character extends Publisher {
     }
   }
 
-  setPosition(position, direction) {
-    /*if (this.isFPV()) {
-      this.camera.rotation.y = direction;
-    }*/
-
-    this.rotation.phi = direction;
+  setPosition(position, phi = 0, theta = 0) {
+    this.rotation.phi = phi;
+    this.rotation.theta = theta;
     this.direction.copy(
-      this.#dir.clone().applyAxisAngle(this.#yawAxis, direction),
+      this.#dir.clone().applyAxisAngle(this.#yawAxis, phi),
     );
 
     this.collider.start.copy(position);
     this.collider.end.copy(position);
-    this.collider.end.y += this.data.height;
-
-    /*this.object.position.copy(this.collider.start);/////
-    this.object.position.y += this.halfHeight;/////
-    this.object.rotation.y = direction;//////*/
+    this.collider.end.y += this.data.height + this.data.radius;
   }
 
   isGrounded() {
@@ -482,41 +499,10 @@ class Character extends Publisher {
     }
   }
 
-  collideWith(character) {
-    const center = this.collider.getCenter(this.#vecA);
-    const charaCenter = character.collider.getCenter(this.#vecB);
-    const r = this.data.radius + character.data.radius;
-    const r2 = r * r;
-
-    const colliders = [
-      character.collider.start,
-      character.collider.end,
-      charaCenter,
-    ];
-
-    for (let j = 0, m = colliders.length; j < m; j += 1) {
-      const point = colliders[j];
-      const d2 = point.distanceToSquared(center);
-
-      if (d2 < r2) {
-        const normal = this.#vecA.subVectors(point, center).normalize();
-        const v1 = this.#vecB
-          .copy(normal)
-          .multiplyScalar(normal.dot(character.velocity));
-        const v2 = this.#vecC
-          .copy(normal)
-          .multiplyScalar(normal.dot(this.velocity));
-        const vec1 = this.#vecD.subVectors(v2, v1);
-        const vec2 = this.#vecE.subVectors(v1, v2);
-
-        character.velocity.addScaledVector(vec1, this.data.weight);
-        this.velocity.addScaledVector(vec2, character.data.weight);
-
-        const d = (r - sqrt(d2)) / 2;
-        const deltaPosition = normal.multiplyScalar(-d);
-        this.collider.translate(deltaPosition);
-      }
-    }
+  addTweener(tweener, arg) {
+    const tween = tweener(this, arg);
+    const updater = tween.update.bind(tween);
+    this.subscribe('tween', updater);
   }
 
   update(deltaTime, elapsedTime, damping) {
@@ -551,19 +537,9 @@ class Character extends Publisher {
       if (this.#urgencyRemainingTime <= 0) {
         this.#actions.clear();
         this.#states.delete(States.urgency);
-        this.#states.add(States.stunning);
         this.#urgencyRemainingTime = 0;
 
-        let duratiion = Controls.stunningDuration;
-
-        if (
-          this.#actions.has(Actions.quickTurnLeft) ||
-          this.#actions.has(Actions.quickTurnRight)
-        ) {
-          duratiion *= 0.5;
-        }
-
-        this.#stunningRemainingTime = duratiion;
+        this.setStunning(true);
       }
 
       if (this.#actions.has(Actions.quickMoveForward)) {
@@ -633,24 +609,20 @@ class Character extends Publisher {
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
 
-    if (this.onUpdate != null) {
-      this.onUpdate(deltaTime, elapsedTime);
-    }
-
     if (this.collider.start.y < World.oob) {
       this.publish('oob', this);
     }
-  }
 
-  postUpdate(deltaTime, elapsedTime) {
-    this.object.position.copy(this.collider.start);
-    this.object.position.y += this.halfHeight;
-    this.object.rotation.y = this.rotation.phi;
+    if (this.isStunning()) {
+      this.#pausedDuration += deltaTime;
+    } else {
+      if (this.onUpdate != null) {
+        this.onUpdate(deltaTime, elapsedTime);
+      }
 
-    if (this.isFPV()) {
-      this.camera.rotation.x = this.povRotation.theta + this.deltaY;
-      this.camera.rotation.y = this.povRotation.phi + this.rotation.phi;
-      this.camera.position.copy(this.collider.end);
+      if (this.getSubscriberCount() > 0) {
+        this.publish('tween', (elapsedTime - this.#pausedDuration) * 1000);
+      }
     }
   }
 }
