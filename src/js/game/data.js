@@ -323,7 +323,7 @@ export const Stages = [
       checkpoints: [
         {
           position: new Vector3(8 * 80, 0, 0),
-          //position: new Vector3(-35 * 80, 0, -3.5 * 80),
+          //position: new Vector3(-8 * 80, 200, 0 * 80),
           //position: new Vector3(-2200, 100, 0),
           //position: new Vector3(-40 * 80, 200, -1 * 80),
           //position: new Vector3(-34.5 * 80, 100, -3.8 * 80),
@@ -401,7 +401,9 @@ export const Stages = [
         {
           name: 'hero-1',
           position: new Vector3(-38 * 80, 1000, 3 * 80),
-          phi: (-25 * PI) / 180,
+          phi: (-27 * PI) / 180,
+          theta: -0.1,
+          ammoType: 'hop-bullet',
           schedule: {
             spawnedAt: 5,
           },

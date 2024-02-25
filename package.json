@@ -1,6 +1,6 @@
 {
   "name": "fps-game",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Three.jsフレームワークを用いたFPSゲームのデモ",
   "main": "./dist/index.html",
   "author": "masa <wizcode.jp@gmail.com>",

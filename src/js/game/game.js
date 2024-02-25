@@ -332,7 +332,14 @@ class Game {
 
       gunTypes.forEach((name, index) => {
         const gun = new Gun(name);
-        const [ammoType] = gun.data.ammoTypes;
+        let ammoType;
+
+        if (data.ammoType != null) {
+          ({ ammoType } = data);
+        } else {
+          [ammoType] = gun.data.ammoTypes;
+        }
+
         const ammo = this.ammos.get(ammoType);
         gun.setAmmo(ammo);
         character.addGun(gun);
