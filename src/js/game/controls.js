@@ -9,7 +9,7 @@ import {
   createCenterMark,
 } from './screen';
 
-const { abs, sign, max, min, PI } = Math;
+const { abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
@@ -134,7 +134,7 @@ class FirstPersonControls {
     this.viewHalfX = 0;
     this.viewHalfY = 0;
 
-    this.gaugeHalfX = 0;
+    this.yawIndicatorRadius = 0;
     this.gaugeHalfY = 0;
 
     this.onWheel = this.onWheel.bind(this);
@@ -187,11 +187,15 @@ class FirstPersonControls {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
 
-    this.gaugeHalfX = this.viewHalfX - 32;
     this.gaugeHalfY = this.viewHalfY - 32;
 
-    this.povIndicator.horizontal.position.setY(
+    this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
+
+    /*this.povIndicator.horizontal.position.setY(
       this.viewHalfY - Screen.sightPovSize / 2,
+    );*/
+    this.povIndicator.horizontal.position.setY(
+      this.yawIndicatorRadius
     );
     this.povIndicator.virtical.position.setX(
       this.viewHalfX - Screen.sightPovSize / 2,
@@ -534,25 +538,26 @@ class FirstPersonControls {
     }
 
     const lookSpeed = Controls.lookSpeed;
+    const { virtical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
 
     if (!this.#resetPointer) {
       if (this.povSight.material.color !== sightColor.pov) {
         this.povSight.material.color = sightColor.pov;
       }
 
-      if (!this.povIndicator.horizontal.visible) {
-        this.povIndicator.horizontal.visible = true;
+      if (!yawIndicator.visible) {
+        yawIndicator.visible = true;
       }
 
-      if (!this.povIndicator.virtical.visible) {
-        this.povIndicator.virtical.visible = true;
+      if (!pitchIndicator.visible) {
+        pitchIndicator.visible = true;
       }
 
-      const degX = (90 * this.#dy) / this.gaugeHalfY; // (Camera.FOV * this.#dy) / (this.viewHalfY * 2);
+      const degX = (90 * this.#dy) / this.gaugeHalfY;
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * lookSpeed;
 
-      const degY = (135 * this.#dx) / this.gaugeHalfX; // (Camera.FOV * this.#dx) / (this.viewHalfX * 2);
+      const degY = (135 * this.#dx) / this.viewHalfX;
       const radY = degY * degToRadCoef;
       this.#rotation.phi -= radY * lookSpeed;
 
@@ -565,35 +570,35 @@ class FirstPersonControls {
         min(PI - this.minPolarAngle.horizontal, this.#rotation.phi),
       );
 
-      let posX = (this.gaugeHalfX * -this.#rotation.phi) / PI;
       let posY = (this.gaugeHalfY * this.#rotation.theta) / halfPI;
 
-      if (posX <= -this.gaugeHalfX) {
-        posX = -this.gaugeHalfX;
-        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
-      } else if (posX >= this.gaugeHalfX) {
-        posX = this.gaugeHalfX;
-        this.povIndicator.horizontal.material.color = indicatorColor.beyondFov;
-      } else if (
-        this.povIndicator.horizontal.material.color !== indicatorColor.normal
+      if (
+        this.#rotation.phi === PI - this.maxPolarAngle.horizontal ||
+        this.#rotation.phi === PI - this.minPolarAngle.horizontal
       ) {
-        this.povIndicator.horizontal.material.color = indicatorColor.normal;
+        yawIndicator.material.color = indicatorColor.beyondFov;
+      } else if (
+        yawIndicator.material.color !== indicatorColor.normal
+      ) {
+        yawIndicator.material.color = indicatorColor.normal;
       }
 
       if (posY <= -this.gaugeHalfY) {
         posY = -this.gaugeHalfY;
-        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+        pitchIndicator.material.color = indicatorColor.beyondFov;
       } else if (posY >= this.gaugeHalfY) {
         posY = this.gaugeHalfY;
-        this.povIndicator.virtical.material.color = indicatorColor.beyondFov;
+        pitchIndicator.material.color = indicatorColor.beyondFov;
       } else if (
-        this.povIndicator.virtical.material.color !== indicatorColor.normal
+        pitchIndicator.material.color !== indicatorColor.normal
       ) {
-        this.povIndicator.virtical.material.color = indicatorColor.normal;
+        pitchIndicator.material.color = indicatorColor.normal;
       }
 
-      this.povIndicator.horizontal.position.x = posX;
-      this.povIndicator.virtical.position.y = posY;
+      yawIndicator.material.rotation = -this.#rotation.phi;
+      yawIndicator.position.x = -this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
+      yawIndicator.position.y = this.yawIndicatorRadius * sin(this.#rotation.phi + halfPI);
+      pitchIndicator.position.y = posY;
     } else {
       if (this.#rotation.theta !== 0) {
         if (abs(this.#rotation.theta) < Controls.restoreMinAngle) {
@@ -606,13 +611,13 @@ class FirstPersonControls {
         }
 
         if (
-          this.povIndicator.virtical.material.color !== indicatorColor.normal
+          pitchIndicator.material.color !== indicatorColor.normal
         ) {
-          this.povIndicator.virtical.material.color = indicatorColor.normal;
+          pitchIndicator.material.color = indicatorColor.normal;
         }
 
         const posY = (this.gaugeHalfY * this.#rotation.theta) / halfPI;
-        this.povIndicator.virtical.position.y = posY;
+        pitchIndicator.position.y = posY;
       }
 
       if (this.#rotation.phi !== 0) {
@@ -626,13 +631,14 @@ class FirstPersonControls {
         }
 
         if (
-          this.povIndicator.horizontal.material.color !== indicatorColor.normal
+          yawIndicator.material.color !== indicatorColor.normal
         ) {
-          this.povIndicator.horizontal.material.color = indicatorColor.normal;
+          yawIndicator.material.color = indicatorColor.normal;
         }
 
-        const posX = (this.gaugeHalfX * -this.#rotation.phi) / PI;
-        this.povIndicator.horizontal.position.x = posX;
+        yawIndicator.material.rotation = -this.#rotation.phi;
+        yawIndicator.position.x = -this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
+        yawIndicator.position.y = this.yawIndicatorRadius * sin(this.#rotation.phi + halfPI);
       }
     }
 
@@ -645,12 +651,12 @@ class FirstPersonControls {
         this.povSight.material.color = sightColor.front;
       }
 
-      if (this.povIndicator.horizontal.visible) {
-        this.povIndicator.horizontal.visible = false;
+      if (yawIndicator.visible) {
+        yawIndicator.visible = false;
       }
 
-      if (this.povIndicator.virtical.visible) {
-        this.povIndicator.virtical.visible = false;
+      if (pitchIndicator.visible) {
+        pitchIndicator.visible = false;
       }
     }
 

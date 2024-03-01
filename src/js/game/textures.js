@@ -247,6 +247,32 @@ const textures = {
 
     return context;
   },
+
+  direction(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 1;
+    context.lineCap = 'butt';
+    context.miterLimit = 20;
+
+    context.shadowColor = '#FFF';
+    context.shadowOffsetY = 0;
+    context.shadowBlur = 8;
+
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(0, 20);
+    context.bezierCurveTo(44, 4, 84, 4, 128, 20);
+    context.moveTo(128, 20);
+    context.bezierCurveTo(84, 8, 44, 8, 0, 20);
+    context.fill();
+
+    return context;
+  },
 };
 
 export default textures;

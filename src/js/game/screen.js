@@ -54,6 +54,12 @@ textures.sightLines(context.sightLines);
 texture.sightLines = new Texture(canvas.sightLines);
 texture.sightLines.needsUpdate = true;
 
+canvas.direction = document.createElement('canvas');
+context.direction = canvas.direction.getContext('2d');
+textures.direction(context.direction);
+texture.direction = new Texture(canvas.direction);
+texture.direction.needsUpdate = true;
+
 export const createSight = () => {
   const material = new SpriteMaterial({
     color: 0xffffff,
@@ -126,16 +132,25 @@ export const createPovIndicator = () => {
     color: 0xffffff,
     map: texture.povIndicator.virtical,
   });
+  material.direction = new SpriteMaterial({
+    color: 0xffffff,
+    map: texture.direction,
+  });
 
-  sprite.horizontal = new Sprite(material.horizontal);
+  /*sprite.horizontal = new Sprite(material.horizontal);
   sprite.horizontal.visible = false;
   sprite.horizontal.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
-  sprite.horizontal.position.setZ(-10);
+  sprite.horizontal.position.setZ(-10);*/
 
   sprite.virtical = new Sprite(material.virtical);
   sprite.virtical.visible = false;
   sprite.virtical.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
   sprite.virtical.position.setZ(-10);
+
+  sprite.horizontal = new Sprite(material.direction);
+  sprite.horizontal.visible = false;
+  sprite.horizontal.scale.set(128, 128, 0);
+  sprite.horizontal.position.setZ(-10);
 
   return sprite;
 };
