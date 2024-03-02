@@ -1,4 +1,4 @@
-import { Sphere, Vector3 } from 'three';
+import { Vector3 } from 'three';
 
 import Collidable from './collidable';
 import { Ammo as AmmoData } from './data';

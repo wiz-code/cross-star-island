@@ -1,39 +1,11 @@
-import { Vector3, Spherical, Euler } from 'three';
-import { Capsule } from 'three/addons/math/Capsule.js';
+import { Vector3, Euler } from 'three';
 
-import { Keys, Actions, States, Characters, Stages } from './data';
-import Publisher from './publisher';
-import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
+import { World } from './settings';
 
-const { exp, sqrt, cos, PI } = Math;
+const { sqrt, cos, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
-const dampingCoef = PI / 180;
-const minRotateAngle = PI / 720;
-const minMovement = 0.01;
-
-const addDamping = (component, damping, minValue) => {
-  let value = component;
-
-  if (value >= 0) {
-    value += damping;
-
-    if (value < minValue) {
-      value = 0;
-    }
-  } else {
-    value -= damping;
-
-    if (value >= -minValue) {
-      value = 0;
-    }
-  }
-
-  return value;
-};
-
-const characterData = new Map(Characters);
 
 class CharacterManager {
   #dir = new Vector3(0, 0, -1);
@@ -130,13 +102,17 @@ class CharacterManager {
 
             if (object.type === 'item') {
               object.setActive(false);
-              object.data.dispatchers.forEach((dispatcher) => this.collidableManager.publish(dispatcher));
+              object.data.dispatchers.forEach((dispatcher) =>
+                this.collidableManager.publish(dispatcher),
+              );
             } else {
               if (!character.isStunning()) {
                 character.setStunning(true, World.collisionShock);
               }
 
-              const normal = this.#vecA.subVectors(point, objectCenter).normalize();
+              const normal = this.#vecA
+                .subVectors(point, objectCenter)
+                .normalize();
               const v1 = this.#vecB
                 .copy(normal)
                 .multiplyScalar(normal.dot(character.velocity));
@@ -205,12 +181,14 @@ class CharacterManager {
                 charaCenter,
               ];
 
-              for (let j = 0, m = colliders.length; j < m; j += 1) {
-                const point = colliders[j];
+              for (let k = 0, l = colliders.length; k < l; k += 1) {
+                const point = colliders[k];
                 const d2 = point.distanceToSquared(center);
 
                 if (d2 < r2) {
-                  const normal = this.#vecA.subVectors(point, center).normalize();
+                  const normal = this.#vecA
+                    .subVectors(point, center)
+                    .normalize();
                   const v1 = this.#vecB
                     .copy(normal)
                     .multiplyScalar(normal.dot(c2.velocity));
@@ -265,8 +243,10 @@ class CharacterManager {
       character.object.rotation.y = character.rotation.phi;
 
       if (character.isFPV()) {
-        character.camera.rotation.x = character.povRotation.theta + character.deltaY;
-        character.camera.rotation.y = character.povRotation.phi + character.rotation.phi;
+        character.camera.rotation.x =
+          character.povRotation.theta + character.deltaY;
+        character.camera.rotation.y =
+          character.povRotation.phi + character.rotation.phi;
         character.camera.position.copy(character.collider.end);
       }
     }

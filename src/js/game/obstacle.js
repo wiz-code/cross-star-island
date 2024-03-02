@@ -3,9 +3,7 @@ import {
   OctahedronGeometry,
   BufferGeometry,
   WireframeGeometry,
-  EdgesGeometry,
   MeshBasicMaterial,
-  MeshNormalMaterial,
   LineBasicMaterial,
   PointsMaterial,
   Mesh,
@@ -14,17 +12,13 @@ import {
   Group,
   Float32BufferAttribute,
   Texture,
-  Sphere,
   Vector3,
   NormalBlending,
 } from 'three';
 
 import Collidable from './collidable';
-import { World, Grid } from './settings';
-import { Obstacles, Stages } from './data';
+import { Obstacles } from './data';
 import textures from './textures';
-
-const { exp, sqrt, PI } = Math;
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -32,8 +26,6 @@ textures.crossStar(context);
 
 const texture = new Texture(canvas);
 texture.needsUpdate = true;
-
-function noop() {}
 
 const obstacleData = new Map(Obstacles);
 
@@ -59,7 +51,7 @@ class Obstacle extends Collidable {
     const pointsDetail = this.data.pointsDetail ?? detail;
 
     this.collider.set(new Vector3(), radius);
-    
+
     const geom = new IcosahedronGeometry(radius, detail);
     const wireframeGeom = new WireframeGeometry(geom);
 

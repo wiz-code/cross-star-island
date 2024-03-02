@@ -41,7 +41,12 @@ class Item extends Collidable {
       radialSegments: floor(data.radialSegments / 2),
       tubularSegments: floor(data.tubularSegments / 2),
     };
-    const geom = new TorusGeometry(data.radius, data.tube, data.radialSegments, data.tubularSegments);
+    const geom = new TorusGeometry(
+      data.radius,
+      data.tube,
+      data.radialSegments,
+      data.tubularSegments,
+    );
     const wireGeom = new EdgesGeometry(geom);
     let pointsGeom = new RingGeometry(data.radius - 6, data.radius + 6, 4, 0);
     const vertices = pointsGeom.attributes.position.array.slice(0);

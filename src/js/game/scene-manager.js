@@ -1,7 +1,25 @@
+import Stats from 'three/addons/libs/stats.module.js';
+
 class SceneManager {
-  constructor(renderer) {
+  constructor(container, renderer) {
+    this.container = container;
     this.renderer = renderer;
     this.list = new Map();
+
+    this.stats = new Stats();
+    this.stats.domElement.style.position = 'absolute';
+    this.stats.domElement.style.top = 'auto';
+    this.stats.domElement.style.bottom = 0;
+
+    this.enableStats();
+  }
+
+  enableStats(bool = true) {
+    if (bool) {
+      this.container.appendChild(this.stats.domElement);
+    } else {
+      this.container.removeChild(this.stats.domElement);
+    }
   }
 
   add(name, scene, camera) {
@@ -26,11 +44,13 @@ class SceneManager {
     this.renderer.clear();
 
     const list = Array.from(this.list.values());
-    // for (const params of this.list) {
+
     for (let i = 0, l = list.length; i < l; i += 1) {
       const params = list[i];
       this.renderer.render(...params);
     }
+
+    this.stats.update();
   }
 }
 

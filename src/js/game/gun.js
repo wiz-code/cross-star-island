@@ -1,6 +1,6 @@
-import { Sphere, Vector3, Euler } from 'three';
+import { Vector3, Euler } from 'three';
 
-import { Ammo as AmmoData, Guns } from './data';
+import { Guns } from './data';
 import Publisher from './publisher';
 
 const { random, PI } = Math;

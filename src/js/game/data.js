@@ -1,11 +1,9 @@
 import { Vector3 } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
-const { floor, random, sin, PI } = Math;
+const { random, sin, PI } = Math;
 
 const getRandomInclusive = (min, max) => random() * (max - min) + min;
-
-const easeOutSine = (x) => sin((x * PI) / 2);
 
 const easeInQuad = (x) => x * x;
 
@@ -124,8 +122,8 @@ export const Ammo = [
   [
     'small-bullet',
     {
-      color: 0xFFFFE0,
-      wireColor: 0xA9A9A9,
+      color: 0xffffe0,
+      wireColor: 0xa9a9a9,
       pointColor: 0xf45c41,
       pointSize: 10,
 
@@ -139,7 +137,9 @@ export const Ammo = [
       rotateSpeed: 10,
 
       update(deltaTime) {
-        let rotateSpeed = !this.isBounced() ? this.data.rotateSpeed : this.data.rotateSpeed * 0.5;
+        const rotateSpeed = !this.isBounced()
+          ? this.data.rotateSpeed
+          : this.data.rotateSpeed * 0.5;
 
         this.object.rotation.z -= deltaTime * rotateSpeed;
       },
@@ -148,8 +148,8 @@ export const Ammo = [
   [
     'hop-bullet',
     {
-      color: 0xFFFFE0,
-      wireColor: 0xA9A9A9,
+      color: 0xffffe0,
+      wireColor: 0xa9a9a9,
       pointColor: 0xf45c41,
       pointSize: 10,
 
@@ -165,8 +165,7 @@ export const Ammo = [
       hopValue: 350,
       hopDuration: 0.5,
 
-
-      update(deltaTime, elapsedTime) {
+      update(deltaTime) {
         this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
 
         if (!this.isBounced()) {
@@ -174,7 +173,8 @@ export const Ammo = [
             const ratio = easeOutCubic(this.elapsedTime);
             this.collider.center.y += deltaTime * ratio * this.data.hopValue;
           } else {
-            const ratio = 1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
+            const ratio =
+              1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
 
             if (ratio >= 0) {
               this.collider.center.y += deltaTime * ratio * this.data.hopValue;
@@ -220,8 +220,8 @@ export const Items = [
     {
       method: 'createRing',
 
-      radius : 20,
-      tube : 3,
+      radius: 20,
+      tube: 3,
       radialSegments: 6,
       tubularSegments: 12,
       weight: 1,
@@ -237,7 +237,7 @@ export const Items = [
 
       update(deltaTime) {
         //
-      }
+      },
     },
   ],
   [
@@ -245,14 +245,14 @@ export const Items = [
     {
       method: 'createRing',
 
-      radius : 20,
-      tube : 3,
+      radius: 20,
+      tube: 3,
       radialSegments: 6,
       tubularSegments: 12,
 
-      color: 0xADD8E6,
-      wireColor: 0xA9A9A9,
-      pointColor: 0x90EE90,
+      color: 0xadd8e6,
+      wireColor: 0xa9a9a9,
+      pointColor: 0x90ee90,
       pointSize: 10,
 
       rotateSpeed: 2,
@@ -261,7 +261,7 @@ export const Items = [
 
       update(deltaTime) {
         //
-      }
+      },
     },
   ],
 ];
@@ -323,10 +323,10 @@ export const Stages = [
       checkpoints: [
         {
           position: new Vector3(8 * 80, 0, 0),
-          //position: new Vector3(-8 * 80, 200, 0 * 80),
-          //position: new Vector3(-2200, 100, 0),
-          //position: new Vector3(-40 * 80, 200, -1 * 80),
-          //position: new Vector3(-34.5 * 80, 100, -3.8 * 80),
+          // position: new Vector3(-8 * 80, 200, 0 * 80),
+          // position: new Vector3(-2200, 100, 0),
+          // position: new Vector3(-40 * 80, 200, -1 * 80),
+          // position: new Vector3(-34.5 * 80, 100, -3.8 * 80),
           phi: PI / 2,
         },
         {
@@ -353,7 +353,7 @@ export const Stages = [
           schedule: {
             spawnedAt: 0,
           },
-          update(deltaTime, elapsedTime) {
+          update(deltaTime) {
             this.elapsedTime += deltaTime;
 
             if (this.elapsedTime > 0.5) {
@@ -371,7 +371,7 @@ export const Stages = [
           schedule: {
             spawnedAt: 2,
           },
-          update(deltaTime, elapsedTime) {
+          update(deltaTime) {
             this.elapsedTime += deltaTime;
 
             if (this.elapsedTime > 0.8) {
@@ -389,7 +389,7 @@ export const Stages = [
           schedule: {
             spawnedAt: 4,
           },
-          update(deltaTime, elapsedTime) {
+          update(deltaTime) {
             this.elapsedTime += deltaTime;
 
             if (this.elapsedTime > 0.8) {
@@ -407,7 +407,7 @@ export const Stages = [
           schedule: {
             spawnedAt: 5,
           },
-          update(deltaTime, elapsedTime) {
+          update(deltaTime) {
             this.elapsedTime += deltaTime;
 
             if (this.elapsedTime > 1) {
@@ -469,7 +469,7 @@ export const Stages = [
         {
           name: 'checkpoint',
           position: new Vector3(-31 * 80, 200, -0.5 * 80),
-          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 5,
           update(deltaTime) {
             const rotateSpeed = deltaTime * this.data.rotateSpeed;
@@ -480,7 +480,7 @@ export const Stages = [
         {
           name: 'checkpoint',
           position: new Vector3(-40 * 80, 200, -1 * 80),
-          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 5,
           update(deltaTime) {
             const rotateSpeed = deltaTime * this.data.rotateSpeed;
@@ -491,7 +491,7 @@ export const Stages = [
         {
           name: 'weapon-upgrade',
           position: new Vector3(-35 * 80, -4 * 80, -7 * 80),
-          //tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 0,
           update(deltaTime) {
             const rotateSpeed = deltaTime * this.data.rotateSpeed;

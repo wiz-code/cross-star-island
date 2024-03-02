@@ -4,7 +4,6 @@ import {
   Euler,
   CapsuleGeometry,
   ConeGeometry,
-  WireframeGeometry,
   EdgesGeometry,
   SphereGeometry,
   BufferGeometry,
@@ -21,18 +20,16 @@ import {
 } from 'three';
 import { Capsule } from 'three/addons/math/Capsule.js';
 
-import { Keys, Actions, States, Characters, Stages } from './data';
+import { Keys, Actions, States, Characters } from './data';
 import Publisher from './publisher';
-import { World, PlayerSettings, Controls, AmmoSettings } from './settings';
+import { World, Controls } from './settings';
 import textures from './textures';
 
-const { floor, exp, sqrt, cos, PI } = Math;
+const { floor, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
-const COS_30 = cos(RAD_30);
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
-const minMovement = 0.01;
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -117,7 +114,15 @@ class Character extends Publisher {
 
     geometry.body = new CapsuleGeometry(data.radius, data.height, 2, 8);
     geometry.wire = new EdgesGeometry(geometry.body);
-    geometry.face = new SphereGeometry(faceSize, 8, 4, undefined, undefined, undefined, PI / 2);
+    geometry.face = new SphereGeometry(
+      faceSize,
+      8,
+      4,
+      undefined,
+      undefined,
+      undefined,
+      PI / 2,
+    );
     geometry.faceWire = new EdgesGeometry(geometry.face);
     geometry.face.rotateX(-PI / 2);
     geometry.faceWire.rotateX(-PI / 2);
@@ -144,7 +149,7 @@ class Character extends Publisher {
       color: 0xdc143c,
     });
     material.faceWire = new LineBasicMaterial({
-      color: 0xdb6e84
+      color: 0xdb6e84,
     });
 
     material.points = new PointsMaterial({
@@ -288,9 +293,7 @@ class Character extends Publisher {
   setPosition(position, phi = 0, theta = 0) {
     this.rotation.phi = phi;
     this.rotation.theta = theta;
-    this.direction.copy(
-      this.#dir.clone().applyAxisAngle(this.#yawAxis, phi),
-    );
+    this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, phi));
 
     this.collider.start.copy(position);
     this.collider.end.copy(position);

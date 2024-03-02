@@ -8,7 +8,6 @@ import {
   Clock,
   Vector3,
 } from 'three';
-import Stats from 'three/addons/libs/stats.module.js';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
 
@@ -17,10 +16,6 @@ import {
   Scene,
   Camera,
   Renderer,
-  Light,
-  PlayerSettings,
-  Grid,
-  Ground,
   World,
 } from './settings';
 
@@ -42,20 +37,20 @@ import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
 import Item from './item';
-import { createStage } from './stages';
+import createStage from './stages';
 
 const { floor, exp } = Math;
 
 const resistances = Object.entries(World.Resistance);
-const damping = {};
+const dampingData = {};
 const getDamping = (delta) => {
   for (let i = 0, l = resistances.length; i < l; i += 1) {
     const [key, value] = resistances[i];
     const result = exp(-value * delta) - 1;
-    damping[key] = result;
+    dampingData[key] = result;
   }
 
-  return damping;
+  return dampingData;
 };
 
 class Game {
@@ -82,7 +77,7 @@ class Game {
     // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
     this.container.appendChild(this.renderer.domElement);
 
-    this.scenes = new SceneManager(this.renderer);
+    this.sceneManager = new SceneManager(this.container, this.renderer);
 
     this.scene = {};
     this.camera = {};
@@ -115,9 +110,9 @@ class Game {
       1000,
     );
 
-    this.scenes.clear();
-    this.scenes.add('field', this.scene.field, this.camera.field);
-    this.scenes.add('screen', this.scene.screen, this.camera.screen);
+    this.sceneManager.clear();
+    this.sceneManager.add('field', this.scene.field, this.camera.field);
+    this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
 
     this.data = {};
     this.data.stages = new Map(Stages);
@@ -196,12 +191,6 @@ class Game {
     this.weaponUpgrade = this.weaponUpgrade.bind(this);
     this.objectManager.subscribe('nextCheckpoint', this.nextCheckpoint);
     this.objectManager.subscribe('weaponUpgrade', this.weaponUpgrade);
-
-    this.stats = new Stats();
-    this.stats.domElement.style.position = 'absolute';
-    this.stats.domElement.style.top = 'auto';
-    this.stats.domElement.style.bottom = 0;
-    this.container.appendChild(this.stats.domElement);
   }
 
   getElapsedTime() {
@@ -219,7 +208,7 @@ class Game {
     this.teleportCharacter = this.teleportCharacter.bind(this);
     this.player.subscribe('oob', this.teleportCharacter);
 
-    const gunTypes = this.player.data.gunTypes;
+    const { gunTypes } = this.player.data;
 
     gunTypes.forEach((name, index) => {
       const gun = new Gun(name);
@@ -241,7 +230,7 @@ class Game {
     );
   }
 
-  removePlayer(character) {
+  removePlayer() {
     if (this.player != null) {
       this.player.unsetFPV();
       this.player = null;
@@ -257,8 +246,11 @@ class Game {
     if (character.isFPV()) {
       const checkpoint = stageData.checkpoints[this.checkpointIndex];
       character.velocity.copy(new Vector3(0, 0, 0));
-      character.setPosition(checkpoint.position, checkpoint.phi, checkpoint.theta);
-
+      character.setPosition(
+        checkpoint.position,
+        checkpoint.phi,
+        checkpoint.theta,
+      );
     }
   }
 
@@ -291,8 +283,10 @@ class Game {
 
     switch (this.mode) {
       case 'loading': {
+        break;
       }
       case 'initial': {
+        break;
       }
       case 'play': {
         this.setStage();
@@ -301,6 +295,7 @@ class Game {
       }
 
       default: {
+        //
       }
     }
   }
@@ -328,7 +323,7 @@ class Game {
 
     characters.forEach((data) => {
       const character = new Character(data.name);
-      const gunTypes = character.data.gunTypes;
+      const { gunTypes } = character.data;
 
       gunTypes.forEach((name, index) => {
         const gun = new Gun(name);
@@ -392,8 +387,11 @@ class Game {
       this.objectManager.add(obstacle, data);
     });
 
-
-    this.player.setPosition(checkpoint.position, checkpoint.phi, checkpoint.theta);
+    this.player.setPosition(
+      checkpoint.position,
+      checkpoint.phi,
+      checkpoint.theta,
+    );
     this.characterManager.add(this.player);
 
     this.clearStage();
@@ -431,7 +429,7 @@ class Game {
     }
 
     this.clock.start();
-    this.loop.start()
+    this.loop.start();
   }
 
   stop() {
@@ -441,7 +439,7 @@ class Game {
     }
 
     this.clock.stop();
-    this.loop.stop()
+    this.loop.stop();
   }
 
   restart(checkpoint) {}
@@ -463,8 +461,7 @@ class Game {
       this.objectManager.update(deltaTime, this.#elapsedTime, damping);
     }
 
-    this.scenes.update();
-    this.stats.update();
+    this.sceneManager.update();
   }
 }
 

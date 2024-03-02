@@ -3,7 +3,6 @@ import {
   CylinderGeometry,
   BufferGeometry,
   WireframeGeometry,
-  EdgesGeometry,
   Float32BufferAttribute,
   MeshBasicMaterial,
   PointsMaterial,
@@ -12,17 +11,15 @@ import {
   Mesh,
   Points,
   Group,
-  OctahedronGeometry,
   PlaneGeometry,
   LineSegments,
-  DoubleSide,
 } from 'three';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { Grid, Ground, Cylinder } from './settings';
 import textures from './textures';
 
-const { random, sin, floor, abs, PI } = Math;
+const { sin, floor, abs, PI } = Math;
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -164,7 +161,6 @@ export const createCylinder = ({
     radialSegments,
     heightSegments,
   );
-  // geom.surface.rotateX(-PI / 2);
   geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,

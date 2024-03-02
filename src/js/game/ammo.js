@@ -4,7 +4,6 @@ import {
   BufferGeometry,
   WireframeGeometry,
   MeshBasicMaterial,
-  MeshNormalMaterial,
   LineBasicMaterial,
   PointsMaterial,
   Mesh,
@@ -13,7 +12,6 @@ import {
   Group,
   Float32BufferAttribute,
   Texture,
-  Sphere,
   Vector3,
   NormalBlending,
 } from 'three';
@@ -21,14 +19,7 @@ import {
 import Bullet from './bullet';
 import { Ammo as AmmoData } from './data';
 import Publisher from './publisher';
-import { World, AmmoSettings } from './settings';
 import textures from './textures';
-
-const { exp, sqrt } = Math;
-
-const setVisible = (object, bool = true) => {
-  object.children.forEach((mesh) => (mesh = bool));
-};
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -61,11 +52,6 @@ class Ammo extends Publisher {
       radius,
       detail,
       numAmmo,
-      weight,
-      fireInterval,
-      accuracy,
-
-      update,
     } = { ...ammo };
 
     const geom = new IcosahedronGeometry(radius, detail);
@@ -81,10 +67,6 @@ class Ammo extends Publisher {
     bufferGeom.computeBoundingSphere();
 
     const mat = new MeshBasicMaterial({ color });
-    /* const wireMat = new MeshBasicMaterial({
-      color: AmmoSettings.wireColor,
-      wireframe: true,
-    }); */
     const wireMat = new LineBasicMaterial({
       color: wireColor,
     });
@@ -109,25 +91,8 @@ class Ammo extends Publisher {
       group.add(mesh);
       group.add(wireMesh);
       group.add(pointsMesh);
-      // this.scene.add(group);
 
       const bullet = new Bullet(i, name, group);
-
-      /* const bullet = {
-        name,
-        type: 'ammo',
-        object: group,
-        collider: new Sphere(
-          new Vector3(0, i * radius * 2 - 1000, 0),
-          radius,
-        ),
-        velocity: new Vector3(),
-        radius,
-        weight,
-        speed,
-        rotateSpeed,
-      };
-      bullet.update = update.bind(bullet); */
 
       this.list.push(bullet);
     }

@@ -1,24 +1,13 @@
 import { Vector3, Group, ArrowHelper } from 'three';
 
 import { Stages } from './data';
-import {
-  Scene,
-  Camera,
-  Renderer,
-  // Stages,
-  Light,
-  PlayerSettings,
-  ResizeDelayTime,
-  Grid,
-  Ground,
-} from './settings';
+
 import { createGrid, createFineGrid } from './grid';
 import { createGround, createCylinder } from './ground';
 
 const data = new Map(Stages);
 
-export const createStage = (name) => {
-  // const { components } = Stages[name];
+const createStage = (name) => {
   const { components } = data.get(name);
   const stage = new Group();
 
@@ -68,3 +57,5 @@ export const createStage = (name) => {
   }
   return stage;
 };
+
+export default createStage;

@@ -3,8 +3,6 @@ import { Sphere, Vector3 } from 'three';
 import Publisher from './publisher';
 import { World } from './settings';
 
-function noop() {}
-
 let id = 0;
 
 function genId() {
@@ -31,10 +29,6 @@ class Collidable extends Publisher {
     this.velocity = new Vector3();
 
     this.onUpdate = null;
-  }
-
-  setPosition(position, phi = 0, theta = 0) {
-    //
   }
 
   setObject(object) {
@@ -80,15 +74,9 @@ class Collidable extends Publisher {
   update(deltaTime, elapsedTime, damping) {
     if (this.#active) {
       this.velocity.y -= World.gravity * deltaTime;
-      this.velocity.addScaledVector(
-        this.velocity,
-        damping[this.type],
-      );
+      this.velocity.addScaledVector(this.velocity, damping[this.type]);
 
-      this.collider.center.addScaledVector(
-        this.velocity,
-        deltaTime,
-      );
+      this.collider.center.addScaledVector(this.velocity, deltaTime);
 
       if (this.onUpdate != null) {
         this.onUpdate(deltaTime, elapsedTime);

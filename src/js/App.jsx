@@ -1,21 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // import propTypes from 'prop-types';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import {
-  Container,
-  Grid,
-  Button,
-  Box,
-  TextField,
-  Typography,
-  CssBaseline,
-} from '@mui/material';
+import { Button, Box, CssBaseline } from '@mui/material';
 
-import * as THREE from 'three'; /// //////////////
 import Game from './game/game';
-import Loop from './game/loop';
-import { StepsPerFrame } from './game/settings';
 
 const theme = createTheme({
   typography: {
@@ -128,8 +117,6 @@ function App() {
 
   useEffect(() => {
     if (game != null) {
-      // const loop = new Loop(update, objects);
-      const loop = new Loop(game.update, game);
       setReady(true);
     }
   }, [game]);
@@ -141,11 +128,9 @@ function App() {
           game.start();
           setStarted(true);
         }
-      } else {
-        if (game != null) {
-          game.stop();
-          setStarted(false);
-        }
+      } else if (game != null) {
+        game.stop();
+        setStarted(false);
       }
     }
   }, [ready, started, game]);

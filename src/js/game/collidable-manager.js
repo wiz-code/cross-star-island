@@ -1,15 +1,9 @@
-import {
-  Texture,
-  Sphere,
-  Vector3,
-} from 'three';
+import { Texture, Vector3 } from 'three';
 
-import { World, Grid, ObjectSettings } from './settings';
-import { Tweens } from './data';
 import Publisher from './publisher';
 import textures from './textures';
 
-const { exp, sqrt, PI } = Math;
+const { sqrt } = Math;
 
 const canvas = document.createElement('canvas');
 const context = canvas.getContext('2d');
@@ -73,7 +67,7 @@ class CollidableManager extends Publisher {
     this.list.delete(collidable);
   }
 
-  clear(type) {
+  clear() {
     this.list.clear();
   }
 

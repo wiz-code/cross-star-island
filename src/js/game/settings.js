@@ -1,4 +1,4 @@
-import { Vector3, Euler, VSMShadowMap, ACESFilmicToneMapping } from 'three';
+import { VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
 const { PI } = Math;
 
