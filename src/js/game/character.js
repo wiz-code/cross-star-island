@@ -446,7 +446,9 @@ class Character extends Publisher {
 
       return;
     }
+
     if (this.#states.has(States.stunning)) {
+      this.#actions.clear();
       return;
     }
 
