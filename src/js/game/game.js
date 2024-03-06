@@ -66,7 +66,6 @@ class Game {
     };
 
     this.container = document.getElementById('container');
-
     this.renderer = new WebGLRenderer({ antialias: false });
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
@@ -76,7 +75,6 @@ class Game {
     // renderer.shadowMap.type = Renderer.ShadowMap.type;
     // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
     this.container.appendChild(this.renderer.domElement);
-
     this.sceneManager = new SceneManager(this.container, this.renderer);
 
     this.scene = {};

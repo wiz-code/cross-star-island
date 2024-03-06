@@ -322,7 +322,8 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: new Vector3(8 * 80, 0, 0),
+          position: new Vector3(0, 400, 0),
+          // position: new Vector3(8 * 80, 0, 0),
           // position: new Vector3(-8 * 80, 200, 0 * 80),
           // position: new Vector3(-2200, 100, 0),
           // position: new Vector3(-40 * 80, 200, -1 * 80),
@@ -502,6 +503,14 @@ export const Stages = [
       ],
       components: [
         {
+          maze: {
+            widthSegments: 24,
+            heightSegments: 5,
+            depthSegments: 4,
+            position: { sx: 0, sy: 2.7, sz: 0 },
+          },
+        },
+        {
           grid: {
             widthSegments: 24,
             heightSegments: 6,
@@ -511,7 +520,7 @@ export const Stages = [
             depthSpacing: 80,
             position: { sx: 0, sy: -0.2, sz: 0 },
           },
-          ground: {
+          /*ground: {
             widthSegments: 20,
             depthSegments: 6,
             widthSpacing: 80,
@@ -519,7 +528,7 @@ export const Stages = [
             bumpHeight: 0,
             position: { sx: 0, sy: 0, sz: 0, heightSpacing: 80 },
             rotation: { x: 0, y: 0, z: 0 },
-          },
+          },*/
           arrow: {
             direction: new Vector3(-1, 0, 0),
             position: new Vector3(400, 200, 0),
@@ -527,7 +536,7 @@ export const Stages = [
             color: 0xffffff,
           },
         },
-        {
+        /*{
           ground: {
             widthSegments: 20,
             depthSegments: 6,
@@ -559,7 +568,7 @@ export const Stages = [
             position: { sx: 0, sy: 1.9, sz: -2.1, heightSpacing: 80 },
             rotation: { x: PI / 2, y: 0, z: 0 },
           },
-        },
+        },*/
         {
           grid: {
             widthSegments: 20,

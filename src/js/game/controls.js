@@ -96,6 +96,8 @@ class FirstPersonControls {
 
   #resetWheel = false;
 
+  #povLock = false;
+
   #enabled = false;
 
   constructor(screen, camera, player, domElement) {
@@ -116,8 +118,6 @@ class FirstPersonControls {
 
     this.centerMark = createCenterMark();
     this.screen.add(this.centerMark);
-
-    this.povLock = false;
 
     this.minPolarAngle = {
       virtical: 0,
@@ -151,10 +151,10 @@ class FirstPersonControls {
     document.addEventListener('keyup', this.onKeyUp);
 
     this.onChangeRotateComponent = this.onChangeRotateComponent.bind(this);
-    /* this.player.subscribe(
+    this.player.subscribe(
       'onChangeRotateComponent',
       this.onChangeRotateComponent,
-    ); */
+    );
 
     this.handleResize();
     this.setOrientation();
@@ -169,7 +169,7 @@ class FirstPersonControls {
   }
 
   onChangeRotateComponent(rotateComponent) {
-    if (this.#rotation.theta !== 0 || this.#rotation.phi !== 0) {
+    if (this.#povLock && this.#rotation.phi !== 0) {
       this.#rotation.phi -= rotateComponent;
     }
   }
@@ -234,14 +234,18 @@ class FirstPersonControls {
         }
 
         if (button === 2) {
-          this.#resetPointer = true;
+          this.#povLock = true;
         }
 
         break;
       }
 
       case 'pointerup': {
-        //
+        if (button === 2) {
+          this.#povLock = false;
+          this.#resetPointer = true;
+        }
+
         break;
       }
 
@@ -302,12 +306,12 @@ class FirstPersonControls {
     }
 
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }
 
-  onPointerUp(event) {
+  onPointerUp(event) {console.log(event.type, event.button)
     if (!this.#enabled) {
       return;
     }

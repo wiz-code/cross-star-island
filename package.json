@@ -50,6 +50,8 @@
     "regenerator-runtime": "^0.14.1",
     "serve": "^14.2.1",
     "three": "^0.160.0",
+    "three-bvh-csg": "^0.0.16",
+    "three-mesh-bvh": "^0.7.3",
     "throttle-debounce": "^5.0.0"
   }
 }

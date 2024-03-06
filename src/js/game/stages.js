@@ -3,7 +3,7 @@ import { Vector3, Group, ArrowHelper } from 'three';
 import { Stages } from './data';
 
 import { createGrid, createFineGrid } from './grid';
-import { createGround, createCylinder } from './ground';
+import { createGround, createMaze, createCylinder } from './ground';
 
 const data = new Map(Stages);
 
@@ -25,6 +25,11 @@ const createStage = (name) => {
     if (component.ground != null) {
       const ground = createGround(component.ground);
       block.add(ground);
+    }
+
+    if (component.maze != null) {
+      const maze = createMaze(component.maze);
+      block.add(maze);
     }
 
     if (component.cylinder != null) {

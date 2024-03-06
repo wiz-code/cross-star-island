@@ -119,17 +119,10 @@ export const Cylinder = {
 };
 
 export const Ground = {
-  Object: {
-    color: 0x203b33, // 0x1955a6,
-    size: 5,
-    pointsColor: 0xdc3545, // 0xa3d8f6,
-  },
-  heightCoef: 6,
   color: 0x4d4136,
-  wireframeColor: 0x332000,
-  pointsColor: 0xf4e511, // 0xffff00,
-  wallHeightSize: 4,
-  wallColor: 0x203b33,
+  wireColor: 0x332000,
+  pointColor: 0xf4e511,
+  pointSize: 10,
 };
 
 export const Controls = {

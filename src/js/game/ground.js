@@ -1,9 +1,11 @@
 import {
   Texture,
   CylinderGeometry,
+  BoxGeometry,
   BufferGeometry,
   WireframeGeometry,
   Float32BufferAttribute,
+  BufferAttribute,
   MeshBasicMaterial,
   PointsMaterial,
   NormalBlending,
@@ -14,6 +16,7 @@ import {
   PlaneGeometry,
   LineSegments,
 } from 'three';
+import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { Grid, Ground, Cylinder } from './settings';
@@ -101,12 +104,12 @@ export const createGround = ({
     // side: DoubleSide,
   });
   mat.wireframe = new LineBasicMaterial({
-    color: Ground.wireframeColor,
+    color: Ground.wireColor,
   });
 
   mat.points = new PointsMaterial({
-    color: Ground.pointsColor,
-    size: Grid.size,
+    color: Ground.pointColor,
+    size: Ground.pointSize,
     map: texture,
     blending: NormalBlending,
     alphaTest: 0.5,
@@ -114,7 +117,6 @@ export const createGround = ({
 
   mesh.surface = new Mesh(geom.surface, mat.surface);
   mesh.surface.name = 'surface';
-  // mesh.wireframe = new Mesh(geom.surface, mat.wireframe);
   mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
   mesh.wireframe.name = 'wireframe';
   mesh.points = new Points(geom.points, mat.points);
@@ -139,6 +141,124 @@ export const createGround = ({
   ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return ground;
+};
+
+export const createMaze = ({
+  widthSegments = 10,
+  heightSegments = 10,
+  depthSegments = 10,
+  widthSpacing = 80,
+  heightSpacing = 80,
+  depthSpacing = 80,
+  position = { x: 0, y: 0, z: 0 },
+  rotation = { x: 0, y: 0, z: 0 },
+  offset = { x: 0, y: 0, z: 0 },//////////////
+}) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  geom.box = new BoxGeometry(
+    widthSpacing * widthSegments,
+    heightSpacing * heightSegments,
+    depthSpacing * depthSegments,
+    widthSegments,
+    heightSegments,
+    depthSegments,
+  );
+  geom.wireframe = new WireframeGeometry(geom.box);
+  geom.points = new BoxGeometry(
+    widthSpacing * widthSegments - 10,
+    heightSpacing * heightSegments - 10,
+    depthSpacing * depthSegments - 10,
+    widthSegments,
+    heightSegments,
+    depthSegments,
+  );
+
+  let vertices = geom.points.attributes.position.array.slice(0);
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(vertices, 3)
+  );
+  geom.points.computeBoundingSphere();
+
+  vertices = geom.box.getAttribute('position').array.slice(0);
+  const indices = geom.box.getIndex().array.slice(0);
+
+  for (let i = 0, l = indices.length; i < l; i += 3) {
+    const a = indices[i];
+    const b = indices[i + 1];
+    const c = indices[i + 2];
+    indices[i] = c;
+    indices[i + 1] = b;
+    indices[i + 2] = a;
+  }
+
+  geom.surface = new BufferGeometry();
+  geom.surface.setIndex(new BufferAttribute(indices, 1));
+  geom.surface.setAttribute(
+    'position',
+    new BufferAttribute(vertices, 3)
+  );
+  geom.surface.computeVertexNormals();
+
+  /*mesh.brush1 = new Brush(geom.surface);
+  mesh.brush1.updateMatrixWorld();
+console.log(mesh.brush1)
+  geom.plane = new PlaneGeometry(
+    heightSpacing * heightSegments,
+    depthSpacing * depthSegments,
+    heightSegments,
+    depthSegments
+  );
+
+  mesh.brush2 = new Brush(geom.plane);
+  mesh.brush2.updateMatrixWorld();
+  const evaluator = new Evaluator();
+  geom.surface = evaluator.evaluate(mesh.brush1.geometry, mesh.brush2.geometry, SUBTRACTION);*/
+
+  mat.surface = new MeshBasicMaterial({
+    color: Ground.color,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Ground.wireColor,
+  });
+  mat.points = new PointsMaterial({
+    color: Ground.pointColor,
+    size: Ground.pointSize,
+    map: texture,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  mesh.surface = new Mesh(geom.surface, mat.surface);
+  mesh.surface.name = 'surface';
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe.name = 'wireframe';
+  mesh.points = new Points(geom.points, mat.points);
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  if (position.sx != null) {
+    const spacing = position.spacing ?? 80;
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+  }
+
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+
+  return group;
 };
 
 export const createCylinder = ({
