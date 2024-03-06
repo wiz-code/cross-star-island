@@ -188,9 +188,6 @@ class FirstPersonControls {
 
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
 
-    /* this.povIndicator.horizontal.position.setY(
-      this.viewHalfY - Screen.sightPovSize / 2,
-    ); */
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
     this.povIndicator.virtical.position.setX(
       this.viewHalfX - Screen.sightPovSize / 2,
@@ -306,7 +303,7 @@ class FirstPersonControls {
     }
 
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }
