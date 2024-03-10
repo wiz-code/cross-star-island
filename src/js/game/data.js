@@ -81,7 +81,6 @@ export const Obstacles = [
       color: 0x203b33,
       wireColor: 0x4c625b,
       pointColor: 0xf4e511,
-      pointSize: 10,
       rotateSpeed: 2,
     },
   ],
@@ -96,7 +95,6 @@ export const Obstacles = [
       color: 0x203b33,
       wireColor: 0x4c625b,
       pointColor: 0xf4e511,
-      pointSize: 10,
       rotateSpeed: 3,
     },
   ],
@@ -123,12 +121,11 @@ export const Ammo = [
     'small-bullet',
     {
       color: 0xffffe0,
-      wireColor: 0xa9a9a9,
+      wireColor: 0xf7ca79,
       pointColor: 0xf45c41,
-      pointSize: 10,
 
       radius: 6,
-      detail: 0,
+      detail: 1,
       numAmmo: 30, // dev 10, prod 50
 
       weight: 0.08,
@@ -148,13 +145,12 @@ export const Ammo = [
   [
     'hop-bullet',
     {
-      color: 0xffffe0,
-      wireColor: 0xa9a9a9,
+      color: 0x75c6c3,
+      wireColor: 0x424a76,
       pointColor: 0xf45c41,
-      pointSize: 10,
 
       radius: 6,
-      detail: 0,
+      detail: 1,
       numAmmo: 10, // dev 10, prod 50
 
       weight: 0.08,
@@ -193,7 +189,33 @@ export const Characters = [
       color: 0x007399,
       wireColor: 0x004d66,
       pointColor: 0xeb4b2f,
-      pointSize: 10,
+
+      height: 20,
+      radius: 10,
+      weight: 1,
+
+      speed: 300, // 3,
+      turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+      sprint: 2.5,
+      urgencyMove: 8,
+
+      // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
+      urgencyTurn: PI * 2,
+      airSpeed: 100,
+      jumpPower: 350,
+
+      gunTypes: ['normal-gun'],
+    },
+  ],
+  [
+    'heroine-1',
+    {
+      pointColor: 0xeb4b2f,
+
+      model: 'model-1',
+      modelSize: 27.5,
+      offsetY: 20,
+      rotateSpeed: 2,
 
       height: 20,
       radius: 10,
@@ -229,7 +251,6 @@ export const Items = [
       color: 0xffe870,
       wireColor: 0xfffbe6,
       pointColor: 0xffffff,
-      pointSize: 10,
 
       rotateSpeed: 2,
 
@@ -253,7 +274,6 @@ export const Items = [
       color: 0xadd8e6,
       wireColor: 0xa9a9a9,
       pointColor: 0x90ee90,
-      pointSize: 10,
 
       rotateSpeed: 2,
 
@@ -322,7 +342,7 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: new Vector3(0, 400, 0),
+          position: { sx: 2.1, sy: 4, sz: 0.1 },
           // position: new Vector3(8 * 80, 0, 0),
           // position: new Vector3(-8 * 80, 200, 0 * 80),
           // position: new Vector3(-2200, 100, 0),
@@ -331,23 +351,39 @@ export const Stages = [
           phi: PI / 2,
         },
         {
-          position: new Vector3(-8 * 80, 200, 0),
+          position: { sx: -8, sy: 4, sz: 0 },
           phi: PI / 2,
         },
         {
-          position: new Vector3(-31 * 80, 200, -0.5 * 80),
+          position: { sx: -31, sy: 4, sz: -0.5 },
           phi: PI / 2,
         },
         // 最終チェックポイント
         {
-          position: new Vector3(-40 * 80, 200, -1 * 80),
+          position: { sx: -40, sy: 4, sz: -1 },
           phi: PI / 2,
         },
       ],
       characters: [
         {
+          name: 'heroine-1',
+          position: { sx: 0.1, sy: 4, sz: 1.6 },
+          phi: -PI * 0.25,
+          pose: 'pose-1',
+          // tweeners: [{ name: 'avoidance-1' }],
+          schedule: {
+            spawnedAt: 0,
+          },
+          update(deltaTime) {
+            if (this.object != null) {
+              const points = this.object.getObjectByName('points');
+              points.rotation.y -= deltaTime * this.data.rotateSpeed;
+            }
+          },
+        },
+        {
           name: 'hero-1',
-          position: new Vector3(-43 * 80, 300, -0.8 * 80),
+          position: { sx: -43, sy: 4, sz: -0.8 },
           phi: -PI / 2,
           theta: -0.1,
           tweeners: [{ name: 'avoidance-1' }],
@@ -365,7 +401,7 @@ export const Stages = [
         },
         {
           name: 'hero-1',
-          position: new Vector3(-45 * 80, 300, -0.8 * 80),
+          position: { sx: -45, sy: 4, sz: -0.8 },
           phi: (80 * -PI) / 180,
           theta: -0.1,
           tweeners: [{ name: 'avoidance-1' }],
@@ -383,7 +419,7 @@ export const Stages = [
         },
         {
           name: 'hero-1',
-          position: new Vector3(-47 * 80, 300, -0.8 * 80),
+          position: { sx: -47, sy: 4, sz: -0.8 },
           phi: (98 * -PI) / 180,
           theta: -0.1,
           tweeners: [{ name: 'avoidance-1' }],
@@ -401,7 +437,7 @@ export const Stages = [
         },
         {
           name: 'hero-1',
-          position: new Vector3(-38 * 80, 1000, 3 * 80),
+          position: { sx: -38, sy: 4, sz: 3 },
           phi: (-27 * PI) / 180,
           theta: -0.1,
           ammoType: 'hop-bullet',
@@ -421,7 +457,7 @@ export const Stages = [
       obstacles: [
         {
           name: 'round-stone',
-          position: new Vector3(-2100, 300, 0),
+          position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1' }],
           spawnedAt: 0,
           update(deltaTime) {
@@ -430,7 +466,7 @@ export const Stages = [
         },
         {
           name: 'round-stone',
-          position: new Vector3(-2100, 300, 0),
+          position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1', arg: 5000 }],
           spawnedAt: 5,
           update(deltaTime) {
@@ -439,7 +475,7 @@ export const Stages = [
         },
         {
           name: 'small-round-stone',
-          position: new Vector3(-2100, 300, 0),
+          position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1', arg: 2500 }],
           spawnedAt: 2.5,
           update(deltaTime) {
@@ -448,7 +484,7 @@ export const Stages = [
         },
         {
           name: 'small-round-stone',
-          position: new Vector3(-2100, 300, 0),
+          position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 7.5,
           update(deltaTime) {
@@ -459,7 +495,7 @@ export const Stages = [
       items: [
         {
           name: 'checkpoint',
-          position: new Vector3(-8 * 80, 200, 0),
+          position: { sx: -8, sy: 2, sz: 0 },
           spawnedAt: 5,
           update(deltaTime) {
             const rotateSpeed = deltaTime * this.data.rotateSpeed;
@@ -469,7 +505,7 @@ export const Stages = [
         },
         {
           name: 'checkpoint',
-          position: new Vector3(-31 * 80, 200, -0.5 * 80),
+          position: { sx: -31, sy: 2, sz: -0.5 },
           // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 5,
           update(deltaTime) {
@@ -480,7 +516,7 @@ export const Stages = [
         },
         {
           name: 'checkpoint',
-          position: new Vector3(-40 * 80, 200, -1 * 80),
+          position: { sx: -40, sy: 2, sz: -1 },
           // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 5,
           update(deltaTime) {
@@ -491,7 +527,7 @@ export const Stages = [
         },
         {
           name: 'weapon-upgrade',
-          position: new Vector3(-35 * 80, -4 * 80, -7 * 80),
+          position: { sx: -35, sy: -4, sz: -7 },
           // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
           spawnedAt: 0,
           update(deltaTime) {
@@ -515,35 +551,28 @@ export const Stages = [
             widthSegments: 24,
             heightSegments: 6,
             depthSegments: 8,
-            widthSpacing: 80,
-            heightSpacing: 80,
-            depthSpacing: 80,
             position: { sx: 0, sy: -0.2, sz: 0 },
           },
-          /*ground: {
+          /* ground: {
             widthSegments: 20,
             depthSegments: 6,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: 0, sy: 0, sz: 0, heightSpacing: 80 },
+            position: { sx: 0, sy: 0, sz: 0 },
             rotation: { x: 0, y: 0, z: 0 },
-          },*/
-          arrow: {
+          }, */
+          /* arrow: {
             direction: new Vector3(-1, 0, 0),
             position: new Vector3(400, 200, 0),
             length: 200,
             color: 0xffffff,
-          },
+          }, */
         },
-        /*{
+        /* {
           ground: {
             widthSegments: 20,
             depthSegments: 6,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: 0, sy: 1.9, sz: 2.1, heightSpacing: 80 },
+            position: { sx: 0, sy: 1.9, sz: 2.1 },
             rotation: { x: -PI / 2, y: 0, z: 0 },
           },
         },
@@ -551,10 +580,8 @@ export const Stages = [
           ground: {
             widthSegments: 20,
             depthSegments: 8,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: 0, sy: 4.8, sz: 0, heightSpacing: 80 },
+            position: { sx: 0, sy: 4.8, sz: 0 },
             rotation: { x: -PI, y: 0, z: 0 },
           },
         },
@@ -562,36 +589,29 @@ export const Stages = [
           ground: {
             widthSegments: 20,
             depthSegments: 6,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: 0, sy: 1.9, sz: -2.1, heightSpacing: 80 },
+            position: { sx: 0, sy: 1.9, sz: -2.1 },
             rotation: { x: PI / 2, y: 0, z: 0 },
           },
-        },*/
+        }, */
         {
           grid: {
             widthSegments: 20,
             heightSegments: 6,
             depthSegments: 8,
-            widthSpacing: 80,
-            heightSpacing: 80,
-            depthSpacing: 80,
             position: { sx: -22, sy: -0.2, sz: 0 },
           },
-          arrow: {
+          /* arrow: {
             direction: new Vector3(0, -1, 0),
             position: new Vector3(-960, 300, 0),
             length: 200,
             color: 0xffffff,
-          },
+          }, */
           ground: {
             widthSegments: 20,
             depthSegments: 5,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 2,
-            position: { sx: -19.5, sy: -1, sz: 0, heightSpacing: 80 },
+            position: { sx: -19.5, sy: -1, sz: 0 },
             rotation: { x: 0, y: 0, z: -0.2 },
           },
         },
@@ -599,10 +619,8 @@ export const Stages = [
           ground: {
             widthSegments: 20,
             depthSegments: 8,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 4,
-            position: { sx: -19.5, sy: -1, sz: 2.1, heightSpacing: 80 },
+            position: { sx: -19.5, sy: -1, sz: 2.1 },
             rotation: { x: -1.4, y: 1, z: -1 },
           },
         },
@@ -610,10 +628,8 @@ export const Stages = [
           ground: {
             widthSegments: 20,
             depthSegments: 8,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 4,
-            position: { sx: -19.5, sy: -1, sz: -2.1, heightSpacing: 80 },
+            position: { sx: -19.5, sy: -1, sz: -2.1 },
             rotation: { x: 1.4, y: -1, z: -1 },
           },
         },
@@ -622,9 +638,6 @@ export const Stages = [
             widthSegments: 24,
             heightSegments: 6,
             depthSegments: 12,
-            widthSpacing: 80,
-            heightSpacing: 80,
-            depthSpacing: 80,
             position: { sx: -44, sy: 2.2, sz: 0 },
           },
           cylinder: {
@@ -633,7 +646,7 @@ export const Stages = [
             height: 10,
             radialSegments: 9,
             heightSegments: 1,
-            position: { sx: -31, sy: 0.5, sz: -0.5, spacing: 80 },
+            position: { sx: -31, sy: 0.5, sz: -0.5 },
           },
         },
         {
@@ -643,7 +656,7 @@ export const Stages = [
             height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -33, sy: 0.4, sz: -1.5, spacing: 80 },
+            position: { sx: -33, sy: 0.4, sz: -1.5 },
           },
         },
         {
@@ -653,7 +666,7 @@ export const Stages = [
             height: 10,
             radialSegments: 9,
             heightSegments: 1,
-            position: { sx: -34.5, sy: 0, sz: -3.8, spacing: 80 },
+            position: { sx: -34.5, sy: 0, sz: -3.8 },
           },
         },
         {
@@ -663,7 +676,7 @@ export const Stages = [
             height: 10,
             radialSegments: 9,
             heightSegments: 1,
-            position: { sx: -35, sy: -4, sz: -7, spacing: 80 },
+            position: { sx: -35, sy: -4, sz: -7 },
           },
         },
         {
@@ -673,7 +686,7 @@ export const Stages = [
             height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -38, sy: 0.5, sz: 3, spacing: 80 },
+            position: { sx: -38, sy: 0.5, sz: 3 },
           },
         },
         {
@@ -683,7 +696,7 @@ export const Stages = [
             height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -35.8, sy: 0.3, sz: -2, spacing: 80 },
+            position: { sx: -35.8, sy: 0.3, sz: -2 },
           },
         },
         {
@@ -693,7 +706,7 @@ export const Stages = [
             height: 10,
             radialSegments: 7,
             heightSegments: 1,
-            position: { sx: -37.5, sy: 0.6, sz: -1, spacing: 80 },
+            position: { sx: -37.5, sy: 0.6, sz: -1 },
           },
         },
         {
@@ -703,17 +716,15 @@ export const Stages = [
             height: 10,
             radialSegments: 10,
             heightSegments: 1,
-            position: { sx: -40, sy: 0.62, sz: -1, spacing: 80 },
+            position: { sx: -40, sy: 0.62, sz: -1 },
           },
         },
         {
           ground: {
             widthSegments: 10,
             depthSegments: 1,
-            widthSpacing: 80,
-            depthSpacing: 80,
             bumpHeight: 0,
-            position: { sx: -46, sy: 1.5, sz: -1, heightSpacing: 80 },
+            position: { sx: -46, sy: 1.5, sz: -1 },
             rotation: { x: 0, y: 0, z: -0.2 },
           },
         },
@@ -724,7 +735,7 @@ export const Stages = [
             height: 10,
             radialSegments: 10,
             heightSegments: 1,
-            position: { sx: -53, sy: 2, sz: -1, spacing: 80 },
+            position: { sx: -53, sy: 2, sz: -1 },
           },
         },
       ],

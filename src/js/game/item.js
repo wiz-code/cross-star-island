@@ -17,6 +17,7 @@ import {
   Texture,
 } from 'three';
 
+import { World } from './settings';
 import Collidable from './collidable';
 import { Items } from './data';
 import textures from './textures';
@@ -64,7 +65,7 @@ class Item extends Collidable {
 
     const pointsMat = new PointsMaterial({
       color: data.pointColor,
-      size: data.pointSize,
+      size: World.pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,

@@ -7,6 +7,9 @@ import {
   Color,
   Clock,
   Vector3,
+  AmbientLight,
+
+  Group,////////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -17,8 +20,8 @@ import {
   Camera,
   Renderer,
   World,
+  Light,
 } from './settings';
-
 import FirstPersonControls from './controls';
 import {
   Characters,
@@ -32,12 +35,14 @@ import Loop from './loop';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
+import ModelManager from './model-manager';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
 import Item from './item';
 import createStage from './stages';
+import { leftToRightHandedQuaternion } from './utils';
 
 const { floor, exp } = Math;
 
@@ -71,9 +76,6 @@ class Game {
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // renderer.shadowMap.enabled = Renderer.ShadowMap.enabled;
-    // renderer.shadowMap.type = Renderer.ShadowMap.type;
-    // renderer.toneMapping = Renderer.ShadowMap.toneMapping;
     this.container.appendChild(this.renderer.domElement);
     this.sceneManager = new SceneManager(this.container, this.renderer);
 
@@ -89,6 +91,8 @@ class Game {
     );
 
     this.scene.screen = new ThreeScene();
+
+    this.modelManager = new ModelManager(this.scene.field);
 
     this.camera.field = new PerspectiveCamera(
       Camera.FOV,
@@ -111,6 +115,13 @@ class Game {
     this.sceneManager.clear();
     this.sceneManager.add('field', this.scene.field, this.camera.field);
     this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
+
+    this.light = {};
+    this.light.ambient = new AmbientLight(
+      Light.Ambient.color,
+      Light.Ambient.intensity,
+    );
+    this.scene.field.add(this.light.ambient);
 
     this.data = {};
     this.data.stages = new Map(Stages);
@@ -154,10 +165,10 @@ class Game {
     this.setPlayer(player);
     this.setMode('play');
 
+    /// ///////////
+
     this.ready = true;
     this.loop = new Loop(this.update, this);
-
-    /// ///////////
 
     const onResize = function onResize() {
       const iw = window.innerWidth;
@@ -243,7 +254,7 @@ class Game {
 
     if (character.isFPV()) {
       const checkpoint = stageData.checkpoints[this.checkpointIndex];
-      character.velocity.copy(new Vector3(0, 0, 0));
+      character.velocity.copy(new Vector3());
       character.setPosition(
         checkpoint.position,
         checkpoint.phi,
@@ -299,6 +310,8 @@ class Game {
   }
 
   setStage(stageIndex) {
+    this.clearStage();
+
     const stageNameList = this.data.compositions.get('stage');
 
     const stageName =
@@ -322,6 +335,42 @@ class Game {
     characters.forEach((data) => {
       const character = new Character(data.name);
       const { gunTypes } = character.data;
+
+      if (character.gltf.model != null) {
+        character.gltf.model.then(
+          (gltf) => {
+            this.modelManager.addModel(gltf);
+            const { humanoid } = gltf.userData.vrm;
+
+            if (data.pose != null) {
+              character
+                .loadPoseData(data.pose).then(
+                  (json) => {
+                    const poses = Object.entries(json.pose);
+
+                    for (let i = 0, l = poses.length; i < l; i += 1) {
+                      const [bone, { rotation }] = poses[i];
+                      const rot = leftToRightHandedQuaternion.apply(
+                        null,
+                        rotation,
+                      );
+                      const object = humanoid.getNormalizedBoneNode(bone);
+                      object.quaternion.copy(rot);
+                      // object.quaternion.set.apply(object.quaternion, rotation);
+                    }
+                  }
+                ).catch((error) => console.error(error));
+            }
+
+            character.setPosition(data.position, data.phi, data.theta);
+            this.characterManager.add(character, data);
+            // vrm.expressionManager.setValue('blink', 1);
+
+            return gltf;
+          },
+          (error) => console.error(error),
+        );
+      }
 
       gunTypes.forEach((name, index) => {
         const gun = new Gun(name);
@@ -352,12 +401,14 @@ class Game {
         });
       }
 
-      this.characterManager.add(character, data);
+      if (character.object != null) {
+        this.characterManager.add(character, data);
+      }
     });
 
     items.forEach((data) => {
       const item = new Item(data.name);
-      item.collider.center.copy(data.position);
+      item.setPosition(data.position);
 
       if (item.tweeners != null) {
         item.tweeners.forEach(({ name, arg }) => {
@@ -372,7 +423,7 @@ class Game {
 
     obstacles.forEach((data) => {
       const obstacle = new Obstacle(data.name);
-      obstacle.collider.center.copy(data.position);
+      obstacle.setPosition(data.position);
 
       if (data.tweeners != null) {
         data.tweeners.forEach(({ name, arg }) => {
@@ -391,8 +442,6 @@ class Game {
       checkpoint.theta,
     );
     this.characterManager.add(this.player);
-
-    this.clearStage();
 
     this.stage = createStage(stageName);
     this.scene.field.add(this.stage);
@@ -449,16 +498,18 @@ class Game {
       return;
     }
 
-    const deltaTime = this.clock.getDelta() / GameSettings.stepsPerFrame;
-    const damping = getDamping(deltaTime);
+    const deltaTime = this.clock.getDelta();
+    const delta = deltaTime / GameSettings.stepsPerFrame;
+    const damping = getDamping(delta);
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
-      this.#elapsedTime += deltaTime;
-      this.controls.update(deltaTime);
-      this.characterManager.update(deltaTime, this.#elapsedTime, damping);
-      this.objectManager.update(deltaTime, this.#elapsedTime, damping);
+      this.#elapsedTime += delta;
+      this.controls.update(delta);
+      this.characterManager.update(delta, this.#elapsedTime, damping);
+      this.objectManager.update(delta, this.#elapsedTime, damping);
     }
 
+    this.modelManager.update(deltaTime);
     this.sceneManager.update();
   }
 }

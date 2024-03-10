@@ -23,7 +23,9 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { Keys, Actions, States, Characters } from './data';
 import Publisher from './publisher';
 import { World, Controls } from './settings';
+import { getVectorPos } from './utils';
 import textures from './textures';
+import ModelLoader from './model-loader';
 
 const { floor, PI } = Math;
 
@@ -56,6 +58,16 @@ const addDamping = (component, damping, minValue) => {
   }
 
   return value;
+};
+
+const traverseChildren = (object, bool) => {
+  object.children.forEach((child) => {
+    if (child.isGroup) {
+      return traverseChildren(child, bool);
+    }
+
+    object.visible = bool;
+  });
 };
 
 let id = 0;
@@ -127,7 +139,7 @@ class Character extends Publisher {
     geometry.face.rotateX(-PI / 2);
     geometry.faceWire.rotateX(-PI / 2);
 
-    const geomSize = data.radius + floor(data.pointSize / 2);
+    const geomSize = data.radius + floor(World.pointSize / 2);
 
     geometry.points = new ConeGeometry(geomSize, geomSize, 3);
     const vertices = geometry.points.attributes.position.array.slice(0);
@@ -154,7 +166,7 @@ class Character extends Publisher {
 
     material.points = new PointsMaterial({
       color: data.pointColor,
-      size: data.pointSize,
+      size: World.pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,
@@ -174,12 +186,13 @@ class Character extends Publisher {
     mesh.points2.rotateX(PI);
 
     mesh.points = new Group();
+    mesh.name = 'points';
     mesh.points.add(mesh.points1, mesh.points2);
     mesh.points1.position.setY(
-      (data.height + data.radius) / 2 + data.pointSize / 4,
+      (data.height + data.radius) / 2 + World.pointSize / 4,
     );
     mesh.points2.position.setY(
-      (-data.height - data.radius) / 2 - data.pointSize / 4,
+      (-data.height - data.radius) / 2 - World.pointSize / 4,
     );
 
     const object = new Group();
@@ -190,6 +203,40 @@ class Character extends Publisher {
     object.add(mesh.points);
 
     return object;
+  }
+
+  static createPoints(data) {
+    const geomSize = data.radius + floor(World.pointSize / 2);
+
+    let geom = new ConeGeometry(geomSize, geomSize, 3);
+    const vertices = geom.attributes.position.array.slice(0);
+
+    geom = new BufferGeometry();
+    geom.setAttribute(
+      'position',
+      new Float32BufferAttribute(vertices, 3),
+    );
+    geom.computeBoundingSphere();
+
+    const mat = new PointsMaterial({
+      color: data.pointColor,
+      size: World.pointSize,
+      map: texture,
+      blending: NormalBlending,
+      alphaTest: 0.5,
+    });
+
+    const mesh1 = new Points(geom, mat);
+    const mesh2 = new Points(geom, mat);
+    mesh2.rotateX(PI);
+
+    const mesh = new Group();
+    mesh.name = 'points';
+    mesh.add(mesh1, mesh2);
+    mesh1.position.setY((data.height + data.radius) / 2 + World.pointSize / 4);
+    mesh2.position.setY((-data.height - data.radius) / 2 - World.pointSize / 4);
+
+    return mesh;
   }
 
   static defaultParams = [['hp', 100]];
@@ -204,6 +251,7 @@ class Character extends Publisher {
     }
 
     this.id = `character-${genId()}`;
+    this.name = name;
     this.data = dataMap.get(name);
 
     this.params = new Map(Character.defaultParams);
@@ -221,7 +269,33 @@ class Character extends Publisher {
     this.onUpdate = null;
     this.elapsedTime = 0;
 
-    this.object = Character.createObject(this.data);
+    this.gltf = {
+      model: null,
+      pose: null,
+    }; // promise object
+    this.object = null;
+
+    if (this.data.model != null) {
+      const url = `assets/vrm/${this.data.model}.vrm`;
+      const loader = new ModelLoader(url);
+      this.gltf.model = loader
+        .load()
+        .then((gltf) => {
+          const { scene } = gltf.userData.vrm;
+          scene.scale.setScalar(this.data.modelSize);
+          scene.position.y -= this.data.offsetY;
+          const points = Character.createPoints(this.data);
+          const group = new Group();
+          group.add(scene);
+          group.add(points);
+          this.object = group;
+          return gltf;
+        })
+        .catch((error) => console.error(error));
+    } else {
+      this.object = Character.createObject(this.data);
+    }
+
     this.halfHeight = floor(this.data.height / 2);
 
     this.collider = new Capsule();
@@ -231,6 +305,11 @@ class Character extends Publisher {
     this.collider.set(start, end, this.data.radius);
 
     this.setActive(false);
+  }
+
+  async loadPoseData(name) {
+    this.gltf.pose = await import(`../../../assets/pose/${name}.json`);
+    return this.gltf.pose;
   }
 
   isStunning() {
@@ -291,12 +370,14 @@ class Character extends Publisher {
   }
 
   setPosition(position, phi = 0, theta = 0) {
+    const pos = getVectorPos(position);
+
     this.rotation.phi = phi;
     this.rotation.theta = theta;
     this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, phi));
 
-    this.collider.start.copy(position);
-    this.collider.end.copy(position);
+    this.collider.start.copy(pos);
+    this.collider.end.copy(pos);
     this.collider.end.y += this.data.height + this.data.radius;
   }
 
@@ -309,16 +390,19 @@ class Character extends Publisher {
   }
 
   visible(bool) {
-    this.object.children.forEach((object) => {
-      if (object.isGroup) {
-        object.children.forEach((mesh) => {
-          mesh.visible = bool;
-        });
-        return;
-      }
+    if (this.object != null) {
+      traverseChildren(this.object, bool);
+      /*this.object.children.forEach((object) => {
+        if (object.isGroup) {
+          object.children.forEach((mesh) => {
+            mesh.visible = bool;
+          });
+          return;
+        }
 
-      object.visible = bool;
-    });
+        object.visible = bool;
+      });*/
+    }
   }
 
   jump() {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Grid } from './settings';
+import { World, Grid } from './settings';
 import textures from './textures';
 
 const { floor } = Math;
@@ -26,9 +26,9 @@ export const createGrid = ({
   widthSegments = 10,
   heightSegments = 10,
   depthSegments = 10,
-  widthSpacing = 80,
-  heightSpacing = 80,
-  depthSpacing = 80,
+  widthSpacing = World.spacing,
+  heightSpacing = World.spacing,
+  depthSpacing = World.spacing,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
 } = {}) => {
@@ -59,7 +59,7 @@ export const createGrid = ({
 
   const material = new THREE.PointsMaterial({
     color: Grid.color,
-    size: Grid.size,
+    size: World.pointSize,
     map: texture.grid,
     blending: THREE.NormalBlending,
     depthTest: true,
@@ -88,9 +88,9 @@ export const createFineGrid = ({
   widthSegments = 10,
   heightSegments = 10,
   depthSegments = 10,
-  widthSpacing = 80,
-  heightSpacing = 80,
-  depthSpacing = 80,
+  widthSpacing = World.spacing,
+  heightSpacing = World.spacing,
+  depthSpacing = World.spacing,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
 } = {}) => {
@@ -125,7 +125,7 @@ export const createFineGrid = ({
   );
   geometry.computeBoundingSphere();
 
-  const size = floor(Grid.size / 2);
+  const size = floor(World.pointSize / 2);
 
   const material = new THREE.PointsMaterial({
     color: Grid.color,

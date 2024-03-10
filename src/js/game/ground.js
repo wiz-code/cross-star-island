@@ -19,7 +19,7 @@ import {
 import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
-import { Grid, Ground, Cylinder } from './settings';
+import { World, Grid, Ground, Cylinder } from './settings';
 import textures from './textures';
 
 const { sin, floor, abs, PI } = Math;
@@ -64,8 +64,8 @@ const generateHeight = (width, height) => {
 export const createGround = ({
   widthSegments = 10,
   depthSegments = 10,
-  widthSpacing = 80,
-  depthSpacing = 80,
+  widthSpacing = World.spacing,
+  depthSpacing = World.spacing,
   bumpHeight = 1,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
@@ -87,7 +87,7 @@ export const createGround = ({
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
     vertices[j + 1] = data[i] * bumpHeight;
-    pointsVertices[j + 1] = vertices[j + 1] + Grid.size / 2;
+    pointsVertices[j + 1] = vertices[j + 1] + World.pointSize / 2;
   }
 
   geom.wireframe = new WireframeGeometry(geom.surface);
@@ -109,7 +109,7 @@ export const createGround = ({
 
   mat.points = new PointsMaterial({
     color: Ground.pointColor,
-    size: Ground.pointSize,
+    size: World.pointSize,
     map: texture,
     blending: NormalBlending,
     alphaTest: 0.5,
@@ -128,7 +128,7 @@ export const createGround = ({
   ground.add(mesh.points);
 
   if (position.sx != null) {
-    const heightSpacing = position.heightSpacing ?? 80;
+    const heightSpacing = position.heightSpacing ?? World.spacing;
     ground.position.set(
       position.sx * widthSpacing,
       position.sy * heightSpacing,
@@ -147,12 +147,12 @@ export const createMaze = ({
   widthSegments = 10,
   heightSegments = 10,
   depthSegments = 10,
-  widthSpacing = 80,
-  heightSpacing = 80,
-  depthSpacing = 80,
+  widthSpacing = World.spacing,
+  heightSpacing = World.spacing,
+  depthSpacing = World.spacing,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-  offset = { x: 0, y: 0, z: 0 },//////////////
+  offset = { x: 0, y: 0, z: 0 }, /// ///////////
 }) => {
   const geom = {};
   const mat = {};
@@ -178,10 +178,7 @@ export const createMaze = ({
 
   let vertices = geom.points.attributes.position.array.slice(0);
   geom.points = new BufferGeometry();
-  geom.points.setAttribute(
-    'position',
-    new Float32BufferAttribute(vertices, 3)
-  );
+  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geom.points.computeBoundingSphere();
 
   vertices = geom.box.getAttribute('position').array.slice(0);
@@ -198,13 +195,10 @@ export const createMaze = ({
 
   geom.surface = new BufferGeometry();
   geom.surface.setIndex(new BufferAttribute(indices, 1));
-  geom.surface.setAttribute(
-    'position',
-    new BufferAttribute(vertices, 3)
-  );
+  geom.surface.setAttribute('position', new BufferAttribute(vertices, 3));
   geom.surface.computeVertexNormals();
 
-  /*mesh.brush1 = new Brush(geom.surface);
+  /* mesh.brush1 = new Brush(geom.surface);
   mesh.brush1.updateMatrixWorld();
 console.log(mesh.brush1)
   geom.plane = new PlaneGeometry(
@@ -217,7 +211,7 @@ console.log(mesh.brush1)
   mesh.brush2 = new Brush(geom.plane);
   mesh.brush2.updateMatrixWorld();
   const evaluator = new Evaluator();
-  geom.surface = evaluator.evaluate(mesh.brush1.geometry, mesh.brush2.geometry, SUBTRACTION);*/
+  geom.surface = evaluator.evaluate(mesh.brush1.geometry, mesh.brush2.geometry, SUBTRACTION); */
 
   mat.surface = new MeshBasicMaterial({
     color: Ground.color,
@@ -227,7 +221,7 @@ console.log(mesh.brush1)
   });
   mat.points = new PointsMaterial({
     color: Ground.pointColor,
-    size: Ground.pointSize,
+    size: World.pointSize,
     map: texture,
     blending: NormalBlending,
     alphaTest: 0.5,
@@ -284,7 +278,7 @@ export const createCylinder = ({
   geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,
-    height + Cylinder.pointSize * 1.2,
+    height + World.pointSize * 1.2,
     radialSegments,
     heightSegments,
   );
@@ -306,7 +300,7 @@ export const createCylinder = ({
 
   mat.points = new PointsMaterial({
     color: Cylinder.pointColor,
-    size: Cylinder.pointSize,
+    size: World.pointSize,
     map: texture,
     blending: NormalBlending,
     alphaTest: 0.5,

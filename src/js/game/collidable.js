@@ -2,6 +2,7 @@ import { Sphere, Vector3 } from 'three';
 
 import Publisher from './publisher';
 import { World } from './settings';
+import { getVectorPos } from './utils';
 
 let id = 0;
 
@@ -29,6 +30,11 @@ class Collidable extends Publisher {
     this.velocity = new Vector3();
 
     this.onUpdate = null;
+  }
+
+  setPosition(position) {
+    const pos = getVectorPos(position);
+    this.collider.center.copy(pos);
   }
 
   setObject(object) {

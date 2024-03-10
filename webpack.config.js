@@ -66,9 +66,15 @@ module.exports = (env, argv) => {
     },
 
     devServer: {
-      static: {
-        directory: path.resolve(__dirname, 'dist'),
-      },
+      static: [
+        {
+          directory: path.join(__dirname, 'dist'),
+        },
+        {
+          directory: path.join(__dirname, 'assets'),
+          publicPath: '/assets',
+        },
+      ],
       hot: true,
       open: true,
     },
