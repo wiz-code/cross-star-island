@@ -16,6 +16,7 @@ import {
   NormalBlending,
 } from 'three';
 
+import { World } from './settings';
 import Collidable from './collidable';
 import { Obstacles } from './data';
 import textures from './textures';
@@ -46,7 +47,6 @@ class Obstacle extends Collidable {
       color,
       wireColor,
       pointColor,
-      pointSize,
     } = this.data;
     const pointsDetail = this.data.pointsDetail ?? detail;
 
@@ -74,7 +74,7 @@ class Obstacle extends Collidable {
 
     const pointsMat = new PointsMaterial({
       color: pointColor,
-      size: pointSize,
+      size: World.pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,

@@ -1,5 +1,4 @@
 import {
-  IcosahedronGeometry,
   OctahedronGeometry,
   BufferGeometry,
   WireframeGeometry,
@@ -17,6 +16,7 @@ import {
 } from 'three';
 
 import Bullet from './bullet';
+import { World } from './settings';
 import { Ammo as AmmoData } from './data';
 import Publisher from './publisher';
 import textures from './textures';
@@ -47,16 +47,15 @@ class Ammo extends Publisher {
       color,
       wireColor,
       pointColor,
-      pointSize,
 
       radius,
       detail,
       numAmmo,
     } = { ...ammo };
 
-    const geom = new IcosahedronGeometry(radius, detail);
+    const geom = new OctahedronGeometry(radius, detail);
     const geomWire = new WireframeGeometry(geom);
-    const pointsGeom = new OctahedronGeometry(radius + 4, detail);
+    const pointsGeom = new OctahedronGeometry(radius + 4, 0);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();
@@ -73,7 +72,7 @@ class Ammo extends Publisher {
 
     const pointsMat = new PointsMaterial({
       color: pointColor,
-      size: pointSize,
+      size: World.pointSize,
       map: texture,
       blending: NormalBlending,
       alphaTest: 0.5,
