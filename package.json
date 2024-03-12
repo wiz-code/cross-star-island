@@ -1,6 +1,6 @@
 {
   "name": "fps-game",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Three.jsフレームワークを用いたFPSゲームのデモ",
   "main": "./dist/client/index.html",
   "author": "masa <wizcode.jp@gmail.com>",
@@ -10,7 +10,9 @@
     "lint": "eslint './src/**/*' -c ./.eslintrc.json --fix",
     "build": "webpack --mode production && babel ./src/server --out-dir ./dist/server --config-file ./src/server/.babelrc.js",
     "test": "jest",
-    "start": "node ./dist/server/server.js"
+    "start": "forever start ./dist/server/server.js",
+    "restart": "forever restart ./dist/server/server.js",
+    "stop": "forever stop ./dist/server/server.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.4",
@@ -45,6 +47,7 @@
     "@tweenjs/tween.js": "^23.1.1",
     "core-js": "^3.34.0",
     "express": "^4.18.3",
+    "forever": "^4.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
