@@ -8,8 +8,7 @@ import {
   Clock,
   Vector3,
   AmbientLight,
-
-  Group,////////////
+  Group, /// /////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -344,22 +343,22 @@ class Game {
 
             if (data.pose != null) {
               character
-                .loadPoseData(data.pose).then(
-                  (json) => {
-                    const poses = Object.entries(json.pose);
+                .loadPoseData(data.pose)
+                .then((json) => {
+                  const poses = Object.entries(json.pose);
 
-                    for (let i = 0, l = poses.length; i < l; i += 1) {
-                      const [bone, { rotation }] = poses[i];
-                      const rot = leftToRightHandedQuaternion.apply(
-                        null,
-                        rotation,
-                      );
-                      const object = humanoid.getNormalizedBoneNode(bone);
-                      object.quaternion.copy(rot);
-                      // object.quaternion.set.apply(object.quaternion, rotation);
-                    }
+                  for (let i = 0, l = poses.length; i < l; i += 1) {
+                    const [bone, { rotation }] = poses[i];
+                    const rot = leftToRightHandedQuaternion.apply(
+                      null,
+                      rotation,
+                    );
+                    const object = humanoid.getNormalizedBoneNode(bone);
+                    object.quaternion.copy(rot);
+                    // object.quaternion.set.apply(object.quaternion, rotation);
                   }
-                ).catch((error) => console.error(error));
+                })
+                .catch((error) => console.error(error));
             }
 
             character.setPosition(data.position, data.phi, data.theta);

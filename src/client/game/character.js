@@ -212,10 +212,7 @@ class Character extends Publisher {
     const vertices = geom.attributes.position.array.slice(0);
 
     geom = new BufferGeometry();
-    geom.setAttribute(
-      'position',
-      new Float32BufferAttribute(vertices, 3),
-    );
+    geom.setAttribute('position', new Float32BufferAttribute(vertices, 3));
     geom.computeBoundingSphere();
 
     const mat = new PointsMaterial({
@@ -392,7 +389,7 @@ class Character extends Publisher {
   visible(bool) {
     if (this.object != null) {
       traverseChildren(this.object, bool);
-      /*this.object.children.forEach((object) => {
+      /* this.object.children.forEach((object) => {
         if (object.isGroup) {
           object.children.forEach((mesh) => {
             mesh.visible = bool;
@@ -401,7 +398,7 @@ class Character extends Publisher {
         }
 
         object.visible = bool;
-      });*/
+      }); */
     }
   }
 

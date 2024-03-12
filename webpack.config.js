@@ -1,7 +1,7 @@
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const babelConfig = require('./src/.babelrc');
+const babelConfig = require('./src/client/.babelrc');
 
 module.exports = (env, argv) => {
   let mode = 'development';
@@ -26,11 +26,11 @@ module.exports = (env, argv) => {
     devtool: 'source-map',
 
     entry: {
-      app: './src/js/index.jsx',
+      app: './src/client/index.jsx',
     },
 
     output: {
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, 'dist/client'),
       filename: '[name].js',
       clean: true,
     },
@@ -68,7 +68,7 @@ module.exports = (env, argv) => {
     devServer: {
       static: [
         {
-          directory: path.join(__dirname, 'dist'),
+          directory: path.join(__dirname, 'dist/client'),
         },
         {
           directory: path.join(__dirname, 'assets'),
