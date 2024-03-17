@@ -1,4 +1,6 @@
 import { AnimationMixer } from 'three';
+import { VRMUtils } from '@pixiv/three-vrm';
+
 import ModelLoader from './model-loader';
 
 class ModelManager {
@@ -37,6 +39,7 @@ class ModelManager {
   removeModel(name) {
     if (this.models.has(name)) {
       const model = this.models.get(name);
+      VRMUtils.deepDispose(model.scene);
       this.models.delete(name);
     }
   }
@@ -69,6 +72,10 @@ class ModelManager {
 
   clear() {
     if (this.models.size > 0) {
+      for (const model of this.models.values()) {
+        VRMUtils.deepDispose(model.scene);
+      }
+
       this.models.clear();
     }
 

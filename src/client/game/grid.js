@@ -1,26 +1,13 @@
-import * as THREE from 'three';
+import {
+  BufferGeometry,
+  PointsMaterial,
+  Float32BufferAttribute,
+  NormalBlending,
+  Points,
+} from 'three';
 import { World, Grid } from './settings';
-import textures from './textures';
 
 const { floor } = Math;
-
-const canvas = {};
-const context = {};
-const texture = {};
-
-canvas.grid = document.createElement('canvas');
-context.grid = canvas.grid.getContext('2d');
-textures.crossStar(context.grid);
-
-texture.grid = new THREE.Texture(canvas.grid);
-texture.grid.needsUpdate = true;
-
-canvas.fineGrid = document.createElement('canvas');
-context.fineGrid = canvas.fineGrid.getContext('2d');
-textures.crossStarThin(context.fineGrid);
-
-texture.fineGrid = new THREE.Texture(canvas.fineGrid);
-texture.fineGrid.needsUpdate = true;
 
 export const createGrid = ({
   widthSegments = 10,
@@ -31,7 +18,7 @@ export const createGrid = ({
   depthSpacing = World.spacing,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-} = {}) => {
+} = {}, texture) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -50,24 +37,24 @@ export const createGrid = ({
     }
   }
 
-  const geometry = new THREE.BufferGeometry();
+  const geometry = new BufferGeometry();
   geometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(vertices, 3),
+    new Float32BufferAttribute(vertices, 3),
   );
   geometry.computeBoundingSphere();
 
-  const material = new THREE.PointsMaterial({
+  const material = new PointsMaterial({
     color: Grid.color,
     size: World.pointSize,
-    map: texture.grid,
-    blending: THREE.NormalBlending,
+    map: texture.point,
+    blending: NormalBlending,
     depthTest: true,
     transparent: true,
     alphaTest: 0.5,
   });
 
-  const grid = new THREE.Points(geometry, material);
+  const grid = new Points(geometry, material);
 
   if (position.sx != null) {
     grid.position.set(
@@ -93,7 +80,7 @@ export const createFineGrid = ({
   depthSpacing = World.spacing,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-} = {}) => {
+} = {}, texture) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -118,26 +105,26 @@ export const createFineGrid = ({
     }
   }
 
-  const geometry = new THREE.BufferGeometry();
+  const geometry = new BufferGeometry();
   geometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(vertices, 3),
+    new Float32BufferAttribute(vertices, 3),
   );
   geometry.computeBoundingSphere();
 
   const size = floor(World.pointSize / 2);
 
-  const material = new THREE.PointsMaterial({
+  const material = new PointsMaterial({
     color: Grid.color,
     size,
-    map: texture.fineGrid,
-    blending: THREE.NormalBlending,
+    map: texture.pointThin,
+    blending: NormalBlending,
     depthTest: true,
     transparent: true,
     alphaTest: 0.5,
   });
 
-  const grid = new THREE.Points(geometry, material);
+  const grid = new Points(geometry, material);
 
   if (position.sx != null) {
     grid.position.set(

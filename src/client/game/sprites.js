@@ -1,6 +1,6 @@
 const { PI } = Math;
 
-const textures = {
+const sprites = {
   sightLines(context) {
     const { canvas } = context;
     canvas.width = 128;
@@ -273,4 +273,4 @@ const textures = {
   },
 };
 
-export default textures;
+export default sprites;

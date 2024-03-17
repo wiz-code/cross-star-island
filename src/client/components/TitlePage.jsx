@@ -69,7 +69,7 @@ const TitlePage = ({ toggleFullScreen }) => {
           </Button>
         </Row>
         <Row container item sx={{ mb: theme.spacing(4), gap: theme.spacing(1), justifyContent: 'flex-end' }}>
-          <Button variant="outlined" color="secondary" onClick={toggleFullScreen}>
+          <Button variant="outlined" onClick={toggleFullScreen}>
             {!isFullscreen ? '全画面にする' : '全画面を解除'}
           </Button>
         </Row>

@@ -39,6 +39,7 @@ import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
 import Item from './item';
+import TextureManager from './texture-manager';
 import createStage from './stages';
 import { leftToRightHandedQuaternion } from './utils';
 
@@ -54,6 +55,24 @@ const getDamping = (delta) => {
   }
 
   return dampingData;
+};
+
+const disposeObject = (object) => {
+  if (object?.dispose !== undefined) {
+    object.dispose();
+  }
+
+  if (object.geometry?.dispose !== undefined) {
+    object.geometry.dispose();
+  }
+
+  if (object.geometry?.deleteAttribute !== undefined) {
+    object.geometry.deleteAttribute('position');
+  }
+
+  if (object.material?.dispose !== undefined) {
+    object.material.dispose();
+  }
 };
 
 class Game {
@@ -118,6 +137,9 @@ class Game {
     this.sceneManager.add('field', this.scene.field, this.camera.field);
     this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
 
+    this.textureManager = new TextureManager();
+    this.texture = this.textureManager.toObject();
+
     this.light = {};
     this.light.ambient = new AmbientLight(
       Light.Ambient.color,
@@ -146,7 +168,7 @@ class Game {
     this.ammos = new Map();
     const ammoNames = Array.from(this.data.ammos.keys());
     ammoNames.forEach((name) => {
-      const ammo = new Ammo(name);
+      const ammo = new Ammo(name, this.texture);
       this.ammos.set(name, ammo);
       this.objectManager.add(ammo.list);
     });
@@ -162,7 +184,7 @@ class Game {
     this.checkpointIndex = 0;
 
     /// ///////////////
-    const player = new Character('hero-1');
+    const player = new Character('hero-1', this.texture);
 
     this.setPlayer(player);
     this.setMode('play');
@@ -232,6 +254,7 @@ class Game {
       this.scene.screen,
       this.camera.field,
       this.renderer.domElement,
+      this.texture
     );
     this.player.setFPV(this.camera.field, this.controls);
     this.controls.setRotationComponentListener(this.player);
@@ -259,6 +282,7 @@ class Game {
   removePlayer() {
     if (this.player != null) {
       this.player.unsetFPV();
+      this.player.dispose();
       this.player = null;
       this.controls.dispose();
     }
@@ -350,7 +374,7 @@ class Game {
     this.objectManager.removeAll('type', 'item');
 
     characters.forEach((data) => {
-      const character = new Character(data.name);
+      const character = new Character(data.name, this.texture);
       const { gunTypes } = character.data;
 
       if (character.model != null) {
@@ -426,7 +450,7 @@ class Game {
     });
 
     items.forEach((data) => {
-      const item = new Item(data.name);
+      const item = new Item(data.name, this.texture);
       item.setPosition(data.position);
 
       if (item.tweeners != null) {
@@ -441,7 +465,7 @@ class Game {
     });
 
     obstacles.forEach((data) => {
-      const obstacle = new Obstacle(data.name);
+      const obstacle = new Obstacle(data.name, this.texture);
       obstacle.setPosition(data.position);
 
       if (data.tweeners != null) {
@@ -462,7 +486,7 @@ class Game {
     );
     this.characterManager.add(this.player);
 
-    this.stage = createStage(stageName);
+    this.stage = createStage(stageName, this.texture);
     this.scene.field.add(this.stage);
     this.worldOctree.fromGraphNode(this.stage);
   }
@@ -485,6 +509,18 @@ class Game {
   }
 
   dispose() {
+    this.removePlayer();
+
+    this.scene.field.traverse(disposeObject);
+    this.scene.screen.traverse(disposeObject);
+
+    this.clearStage();
+    this.scene.screen.clear();
+    this.modelManager.clear();
+
+    this.textureManager.disposeAll();
+    this.renderer.dispose();
+
     window.removeEventListener('resize', this.onResize);
   }
 
@@ -496,7 +532,6 @@ class Game {
 
     this.clock.start();
     this.renderer.setAnimationLoop(this.update);
-    //this.loop.start();
   }
 
   stop() {
@@ -507,7 +542,6 @@ class Game {
 
     this.clock.stop();
     this.renderer.setAnimationLoop(null);
-    //this.loop.stop();
   }
 
   restart(checkpoint) {}

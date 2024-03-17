@@ -12,7 +12,6 @@ import {
   LineBasicMaterial,
   PointsMaterial,
   NormalBlending,
-  Texture,
   Mesh,
   LineSegments,
   Points,
@@ -24,7 +23,6 @@ import { Keys, Actions, States, Characters } from './data';
 import Publisher from './publisher';
 import { World, Controls } from './settings';
 import { getVectorPos, visibleChildren } from './utils';
-import textures from './textures';
 import ModelLoader from './model-loader';
 
 const { floor, PI } = Math;
@@ -32,13 +30,6 @@ const { floor, PI } = Math;
 const RAD_30 = (30 / 360) * PI * 2;
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
 
 const addDamping = (component, damping, minValue) => {
   let value = component;
@@ -106,7 +97,7 @@ class Character extends Publisher {
 
   #pausedDuration = 0;
 
-  static createObject(data) {
+  static createObject(data, texture) {
     const geometry = {};
     const material = {};
     const mesh = {};
@@ -157,7 +148,7 @@ class Character extends Publisher {
     material.points = new PointsMaterial({
       color: data.pointColor,
       size: World.pointSize,
-      map: texture,
+      map: texture.point,
       blending: NormalBlending,
       alphaTest: 0.5,
     });
@@ -195,7 +186,7 @@ class Character extends Publisher {
     return object;
   }
 
-  static createPoints(data) {
+  static createPoints(data, texture) {
     const geomSize = data.radius + floor(World.pointSize / 2);
 
     let geom = new ConeGeometry(geomSize, geomSize, 3);
@@ -208,7 +199,7 @@ class Character extends Publisher {
     const mat = new PointsMaterial({
       color: data.pointColor,
       size: World.pointSize,
-      map: texture,
+      map: texture.point,
       blending: NormalBlending,
       alphaTest: 0.5,
     });
@@ -228,7 +219,7 @@ class Character extends Publisher {
 
   static defaultParams = [['hp', 100]];
 
-  constructor(name) {
+  constructor(name, texture) {
     super();
 
     const dataMap = new Map(Characters);
@@ -267,9 +258,9 @@ class Character extends Publisher {
 
     if (this.data.model != null) {
       const loader = new ModelLoader(this.data.model);
-      this.model = this.loadModelData(loader);
+      this.model = this.loadModelData(loader, texture);
     } else {
-      this.object = Character.createObject(this.data);
+      this.object = Character.createObject(this.data, texture);
     }
 
     this.halfHeight = floor(this.data.height / 2);
@@ -283,13 +274,13 @@ class Character extends Publisher {
     this.setActive(false);
   }
 
-  async loadModelData(loader) {
+  async loadModelData(loader, texture) {
     try {
       const gltf = await loader.load();
       const { scene } = gltf.userData.vrm;
       scene.scale.setScalar(this.data.modelSize);
       scene.position.y -= this.data.offsetY;
-      const points = Character.createPoints(this.data);
+      const points = Character.createPoints(this.data, texture);
       const group = new Group();
       group.add(scene);
       group.add(points);

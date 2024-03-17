@@ -10,7 +10,6 @@ import {
   Points,
   Group,
   Float32BufferAttribute,
-  Texture,
   Vector3,
   NormalBlending,
 } from 'three';
@@ -19,14 +18,6 @@ import Bullet from './bullet';
 import { World } from './settings';
 import { Ammo as AmmoData } from './data';
 import Publisher from './publisher';
-import textures from './textures';
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
 
 class Ammo extends Publisher {
   #vecA = new Vector3();
@@ -35,7 +26,7 @@ class Ammo extends Publisher {
 
   #vecC = new Vector3();
 
-  constructor(name) {
+  constructor(name, texture) {
     super();
 
     const dataMap = new Map(AmmoData);
@@ -73,7 +64,7 @@ class Ammo extends Publisher {
     const pointsMat = new PointsMaterial({
       color: pointColor,
       size: World.pointSize,
-      map: texture,
+      map: texture.point,
       blending: NormalBlending,
       alphaTest: 0.5,
     });

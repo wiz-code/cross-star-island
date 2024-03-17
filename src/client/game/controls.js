@@ -101,24 +101,24 @@ class FirstPersonControls extends Publisher {
 
   #enabled = false;
 
-  constructor(screen, camera, domElement) {
+  constructor(screen, camera, domElement, texture) {
     super();
 
     this.screen = screen;
     this.camera = camera;
     this.domElement = domElement;
 
-    this.povSight = createSight();
+    this.povSight = createSight(texture);
     this.screen.add(this.povSight);
 
-    this.povSightLines = sightLines();
+    this.povSightLines = sightLines(texture);
     this.screen.add(this.povSightLines);
 
-    this.povIndicator = createPovIndicator();
+    this.povIndicator = createPovIndicator(texture);
     this.screen.add(this.povIndicator.horizontal);
     this.screen.add(this.povIndicator.virtical);
 
-    this.centerMark = createCenterMark();
+    this.centerMark = createCenterMark(texture);
     this.screen.add(this.centerMark);
 
     this.minPolarAngle = {

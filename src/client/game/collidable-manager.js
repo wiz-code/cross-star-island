@@ -1,16 +1,9 @@
-import { Texture, Vector3 } from 'three';
+import { Vector3 } from 'three';
 
 import Publisher from './publisher';
-import textures from './textures';
+import sprites from './sprites';
 
 const { sqrt } = Math;
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();

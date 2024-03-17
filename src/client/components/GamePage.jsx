@@ -35,7 +35,7 @@ const Controls = ({ toggleFullScreen }) => {
         right: theme.spacing(2),
         bottom: theme.spacing(2),
       }}>
-      <Button variant="outlined" color="secondary" onClick={toggleFullScreen}>
+      <Button variant="outlined" onClick={toggleFullScreen}>
         {!isFullscreen ? '全画面にする' : '全画面を解除'}
       </Button>
     </Box>
@@ -65,6 +65,8 @@ const GamePage = ({ toggleFullScreen }) => {
       return () => {
         // TODO: クリーンアップ処理
         game.stop();
+        game.dispose();
+        setGame(null);
         setReady(false);
       };
     }
