@@ -8,7 +8,6 @@ import {
   Clock,
   Vector3,
   AmbientLight,
-  Group, /// /////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -60,21 +59,25 @@ const getDamping = (delta) => {
 class Game {
   #elapsedTime = 0;
 
-  constructor() {
+  constructor(width, height) {
     this.clock = new Clock();
     this.worldOctree = new Octree();
 
     this.windowHalf = {
-      width: floor(window.innerWidth / 2),
-      height: floor(window.innerHeight / 2),
+      //width: floor(window.innerWidth / 2),
+      //height: floor(window.innerHeight / 2),
+      width: floor(width / 2),
+      height: floor(height / 2),
     };
 
     this.container = document.getElementById('container');
+
     this.renderer = new WebGLRenderer({ antialias: false });
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    //this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(width, height);
     this.container.appendChild(this.renderer.domElement);
     this.sceneManager = new SceneManager(this.container, this.renderer);
 
@@ -153,7 +156,7 @@ class Game {
     this.stage = null;
 
     // ゲーム管理変数
-    this.ready = false;
+    this.loadingList = [];
     this.mode = 'loading'; // 'loading', 'opening', 'play', 'gameover'
     this.stageIndex = 0;
     this.checkpointIndex = 0;
@@ -166,16 +169,33 @@ class Game {
 
     /// ///////////
 
-    this.ready = true;
-    this.loop = new Loop(this.update, this);
+
+    //this.loop = new Loop(this.update, this);
+    this.update = this.update.bind(this);
+
+    if (this.loadingList.length > 0) {
+      Promise.all(this.loadingList).then(
+        (result) => {
+          this.start();
+        },
+        (error) => {
+          console.error(error);
+        }
+      );
+    } else {
+      this.start();
+    }
 
     const onResize = function onResize() {
-      const iw = window.innerWidth;
+      const { width: containerWidth, height: containerHeight } = this.container.getBoundingClientRect();
+      /*const iw = window.innerWidth;
       const ih = window.innerHeight;
       this.windowHalf.width = floor(iw / 2);
-      this.windowHalf.height = floor(ih / 2);
+      this.windowHalf.height = floor(ih / 2);*/
+      this.windowHalf.width = floor(containerWidth / 2);
+      this.windowHalf.height = floor(containerHeight / 2);
 
-      this.camera.field.aspect = iw / ih;
+      this.camera.field.aspect = containerWidth / containerHeight;
       this.camera.field.updateProjectionMatrix();
 
       this.camera.screen.left = -this.windowHalf.width;
@@ -184,11 +204,8 @@ class Game {
       this.camera.screen.bottom = -this.windowHalf.height;
       this.camera.screen.updateProjectionMatrix();
 
-      this.renderer.setSize(iw, ih);
-
-      if (this.ready) {
-        this.controls.handleResize();
-      }
+      this.renderer.setSize(containerWidth, containerHeight);
+      this.controls.handleResize();
     };
 
     this.onResize = debounce(GameSettings.resizeDelayTime, onResize.bind(this));
@@ -211,7 +228,13 @@ class Game {
 
   setPlayer(character) {
     this.player = character;
-    this.player.setFPV(this.camera.field);
+    this.controls = new FirstPersonControls(
+      this.scene.screen,
+      this.camera.field,
+      this.renderer.domElement,
+    );
+    this.player.setFPV(this.camera.field, this.controls);
+    this.controls.setRotationComponentListener(this.player);
 
     this.teleportCharacter = this.teleportCharacter.bind(this);
     this.player.subscribe('oob', this.teleportCharacter);
@@ -230,12 +253,7 @@ class Game {
       }
     });
 
-    this.controls = new FirstPersonControls(
-      this.scene.screen,
-      this.camera.field,
-      this.player,
-      this.renderer.domElement,
-    );
+
   }
 
   removePlayer() {
@@ -335,13 +353,18 @@ class Game {
       const character = new Character(data.name);
       const { gunTypes } = character.data;
 
-      if (character.gltf.model != null) {
-        character.gltf.model.then(
+      if (character.model != null) {
+        this.loadingList.push(character.model);
+
+        character.model.then(
           (gltf) => {
             this.modelManager.addModel(gltf);
-            const { humanoid } = gltf.userData.vrm;
+            character.setPosition(data.position, data.phi, data.theta);
+            this.characterManager.add(character, data);
+            // vrm.expressionManager.setValue('blink', 1);
 
             if (data.pose != null) {
+              const { humanoid } = gltf.userData.vrm;
               character
                 .loadPoseData(data.pose)
                 .then((json) => {
@@ -349,6 +372,7 @@ class Game {
 
                   for (let i = 0, l = poses.length; i < l; i += 1) {
                     const [bone, { rotation }] = poses[i];
+                    // 左手系から右手系に変換する処理
                     const rot = leftToRightHandedQuaternion.apply(
                       null,
                       rotation,
@@ -360,10 +384,6 @@ class Game {
                 })
                 .catch((error) => console.error(error));
             }
-
-            character.setPosition(data.position, data.phi, data.theta);
-            this.characterManager.add(character, data);
-            // vrm.expressionManager.setValue('blink', 1);
 
             return gltf;
           },
@@ -475,7 +495,8 @@ class Game {
     }
 
     this.clock.start();
-    this.loop.start();
+    this.renderer.setAnimationLoop(this.update);
+    //this.loop.start();
   }
 
   stop() {
@@ -485,7 +506,8 @@ class Game {
     }
 
     this.clock.stop();
-    this.loop.stop();
+    this.renderer.setAnimationLoop(null);
+    //this.loop.stop();
   }
 
   restart(checkpoint) {}
@@ -493,10 +515,6 @@ class Game {
   clear() {}
 
   update() {
-    if (!this.ready) {
-      return;
-    }
-
     const deltaTime = this.clock.getDelta();
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);

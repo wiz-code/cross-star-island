@@ -23,3 +23,9 @@ export const getVectorPos = (position) => {
 
 export const leftToRightHandedQuaternion = (x, y, z, w) =>
   new Quaternion(-x, y, -z, w);
+
+export const visibleChildren = (object, bool) => {
+  object.traverse((child) => {
+    child.visible = bool;
+  });
+};

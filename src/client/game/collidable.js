@@ -2,7 +2,7 @@ import { Sphere, Vector3 } from 'three';
 
 import Publisher from './publisher';
 import { World } from './settings';
-import { getVectorPos } from './utils';
+import { getVectorPos, visibleChildren } from './utils';
 
 let id = 0;
 
@@ -65,9 +65,7 @@ class Collidable extends Publisher {
     }
 
     if (this.object != null) {
-      this.object.children.forEach((mesh) => {
-        mesh.visible = bool;
-      });
+      visibleChildren(this.object, bool);
     }
   }
 

@@ -23,7 +23,7 @@ import { Capsule } from 'three/addons/math/Capsule.js';
 import { Keys, Actions, States, Characters } from './data';
 import Publisher from './publisher';
 import { World, Controls } from './settings';
-import { getVectorPos } from './utils';
+import { getVectorPos, visibleChildren } from './utils';
 import textures from './textures';
 import ModelLoader from './model-loader';
 
@@ -58,16 +58,6 @@ const addDamping = (component, damping, minValue) => {
   }
 
   return value;
-};
-
-const traverseChildren = (object, bool) => {
-  object.children.forEach((child) => {
-    if (child.isGroup) {
-      return traverseChildren(child, bool);
-    }
-
-    object.visible = bool;
-  });
 };
 
 let id = 0;
@@ -186,7 +176,7 @@ class Character extends Publisher {
     mesh.points2.rotateX(PI);
 
     mesh.points = new Group();
-    mesh.name = 'points';
+    mesh.points.name = 'points';
     mesh.points.add(mesh.points1, mesh.points2);
     mesh.points1.position.setY(
       (data.height + data.radius) / 2 + World.pointSize / 4,
@@ -266,29 +256,18 @@ class Character extends Publisher {
     this.onUpdate = null;
     this.elapsedTime = 0;
 
-    this.gltf = {
-      model: null,
-      pose: null,
-    }; // promise object
+    this.model = null; // promise
+    this.pose = null; // promise
+
     this.object = null;
 
+    this.fire = this.fire.bind(this);
+    this.input = this.input.bind(this);
+    this.setPovRotation = this.setPovRotation.bind(this);
+
     if (this.data.model != null) {
-      const url = `assets/vrm/${this.data.model}.vrm`;
-      const loader = new ModelLoader(url);
-      this.gltf.model = loader
-        .load()
-        .then((gltf) => {
-          const { scene } = gltf.userData.vrm;
-          scene.scale.setScalar(this.data.modelSize);
-          scene.position.y -= this.data.offsetY;
-          const points = Character.createPoints(this.data);
-          const group = new Group();
-          group.add(scene);
-          group.add(points);
-          this.object = group;
-          return gltf;
-        })
-        .catch((error) => console.error(error));
+      const loader = new ModelLoader(this.data.model);
+      this.model = this.loadModelData(loader);
     } else {
       this.object = Character.createObject(this.data);
     }
@@ -304,9 +283,26 @@ class Character extends Publisher {
     this.setActive(false);
   }
 
+  async loadModelData(loader) {
+    try {
+      const gltf = await loader.load();
+      const { scene } = gltf.userData.vrm;
+      scene.scale.setScalar(this.data.modelSize);
+      scene.position.y -= this.data.offsetY;
+      const points = Character.createPoints(this.data);
+      const group = new Group();
+      group.add(scene);
+      group.add(points);
+      this.object = group;
+      return gltf;
+    } catch (e) {
+      return Promise.reject(null);
+    }
+  }
+
   async loadPoseData(name) {
-    this.gltf.pose = await import(`../../../assets/pose/${name}.json`);
-    return this.gltf.pose;
+    this.pose = await import(`../../../assets/pose/${name}.json`);
+    return this.pose;
   }
 
   isStunning() {
@@ -353,11 +349,15 @@ class Character extends Publisher {
     return this.camera != null;
   }
 
-  setFPV(camera) {
+  setFPV(camera, controls) {
     this.camera = camera;
 
     this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
+
+    controls.subscribe('fire', this.fire);
+    controls.subscribe('input', this.input);
+    controls.subscribe('setPovRotation', this.setPovRotation);
   }
 
   unsetFPV() {
@@ -388,17 +388,7 @@ class Character extends Publisher {
 
   visible(bool) {
     if (this.object != null) {
-      traverseChildren(this.object, bool);
-      /* this.object.children.forEach((object) => {
-        if (object.isGroup) {
-          object.children.forEach((mesh) => {
-            mesh.visible = bool;
-          });
-          return;
-        }
-
-        object.visible = bool;
-      }); */
+      visibleChildren(this.object, bool);
     }
   }
 
@@ -483,6 +473,13 @@ class Character extends Publisher {
       const gun = this.guns.get(this.gunType);
       gun.fire(this);
     }
+  }
+
+  dispose() {
+    // TODO
+
+    // リスナーを全削除
+    this.clear();
   }
 
   setPovRotation(povRotation, deltaY) {

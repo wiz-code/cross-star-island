@@ -19,11 +19,11 @@ class ModelLoader {
 
   #status = 'unstarted';
 
-  constructor(url, autoLoad = false) {
-    this.url = url;
+  constructor(name, autoLoad = false) {
+    this.url = `assets/vrm/${name}.vrm`;
 
     if (autoLoad) {
-      this.#promise = this.load(url);
+      this.#promise = this.load(this.url);
     }
   }
 
