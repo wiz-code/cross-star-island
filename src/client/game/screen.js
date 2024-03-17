@@ -1,6 +1,5 @@
-import { Texture, SpriteMaterial, Sprite } from 'three';
+import { SpriteMaterial, Sprite } from 'three';
 import { Screen } from './settings';
-import textures from './textures';
 
 const { PI } = Math;
 
@@ -8,48 +7,15 @@ const canvas = {};
 const context = {};
 const texture = {};
 
-canvas.povIndicator = {};
-context.povIndicator = {};
-texture.povIndicator = {};
+export const disposeTexture = () => {
+  const list = Object.values(texture);
 
-canvas.povIndicator.horizontal = document.createElement('canvas');
-context.povIndicator.horizontal =
-  canvas.povIndicator.horizontal.getContext('2d');
-textures.isoscelesTriangle(context.povIndicator.horizontal, PI);
-texture.povIndicator.horizontal = new Texture(canvas.povIndicator.horizontal);
-texture.povIndicator.horizontal.needsUpdate = true;
+  for (const object of list) {
+    object.dispose();
+  }
+};
 
-canvas.povIndicator.virtical = document.createElement('canvas');
-context.povIndicator.virtical = canvas.povIndicator.virtical.getContext('2d');
-textures.isoscelesTriangle(context.povIndicator.virtical, -PI / 2);
-texture.povIndicator.virtical = new Texture(canvas.povIndicator.virtical);
-texture.povIndicator.virtical.needsUpdate = true;
-
-canvas.povCenterMark = document.createElement('canvas');
-context.povCenterMark = canvas.povCenterMark.getContext('2d');
-textures.isoscelesTriangle(context.povCenterMark, -PI / 2, true);
-texture.povCenterMark = new Texture(canvas.povCenterMark);
-texture.povCenterMark.needsUpdate = true;
-
-canvas.sight = document.createElement('canvas');
-context.sight = canvas.sight.getContext('2d');
-textures.sight(context.sight);
-texture.sight = new Texture(canvas.sight);
-texture.sight.needsUpdate = true;
-
-canvas.sightLines = document.createElement('canvas');
-context.sightLines = canvas.sightLines.getContext('2d');
-textures.sightLines(context.sightLines);
-texture.sightLines = new Texture(canvas.sightLines);
-texture.sightLines.needsUpdate = true;
-
-canvas.direction = document.createElement('canvas');
-context.direction = canvas.direction.getContext('2d');
-textures.direction(context.direction);
-texture.direction = new Texture(canvas.direction);
-texture.direction.needsUpdate = true;
-
-export const createSight = () => {
+export const createSight = (texture) => {
   const material = new SpriteMaterial({
     color: 0xffffff,
     map: texture.sight,
@@ -62,7 +28,7 @@ export const createSight = () => {
   return sprite;
 };
 
-export const sightLines = () => {
+export const sightLines = (texture) => {
   const material = new SpriteMaterial({
     color: Screen.sightLinesColor,
     map: texture.sightLines,
@@ -75,10 +41,10 @@ export const sightLines = () => {
   return sprite;
 };
 
-export const createCenterMark = () => {
+export const createCenterMark = (texture) => {
   const material = new SpriteMaterial({
     color: 0xffffff,
-    map: texture.povCenterMark,
+    map: texture.centerMark,
   });
 
   const sprite = new Sprite(material);
@@ -88,27 +54,18 @@ export const createCenterMark = () => {
   return sprite;
 };
 
-export const createPovIndicator = () => {
+export const createPovIndicator = (texture) => {
   const sprite = {};
 
   const material = {};
-  material.horizontal = new SpriteMaterial({
-    color: 0xffffff,
-    map: texture.povIndicator.horizontal,
-  });
   material.virtical = new SpriteMaterial({
     color: 0xffffff,
-    map: texture.povIndicator.virtical,
+    map: texture.virticalIndicator,
   });
   material.direction = new SpriteMaterial({
     color: 0xffffff,
-    map: texture.direction,
+    map: texture.directionIndicator,
   });
-
-  /* sprite.horizontal = new Sprite(material.horizontal);
-  sprite.horizontal.visible = false;
-  sprite.horizontal.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
-  sprite.horizontal.position.setZ(-10); */
 
   sprite.virtical = new Sprite(material.virtical);
   sprite.virtical.visible = false;

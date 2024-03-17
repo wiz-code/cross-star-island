@@ -1,5 +1,4 @@
 import {
-  Texture,
   CylinderGeometry,
   BoxGeometry,
   BufferGeometry,
@@ -20,16 +19,8 @@ import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { World, Grid, Ground, Cylinder } from './settings';
-import textures from './textures';
 
 const { sin, floor, abs, PI } = Math;
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
 
 let seed = PI / 4;
 const customRandom = () => {
@@ -69,7 +60,7 @@ export const createGround = ({
   bumpHeight = 1,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-} = {}) => {
+} = {}, texture) => {
   const width = widthSegments * widthSpacing;
   const depth = depthSegments * depthSpacing;
 
@@ -110,7 +101,7 @@ export const createGround = ({
   mat.points = new PointsMaterial({
     color: Ground.pointColor,
     size: World.pointSize,
-    map: texture,
+    map: texture.point,
     blending: NormalBlending,
     alphaTest: 0.5,
   });
@@ -153,7 +144,7 @@ export const createMaze = ({
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
   offset = { x: 0, y: 0, z: 0 }, /// ///////////
-}) => {
+} = {}, texture) => {
   const geom = {};
   const mat = {};
   const mesh = {};
@@ -222,7 +213,7 @@ console.log(mesh.brush1)
   mat.points = new PointsMaterial({
     color: Ground.pointColor,
     size: World.pointSize,
-    map: texture,
+    map: texture.point,
     blending: NormalBlending,
     alphaTest: 0.5,
   });
@@ -263,7 +254,7 @@ export const createCylinder = ({
   heightSegments = 1,
   position = { x: 0, y: 0, z: 0 },
   rotation = { x: 0, y: 0, z: 0 },
-} = {}) => {
+} = {}, texture) => {
   const geom = {};
   const mat = {};
   const mesh = {};
@@ -301,7 +292,7 @@ export const createCylinder = ({
   mat.points = new PointsMaterial({
     color: Cylinder.pointColor,
     size: World.pointSize,
-    map: texture,
+    map: texture.point,
     blending: NormalBlending,
     alphaTest: 0.5,
   });

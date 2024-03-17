@@ -1,5 +1,6 @@
 import { Spherical, Vector3, Color } from 'three';
 
+import Publisher from './publisher';
 import { Controls, Screen } from './settings';
 import { Keys, Pointers } from './data';
 import {
@@ -55,7 +56,7 @@ const ActionKeys = new Set([
   'KeyC',
 ]);
 
-class FirstPersonControls {
+class FirstPersonControls extends Publisher {
   #vectorA = new Vector3();
 
   #vectorB = new Vector3();
@@ -100,23 +101,24 @@ class FirstPersonControls {
 
   #enabled = false;
 
-  constructor(screen, camera, player, domElement) {
+  constructor(screen, camera, domElement, texture) {
+    super();
+
     this.screen = screen;
     this.camera = camera;
-    this.player = player;
     this.domElement = domElement;
 
-    this.povSight = createSight();
+    this.povSight = createSight(texture);
     this.screen.add(this.povSight);
 
-    this.povSightLines = sightLines();
+    this.povSightLines = sightLines(texture);
     this.screen.add(this.povSightLines);
 
-    this.povIndicator = createPovIndicator();
+    this.povIndicator = createPovIndicator(texture);
     this.screen.add(this.povIndicator.horizontal);
     this.screen.add(this.povIndicator.virtical);
 
-    this.centerMark = createCenterMark();
+    this.centerMark = createCenterMark(texture);
     this.screen.add(this.centerMark);
 
     this.minPolarAngle = {
@@ -151,10 +153,6 @@ class FirstPersonControls {
     document.addEventListener('keyup', this.onKeyUp);
 
     this.onChangeRotateComponent = this.onChangeRotateComponent.bind(this);
-    this.player.subscribe(
-      'onChangeRotateComponent',
-      this.onChangeRotateComponent,
-    );
 
     this.handleResize();
     this.setOrientation();
@@ -166,6 +164,13 @@ class FirstPersonControls {
 
   enable(bool = true) {
     this.#enabled = bool;
+  }
+
+  setRotationComponentListener(player) {
+    player.subscribe(
+      'onChangeRotateComponent',
+      this.onChangeRotateComponent,
+    );
   }
 
   onChangeRotateComponent(rotateComponent) {
@@ -223,7 +228,7 @@ class FirstPersonControls {
       case 'pointerdown': {
         if (button === 0) {
           this.#moved = true;
-          this.player.fire();
+          this.publish('fire');
         }
 
         if (button === 1) {
@@ -488,11 +493,6 @@ class FirstPersonControls {
 
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
-
-    this.player.unsubscribe(
-      'onChangeRotateComponent',
-      this.onChangeRotateComponent,
-    );
   }
 
   update(deltaTime) {
@@ -500,7 +500,7 @@ class FirstPersonControls {
       return;
     }
 
-    this.player.input(this.#keys, this.#lastKey, this.#mashed);
+    this.publish('input', this.#keys, this.#lastKey, this.#mashed);
 
     if (this.#mashed) {
       this.#mashed = false;
@@ -672,7 +672,7 @@ class FirstPersonControls {
 
     const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.3;
     this.povSightLines.position.setY(posY);
-    this.player.setPovRotation(this.#rotation, this.#wheel);
+    this.publish('setPovRotation', this.#rotation, this.#wheel);
 
     this.#dx = 0;
     this.#dy = 0;

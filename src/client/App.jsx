@@ -1,112 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
-// import propTypes from 'prop-types';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
+import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
+import { Box, CssBaseline } from '@mui/material';
 
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Button, Box, CssBaseline } from '@mui/material';
+import { defaultTheme } from './theme';
+import systemSlice from './redux/systemSlice';
+import TitlePage from './components/TitlePage';
+import GamePage from './components/GamePage';
 
-import Game from './game/game';
+const { actions: systemActions } = systemSlice;
+const theme = createTheme(defaultTheme);
 
-const theme = createTheme({
-  typography: {
-    fontFamily: [
-      '"Helvetica Neue"',
-      'Arial',
-      '"メイリオ"',
-      'Meiryo',
-      '"ヒラギノ角ゴ ProN W3"',
-      '"Hiragino Kaku Gothic ProN"',
-      '"ヒラギノ角ゴシック"',
-      '"Hiragino Sans"',
-      '"Roboto"',
-      'sans-serif',
-    ].join(','),
-    h1: {
-      fontSize: '2.25rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.2,
-      letterSpacing: '0.05rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.2,
-      letterSpacing: '0.04rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    h3: {
-      fontSize: '1.6rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.2,
-      letterSpacing: '0.03rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    h4: {
-      fontSize: '1.35rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.3,
-      letterSpacing: '0.03rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    h5: {
-      fontSize: '1.15rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.3,
-      letterSpacing: '0.02rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    h6: {
-      fontSize: '1rem',
-      fontWeight: 'bolder',
-      lineHeight: 1.3,
-      letterSpacing: '0.02rem',
-      fontFeatureSettings: '"palt" 1',
-    },
-    body1: {
-      lineHeight: 1.7,
-    },
-    body2: {
-      lineHeight: 1.7,
-    },
-    subtitle1: {
-      lineHeight: 1.5,
-    },
-    subtitle2: {
-      lineHeight: 1.5,
-    },
-  },
-});
-
-/* const update = function () {
-  const deltaTime = this.clock.getDelta() / StepsPerFrame;
-
-  for (let i = 0; i < StepsPerFrame; i += 1) {
-    this.controls.update(deltaTime);
-    this.player.update(deltaTime);
-    this.collisionObject.update(deltaTime);
-    this.ammo.update(deltaTime);
-  }
-
-  this.renderer.clear();
-  this.renderer.render(this.scene.field, this.camera.field);
-  this.renderer.render(this.scene.screen, this.camera.screen);
-
-  this.stats.update();
-}; */
+const Wrapper = styled(Box)(
+  ({ theme }) => ({ height: '100vh' })
+);
 
 function App() {
-  const [game, setGame] = useState(null);
-  const [ready, setReady] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    // const data = init();
-    const data = new Game();
-    setGame(data);
-
     const onFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement != null);
+      dispatch(
+        systemActions.setIsFullscreen(document.fullscreenElement != null)
+      );
     };
     document.addEventListener('fullscreenchange', onFullscreenChange);
 
@@ -114,26 +32,6 @@ function App() {
       document.removeEventListener('fullscreenchange', onFullscreenChange);
     };
   }, []);
-
-  useEffect(() => {
-    if (game != null) {
-      setReady(true);
-    }
-  }, [game]);
-
-  const togglePlay = useCallback(() => {
-    if (ready) {
-      if (!started) {
-        if (game != null) {
-          game.start();
-          setStarted(true);
-        }
-      } else if (game != null) {
-        game.stop();
-        setStarted(false);
-      }
-    }
-  }, [ready, started, game]);
 
   const toggleFullScreen = useCallback(() => {
     if (document.fullscreenElement == null) {
@@ -143,34 +41,19 @@ function App() {
     }
   }, [document.fullscreenElement]);
 
+  const Loading = 'loading';
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* <Container>
-        <Grid container>
-          <Grid item xs={12}>
-
-          </Grid>
-        </Grid>
-      </Container>} */}
-      <Box id="container" sx={{ position: 'relative' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: theme.spacing(1),
-            position: 'absolute',
-            bottom: theme.spacing(2),
-            right: theme.spacing(2),
-          }}
-        >
-          <Button variant="contained" onClick={togglePlay}>
-            {started ? '停止する' : '開始する'}
-          </Button>
-          <Button variant="contained" onClick={toggleFullScreen}>
-            {!isFullscreen ? '全画面にする' : '全画面を解除'}
-          </Button>
-        </Box>
-      </Box>
+      <Wrapper>
+        <Suspense fallback={Loading}>
+          <Routes>
+            <Route path="/" element={<TitlePage toggleFullScreen={toggleFullScreen} />} />
+            <Route path="/game" element={<GamePage toggleFullScreen={toggleFullScreen} />} />
+          </Routes>
+        </Suspense>
+      </Wrapper>
     </ThemeProvider>
   );
 }

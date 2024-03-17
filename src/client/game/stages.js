@@ -7,7 +7,7 @@ import { createGround, createMaze, createCylinder } from './ground';
 
 const data = new Map(Stages);
 
-const createStage = (name) => {
+const createStage = (name, texture) => {
   const { components } = data.get(name);
   const stage = new Group();
 
@@ -16,24 +16,24 @@ const createStage = (name) => {
     const block = new Group();
 
     if (component.grid != null) {
-      const grid = createGrid(component.grid);
-      const fineGrid = createFineGrid(component.grid);
+      const grid = createGrid(component.grid, texture);
+      const fineGrid = createFineGrid(component.grid, texture);
       block.add(grid);
       block.add(fineGrid);
     }
 
     if (component.ground != null) {
-      const ground = createGround(component.ground);
+      const ground = createGround(component.ground, texture);
       block.add(ground);
     }
 
     if (component.maze != null) {
-      const maze = createMaze(component.maze);
+      const maze = createMaze(component.maze, texture);
       block.add(maze);
     }
 
     if (component.cylinder != null) {
-      const sylinder = createCylinder(component.cylinder);
+      const sylinder = createCylinder(component.cylinder, texture);
       block.add(sylinder);
     }
 

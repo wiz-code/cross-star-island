@@ -14,30 +14,21 @@ import {
   Group,
   Sphere,
   Vector3,
-  Texture,
 } from 'three';
 
 import { World } from './settings';
 import Collidable from './collidable';
 import { Items } from './data';
-import textures from './textures';
 
 const { floor } = Math;
 const itemData = new Map(Items);
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
 
 class Item extends Collidable {
   #active = false;
 
   #elapsedTime = 0;
 
-  static createRing(data) {
+  static createRing(data, texture) {
     const halfValue = {
       radialSegments: floor(data.radialSegments / 2),
       tubularSegments: floor(data.tubularSegments / 2),
@@ -66,7 +57,7 @@ class Item extends Collidable {
     const pointsMat = new PointsMaterial({
       color: data.pointColor,
       size: World.pointSize,
-      map: texture,
+      map: texture.point,
       blending: NormalBlending,
       alphaTest: 0.5,
     });
@@ -83,7 +74,7 @@ class Item extends Collidable {
     return object;
   }
 
-  constructor(name) {
+  constructor(name, texture) {
     super(name, 'item');
 
     if (!itemData.has(name)) {
@@ -92,7 +83,7 @@ class Item extends Collidable {
 
     this.data = itemData.get(name);
     this.collider.set(new Vector3(), this.data.radius);
-    this.object = Item[this.data.method](this.data);
+    this.object = Item[this.data.method](this.data, texture);
 
     this.setObject(this.object);
     this.setOnUpdate(this.data.update);

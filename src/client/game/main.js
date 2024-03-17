@@ -8,7 +8,6 @@ import {
   Clock,
   Vector3,
   AmbientLight,
-  Group, /// /////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -40,6 +39,7 @@ import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
 import Item from './item';
+import TextureManager from './texture-manager';
 import createStage from './stages';
 import { leftToRightHandedQuaternion } from './utils';
 
@@ -57,24 +57,46 @@ const getDamping = (delta) => {
   return dampingData;
 };
 
+const disposeObject = (object) => {
+  if (object?.dispose !== undefined) {
+    object.dispose();
+  }
+
+  if (object.geometry?.dispose !== undefined) {
+    object.geometry.dispose();
+  }
+
+  if (object.geometry?.deleteAttribute !== undefined) {
+    object.geometry.deleteAttribute('position');
+  }
+
+  if (object.material?.dispose !== undefined) {
+    object.material.dispose();
+  }
+};
+
 class Game {
   #elapsedTime = 0;
 
-  constructor() {
+  constructor(width, height) {
     this.clock = new Clock();
     this.worldOctree = new Octree();
 
     this.windowHalf = {
-      width: floor(window.innerWidth / 2),
-      height: floor(window.innerHeight / 2),
+      //width: floor(window.innerWidth / 2),
+      //height: floor(window.innerHeight / 2),
+      width: floor(width / 2),
+      height: floor(height / 2),
     };
 
     this.container = document.getElementById('container');
+
     this.renderer = new WebGLRenderer({ antialias: false });
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    //this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(width, height);
     this.container.appendChild(this.renderer.domElement);
     this.sceneManager = new SceneManager(this.container, this.renderer);
 
@@ -115,6 +137,9 @@ class Game {
     this.sceneManager.add('field', this.scene.field, this.camera.field);
     this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
 
+    this.textureManager = new TextureManager();
+    this.texture = this.textureManager.toObject();
+
     this.light = {};
     this.light.ambient = new AmbientLight(
       Light.Ambient.color,
@@ -143,7 +168,7 @@ class Game {
     this.ammos = new Map();
     const ammoNames = Array.from(this.data.ammos.keys());
     ammoNames.forEach((name) => {
-      const ammo = new Ammo(name);
+      const ammo = new Ammo(name, this.texture);
       this.ammos.set(name, ammo);
       this.objectManager.add(ammo.list);
     });
@@ -153,29 +178,46 @@ class Game {
     this.stage = null;
 
     // ゲーム管理変数
-    this.ready = false;
+    this.loadingList = [];
     this.mode = 'loading'; // 'loading', 'opening', 'play', 'gameover'
     this.stageIndex = 0;
     this.checkpointIndex = 0;
 
     /// ///////////////
-    const player = new Character('hero-1');
+    const player = new Character('hero-1', this.texture);
 
     this.setPlayer(player);
     this.setMode('play');
 
     /// ///////////
 
-    this.ready = true;
-    this.loop = new Loop(this.update, this);
+
+    //this.loop = new Loop(this.update, this);
+    this.update = this.update.bind(this);
+
+    if (this.loadingList.length > 0) {
+      Promise.all(this.loadingList).then(
+        (result) => {
+          this.start();
+        },
+        (error) => {
+          console.error(error);
+        }
+      );
+    } else {
+      this.start();
+    }
 
     const onResize = function onResize() {
-      const iw = window.innerWidth;
+      const { width: containerWidth, height: containerHeight } = this.container.getBoundingClientRect();
+      /*const iw = window.innerWidth;
       const ih = window.innerHeight;
       this.windowHalf.width = floor(iw / 2);
-      this.windowHalf.height = floor(ih / 2);
+      this.windowHalf.height = floor(ih / 2);*/
+      this.windowHalf.width = floor(containerWidth / 2);
+      this.windowHalf.height = floor(containerHeight / 2);
 
-      this.camera.field.aspect = iw / ih;
+      this.camera.field.aspect = containerWidth / containerHeight;
       this.camera.field.updateProjectionMatrix();
 
       this.camera.screen.left = -this.windowHalf.width;
@@ -184,11 +226,8 @@ class Game {
       this.camera.screen.bottom = -this.windowHalf.height;
       this.camera.screen.updateProjectionMatrix();
 
-      this.renderer.setSize(iw, ih);
-
-      if (this.ready) {
-        this.controls.handleResize();
-      }
+      this.renderer.setSize(containerWidth, containerHeight);
+      this.controls.handleResize();
     };
 
     this.onResize = debounce(GameSettings.resizeDelayTime, onResize.bind(this));
@@ -211,7 +250,14 @@ class Game {
 
   setPlayer(character) {
     this.player = character;
-    this.player.setFPV(this.camera.field);
+    this.controls = new FirstPersonControls(
+      this.scene.screen,
+      this.camera.field,
+      this.renderer.domElement,
+      this.texture
+    );
+    this.player.setFPV(this.camera.field, this.controls);
+    this.controls.setRotationComponentListener(this.player);
 
     this.teleportCharacter = this.teleportCharacter.bind(this);
     this.player.subscribe('oob', this.teleportCharacter);
@@ -230,17 +276,13 @@ class Game {
       }
     });
 
-    this.controls = new FirstPersonControls(
-      this.scene.screen,
-      this.camera.field,
-      this.player,
-      this.renderer.domElement,
-    );
+
   }
 
   removePlayer() {
     if (this.player != null) {
       this.player.unsetFPV();
+      this.player.dispose();
       this.player = null;
       this.controls.dispose();
     }
@@ -332,16 +374,21 @@ class Game {
     this.objectManager.removeAll('type', 'item');
 
     characters.forEach((data) => {
-      const character = new Character(data.name);
+      const character = new Character(data.name, this.texture);
       const { gunTypes } = character.data;
 
-      if (character.gltf.model != null) {
-        character.gltf.model.then(
+      if (character.model != null) {
+        this.loadingList.push(character.model);
+
+        character.model.then(
           (gltf) => {
             this.modelManager.addModel(gltf);
-            const { humanoid } = gltf.userData.vrm;
+            character.setPosition(data.position, data.phi, data.theta);
+            this.characterManager.add(character, data);
+            // vrm.expressionManager.setValue('blink', 1);
 
             if (data.pose != null) {
+              const { humanoid } = gltf.userData.vrm;
               character
                 .loadPoseData(data.pose)
                 .then((json) => {
@@ -349,6 +396,7 @@ class Game {
 
                   for (let i = 0, l = poses.length; i < l; i += 1) {
                     const [bone, { rotation }] = poses[i];
+                    // 左手系から右手系に変換する処理
                     const rot = leftToRightHandedQuaternion.apply(
                       null,
                       rotation,
@@ -360,10 +408,6 @@ class Game {
                 })
                 .catch((error) => console.error(error));
             }
-
-            character.setPosition(data.position, data.phi, data.theta);
-            this.characterManager.add(character, data);
-            // vrm.expressionManager.setValue('blink', 1);
 
             return gltf;
           },
@@ -406,7 +450,7 @@ class Game {
     });
 
     items.forEach((data) => {
-      const item = new Item(data.name);
+      const item = new Item(data.name, this.texture);
       item.setPosition(data.position);
 
       if (item.tweeners != null) {
@@ -421,7 +465,7 @@ class Game {
     });
 
     obstacles.forEach((data) => {
-      const obstacle = new Obstacle(data.name);
+      const obstacle = new Obstacle(data.name, this.texture);
       obstacle.setPosition(data.position);
 
       if (data.tweeners != null) {
@@ -442,7 +486,7 @@ class Game {
     );
     this.characterManager.add(this.player);
 
-    this.stage = createStage(stageName);
+    this.stage = createStage(stageName, this.texture);
     this.scene.field.add(this.stage);
     this.worldOctree.fromGraphNode(this.stage);
   }
@@ -465,6 +509,18 @@ class Game {
   }
 
   dispose() {
+    this.removePlayer();
+
+    this.scene.field.traverse(disposeObject);
+    this.scene.screen.traverse(disposeObject);
+
+    this.clearStage();
+    this.scene.screen.clear();
+    this.modelManager.clear();
+
+    this.textureManager.disposeAll();
+    this.renderer.dispose();
+
     window.removeEventListener('resize', this.onResize);
   }
 
@@ -475,7 +531,7 @@ class Game {
     }
 
     this.clock.start();
-    this.loop.start();
+    this.renderer.setAnimationLoop(this.update);
   }
 
   stop() {
@@ -485,7 +541,7 @@ class Game {
     }
 
     this.clock.stop();
-    this.loop.stop();
+    this.renderer.setAnimationLoop(null);
   }
 
   restart(checkpoint) {}
@@ -493,10 +549,6 @@ class Game {
   clear() {}
 
   update() {
-    if (!this.ready) {
-      return;
-    }
-
     const deltaTime = this.clock.getDelta();
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);

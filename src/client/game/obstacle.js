@@ -11,7 +11,6 @@ import {
   Points,
   Group,
   Float32BufferAttribute,
-  Texture,
   Vector3,
   NormalBlending,
 } from 'three';
@@ -19,19 +18,10 @@ import {
 import { World } from './settings';
 import Collidable from './collidable';
 import { Obstacles } from './data';
-import textures from './textures';
-
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
-textures.crossStar(context);
-
-const texture = new Texture(canvas);
-texture.needsUpdate = true;
-
 const obstacleData = new Map(Obstacles);
 
 class Obstacle extends Collidable {
-  constructor(name) {
+  constructor(name, texture) {
     super(name, 'obstacle');
 
     if (!obstacleData.has(name)) {
@@ -75,7 +65,7 @@ class Obstacle extends Collidable {
     const pointsMat = new PointsMaterial({
       color: pointColor,
       size: World.pointSize,
-      map: texture,
+      map: texture.point,
       blending: NormalBlending,
       alphaTest: 0.5,
     });
