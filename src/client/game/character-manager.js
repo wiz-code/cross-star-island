@@ -107,7 +107,7 @@ class CharacterManager {
               );
             } else {
               if (!character.isStunning()) {
-                character.setStunning(true, World.collisionShock);
+                character.setStunning(World.collisionShock);
               }
 
               const normal = this.#vecA
