@@ -23,6 +23,7 @@ const meta = new Map(Meta);
 const GameContainer = styled(Box)(({ theme }) => ({
   width: '100%',
   height: '100%',
+  overflow: 'clip',
 }));
 
 function Controls({ toggleFullScreen }) {

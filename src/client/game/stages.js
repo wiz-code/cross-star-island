@@ -1,5 +1,6 @@
 import { Vector3, Group, ArrowHelper } from 'three';
 
+import { World } from './settings';
 import { Stages } from './data';
 
 import { createGrid, createFineGrid } from './grid';
@@ -22,17 +23,35 @@ const createStage = (name, texture) => {
       block.add(fineGrid);
     }
 
-    if (component.ground != null) {
+    if (Array.isArray(component.ground)) {
+      for (let j = 0, m = component.ground.length; j < m; j += 1) {
+        const data = component.ground[j];
+        const ground = createGround(data, texture);
+        block.add(ground);
+      }
+    } else if (component.ground != null) {
       const ground = createGround(component.ground, texture);
       block.add(ground);
     }
 
-    if (component.maze != null) {
+    if (Array.isArray(component.maze)) {
+      for (let j = 0, m = component.maze.length; j < m; j += 1) {
+        const data = component.maze[j];
+        const maze = createMaze(data, texture);
+        block.add(maze);
+      }
+    } else if (component.maze != null) {
       const maze = createMaze(component.maze, texture);
       block.add(maze);
     }
 
-    if (component.cylinder != null) {
+    if (Array.isArray(component.cylinder)) {
+      for (let j = 0, m = component.cylinder.length; j < m; j += 1) {
+        const data = component.cylinder[j];
+        const cylinder = createCylinder(data, texture);
+        block.add(cylinder);
+      }
+    } else if (component.cylinder != null) {
       const sylinder = createCylinder(component.cylinder, texture);
       block.add(sylinder);
     }
@@ -56,6 +75,21 @@ const createStage = (name, texture) => {
         length * 0.2,
       );
       block.add(arrow);
+    }
+
+    if (component.offset != null) {
+      const { offset } = component;
+
+      if (offset.sx != null) {
+        const spacing = offset.spacing ?? World.spacing;
+        block.position.set(
+          offset.sx * spacing,
+          offset.sy * spacing,
+          offset.sz * spacing,
+        );
+      } else {
+        block.position.set(offset.x, offset.y, offset.z);
+      }
     }
 
     stage.add(block);

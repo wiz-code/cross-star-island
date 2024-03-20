@@ -179,9 +179,9 @@ class Game {
     this.checkpointIndex = 0;
 
     /// ///////////////
-    const player = new Character('hero-1', this.texture);
+    const heroName = 'hero-1';
 
-    this.setPlayer(player);
+    this.setPlayer(heroName);
     this.setMode('play');
 
     /// ///////////
@@ -239,8 +239,8 @@ class Game {
     this.#elapsedTime = 0;
   }
 
-  setPlayer(character) {
-    this.player = character;
+  setPlayer(characterName) {
+    this.player = new Character(characterName, this.texture);
     this.controls = new FirstPersonControls(
       this.scene.screen,
       this.camera.field,
@@ -377,9 +377,13 @@ class Game {
             this.characterManager.add(character, data);
             // vrm.expressionManager.setValue('blink', 1);
 
-            if (character.motions != null) {
-              const { vrm } = gltf.userData;
+            const { vrm } = gltf.userData;
 
+            if (this.player != null) {
+              vrm.lookAt.target = this.player.object;
+            }
+
+            if (character.motions != null) {
               character.motions.then(
                 (list) => {
                   for (let i = 0, l = list.length; i < l; i += 1) {
@@ -394,7 +398,7 @@ class Game {
             }
 
             if (data.pose != null) {
-              const { humanoid } = gltf.userData.vrm;
+              const { humanoid } = vrm;
               character
                 .loadPoseData(data.pose)
                 .then((json) => {

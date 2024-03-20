@@ -15,7 +15,7 @@ import {
   PlaneGeometry,
   LineSegments,
 } from 'three';
-import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
+import { SUBTRACTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { World, Grid, Ground, Cylinder } from './settings';
@@ -163,20 +163,6 @@ export const createMaze = (
     heightSegments,
     depthSegments,
   );
-  geom.wireframe = new WireframeGeometry(geom.box);
-  geom.points = new BoxGeometry(
-    widthSpacing * widthSegments - 10,
-    heightSpacing * heightSegments - 10,
-    depthSpacing * depthSegments - 10,
-    widthSegments,
-    heightSegments,
-    depthSegments,
-  );
-
-  let vertices = geom.points.attributes.position.array.slice(0);
-  geom.points = new BufferGeometry();
-  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-  geom.points.computeBoundingSphere();
 
   vertices = geom.box.getAttribute('position').array.slice(0);
   const indices = geom.box.getIndex().array.slice(0);
@@ -195,21 +181,6 @@ export const createMaze = (
   geom.surface.setAttribute('position', new BufferAttribute(vertices, 3));
   geom.surface.computeVertexNormals();
 
-  /* mesh.brush1 = new Brush(geom.surface);
-  mesh.brush1.updateMatrixWorld();
-console.log(mesh.brush1)
-  geom.plane = new PlaneGeometry(
-    heightSpacing * heightSegments,
-    depthSpacing * depthSegments,
-    heightSegments,
-    depthSegments
-  );
-
-  mesh.brush2 = new Brush(geom.plane);
-  mesh.brush2.updateMatrixWorld();
-  const evaluator = new Evaluator();
-  geom.surface = evaluator.evaluate(mesh.brush1.geometry, mesh.brush2.geometry, SUBTRACTION); */
-
   mat.surface = new MeshBasicMaterial({
     color: Ground.color,
   });
@@ -224,11 +195,66 @@ console.log(mesh.brush1)
     alphaTest: 0.5,
   });
 
-  mesh.surface = new Mesh(geom.surface, mat.surface);
-  mesh.surface.name = 'surface';
+  mesh.surface = new Brush(geom.surface, mat.surface);
+  mesh.surface.updateMatrixWorld();
+
+  geom.plane1 = new PlaneGeometry(
+    heightSpacing * heightSegments,
+    depthSpacing * depthSegments,
+    heightSegments,
+    depthSegments
+  );
+  geom.plane2 = geom.plane1.clone();
+
+  const x = floor(widthSpacing * widthSegments * -0.5);
+  geom.plane1.rotateZ(PI / 2);
+  geom.plane1.rotateY(PI / 2);
+  geom.plane1.translate(x, 0, 0);
+
+  mesh.brush1 = new Brush(geom.plane1, mat.surface);
+  mesh.brush1.updateMatrixWorld();
+
+  geom.plane2.rotateZ(-PI / 2);
+  geom.plane2.rotateY(-PI / 2);
+  geom.plane2.translate(-x, 0, 0);
+
+  mesh.brush2 = new Brush(geom.plane2, mat.surface);
+  mesh.brush2.updateMatrixWorld();
+
+  const evaluator = new Evaluator();
+  evaluator.attributes = ['position', 'normal'];
+
+  mesh.surface = evaluator.evaluate(
+    mesh.surface,
+    mesh.brush1,
+    SUBTRACTION
+  );
+  mesh.surface = evaluator.evaluate(
+    mesh.surface,
+    mesh.brush2,
+    SUBTRACTION
+  );
+
+  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
+
+  let vertices = mesh.surface.geometry.attributes.position.array.slice(0);
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+  geom.points.computeBoundingSphere();
+
+  const width = widthSpacing * widthSegments;
+  const height = heightSpacing * heightSegments;
+  const depth = depthSpacing * depthSegments;
+  const scaleX = (width - World.pointSize) / width;
+  const scaleY = (height - World.pointSize) / height;
+  const scaleZ = (depth - World.pointSize) / depth;
+  geom.points.scale(scaleX, scaleY, scaleZ);
+
   mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
-  mesh.wireframe.name = 'wireframe';
   mesh.points = new Points(geom.points, mat.points);
+
+  mesh.surface.name = 'surface';
+  mesh.wireframe.name = 'wireframe';
   mesh.points.name = 'points';
 
   const group = new Group();
@@ -237,7 +263,7 @@ console.log(mesh.brush1)
   group.add(mesh.points);
 
   if (position.sx != null) {
-    const spacing = position.spacing ?? 80;
+    const spacing = position.spacing ?? World.spacing;
     group.position.set(
       position.sx * spacing,
       position.sy * spacing,
@@ -319,7 +345,7 @@ export const createCylinder = (
   group.add(mesh.points);
 
   if (position.sx != null) {
-    const spacing = position.spacing ?? 80;
+    const spacing = position.spacing ?? World.spacing;
     group.position.set(
       position.sx * spacing,
       position.sy * spacing,
