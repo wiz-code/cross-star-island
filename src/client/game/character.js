@@ -58,6 +58,8 @@ function genId() {
   return id;
 }
 
+const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
+
 class Character extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
@@ -96,6 +98,10 @@ class Character extends Publisher {
   #active = false;
 
   #pausedDuration = 0;
+
+  #lastTurn = '';
+
+  #turnElapsedTime = 0;
 
   static createObject(data, texture) {
     const geometry = {};
@@ -249,6 +255,7 @@ class Character extends Publisher {
 
     this.model = null; // promise
     this.pose = null; // promise
+    this.motions = null; // promise
 
     this.object = null;
 
@@ -259,6 +266,17 @@ class Character extends Publisher {
     if (this.data.model != null) {
       const loader = new ModelLoader(this.data.model);
       this.model = this.loadModelData(loader, texture);
+
+      if (Array.isArray(this.data.motions)) {
+        const motions = [];
+
+        for (let i = 0, l = this.data.motions.length; i < l; i += 1) {
+          const motionName = this.data.motions[i];
+          motions.push(this.loadMotionData(motionName));
+        }
+
+        this.motions = Promise.all(motions);
+      }
     } else {
       this.object = Character.createObject(this.data, texture);
     }
@@ -294,6 +312,28 @@ class Character extends Publisher {
   async loadPoseData(name) {
     this.pose = await import(`../../../assets/pose/${name}.json`);
     return this.pose;
+  }
+
+  async loadMotionData(name) {
+    try {
+      const loader = new ModelLoader(name, 'vrma');
+      const gltf = await loader.load();
+      let animations;
+
+      if (gltf.animations.length > 0) {
+        animations = gltf.animations;
+      } else if (Array.isArray(gltf.userData.vrmAnimations)) {
+        animations = gltf.userData.vrmAnimations;
+      } else {
+        throw new Error('animations not found');
+      }
+
+      // 色々と処理
+
+      return gltf;
+    } catch (e) {
+      return Promise.reject(null);
+    }
   }
 
   isStunning() {
@@ -408,13 +448,36 @@ class Character extends Publisher {
     this.velocity.add(direction);
   }
 
-  rotate(deltaTime, state = States.idle) {
+  /* rotate(deltaTime, state = States.idle) {
     this.rotateComponent = deltaTime;
 
     if (state === States.urgency) {
       this.rotateComponent *= this.data.urgencyTurn;
     } else {
       this.rotateComponent *= this.data.turnSpeed;
+    }
+  } */
+  rotate(deltaTime, direction) {
+    if (this.#states.has(States.urgency)) {
+      this.rotateComponent = this.data.urgencyTurn * deltaTime;
+    } else {
+      if (this.#lastTurn === direction) {
+        this.#turnElapsedTime += deltaTime;
+
+        if (this.#turnElapsedTime > 1) {
+          this.#turnElapsedTime = 1;
+        }
+      } else {
+        this.#turnElapsedTime = 0;
+        this.#lastTurn = direction;
+      }
+
+      const turnSpeed =
+        direction === Actions.rotateLeft
+          ? this.data.turnSpeed
+          : -this.data.turnSpeed;
+      this.rotateComponent =
+        turnSpeed * deltaTime * easeOutQuad(this.#turnElapsedTime);
     }
   }
 
@@ -621,9 +684,9 @@ class Character extends Publisher {
       } else if (this.#actions.has(Actions.quickMoveBackward)) {
         this.moveForward(-deltaTime, States.urgency);
       } else if (this.#actions.has(Actions.quickTurnLeft)) {
-        this.rotate(deltaTime, States.urgency);
+        this.rotate(deltaTime);
       } else if (this.#actions.has(Actions.quickTurnRight)) {
-        this.rotate(-deltaTime, States.urgency);
+        this.rotate(-deltaTime);
       } else if (this.#actions.has(Actions.quickMoveLeft)) {
         this.moveSide(-deltaTime, States.urgency);
       } else if (this.#actions.has(Actions.quickMoveRight)) {
@@ -631,9 +694,12 @@ class Character extends Publisher {
       }
     } else {
       if (this.#actions.has(Actions.rotateLeft)) {
-        this.rotate(deltaTime);
+        this.rotate(deltaTime, Actions.rotateLeft);
       } else if (this.#actions.has(Actions.rotateRight)) {
-        this.rotate(-deltaTime);
+        // this.rotate(-deltaTime);
+        this.rotate(deltaTime, Actions.rotateRight);
+      } else {
+        this.#lastTurn = '';
       }
 
       if (this.#actions.has(Actions.moveForward)) {
@@ -662,7 +728,6 @@ class Character extends Publisher {
 
     if (this.rotateComponent !== 0) {
       this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
-      // this.direction.normalize();
 
       this.rotation.phi += this.rotateComponent;
 

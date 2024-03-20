@@ -13,9 +13,7 @@ import GamePage from './components/GamePage';
 const { actions: systemActions } = systemSlice;
 const theme = createTheme(defaultTheme);
 
-const Wrapper = styled(Box)(
-  ({ theme }) => ({ height: '100vh' })
-);
+const Wrapper = styled(Box)(({ theme }) => ({ height: '100vh' }));
 
 function App() {
   const dispatch = useDispatch();
@@ -23,7 +21,7 @@ function App() {
   useEffect(() => {
     const onFullscreenChange = () => {
       dispatch(
-        systemActions.setIsFullscreen(document.fullscreenElement != null)
+        systemActions.setIsFullscreen(document.fullscreenElement != null),
       );
     };
     document.addEventListener('fullscreenchange', onFullscreenChange);
@@ -49,8 +47,14 @@ function App() {
       <Wrapper>
         <Suspense fallback={Loading}>
           <Routes>
-            <Route path="/" element={<TitlePage toggleFullScreen={toggleFullScreen} />} />
-            <Route path="/game" element={<GamePage toggleFullScreen={toggleFullScreen} />} />
+            <Route
+              path="/"
+              element={<TitlePage toggleFullScreen={toggleFullScreen} />}
+            />
+            <Route
+              path="/game"
+              element={<GamePage toggleFullScreen={toggleFullScreen} />}
+            />
           </Routes>
         </Suspense>
       </Wrapper>

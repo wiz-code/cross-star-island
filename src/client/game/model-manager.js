@@ -1,39 +1,52 @@
 import { AnimationMixer } from 'three';
 import { VRMUtils } from '@pixiv/three-vrm';
-
-import ModelLoader from './model-loader';
+import { createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 
 class ModelManager {
-  constructor(scene) {
+  constructor() {
     this.models = new Map();
     this.mixers = new Map();
     this.actions = new Map();
-    this.animations = new Map();
+    this.motions = new Map();
   }
 
-  addModel(gltf) {
+  addModel(name, gltf) {
     if (gltf.userData.vrm != null) {
       const model = gltf.userData.vrm;
       this.models.set(name, model);
-      const mixer = new AnimationMixer(model.scene);
-      this.mixers.set(name, mixer);
-
-      gltf.animations.forEach((clip) => {
-        const action = mixer.clipAction(clip);
-
-        if (this.actions.has(name)) {
-          this.actions.set(name, new Set());
-        }
-
-        const actionSet = this.actions.get(name);
-        actionSet.add(action);
-      });
 
       return model;
     }
-    if (gltf.userData.vrmAnimations != null) {
-      //
+  }
+
+  addMotion(name, gltf, vrm) {
+    const mixer = new AnimationMixer(vrm.scene);
+    this.mixers.set(name, mixer);
+
+    let animations = [];
+
+    if (Array.isArray(gltf.userData.vrmAnimations)) {
+      for (let i = 0, l = gltf.userData.vrmAnimations.length; i < l; i += 1) {
+        const animation = gltf.userData.vrmAnimations[i];
+        const clip = createVRMAnimationClip(animation, vrm);
+        animations.push(clip);
+      }
+    } else if (gltf.animations.length > 0) {
+      animations = gltf.animations;
+    } else {
+      return;
     }
+
+    animations.forEach((clip) => {
+      const action = mixer.clipAction(clip);
+
+      if (!this.actions.has(name)) {
+        this.actions.set(name, new Set());
+      }
+action.play();//////////////
+      const actionSet = this.actions.get(name);
+      actionSet.add(action);
+    });
   }
 
   removeModel(name) {
@@ -42,6 +55,10 @@ class ModelManager {
       VRMUtils.deepDispose(model.scene);
       this.models.delete(name);
     }
+  }
+
+  removeMotion(name) {
+    //
   }
 
   setTransform(name, param) {

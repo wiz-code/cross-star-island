@@ -9,16 +9,19 @@ import { World, Grid } from './settings';
 
 const { floor } = Math;
 
-export const createGrid = ({
-  widthSegments = 10,
-  heightSegments = 10,
-  depthSegments = 10,
-  widthSpacing = World.spacing,
-  heightSpacing = World.spacing,
-  depthSpacing = World.spacing,
-  position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 },
-} = {}, texture) => {
+export const createGrid = (
+  {
+    widthSegments = 10,
+    heightSegments = 10,
+    depthSegments = 10,
+    widthSpacing = World.spacing,
+    heightSpacing = World.spacing,
+    depthSpacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  } = {},
+  texture,
+) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -38,10 +41,7 @@ export const createGrid = ({
   }
 
   const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(vertices, 3),
-  );
+  geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geometry.computeBoundingSphere();
 
   const material = new PointsMaterial({
@@ -71,16 +71,19 @@ export const createGrid = ({
   return grid;
 };
 
-export const createFineGrid = ({
-  widthSegments = 10,
-  heightSegments = 10,
-  depthSegments = 10,
-  widthSpacing = World.spacing,
-  heightSpacing = World.spacing,
-  depthSpacing = World.spacing,
-  position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 },
-} = {}, texture) => {
+export const createFineGrid = (
+  {
+    widthSegments = 10,
+    heightSegments = 10,
+    depthSegments = 10,
+    widthSpacing = World.spacing,
+    heightSpacing = World.spacing,
+    depthSpacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  } = {},
+  texture,
+) => {
   const vertices = [];
   const halfSize = {
     width: floor((widthSegments * widthSpacing) / 2),
@@ -106,10 +109,7 @@ export const createFineGrid = ({
   }
 
   const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(vertices, 3),
-  );
+  geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geometry.computeBoundingSphere();
 
   const size = floor(World.pointSize / 2);

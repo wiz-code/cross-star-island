@@ -1,5 +1,6 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation';
 
 const { floor } = Math;
 
@@ -8,6 +9,10 @@ gltfLoader.crossOrigin = 'anonymous'; /// /////////
 
 gltfLoader.register((parser) => {
   return new VRMLoaderPlugin(parser);
+});
+
+gltfLoader.register((parser) => {
+  return new VRMAnimationLoaderPlugin(parser);
 });
 
 class ModelLoader {
@@ -19,12 +24,8 @@ class ModelLoader {
 
   #status = 'unstarted';
 
-  constructor(name, autoLoad = false) {
-    this.url = `assets/vrm/${name}.vrm`;
-
-    if (autoLoad) {
-      this.#promise = this.load(this.url);
-    }
+  constructor(name, dataType = 'vrm') {
+    this.url = `assets/${dataType}/${name}.${dataType}`;
   }
 
   async load() {
@@ -58,7 +59,6 @@ class ModelLoader {
     return this.#promise;
   }
 
-  // const model = new ModelLoader('some_url').getPromise();
   getPromise() {
     return this.#promise;
   }
