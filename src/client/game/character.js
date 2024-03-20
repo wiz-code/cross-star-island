@@ -91,15 +91,17 @@ class Character extends Publisher {
 
   #states = new Set();
 
-  #urgencyRemainingTime = 0;
-
-  #stunningRemainingTime = 0;
+  #stunningElapsedTime = 0;
 
   #active = false;
 
   #pausedDuration = 0;
 
-  #lastTurn = '';
+  #urgencyKey = '';
+
+  #urgencyElapsedTime = 0;
+
+  #lastTurnKey = '';
 
   #turnElapsedTime = 0;
 
@@ -337,27 +339,7 @@ class Character extends Publisher {
   }
 
   isStunning() {
-    return this.#stunningRemainingTime > 0;
-  }
-
-  setStunning(bool, remainingTime = Controls.stunningDuration) {
-    if (bool) {
-      this.#states.add(States.stunning);
-
-      if (
-        this.#actions.has(Actions.quickTurnLeft) ||
-        this.#actions.has(Actions.quickTurnRight)
-      ) {
-        this.#stunningRemainingTime = remainingTime * 0.5;
-      } else {
-        this.#stunningRemainingTime = remainingTime;
-      }
-
-      return;
-    }
-
-    this.#states.delete(States.stunning);
-    this.#stunningRemainingTime = 0;
+    return this.#states.has(States.stunning);
   }
 
   isActive() {
@@ -461,19 +443,19 @@ class Character extends Publisher {
     if (this.#states.has(States.urgency)) {
       this.rotateComponent = this.data.urgencyTurn * deltaTime;
     } else {
-      if (this.#lastTurn === direction) {
+      if (this.#lastTurnKey === direction) {
         this.#turnElapsedTime += deltaTime;
 
         if (this.#turnElapsedTime > 1) {
           this.#turnElapsedTime = 1;
         }
       } else {
-        this.#turnElapsedTime = 0;
-        this.#lastTurn = direction;
+        this.#turnElapsedTime = deltaTime;
+        this.#lastTurnKey = direction;
       }
 
       const turnSpeed =
-        direction === Actions.rotateLeft
+        this.#lastTurnKey === Actions.rotateLeft
           ? this.data.turnSpeed
           : -this.data.turnSpeed;
       this.rotateComponent =
@@ -550,6 +532,11 @@ class Character extends Publisher {
       this.#actions.add(Actions.jump);
     }
 
+    if (this.#states.has(States.stunning)) {
+      this.#actions.clear();
+      return;
+    }
+
     // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
     // ジャンプ中は緊急行動のコマンド受け付けは停止
     if (mashed) {
@@ -557,30 +544,30 @@ class Character extends Publisher {
         return;
       }
 
-      this.#states.add(States.urgency);
+      if (!this.#states.has(States.urgency)) {
+        this.#states.add(States.urgency);
+        this.#urgencyKey = lastKey;///////////
+        this.#urgencyElapsedTime = 0;///////////
+      }
     }
 
     // 緊急回避中は一部アクションを制限、スタン中はすべてのアクションを更新しない
     if (this.#states.has(States.urgency)) {
-      if (Keys[lastKey] === Keys.KeyW) {
+      const key = Keys[this.#urgencyKey];
+      if (key === Keys.KeyW) {
         this.#actions.add(Actions.quickMoveForward);
-      } else if (Keys[lastKey] === Keys.KeyA) {
+      } else if (key === Keys.KeyA) {
         this.#actions.add(Actions.quickTurnLeft);
-      } else if (Keys[lastKey] === Keys.KeyS) {
+      } else if (key === Keys.KeyS) {
         this.#actions.add(Actions.quickMoveBackward);
-      } else if (Keys[lastKey] === Keys.KeyD) {
+      } else if (key === Keys.KeyD) {
         this.#actions.add(Actions.quickTurnRight);
-      } else if (Keys[lastKey] === Keys.KeyQ) {
+      } else if (key === Keys.KeyQ) {
         this.#actions.add(Actions.quickMoveLeft);
-      } else if (Keys[lastKey] === Keys.KeyE) {
+      } else if (key === Keys.KeyE) {
         this.#actions.add(Actions.quickMoveRight);
       }
 
-      return;
-    }
-
-    if (this.#states.has(States.stunning)) {
-      this.#actions.clear();
       return;
     }
 
@@ -648,19 +635,13 @@ class Character extends Publisher {
     }
 
     // 自機の動き制御
-    if (this.#stunningRemainingTime > 0) {
-      this.#stunningRemainingTime -= deltaTime;
+    if (this.#states.has(States.stunning)) {
+      this.#stunningElapsedTime += deltaTime;
 
-      if (this.#stunningRemainingTime <= 0) {
+      if (Controls.stunningDuration <= this.#stunningElapsedTime) {
         this.#states.delete(States.stunning);
-        this.#stunningRemainingTime = 0;
+        this.#stunningElapsedTime = 0;
       }
-    } else if (
-      this.#states.has(States.urgency) &&
-      this.#urgencyRemainingTime === 0 &&
-      this.#isGrounded
-    ) {
-      this.#urgencyRemainingTime = Controls.urgencyDuration;
     }
 
     if (this.#actions.has(Actions.jump)) {
@@ -668,15 +649,17 @@ class Character extends Publisher {
       this.jump();
     }
 
-    if (this.#urgencyRemainingTime > 0) {
-      this.#urgencyRemainingTime -= deltaTime;
+    if (this.#states.has(States.urgency)) {
+      this.#urgencyElapsedTime += deltaTime;
 
-      if (this.#urgencyRemainingTime <= 0) {
+      if (Controls.urgencyDuration <= this.#urgencyElapsedTime) {
         this.#actions.clear();
         this.#states.delete(States.urgency);
-        this.#urgencyRemainingTime = 0;
+        this.#urgencyElapsedTime = 0;
+        this.#urgencyKey = '';
 
-        this.setStunning(true);
+        this.#states.add(States.stunning);
+        this.#stunningElapsedTime = 0;
       }
 
       if (this.#actions.has(Actions.quickMoveForward)) {
@@ -696,10 +679,9 @@ class Character extends Publisher {
       if (this.#actions.has(Actions.rotateLeft)) {
         this.rotate(deltaTime, Actions.rotateLeft);
       } else if (this.#actions.has(Actions.rotateRight)) {
-        // this.rotate(-deltaTime);
         this.rotate(deltaTime, Actions.rotateRight);
       } else {
-        this.#lastTurn = '';
+        this.#lastTurnKey = '';
       }
 
       if (this.#actions.has(Actions.moveForward)) {
