@@ -93,6 +93,8 @@ class Character extends Publisher {
 
   #stunningElapsedTime = 0;
 
+  #stunningDuration = 0;
+
   #active = false;
 
   #pausedDuration = 0;
@@ -340,6 +342,12 @@ class Character extends Publisher {
 
   isStunning() {
     return this.#states.has(States.stunning);
+  }
+
+  setStunning(duration) {
+    this.#states.add(States.stunning);
+    this.#stunningElapsedTime = 0;
+    this.#stunningDuration = duration;
   }
 
   isActive() {
@@ -638,9 +646,10 @@ class Character extends Publisher {
     if (this.#states.has(States.stunning)) {
       this.#stunningElapsedTime += deltaTime;
 
-      if (Controls.stunningDuration <= this.#stunningElapsedTime) {
+      if (this.#stunningDuration <= this.#stunningElapsedTime) {
         this.#states.delete(States.stunning);
         this.#stunningElapsedTime = 0;
+        this.#stunningDuration = 0;
       }
     }
 
@@ -660,6 +669,7 @@ class Character extends Publisher {
 
         this.#states.add(States.stunning);
         this.#stunningElapsedTime = 0;
+        this.#stunningDuration = Controls.stunningDuration;
       }
 
       if (this.#actions.has(Actions.quickMoveForward)) {
@@ -734,7 +744,7 @@ class Character extends Publisher {
       this.publish('oob', this);
     }
 
-    if (this.isStunning()) {
+    if (this.#states.has(States.stunning)) {
       this.#pausedDuration += deltaTime;
     } else {
       if (this.onUpdate != null) {
