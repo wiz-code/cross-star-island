@@ -3,18 +3,6 @@ import { Screen } from './settings';
 
 const { PI } = Math;
 
-const canvas = {};
-const context = {};
-const texture = {};
-
-export const disposeTexture = () => {
-  const list = Object.values(texture);
-
-  for (const object of list) {
-    object.dispose();
-  }
-};
-
 export const createSight = (texture) => {
   const material = new SpriteMaterial({
     color: 0xffffff,

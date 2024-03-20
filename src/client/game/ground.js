@@ -52,15 +52,18 @@ const generateHeight = (width, height) => {
   return data;
 };
 
-export const createGround = ({
-  widthSegments = 10,
-  depthSegments = 10,
-  widthSpacing = World.spacing,
-  depthSpacing = World.spacing,
-  bumpHeight = 1,
-  position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 },
-} = {}, texture) => {
+export const createGround = (
+  {
+    widthSegments = 10,
+    depthSegments = 10,
+    widthSpacing = World.spacing,
+    depthSpacing = World.spacing,
+    bumpHeight = 1,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  } = {},
+  texture,
+) => {
   const width = widthSegments * widthSpacing;
   const depth = depthSegments * depthSpacing;
 
@@ -134,17 +137,20 @@ export const createGround = ({
   return ground;
 };
 
-export const createMaze = ({
-  widthSegments = 10,
-  heightSegments = 10,
-  depthSegments = 10,
-  widthSpacing = World.spacing,
-  heightSpacing = World.spacing,
-  depthSpacing = World.spacing,
-  position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 },
-  offset = { x: 0, y: 0, z: 0 }, /// ///////////
-} = {}, texture) => {
+export const createMaze = (
+  {
+    widthSegments = 10,
+    heightSegments = 10,
+    depthSegments = 10,
+    widthSpacing = World.spacing,
+    heightSpacing = World.spacing,
+    depthSpacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+    offset = { x: 0, y: 0, z: 0 }, /// ///////////
+  } = {},
+  texture,
+) => {
   const geom = {};
   const mat = {};
   const mesh = {};
@@ -246,15 +252,18 @@ console.log(mesh.brush1)
   return group;
 };
 
-export const createCylinder = ({
-  radiusTop = 5,
-  radiusBottom = 5,
-  height = 10,
-  radialSegments = 8,
-  heightSegments = 1,
-  position = { x: 0, y: 0, z: 0 },
-  rotation = { x: 0, y: 0, z: 0 },
-} = {}, texture) => {
+export const createCylinder = (
+  {
+    radiusTop = 5,
+    radiusBottom = 5,
+    height = 10,
+    radialSegments = 8,
+    heightSegments = 1,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  } = {},
+  texture,
+) => {
   const geom = {};
   const mat = {};
   const mesh = {};

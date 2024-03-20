@@ -18,6 +18,7 @@ import {
 import { World } from './settings';
 import Collidable from './collidable';
 import { Obstacles } from './data';
+
 const obstacleData = new Map(Obstacles);
 
 class Obstacle extends Collidable {

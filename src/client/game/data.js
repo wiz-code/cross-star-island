@@ -195,12 +195,13 @@ export const Characters = [
       weight: 1,
 
       speed: 300, // 3,
-      turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+      // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+      turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
       sprint: 2.5,
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 2,
+      urgencyTurn: PI * 4, // PI * 2,
       airSpeed: 100,
       jumpPower: 350,
 
@@ -212,7 +213,8 @@ export const Characters = [
     {
       pointColor: 0xeb4b2f,
 
-      model: 'model-1',
+      model: 'model-2',
+      motions: ['VRMA_01'],
       modelSize: 27.5,
       offsetY: 20,
       rotateSpeed: 2,
@@ -367,12 +369,12 @@ export const Stages = [
       characters: [
         {
           name: 'heroine-1',
-          position: { sx: 0.1, sy: 4, sz: 1.6 },
-          phi: -PI * 0.25,
+          position: { sx: 0.1, sy: 4, sz: 0.1 },
+          phi: -PI * 0.5,
           pose: 'pose-1',
           // tweeners: [{ name: 'avoidance-1' }],
           schedule: {
-            spawnedAt: 0,
+            spawnedAt: 0.2,
           },
           update(deltaTime) {
             if (this.object != null) {

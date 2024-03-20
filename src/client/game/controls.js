@@ -167,10 +167,7 @@ class FirstPersonControls extends Publisher {
   }
 
   setRotationComponentListener(player) {
-    player.subscribe(
-      'onChangeRotateComponent',
-      this.onChangeRotateComponent,
-    );
+    player.subscribe('onChangeRotateComponent', this.onChangeRotateComponent);
   }
 
   onChangeRotateComponent(rotateComponent) {
@@ -486,6 +483,8 @@ class FirstPersonControls extends Publisher {
   }
 
   dispose() {
+    this.clear();
+
     document.removeEventListener('contextmenu', onContextmenu);
     this.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.domElement.removeEventListener('pointermove', this.onPointerMove);
