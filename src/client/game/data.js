@@ -201,7 +201,7 @@ export const Characters = [
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 18 / 6, // PI * 2,
+      urgencyTurn: PI * 17 / 6, // PI * 2,
       airSpeed: 100,
       jumpPower: 350,
 
