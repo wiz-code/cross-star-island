@@ -8,6 +8,7 @@ import {
   Clock,
   Vector3,
   AmbientLight,
+  Float32BufferAttribute,
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -56,6 +57,7 @@ const getDamping = (delta) => {
 
   return dampingData;
 };
+const canvas = document.createElement('canvas');
 
 const disposeObject = (object) => {
   if (object?.dispose !== undefined) {
@@ -64,10 +66,6 @@ const disposeObject = (object) => {
 
   if (object.geometry?.dispose !== undefined) {
     object.geometry.dispose();
-  }
-
-  if (object.geometry?.deleteAttribute !== undefined) {
-    object.geometry.deleteAttribute('position');
   }
 
   if (object.material?.dispose !== undefined) {
@@ -89,7 +87,7 @@ class Game {
 
     this.container = document.getElementById('container');
 
-    this.renderer = new WebGLRenderer({ antialias: false });
+    this.renderer = new WebGLRenderer({ canvas, antialias: false });
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
@@ -517,6 +515,7 @@ class Game {
   }
 
   dispose() {
+    window.removeEventListener('resize', this.onResize);
     this.removePlayer();
 
     this.scene.field.traverse(disposeObject);
@@ -529,8 +528,6 @@ class Game {
     this.textureManager.disposeAll();
     this.container.removeChild(this.renderer.domElement);
     this.renderer.dispose();
-
-    window.removeEventListener('resize', this.onResize);
   }
 
   start() {
