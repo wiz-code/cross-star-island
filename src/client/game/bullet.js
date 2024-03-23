@@ -18,23 +18,22 @@ class Bullet extends Collidable {
     );
     this.elapsedTime = 0;
 
-    this.setOnUpdate(this.data.update);
-    this.setActive(false);
+    this.setAlive(false);
   }
 
-  setActive(bool) {
-    super.setActive(bool);
+  setAlive(bool) {
+    super.setAlive(bool);
     this.elapsedTime = 0;
   }
 
   update(deltaTime, elapsedTime, damping) {
     super.update(deltaTime, elapsedTime, damping);
 
-    if (this.isActive()) {
+    if (this.isAlive()) {
       this.elapsedTime += deltaTime;
 
       if (this.elapsedTime > this.data.lifetime) {
-        this.setActive(false);
+        this.setAlive(false);
       }
     }
   }

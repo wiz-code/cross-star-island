@@ -95,8 +95,6 @@ class Character extends Publisher {
 
   #stunningDuration = 0;
 
-  #active = false;
-
   #pausedDuration = 0;
 
   #urgencyKey = '';
@@ -254,7 +252,6 @@ class Character extends Publisher {
     this.gunType = '';
     this.guns = new Map();
     this.camera = null;
-    this.onUpdate = null;
     this.elapsedTime = 0;
 
     this.model = null; // promise
@@ -293,7 +290,7 @@ class Character extends Publisher {
     end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
 
-    this.setActive(false);
+    this.setAlive(false);
   }
 
   async loadModelData(loader, texture) {
@@ -350,20 +347,24 @@ class Character extends Publisher {
     this.#stunningDuration = duration;
   }
 
-  isActive() {
-    return this.#active;
+  hasState(state) {
+    return this.#states.has(state);
   }
 
-  setActive(bool = true) {
-    this.#active = bool;
+  isAlive() {
+    return this.#states.has(States.alive);
+  }
+
+  setAlive(bool = true) {
+    if (bool) {
+      this.#states.add(States.alive);
+    } else {
+      this.#states.delete(States.alive);
+    }
 
     if (!this.isFPV()) {
       this.visible(bool);
     }
-  }
-
-  setOnUpdate(update) {
-    this.onUpdate = update.bind(this);
   }
 
   isFPV() {
@@ -631,14 +632,14 @@ class Character extends Publisher {
     }
   }
 
-  addTweener(tweener, arg) {
+  addTweener(tweener, arg) {////////////
     const tween = tweener(this, arg);
     const updater = tween.update.bind(tween);
     this.subscribe('tween', updater);
   }
 
   update(deltaTime, elapsedTime, damping) {
-    if (!this.#active) {
+    if (!this.#states.has(States.alive)) {
       return;
     }
 
@@ -744,7 +745,7 @@ class Character extends Publisher {
       this.publish('oob', this);
     }
 
-    if (this.#states.has(States.stunning)) {
+    /*if (this.#states.has(States.stunning)) {
       this.#pausedDuration += deltaTime;
     } else {
       if (this.onUpdate != null) {
@@ -754,7 +755,7 @@ class Character extends Publisher {
       if (this.getSubscriberCount() > 0) {
         this.publish('tween', (elapsedTime - this.#pausedDuration) * 1000);
       }
-    }
+    }*/
   }
 }
 

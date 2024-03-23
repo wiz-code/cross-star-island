@@ -27,6 +27,7 @@ import {
   Stages,
   Compositions,
   Tweeners,
+  Updaters,
   Ammo as AmmoData,
   Guns,
 } from './data';
@@ -35,6 +36,7 @@ import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import ModelManager from './model-manager';
+import EventManager from './event-manager';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -109,6 +111,7 @@ class Game {
     this.scene.screen = new ThreeScene();
 
     this.modelManager = new ModelManager(this.scene.field);
+    this.eventManager = new EventManager();
 
     this.camera.field = new PerspectiveCamera(
       Camera.FOV,
@@ -149,6 +152,7 @@ class Game {
     this.data.ammos = new Map(AmmoData);
     this.data.guns = new Map(Guns);
     this.data.tweeners = new Map(Tweeners);
+    this.data.updaters = new Map(Updaters);
 
     this.objectManager = new CollidableManager(
       this.scene.field,
@@ -164,6 +168,19 @@ class Game {
     const ammoNames = Array.from(this.data.ammos.keys());
     ammoNames.forEach((name) => {
       const ammo = new Ammo(name, this.texture);
+      ammo.list.forEach((bullet) => {
+        if (bullet.data.updaters != null) {
+          bullet.data.updaters.forEach((param) => {
+            if (typeof param === 'string') {
+              const updater = this.data.updaters.get(param);
+              this.eventManager.addUpdater(bullet, updater.state, updater.update, updater.args);
+            } else {
+              const { state, update, args } = param;
+              this.eventManager.addUpdater(bullet, state, update, args);
+            }
+          });
+        }
+      })
       this.ammos.set(name, ammo);
       this.objectManager.add(ammo.list);
     });
@@ -444,13 +461,24 @@ class Game {
         }
       });
 
-      character.setOnUpdate(data.update);
       character.setPosition(data.position, data.phi, data.theta);
 
       if (data.tweeners != null) {
-        data.tweeners.forEach(({ name, arg }) => {
+        data.tweeners.forEach(({ name, state, args }) => {
           const tweener = this.data.tweeners.get(name);
-          character.addTweener(tweener, arg);
+          this.eventManager.addTween(character, state, tweener, args);
+        });
+      }
+
+      if (data.updaters != null) {
+        data.updaters.forEach((param) => {
+          if (typeof param === 'string') {
+            const updater = this.data.updaters.get(param);
+            this.eventManager.addUpdater(character, updater.state, updater.update, updater.args);
+          } else {
+            const { state, update, args } = param;
+            this.eventManager.addUpdater(character, state, update, args);
+          }
         });
       }
 
@@ -463,14 +491,25 @@ class Game {
       const item = new Item(data.name, this.texture);
       item.setPosition(data.position);
 
-      if (item.tweeners != null) {
-        item.tweeners.forEach(({ name, arg }) => {
+      if (data.tweeners != null) {
+        data.tweeners.forEach(({ name, state, args }) => {
           const tweener = this.data.tweeners.get(name);
-          item.addTweener(tweener, arg);
+          this.eventManager.addTween(item, state, tweener, args);
         });
       }
 
-      item.setOnUpdate(data.update);
+      if (data.updaters != null) {
+        data.updaters.forEach((param) => {
+          if (typeof param === 'string') {
+            const updater = this.data.updaters.get(param);
+            this.eventManager.addUpdater(item, updater.state, updater.update, updater.args);
+          } else {
+            const { state, update, args } = param;
+            this.eventManager.addUpdater(item, state, update, args);
+          }
+        });
+      }
+
       this.objectManager.add(item, data);
     });
 
@@ -479,13 +518,24 @@ class Game {
       obstacle.setPosition(data.position);
 
       if (data.tweeners != null) {
-        data.tweeners.forEach(({ name, arg }) => {
+        data.tweeners.forEach(({ name, state, args }) => {
           const tweener = this.data.tweeners.get(name);
-          obstacle.addTweener(tweener, arg);
+          this.eventManager.addTween(obstacle, state, tweener, args);
         });
       }
 
-      obstacle.setOnUpdate(data.update);
+      if (data.updaters != null) {
+        data.updaters.forEach((param) => {
+          if (typeof param === 'string') {
+            const updater = this.data.updaters.get(param);
+            this.eventManager.addUpdater(obstacle, updater.state, updater.update, updater.args);
+          } else {
+            const { state, update, args } = param;
+            this.eventManager.addUpdater(obstacle, state, update, args);
+          }
+        });
+      }
+
       this.objectManager.add(obstacle, data);
     });
 
@@ -536,7 +586,7 @@ class Game {
 
   start() {
     if (this.player != null) {
-      this.player.setActive(true);
+      this.player.setAlive(true);
       this.controls.enable(true);
     }
 
@@ -546,7 +596,7 @@ class Game {
 
   stop() {
     if (this.player != null) {
-      this.player.setActive(false);
+      this.player.setAlive(false);
       this.controls.enable(false);
     }
 
@@ -571,6 +621,7 @@ class Game {
     }
 
     this.modelManager.update(deltaTime);
+    this.eventManager.update(deltaTime, this.#elapsedTime);
     this.sceneManager.update();
   }
 }

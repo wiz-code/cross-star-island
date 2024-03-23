@@ -87,7 +87,7 @@ class CollidableManager extends Publisher {
         );
       }
 
-      if (collidable.isActive()) {
+      if (collidable.isAlive()) {
         this.publish('collideWith', collidable);
       }
     }
@@ -95,11 +95,11 @@ class CollidableManager extends Publisher {
     for (let i = 0; i < len; i += 1) {
       const a1 = list[i];
 
-      if (a1.isActive() && a1.type !== 'item') {
+      if (a1.isAlive() && a1.type !== 'item') {
         for (let j = i + 1; j < len; j += 1) {
           const a2 = list[j];
 
-          if (a2.isActive() && a2.type !== 'item') {
+          if (a2.isAlive() && a2.type !== 'item') {
             const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
             const r = a1.data.radius + a2.data.radius;
             const r2 = r * r;
@@ -147,7 +147,7 @@ class CollidableManager extends Publisher {
       const [object, spawnedAt] = schedules[i];
 
       if (elapsedTime > spawnedAt) {
-        object.setActive(true);
+        object.setAlive(true);
         this.schedules.delete(object);
       }
     }
@@ -157,7 +157,6 @@ class CollidableManager extends Publisher {
 
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
-      // オブジェクト固有の挙動をupdate()に記述する
       collidable.update(deltaTime, elapsedTime, damping);
     }
 

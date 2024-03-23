@@ -88,11 +88,11 @@ class Ammo extends Publisher {
     }
   }
 
-  setActive(bool) {
+  /*setAlive(bool) {
     this.list.forEach((bullet) => {
-      bullet.setActive(bool);
+      bullet.setAlive(bool);
     });
-  }
+  }*/
 }
 
 export default Ammo;

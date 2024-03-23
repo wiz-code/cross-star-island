@@ -64,7 +64,7 @@ export const Actions = {
 };
 
 export const States = {
-  idle: 0,
+  alive: 0,
   sprint: 1,
   urgency: 2,
   stunning: 3,
@@ -133,13 +133,18 @@ export const Ammo = [
 
       rotateSpeed: 10,
 
-      update(deltaTime) {
-        const rotateSpeed = !this.isBounced()
-          ? this.data.rotateSpeed
-          : this.data.rotateSpeed * 0.5;
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            const rotateSpeed = !this.isBounced()
+              ? this.data.rotateSpeed
+              : this.data.rotateSpeed * 0.5;
 
-        this.object.rotation.z -= deltaTime * rotateSpeed;
-      },
+            this.object.rotation.z -= deltaTime * rotateSpeed;
+          },
+        },
+      ]
     },
   ],
   [
@@ -161,23 +166,28 @@ export const Ammo = [
       hopValue: 350,
       hopDuration: 0.5,
 
-      update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
 
-        if (!this.isBounced()) {
-          if (this.elapsedTime <= this.data.hopDuration) {
-            const ratio = easeOutCubic(this.elapsedTime);
-            this.collider.center.y += deltaTime * ratio * this.data.hopValue;
-          } else {
-            const ratio =
-              1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
+            if (!this.isBounced()) {
+              if (this.elapsedTime <= this.data.hopDuration) {
+                const ratio = easeOutCubic(this.elapsedTime);
+                this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+              } else {
+                const ratio =
+                  1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
 
-            if (ratio >= 0) {
-              this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+                if (ratio >= 0) {
+                  this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+                }
+              }
             }
-          }
-        }
-      },
+          },
+        },
+      ],
     },
   ],
 ];
@@ -259,9 +269,14 @@ export const Items = [
 
       dispatchers: ['nextCheckpoint'],
 
-      update(deltaTime) {
-        //
-      },
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            //
+          },
+        },
+      ],
     },
   ],
   [
@@ -282,9 +297,14 @@ export const Items = [
 
       dispatchers: ['weaponUpgrade'],
 
-      update(deltaTime) {
-        //
-      },
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            //
+          },
+        },
+      ],
     },
   ],
 ];
@@ -339,6 +359,29 @@ export const Tweeners = [
   ],
 ];
 
+export const Updaters = [
+  [
+    'rolling-stone-1',
+    {
+      state: States.alive,
+      update(deltaTime) {
+        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+      },
+    },
+  ],
+  [
+    'item-ring-1',
+    {
+      state: States.alive,
+      update(deltaTime) {
+        const rotateSpeed = deltaTime * this.data.rotateSpeed;
+        this.object.rotation.y -= rotateSpeed;
+        this.object.rotation.z -= rotateSpeed * 2;
+      },
+    },
+  ],
+];
+
 export const Stages = [
   [
     'firstStage',
@@ -369,70 +412,90 @@ export const Stages = [
           position: { sx: -53, sy: 4, sz: 1 },
           phi: -PI * 0.5,
           pose: 'pose-1',
-          // tweeners: [{ name: 'avoidance-1' }],
+          // tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 0.2,
           },
-          update(deltaTime) {
-            if (this.object != null) {
-              const points = this.object.getObjectByName('points');
-              points.rotation.y -= deltaTime * this.data.rotateSpeed;
-            }
-          },
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                if (this.object != null) {
+                  const points = this.object.getObjectByName('points');
+                  points.rotation.y -= deltaTime * this.data.rotateSpeed;
+                }
+              },
+            },
+          ],
         },
         {
           name: 'hero-1',
           position: { sx: -43, sy: 2, sz: 1.2 },
           phi: -PI / 2,
           theta: -0.1,
-          tweeners: [{ name: 'avoidance-1' }],
+          tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 0,
           },
-          update(deltaTime) {
-            this.elapsedTime += deltaTime;
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 0.5) {
-              this.elapsedTime = 0;
-              this.fire();
-            }
-          },
+                if (this.elapsedTime > 0.5) {
+                  this.elapsedTime = 0;
+                  this.fire();
+                }
+              },
+            },
+          ],
         },
         {
           name: 'hero-1',
           position: { sx: -45, sy: 2, sz: 1.2 },
           phi: (80 * -PI) / 180,
           theta: -0.1,
-          tweeners: [{ name: 'avoidance-1' }],
+          tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 2,
           },
-          update(deltaTime) {
-            this.elapsedTime += deltaTime;
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 0.8) {
-              this.elapsedTime = 0;
-              this.fire();
-            }
-          },
+                if (this.elapsedTime > 0.8) {
+                  this.elapsedTime = 0;
+                  this.fire();
+                }
+              },
+            },
+          ],
         },
         {
           name: 'hero-1',
           position: { sx: -47, sy: 2, sz: 1.2 },
           phi: (98 * -PI) / 180,
           theta: -0.1,
-          tweeners: [{ name: 'avoidance-1' }],
+          tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 4,
           },
-          update(deltaTime) {
-            this.elapsedTime += deltaTime;
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 0.8) {
-              this.elapsedTime = 0;
-              this.fire();
-            }
-          },
+                if (this.elapsedTime > 0.8) {
+                  this.elapsedTime = 0;
+                  this.fire();
+                }
+              },
+            },
+          ],
         },
         {
           name: 'hero-1',
@@ -443,14 +506,19 @@ export const Stages = [
           schedule: {
             spawnedAt: 5,
           },
-          update(deltaTime) {
-            this.elapsedTime += deltaTime;
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 1) {
-              this.elapsedTime = 0;
-              this.fire();
-            }
-          },
+                if (this.elapsedTime > 1) {
+                  this.elapsedTime = 0;
+                  this.fire();
+                }
+              },
+            },
+          ],
         },
         {
           name: 'hero-1',
@@ -461,52 +529,49 @@ export const Stages = [
           schedule: {
             spawnedAt: 5,
           },
-          update(deltaTime) {
-            this.elapsedTime += deltaTime;
+          updaters: [
+            {
+              state: States.alive,
+              update(deltaTime) {
+                this.elapsedTime += deltaTime;
 
-            if (this.elapsedTime > 1) {
-              this.elapsedTime = 0;
-              this.fire();
-            }
-          },
+                if (this.elapsedTime > 1) {
+                  this.elapsedTime = 0;
+                  this.fire();
+                }
+              },
+            },
+          ],
         },
       ],
       obstacles: [
         {
           name: 'round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1' }],
+          tweeners: [{ name: 'rolling-stone-1', state: States.alive }],
           spawnedAt: 0,
-          update(deltaTime) {
-            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-          },
+          updaters: ['rolling-stone-1'],
         },
         {
           name: 'round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', arg: 5000 }],
+          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [5000] }],
           spawnedAt: 5,
-          update(deltaTime) {
-            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-          },
+          updaters: ['rolling-stone-1'],
         },
         {
           name: 'small-round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', arg: 2500 }],
+          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [2500] }],
           spawnedAt: 2.5,
-          update(deltaTime) {
-            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-          },
+          updaters: ['rolling-stone-1'],
         },
         {
           name: 'small-round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [7500] }],
           spawnedAt: 7.5,
-          update(deltaTime) {
-            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-          },
+          updaters: ['rolling-stone-1'],
         },
       ],
       items: [
@@ -514,44 +579,28 @@ export const Stages = [
           name: 'checkpoint',
           position: { sx: -8, sy: 2, sz: 0 },
           spawnedAt: 5,
-          update(deltaTime) {
-            const rotateSpeed = deltaTime * this.data.rotateSpeed;
-            this.object.rotation.y -= rotateSpeed;
-            this.object.rotation.z -= rotateSpeed * 2;
-          },
+          updaters: ['item-ring-1'],
         },
         {
           name: 'checkpoint',
           position: { sx: -31, sy: 2, sz: 1.5 },
-          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [7500] }],
           spawnedAt: 5,
-          update(deltaTime) {
-            const rotateSpeed = deltaTime * this.data.rotateSpeed;
-            this.object.rotation.y -= rotateSpeed;
-            this.object.rotation.z -= rotateSpeed * 2;
-          },
+          updaters: ['item-ring-1'],
         },
         {
           name: 'checkpoint',
           position: { sx: -40, sy: 2, sz: 1 },
-          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', args: [7500] }],
           spawnedAt: 5,
-          update(deltaTime) {
-            const rotateSpeed = deltaTime * this.data.rotateSpeed;
-            this.object.rotation.y -= rotateSpeed;
-            this.object.rotation.z -= rotateSpeed * 2;
-          },
+          updaters: ['item-ring-1'],
         },
         {
           name: 'weapon-upgrade',
           position: { sx: -35, sy: -2, sz: -5 },
-          // tweeners: [{ name: 'rolling-stone-1', arg: 7500 }],
+          // tweeners: [{ name: 'rolling-stone-1', args: [7500] }],
           spawnedAt: 3,
-          update(deltaTime) {
-            const rotateSpeed = deltaTime * this.data.rotateSpeed;
-            this.object.rotation.y -= rotateSpeed;
-            this.object.rotation.z -= rotateSpeed * 2;
-          },
+          updaters: ['item-ring-1'],
         },
       ],
       components: [
