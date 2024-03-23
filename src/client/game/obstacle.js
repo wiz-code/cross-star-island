@@ -81,7 +81,7 @@ class Obstacle extends Collidable {
     object.add(pointsMesh);
 
     this.setObject(object);
-    this.setActive(false);
+    this.setAlive(false);
   }
 
   update(deltaTime, elapsedTime, damping) {

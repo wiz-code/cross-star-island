@@ -52,7 +52,7 @@ class Gun extends Publisher {
 
     const { rotation, povRotation, deltaY } = character;
     const bullet = this.ammo.list[this.ammo.index];
-    bullet.setActive(true);
+    bullet.setAlive(true);
 
     const halfRad = (this.data.accuracy / 2) * Rad_1;
     const theta = getRandomInclusive(-halfRad, halfRad);

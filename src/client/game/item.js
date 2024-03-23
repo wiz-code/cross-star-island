@@ -24,8 +24,6 @@ const { floor } = Math;
 const itemData = new Map(Items);
 
 class Item extends Collidable {
-  #active = false;
-
   #elapsedTime = 0;
 
   static createRing(data, texture) {
@@ -86,8 +84,7 @@ class Item extends Collidable {
     this.object = Item[this.data.method](this.data, texture);
 
     this.setObject(this.object);
-    this.setOnUpdate(this.data.update);
-    this.setActive(false);
+    this.setAlive(false);
   }
 
   update(deltaTime, elapsedTime, damping) {

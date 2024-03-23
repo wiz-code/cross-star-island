@@ -12,7 +12,7 @@ function genId() {
 }
 
 class Collidable extends Publisher {
-  #active = false;
+  #alive = false;
 
   #bounced = false;
 
@@ -28,8 +28,6 @@ class Collidable extends Publisher {
 
     this.collider = new Sphere();
     this.velocity = new Vector3();
-
-    this.onUpdate = null;
   }
 
   setPosition(position) {
@@ -41,10 +39,6 @@ class Collidable extends Publisher {
     this.object = object;
   }
 
-  setOnUpdate(update) {
-    this.onUpdate = update.bind(this);
-  }
-
   isBounced() {
     return this.#bounced;
   }
@@ -53,12 +47,12 @@ class Collidable extends Publisher {
     this.#bounced = bool;
   }
 
-  isActive() {
-    return this.#active;
+  isAlive() {
+    return this.#alive;
   }
 
-  setActive(bool = true) {
-    this.#active = bool;
+  setAlive(bool = true) {
+    this.#alive = bool;
 
     if (bool) {
       this.#bounced = false;
@@ -76,19 +70,11 @@ class Collidable extends Publisher {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    if (this.#active) {
+    if (this.#alive) {
       this.velocity.y -= World.gravity * deltaTime;
       this.velocity.addScaledVector(this.velocity, damping[this.type]);
 
       this.collider.center.addScaledVector(this.velocity, deltaTime);
-
-      if (this.onUpdate != null) {
-        this.onUpdate(deltaTime, elapsedTime);
-      }
-
-      if (this.getSubscriberCount() > 0) {
-        this.publish('tween', elapsedTime * 1000);
-      }
     }
   }
 }

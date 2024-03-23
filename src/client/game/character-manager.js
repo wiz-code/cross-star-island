@@ -79,7 +79,7 @@ class CharacterManager {
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
 
-      if (character.isActive()) {
+      if (character.isAlive()) {
         const center = character.collider.getCenter(this.#vecA);
         const objectCenter = object.collider.center;
         const r = character.collider.radius + object.collider.radius;
@@ -101,7 +101,7 @@ class CharacterManager {
             }
 
             if (object.type === 'item') {
-              object.setActive(false);
+              object.setAlive(false);
               object.data.dispatchers.forEach((dispatcher) =>
                 this.collidableManager.publish(dispatcher),
               );
@@ -165,11 +165,11 @@ class CharacterManager {
       for (let i = 0; i < len; i += 1) {
         const c1 = list[i];
 
-        if (c1.isActive()) {
+        if (c1.isAlive()) {
           for (let j = i + 1; j < len; j += 1) {
             const c2 = list[j];
 
-            if (c2.isActive) {
+            if (c2.isAlive()) {
               const center = c1.collider.getCenter(this.#vecA);
               const charaCenter = c2.collider.getCenter(this.#vecB);
               const r = c1.data.radius + c2.data.radius;
@@ -220,8 +220,8 @@ class CharacterManager {
       const [character, schedule] = schedules[i];
 
       if (elapsedTime > schedule.spawnedAt) {
-        if (!character.isActive()) {
-          character.setActive(true);
+        if (!character.isAlive()) {
+          character.setAlive(true);
         }
       }
     }
