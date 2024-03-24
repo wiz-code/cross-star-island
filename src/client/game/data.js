@@ -1,9 +1,6 @@
 import { Vector3 } from 'three';
-import TWEEN from '@tweenjs/tween.js';
 
-const { random, sin, PI } = Math;
-
-const getRandomInclusive = (min, max) => random() * (max - min) + min;
+const { sin, PI } = Math;
 
 const easeInQuad = (x) => x * x;
 
@@ -267,8 +264,6 @@ export const Items = [
 
       rotateSpeed: 2,
 
-      dispatchers: ['nextCheckpoint'],
-
       updaters: [
         {
           state: States.alive,
@@ -295,8 +290,6 @@ export const Items = [
 
       rotateSpeed: 2,
 
-      dispatchers: ['weaponUpgrade'],
-
       updaters: [
         {
           state: States.alive,
@@ -305,79 +298,6 @@ export const Items = [
           },
         },
       ],
-    },
-  ],
-];
-
-export const Tweeners = [
-  [
-    'rolling-stone-1',
-    (target, arg) => {
-      const time = arg ?? 0;
-
-      const group = new TWEEN.Group();
-      const tween = new TWEEN.Tween(target.collider.center, group);
-      tween
-        .onEveryStart(() => {
-          const posZ = getRandomInclusive(-80, 80);
-          target.collider.center.set(-2100, 300, posZ);
-          target.velocity.copy(new Vector3(0, 0, 0));
-        })
-        .delay(10000)
-        .repeat(Infinity)
-        .start(time);
-
-      return group;
-    },
-  ],
-  [
-    'avoidance-1',
-    (target, arg) => {
-      const time = arg ?? 0;
-      let prevValue = 0;
-      const offset = { z: 0 };
-      const update = ({ z }) => {
-        target.collider.start.z += z - prevValue;
-        target.collider.end.copy(target.collider.start);
-        target.collider.end.y += target.data.height + target.data.radius;
-        prevValue = z;
-      };
-
-      const group = new TWEEN.Group();
-      const tween1 = new TWEEN.Tween(offset, group)
-        .to({ z: -40 }, 1000)
-        .onUpdate(update);
-      const tween2 = new TWEEN.Tween(offset, group)
-        .to({ z: 0 }, 1000)
-        .onUpdate(update);
-
-      tween1.chain(tween2).start(time);
-      tween2.chain(tween1);
-
-      return group;
-    },
-  ],
-];
-
-export const Updaters = [
-  [
-    'rolling-stone-1',
-    {
-      state: States.alive,
-      update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
-      },
-    },
-  ],
-  [
-    'item-ring-1',
-    {
-      state: States.alive,
-      update(deltaTime) {
-        const rotateSpeed = deltaTime * this.data.rotateSpeed;
-        this.object.rotation.y -= rotateSpeed;
-        this.object.rotation.z -= rotateSpeed * 2;
-      },
     },
   ],
 ];
@@ -412,9 +332,8 @@ export const Stages = [
           position: { sx: -53, sy: 4, sz: 1 },
           phi: -PI * 0.5,
           pose: 'pose-1',
-          // tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnedAt: 0.2,
+            spawnedAt: 1,
           },
           updaters: [
             {
@@ -437,19 +356,11 @@ export const Stages = [
           schedule: {
             spawnedAt: 0,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                this.elapsedTime += deltaTime;
-
-                if (this.elapsedTime > 0.5) {
-                  this.elapsedTime = 0;
-                  this.fire();
-                }
-              },
-            },
-          ],
+          params: {
+            elapsedTime: 0,
+            fireInterval: 0.4,
+          },
+          updaters: ['bullet-fire-1'],
         },
         {
           name: 'hero-1',
@@ -460,19 +371,11 @@ export const Stages = [
           schedule: {
             spawnedAt: 2,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                this.elapsedTime += deltaTime;
-
-                if (this.elapsedTime > 0.8) {
-                  this.elapsedTime = 0;
-                  this.fire();
-                }
-              },
-            },
-          ],
+          params: {
+            elapsedTime: 0,
+            fireInterval: 0.8,
+          },
+          updaters: ['bullet-fire-1'],
         },
         {
           name: 'hero-1',
@@ -483,19 +386,11 @@ export const Stages = [
           schedule: {
             spawnedAt: 4,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                this.elapsedTime += deltaTime;
-
-                if (this.elapsedTime > 0.8) {
-                  this.elapsedTime = 0;
-                  this.fire();
-                }
-              },
-            },
-          ],
+          params: {
+            elapsedTime: 0,
+            fireInterval: 0.8,
+          },
+          updaters: ['bullet-fire-1'],
         },
         {
           name: 'hero-1',
@@ -506,19 +401,11 @@ export const Stages = [
           schedule: {
             spawnedAt: 5,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                this.elapsedTime += deltaTime;
-
-                if (this.elapsedTime > 1) {
-                  this.elapsedTime = 0;
-                  this.fire();
-                }
-              },
-            },
-          ],
+          params: {
+            elapsedTime: 0,
+            fireInterval: 1,
+          },
+          updaters: ['bullet-fire-1'],
         },
         {
           name: 'hero-1',
@@ -529,19 +416,11 @@ export const Stages = [
           schedule: {
             spawnedAt: 5,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                this.elapsedTime += deltaTime;
-
-                if (this.elapsedTime > 1) {
-                  this.elapsedTime = 0;
-                  this.fire();
-                }
-              },
-            },
-          ],
+          params: {
+            elapsedTime: 0,
+            fireInterval: 1,
+          },
+          updaters: ['bullet-fire-1'],
         },
       ],
       obstacles: [

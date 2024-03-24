@@ -1,6 +1,6 @@
 import { Sphere, Vector3 } from 'three';
 
-import Publisher from './publisher';
+import Entity from './entity';
 import { World } from './settings';
 import { getVectorPos, visibleChildren } from './utils';
 
@@ -11,19 +11,18 @@ function genId() {
   return id;
 }
 
-class Collidable extends Publisher {
-  #alive = false;
-
+class Collidable extends Entity {
   #bounced = false;
 
   constructor(name, type, object = null) {
-    super();
+    super(name, type);
 
-    this.id = `${type}-${genId()}`;
+    /*this.id = `${type}-${genId()}`;
 
     this.name = name;
     this.type = type;
 
+    this.params = null;*/
     this.object = object;
 
     this.collider = new Sphere();
@@ -47,35 +46,44 @@ class Collidable extends Publisher {
     this.#bounced = bool;
   }
 
-  isAlive() {
+  /*isAlive() {
     return this.#alive;
-  }
+  }*/
 
   setAlive(bool = true) {
-    this.#alive = bool;
+    //this.#alive = bool;
+    super.setAlive(bool);
 
     if (bool) {
       this.#bounced = false;
     }
 
-    if (this.object != null) {
+    super.visible(bool);
+    /*if (this.object != null) {
       visibleChildren(this.object, bool);
-    }
+    }*/
   }
 
-  addTweener(tweener, arg) {
-    const tween = tweener(this, arg);
-    const updater = tween.update.bind(tween);
-    this.subscribe('tween', updater);
-  }
+  /*// 関数が渡された場合、実行結果を返す
+  setParams(params) {
+    if (typeof params === 'function') {
+      const result = params(this);
+      this.params = params;
+      return;
+    }
+
+    this.params = params;
+  }*/
 
   update(deltaTime, elapsedTime, damping) {
-    if (this.#alive) {
-      this.velocity.y -= World.gravity * deltaTime;
-      this.velocity.addScaledVector(this.velocity, damping[this.type]);
-
-      this.collider.center.addScaledVector(this.velocity, deltaTime);
+    if (!this.isAlive()) {
+      return;
     }
+
+    this.velocity.y -= World.gravity * deltaTime;
+    this.velocity.addScaledVector(this.velocity, damping[this.type]);
+
+    this.collider.center.addScaledVector(this.velocity, deltaTime);
   }
 }
 

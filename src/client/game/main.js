@@ -26,11 +26,10 @@ import {
   Characters,
   Stages,
   Compositions,
-  Tweeners,
-  Updaters,
   Ammo as AmmoData,
   Guns,
 } from './data';
+import { handlers, Tweeners, Updaters } from './handlers';
 import Loop from './loop';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
@@ -151,6 +150,7 @@ class Game {
     this.data.compositions = new Map(Compositions);
     this.data.ammos = new Map(AmmoData);
     this.data.guns = new Map(Guns);
+    this.data.handlers = handlers;
     this.data.tweeners = new Map(Tweeners);
     this.data.updaters = new Map(Updaters);
 
@@ -161,6 +161,7 @@ class Game {
     this.characterManager = new CharacterManager(
       this.scene.field,
       this.objectManager,
+      this.eventManager,
       this.worldOctree,
     );
 
@@ -188,6 +189,34 @@ class Game {
     this.controls = null;
     this.player = null;
     this.stage = null;
+
+    const onResize = function onResize() {
+      const { width: containerWidth, height: containerHeight } =
+        this.container.getBoundingClientRect();
+      this.windowHalf.width = floor(containerWidth / 2);
+      this.windowHalf.height = floor(containerHeight / 2);
+
+      this.camera.field.aspect = containerWidth / containerHeight;
+      this.camera.field.updateProjectionMatrix();
+
+      this.camera.screen.left = -this.windowHalf.width;
+      this.camera.screen.right = this.windowHalf.width;
+      this.camera.screen.top = this.windowHalf.height;
+      this.camera.screen.bottom = -this.windowHalf.height;
+      this.camera.screen.updateProjectionMatrix();
+
+      this.renderer.setSize(containerWidth, containerHeight);
+      this.controls.handleResize();
+    };
+
+    this.onResize = debounce(GameSettings.resizeDelayTime, onResize.bind(this));
+
+    window.addEventListener('resize', this.onResize);
+
+    handlers.forEach((object) => {
+      const { eventName, effectName, handler } = object;
+      this.eventManager.addHandler(eventName, effectName, handler, this);
+    });
 
     // ゲーム管理変数
     this.loadingList = [];
@@ -218,34 +247,6 @@ class Game {
     } else {
       this.start();
     }
-
-    const onResize = function onResize() {
-      const { width: containerWidth, height: containerHeight } =
-        this.container.getBoundingClientRect();
-      this.windowHalf.width = floor(containerWidth / 2);
-      this.windowHalf.height = floor(containerHeight / 2);
-
-      this.camera.field.aspect = containerWidth / containerHeight;
-      this.camera.field.updateProjectionMatrix();
-
-      this.camera.screen.left = -this.windowHalf.width;
-      this.camera.screen.right = this.windowHalf.width;
-      this.camera.screen.top = this.windowHalf.height;
-      this.camera.screen.bottom = -this.windowHalf.height;
-      this.camera.screen.updateProjectionMatrix();
-
-      this.renderer.setSize(containerWidth, containerHeight);
-      this.controls.handleResize();
-    };
-
-    this.onResize = debounce(GameSettings.resizeDelayTime, onResize.bind(this));
-
-    window.addEventListener('resize', this.onResize);
-
-    this.nextCheckpoint = this.nextCheckpoint.bind(this);
-    this.weaponUpgrade = this.weaponUpgrade.bind(this);
-    this.objectManager.subscribe('nextCheckpoint', this.nextCheckpoint);
-    this.objectManager.subscribe('weaponUpgrade', this.weaponUpgrade);
   }
 
   getElapsedTime() {
@@ -266,9 +267,6 @@ class Game {
     );
     this.player.setFPV(this.camera.field, this.controls);
     this.controls.setRotationComponentListener(this.player);
-
-    this.teleportCharacter = this.teleportCharacter.bind(this);
-    this.player.subscribe('oob', this.teleportCharacter);
 
     const { gunTypes } = this.player.data;
 
@@ -293,46 +291,6 @@ class Game {
       this.player = null;
       this.controls = null;
     }
-  }
-
-  teleportCharacter(character) {
-    const stageNameList = this.data.compositions.get('stage');
-    const stageName = stageNameList[this.stageIndex];
-    const stageData = this.data.stages.get(stageName);
-
-    if (character.isFPV()) {
-      const checkpoint = stageData.checkpoints[this.checkpointIndex];
-      character.velocity.copy(new Vector3());
-      character.setPosition(
-        checkpoint.position,
-        checkpoint.phi,
-        checkpoint.theta,
-      );
-    }
-  }
-
-  weaponUpgrade() {
-    if (this.player != null) {
-      if (this.player.guns.has(this.player.gunType)) {
-        const gun = this.player.guns.get(this.player.gunType);
-        const { ammoTypes } = gun.data;
-        const { name } = gun.ammo;
-        const index = ammoTypes.indexOf(name);
-
-        if (index > -1) {
-          const ammoType = ammoTypes[index + 1];
-
-          if (ammoType != null) {
-            const ammo = this.ammos.get(ammoType);
-            this.player.setAmmo(ammo);
-          }
-        }
-      }
-    }
-  }
-
-  nextCheckpoint() {
-    this.checkpointIndex += 1;
   }
 
   setMode(mode) {
@@ -463,6 +421,10 @@ class Game {
 
       character.setPosition(data.position, data.phi, data.theta);
 
+      if (data.params != null) {
+        character.setParams(data.params);
+      }
+
       if (data.tweeners != null) {
         data.tweeners.forEach(({ name, state, args }) => {
           const tweener = this.data.tweeners.get(name);
@@ -491,6 +453,10 @@ class Game {
       const item = new Item(data.name, this.texture);
       item.setPosition(data.position);
 
+      if (data.params != null) {
+        item.setParams(data.params);
+      }
+
       if (data.tweeners != null) {
         data.tweeners.forEach(({ name, state, args }) => {
           const tweener = this.data.tweeners.get(name);
@@ -516,6 +482,10 @@ class Game {
     obstacles.forEach((data) => {
       const obstacle = new Obstacle(data.name, this.texture);
       obstacle.setPosition(data.position);
+
+      if (data.params != null) {
+        obstacle.setParams(data.params);
+      }
 
       if (data.tweeners != null) {
         data.tweeners.forEach(({ name, state, args }) => {

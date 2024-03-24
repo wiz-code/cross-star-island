@@ -14,25 +14,21 @@ class EventManager extends Publisher {
     this.updaters = new Map();
   }
 
-  addHandler(object, eventName, handler) {
-    if (!this.events.has(object)) {
-      this.events.set(object, new Map());
+  addHandler(eventName, effectName, handler, bindObject = null) {
+    if (!this.events.has(eventName)) {
+      this.events.set(eventName, new Map());
     }
 
-    const events = this.events.get(object);
+    const events = this.events.get(eventName);
+    const boundHandler = handler.bind(bindObject);
+    events.set(effectName, boundHandler);
+    const key = `${eventName}-${effectName}`;
 
-    if (!events.has(eventName)) {
-      events.set(eventName, new Set());
-    }
-
-    const handlerSet = events.get(eventName);
-    const boundHandler = handler.bind(object);
-    handlerSet.add(boundHandler);
-    this.#handlerCache.set(handler, boundHandler);
+    this.#handlerCache.set(key, handler);
   }
 
   removeHandler(object, eventName, handler) {
-    if (this.events.has(object)) {
+    /*if (this.events.has(object)) {
       const events = this.events.get(object);
 
       if (events.has(eventName)) {
@@ -47,7 +43,7 @@ class EventManager extends Publisher {
           }
         }
       }
-    }
+    }*/
   }
 
   addUpdater(object, state, updater, args) {
@@ -122,17 +118,13 @@ class EventManager extends Publisher {
 
   clear() {}
 
-  dispatch(object, eventName, ...args) {
-    if (this.events.has(object)) {
-      const events = this.events.get(object);
+  dispatch(eventName, effectName, ...args) {
+    if (this.events.has(eventName)) {
+      const events = this.events.get(eventName);
 
-      if (events.has(eventName)) {
-        const handlers = Array.from(events.get(eventName));
-
-        for (let i = 0, l = handlers.length; i < l; i += 1) {
-          const handler = handlers[i];
-          handler(...args);
-        }
+      if (events.has(effectName)) {
+        const handler = events.get(effectName);
+        handler(...args);
       }
     }
   }

@@ -394,7 +394,10 @@ class FirstPersonControls extends Publisher {
           this.#keyDownTime = now;
           this.#lastKey = event.code;
         } else {
-          if (now - this.#keyUpTime <= Controls.inputDuration) {
+          if (
+            this.#lastKey === event.code &&
+            now - this.#keyUpTime <= Controls.inputDuration
+          ) {
             this.#mashed = true;
           }
 
@@ -472,7 +475,10 @@ class FirstPersonControls extends Publisher {
           this.#keyUpTime = 0;
           this.#lastKey = '';
         } else {
-          if (now - this.#keyDownTime <= Controls.inputDuration) {
+          if (
+            this.#lastKey === event.code &&
+            now - this.#keyDownTime <= Controls.inputDuration
+          ) {
             this.#keyUpTime = performance.now();
           }
 
