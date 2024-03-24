@@ -73,7 +73,7 @@ class CollidableManager extends Publisher {
 
       const result = this.worldOctree.sphereIntersect(collidable.collider);
 
-      if (result) {
+      if (result !== false) {
         if (!collidable.isBounced()) {
           collidable.setBounced(true);
         }

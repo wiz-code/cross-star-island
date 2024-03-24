@@ -1,13 +1,14 @@
 import { Vector3, Euler } from 'three';
 
 import { World } from './settings';
+import Publisher from './publisher';
 
 const { sqrt, cos, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
 
-class CharacterManager {
+class CharacterManager extends Publisher {
   #dir = new Vector3(0, 0, -1);
 
   #side = new Vector3();
@@ -36,9 +37,12 @@ class CharacterManager {
 
   #stunningRemainingTime = 0;
 
-  constructor(scene, collidableManager, worldOctree) {
+  constructor(scene, collidableManager, eventManager, worldOctree) {
+    super();
+
     this.scene = scene;
     this.collidableManager = collidableManager;
+    this.eventManager = eventManager;
     this.worldOctree = worldOctree;
     this.list = new Set();
     this.schedules = new Map();
@@ -100,11 +104,12 @@ class CharacterManager {
               object.setBounced(true);
             }
 
-            if (object.type === 'item') {
+            if (
+              character.isFPV() &&
+              object.type === 'item'
+            ) {
               object.setAlive(false);
-              object.data.dispatchers.forEach((dispatcher) =>
-                this.collidableManager.publish(dispatcher),
-              );
+              this.eventManager.dispatch('get-item', object.name, character);
             } else {
               if (!character.isStunning()) {
                 character.setStunning(World.collisionShock);
@@ -144,7 +149,7 @@ class CharacterManager {
       const result = this.worldOctree.capsuleIntersect(character.collider);
       character.setGrounded(false);
 
-      if (result) {
+      if (result !== false) {
         const onGround = result.normal.y > COS_30;
         character.setGrounded(onGround);
 
@@ -232,6 +237,10 @@ class CharacterManager {
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
       character.update(deltaTime, elapsedTime, damping);
+
+      if (character.collider.start.y < World.oob) {
+        this.eventManager.dispatch('oob', 'teleport-character', character);
+      }
     }
 
     this.collisions();

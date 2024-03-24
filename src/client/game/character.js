@@ -20,12 +20,12 @@ import {
 import { Capsule } from 'three/addons/math/Capsule.js';
 
 import { Keys, Actions, States, Characters } from './data';
-import Publisher from './publisher';
+import Entity from './entity';
 import { World, Controls } from './settings';
 import { getVectorPos, visibleChildren } from './utils';
 import ModelLoader from './model-loader';
 
-const { floor, PI } = Math;
+const { floor, sign, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const dampingCoef = PI / 180;
@@ -60,7 +60,7 @@ function genId() {
 
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
 
-class Character extends Publisher {
+class Character extends Entity {
   #dir = new Vector3(0, 0, -1);
 
   #vel = new Vector3(0, 0, 0);
@@ -225,10 +225,8 @@ class Character extends Publisher {
     return mesh;
   }
 
-  static defaultParams = [['hp', 100]];
-
   constructor(name, texture) {
-    super();
+    super(name, 'character');
 
     const dataMap = new Map(Characters);
 
@@ -236,11 +234,11 @@ class Character extends Publisher {
       throw new Error('character data not found');
     }
 
-    this.id = `character-${genId()}`;
-    this.name = name;
+    /*this.id = `character-${genId()}`;
+    this.name = name;*/
     this.data = dataMap.get(name);
 
-    this.params = new Map(Character.defaultParams);
+    //this.params = null; // TweenerとUpdater関数内で参照するデータ
 
     this.rotateComponent = 0;
     this.povRotation = new Spherical();
@@ -258,7 +256,7 @@ class Character extends Publisher {
     this.pose = null; // promise
     this.motions = null; // promise
 
-    this.object = null;
+    //this.object = null;
 
     this.fire = this.fire.bind(this);
     this.input = this.input.bind(this);
@@ -304,6 +302,11 @@ class Character extends Publisher {
       group.add(scene);
       group.add(points);
       this.object = group;
+
+      scene.traverse((obj) => {
+				obj.frustumCulled = false;
+			});
+
       return gltf;
     } catch (e) {
       return Promise.reject(null);
@@ -351,19 +354,21 @@ class Character extends Publisher {
     return this.#states.has(state);
   }
 
-  isAlive() {
+  /*isAlive() {
     return this.#states.has(States.alive);
-  }
+  }*/
 
   setAlive(bool = true) {
-    if (bool) {
+    /*if (bool) {
       this.#states.add(States.alive);
     } else {
       this.#states.delete(States.alive);
-    }
+    }*/
+    super.setAlive(bool);
 
     if (!this.isFPV()) {
-      this.visible(bool);
+      super.visible(bool);
+      //this.visible(bool);
     }
   }
 
@@ -374,7 +379,7 @@ class Character extends Publisher {
   setFPV(camera, controls) {
     this.camera = camera;
 
-    this.camera.rotation.x = -RAD_30;
+    //this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
 
     controls.subscribe('fire', this.fire);
@@ -400,6 +405,17 @@ class Character extends Publisher {
     this.collider.end.y += this.data.height + this.data.radius;
   }
 
+  /*// 関数が渡された場合、実行結果を返す
+  setParams(params) {
+    if (typeof params === 'function') {
+      const result = params(this);
+      this.params = params;
+      return;
+    }
+
+    this.params = params;
+  }*/
+
   isGrounded() {
     return this.#isGrounded;
   }
@@ -408,17 +424,17 @@ class Character extends Publisher {
     this.#isGrounded = bool;
   }
 
-  visible(bool) {
+  /*visible(bool) {
     if (this.object != null) {
       visibleChildren(this.object, bool);
     }
-  }
+  }*/
 
   jump() {
     this.velocity.y = this.data.jumpPower;
   }
 
-  moveForward(deltaTime, state = States.idle) {
+  moveForward(deltaTime, state = States.alive) {
     let multiplier = deltaTime;
 
     if (this.#isGrounded) {
@@ -436,6 +452,7 @@ class Character extends Publisher {
     const direction = this.#forward
       .copy(this.direction)
       .multiplyScalar(multiplier);
+    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * -RAD_30);
     this.velocity.add(direction);
   }
 
@@ -486,6 +503,7 @@ class Character extends Publisher {
     }
 
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
+    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * -RAD_30);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
   }
@@ -639,7 +657,7 @@ class Character extends Publisher {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    if (!this.#states.has(States.alive)) {
+    if (!this.isAlive()) {
       return;
     }
 
@@ -740,10 +758,6 @@ class Character extends Publisher {
       .copy(this.velocity)
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
-
-    if (this.collider.start.y < World.oob) {
-      this.publish('oob', this);
-    }
 
     /*if (this.#states.has(States.stunning)) {
       this.#pausedDuration += deltaTime;
