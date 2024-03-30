@@ -46,12 +46,7 @@ class Collidable extends Entity {
     this.#bounced = bool;
   }
 
-  /*isAlive() {
-    return this.#alive;
-  }*/
-
   setAlive(bool = true) {
-    //this.#alive = bool;
     super.setAlive(bool);
 
     if (bool) {
@@ -59,21 +54,7 @@ class Collidable extends Entity {
     }
 
     super.visible(bool);
-    /*if (this.object != null) {
-      visibleChildren(this.object, bool);
-    }*/
   }
-
-  /*// 関数が渡された場合、実行結果を返す
-  setParams(params) {
-    if (typeof params === 'function') {
-      const result = params(this);
-      this.params = params;
-      return;
-    }
-
-    this.params = params;
-  }*/
 
   update(deltaTime, elapsedTime, damping) {
     if (!this.isAlive()) {

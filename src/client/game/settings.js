@@ -82,6 +82,10 @@ export const Controls = {
   stunningDuration: 0.4,
 
   inputDuration: 120,
+
+  wheelSpeed: 3,
+  horizontalAngleLimit: 160,
+  virticalAngleLimit: 80,
 };
 
 export const World = {

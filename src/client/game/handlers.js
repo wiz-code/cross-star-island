@@ -12,29 +12,30 @@ const compositions = new Map(Compositions);
 export const handlers = [
   {
     eventName: 'oob',
-    effectName: 'teleport-character',
-    handler(character) {
-      const stageNameList = this.data.compositions.get('stage');
-      const stageName = stageNameList[this.stageIndex];
-      const stageData = this.data.stages.get(stageName);
+    targetName: 'teleport-character',
+    condition(states, character) {
+      return character.isFPV();
+    },
+    handler(states, character) {
+      const stageIndex = states.get('stageIndex');
+      const stageNameList = compositions.get('stage');
+      const stageName = stageNameList[stageIndex];
+      const stageData = stages.get(stageName);
 
-      if (character.isFPV()) {
-        const checkpoint = stageData.checkpoints[this.checkpointIndex];
-        character.velocity.copy(new Vector3());
-        character.setPosition(
-          checkpoint.position,
-          checkpoint.phi,
-          checkpoint.theta,
-        );
-      } else {
-        character.setAlive(false);
-      }
+      const checkpointIndex = states.get('checkpointIndex');
+      const checkpoint = stageData.checkpoints[checkpointIndex];
+      character.velocity.copy(new Vector3());
+      character.setPosition(
+        checkpoint.position,
+        checkpoint.phi,
+        checkpoint.theta,
+      );
     },
   },
   {
     eventName: 'get-item',
-    effectName: 'weapon-upgrade',
-    handler(character) {
+    targetName: 'weapon-upgrade',
+    handler(states, character) {
       if (character.guns.has(character.gunType)) {
         const gun = character.guns.get(character.gunType);
         const { ammoTypes } = gun.data;
@@ -45,8 +46,7 @@ export const handlers = [
           const ammoType = ammoTypes[index + 1];
 
           if (ammoType != null) {
-            const ammo = this.ammos.get(ammoType);
-            character.setAmmo(ammo);
+            character.setAmmoType(ammoType);
           }
         }
       }
@@ -54,10 +54,19 @@ export const handlers = [
   },
   {
     eventName: 'get-item',
-    effectName: 'checkpoint',
-    handler() {
-      this.checkpointIndex += 1;
-    }
+    targetName: 'checkpoint',
+    handler(states) {
+      const checkpointIndex = states.get('checkpointIndex');
+      states.set('checkpointIndex', checkpointIndex + 1);
+    },
+  },
+  {
+    eventName: 'collision',
+    targetName: 'girl-1',
+    once: true,
+    handler(states, c1, c2) {
+      alert('ゴール！　おめでとう！');
+    },
   },
 ];
 

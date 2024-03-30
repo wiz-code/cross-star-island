@@ -67,6 +67,12 @@ export const States = {
   stunning: 3,
 };
 
+export const InitStates = [
+  ['stageIndex', 0],
+  ['checkpointIndex', 0],
+  ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
+];
+
 export const Obstacles = [
   [
     'round-stone',
@@ -328,7 +334,8 @@ export const Stages = [
       ],
       characters: [
         {
-          name: 'heroine-1',
+          name: 'girl-1',
+          ctype: 'heroine-1',
           position: { sx: -53, sy: 4, sz: 1 },
           phi: -PI * 0.5,
           pose: 'pose-1',
@@ -349,9 +356,11 @@ export const Stages = [
         },
         {
           name: 'hero-1',
+          ctype: 'hero-1',
           position: { sx: -43, sy: 2, sz: 1.2 },
           phi: -PI / 2,
           theta: -0.1,
+          ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 0,
@@ -364,9 +373,11 @@ export const Stages = [
         },
         {
           name: 'hero-1',
+          ctype: 'hero-1',
           position: { sx: -45, sy: 2, sz: 1.2 },
           phi: (80 * -PI) / 180,
           theta: -0.1,
+          ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 2,
@@ -379,9 +390,11 @@ export const Stages = [
         },
         {
           name: 'hero-1',
+          ctype: 'hero-1',
           position: { sx: -47, sy: 2, sz: 1.2 },
           phi: (98 * -PI) / 180,
           theta: -0.1,
+          ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
             spawnedAt: 4,
@@ -394,6 +407,7 @@ export const Stages = [
         },
         {
           name: 'hero-1',
+          ctype: 'hero-1',
           position: { sx: -38, sy: 4, sz: 5 },
           phi: (-27 * PI) / 180,
           theta: -0.1,
@@ -409,6 +423,7 @@ export const Stages = [
         },
         {
           name: 'hero-1',
+          ctype: 'hero-1',
           position: { sx: -41, sy: 3, sz: -3 },
           phi: (-100 * PI * 2) / 360,
           theta: -0.25,
