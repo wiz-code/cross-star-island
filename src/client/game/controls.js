@@ -121,13 +121,13 @@ class FirstPersonControls extends Publisher {
     this.centerMark = createCenterMark(texture);
     this.screen.add(this.centerMark);
 
-    this.minPolarAngle = {
-      virtical: 0,
-      horizontal: 0,
+    this.virticalAngle = {
+      min: -Controls.virticalAngleLimit / 360 * PI * 2,
+      max: Controls.virticalAngleLimit / 360 * PI * 2,
     };
-    this.maxPolarAngle = {
-      virtical: PI,
-      horizontal: PI * 2,
+    this.horizontalAngle = {
+      min: -Controls.horizontalAngleLimit / 360 * PI * 2,
+      max: Controls.horizontalAngleLimit / 360 * PI * 2,
     };
 
     this.viewHalfX = 0;
@@ -171,7 +171,7 @@ class FirstPersonControls extends Publisher {
   }
 
   onChangeRotateComponent(rotateComponent) {
-    if (this.#povLock && this.#rotation.phi !== 0) {
+    if (this.#povLock) {
       this.#rotation.phi -= rotateComponent;
     }
   }
@@ -261,15 +261,23 @@ class FirstPersonControls extends Publisher {
       return;
     }
 
-    const delta = sign(event.deltaY) * 2 * Rad_1;
-    const rot = this.#rotation.theta + this.#wheel + delta;
+    /*if (
+      this.virticalAngle.max <= this.#rotation.theta + this.#wheel ||
+      this.virticalAngle.min >= this.#rotation.theta + this.#wheel
+    ) {
+      const delta = sign(event.deltaY) * Controls.wheelSpeed * Rad_1;
+      this.#wheel += delta;
+    }*/
 
-    if (
-      halfPI - this.minPolarAngle.virtical >= rot &&
-      halfPI - this.maxPolarAngle.virtical <= rot
+    const delta = sign(event.deltaY) * Controls.wheelSpeed * Rad_1;
+    this.#wheel += delta;
+
+    /*if (
+      this.virticalAngle.max >= rot &&
+      this.virticalAngle.min <= rot
     ) {
       this.#wheel += delta;
-    }
+    }*/
   }
 
   onPointerMove(event) {
@@ -555,29 +563,29 @@ class FirstPersonControls extends Publisher {
       this.#rotation.phi -= radY * lookSpeed;
 
       this.#rotation.theta = max(
-        halfPI - this.maxPolarAngle.virtical,
-        min(halfPI - this.minPolarAngle.virtical, this.#rotation.theta),
+        this.virticalAngle.min,
+        min(this.virticalAngle.max, this.#rotation.theta),
       );
       this.#rotation.phi = max(
-        PI - this.maxPolarAngle.horizontal,
-        min(PI - this.minPolarAngle.horizontal, this.#rotation.phi),
+        this.horizontalAngle.min,
+        min(this.horizontalAngle.max, this.#rotation.phi),
       );
 
-      let posY = (this.gaugeHalfY * this.#rotation.theta) / halfPI;
+      let posY = (this.gaugeHalfY * this.#rotation.theta) / this.virticalAngle.max;
 
       if (
-        this.#rotation.phi === PI - this.maxPolarAngle.horizontal ||
-        this.#rotation.phi === PI - this.minPolarAngle.horizontal
+        this.#rotation.phi === this.horizontalAngle.min ||
+        this.#rotation.phi === this.horizontalAngle.max
       ) {
         yawIndicator.material.color = indicatorColor.beyondFov;
       } else if (yawIndicator.material.color !== indicatorColor.normal) {
         yawIndicator.material.color = indicatorColor.normal;
       }
 
-      if (posY <= -this.gaugeHalfY) {
+      if (this.#rotation.theta <= this.virticalAngle.min) {
         posY = -this.gaugeHalfY;
         pitchIndicator.material.color = indicatorColor.beyondFov;
-      } else if (posY >= this.gaugeHalfY) {
+      } else if (this.#rotation.theta >= this.virticalAngle.max) {
         posY = this.gaugeHalfY;
         pitchIndicator.material.color = indicatorColor.beyondFov;
       } else if (pitchIndicator.material.color !== indicatorColor.normal) {
@@ -675,7 +683,13 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.3;
+    if (this.virticalAngle.max <= this.#wheel) {
+        this.#wheel = this.virticalAngle.max;
+      } else if (this.virticalAngle.min >= this.#wheel) {
+      this.#wheel = this.virticalAngle.min;
+    }
+
+    const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.4;
     this.povSightLines.position.setY(posY);
     this.publish('setPovRotation', this.#rotation, this.#wheel);
 

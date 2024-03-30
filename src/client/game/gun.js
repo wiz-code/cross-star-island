@@ -26,15 +26,14 @@ class Gun extends Publisher {
     this.type = 'gun';
     this.data = gunData.get(name);
     this.ammo = null;
+    this.ammos = new Map();
     this.fireAt = performance.now();
   }
 
-  setAmmo(ammo) {
-    if (!this.data.ammoTypes.includes(ammo.name)) {
-      return;
+  setAmmoType(ammoType) {
+    if (this.ammos.has(ammoType)) {
+      this.ammo = this.ammos.get(ammoType);
     }
-
-    this.ammo = ammo;
   }
 
   fire(character) {

@@ -109,7 +109,7 @@ class CharacterManager extends Publisher {
               object.type === 'item'
             ) {
               object.setAlive(false);
-              this.eventManager.dispatch('get-item', object.name, character);
+              this.eventManager.dispatch('get-item', object.name, character, object);
             } else {
               if (!character.isStunning()) {
                 character.setStunning(World.collisionShock);
@@ -180,6 +180,7 @@ class CharacterManager extends Publisher {
               const r = c1.data.radius + c2.data.radius;
               const r2 = r * r;
 
+              let collided = false;
               const colliders = [
                 c2.collider.start,
                 c2.collider.end,
@@ -191,6 +192,8 @@ class CharacterManager extends Publisher {
                 const d2 = point.distanceToSquared(center);
 
                 if (d2 < r2) {
+                  collided = true;
+
                   const normal = this.#vecA
                     .subVectors(point, center)
                     .normalize();
@@ -209,6 +212,11 @@ class CharacterManager extends Publisher {
                   const d = (r - sqrt(d2)) / 2;
                   c1.collider.translate(normal.multiplyScalar(-d));
                   c2.collider.translate(normal.multiplyScalar(d));
+                }
+
+                if (collided) {
+                  this.eventManager.dispatch('collision', c1.name, c1, c2);
+                  this.eventManager.dispatch('collision', c2.name, c2, c1);
                 }
               }
             }

@@ -225,20 +225,16 @@ class Character extends Entity {
     return mesh;
   }
 
-  constructor(name, texture) {
+  constructor(name, ctype, texture) {
     super(name, 'character');
 
     const dataMap = new Map(Characters);
 
-    if (!dataMap.has(name)) {
+    if (!dataMap.has(ctype)) {
       throw new Error('character data not found');
     }
 
-    /*this.id = `character-${genId()}`;
-    this.name = name;*/
-    this.data = dataMap.get(name);
-
-    //this.params = null; // TweenerとUpdater関数内で参照するデータ
+    this.data = dataMap.get(ctype);
 
     this.rotateComponent = 0;
     this.povRotation = new Spherical();
@@ -354,21 +350,11 @@ class Character extends Entity {
     return this.#states.has(state);
   }
 
-  /*isAlive() {
-    return this.#states.has(States.alive);
-  }*/
-
   setAlive(bool = true) {
-    /*if (bool) {
-      this.#states.add(States.alive);
-    } else {
-      this.#states.delete(States.alive);
-    }*/
     super.setAlive(bool);
 
     if (!this.isFPV()) {
       super.visible(bool);
-      //this.visible(bool);
     }
   }
 
@@ -404,17 +390,6 @@ class Character extends Entity {
     this.collider.end.copy(pos);
     this.collider.end.y += this.data.height + this.data.radius;
   }
-
-  /*// 関数が渡された場合、実行結果を返す
-  setParams(params) {
-    if (typeof params === 'function') {
-      const result = params(this);
-      this.params = params;
-      return;
-    }
-
-    this.params = params;
-  }*/
 
   isGrounded() {
     return this.#isGrounded;
@@ -524,10 +499,10 @@ class Character extends Entity {
     this.guns.set(gun.name, gun);
   }
 
-  setAmmo(ammo) {
+  setAmmoType(ammoType) {
     if (this.guns.has(this.gunType)) {
       const gun = this.guns.get(this.gunType);
-      gun.setAmmo(ammo);
+      gun.setAmmoType(ammoType);
     }
   }
 

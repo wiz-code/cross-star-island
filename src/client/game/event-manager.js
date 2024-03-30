@@ -2,48 +2,40 @@ import { States } from './data';
 import Publisher from './publisher';
 
 class EventManager extends Publisher {
-  #handlerCache = new Map();
   #updaterCache = new Map();
 
-  constructor() {
+  constructor(states) {
     super();
 
+    this.states = states;
     this.schedules = new Map();
     this.events = new Map();
     this.tweens = new Map();
     this.updaters = new Map();
   }
 
-  addHandler(eventName, effectName, handler, bindObject = null) {
+  addHandler(eventName, targetName, handler, condition = null, once = false) {
     if (!this.events.has(eventName)) {
       this.events.set(eventName, new Map());
     }
 
-    const events = this.events.get(eventName);
-    const boundHandler = handler.bind(bindObject);
-    events.set(effectName, boundHandler);
-    const key = `${eventName}-${effectName}`;
+    const targets = this.events.get(eventName);
 
-    this.#handlerCache.set(key, handler);
+    targets.set(targetName, [handler, condition, once]);
   }
 
-  removeHandler(object, eventName, handler) {
-    /*if (this.events.has(object)) {
-      const events = this.events.get(object);
+  removeHandler(eventName, targetName, handler, condition = null) {
+    if (this.events.has(eventName)) {
+      const targets = this.events.get(eventName);
 
-      if (events.has(eventName)) {
-        const handlerSet = events.get(eventName);
+      if (targets.has(targetName)) {
+        const [hdlr, cond] = targets.get(targetName);
 
-        if (this.#handlerCache.has(handler)) {
-          const boundHandler = this.#handlerCache.get(handler);
-
-          if (handlerSet.has(boundHandler)){
-            handlerSet.delete(boundHandler);
-            this.#handlerCache.delete(handler);
-          }
+        if (handler === hdlr && condition === cond) {
+          targets.delete(targetName);
         }
       }
-    }*/
+    }
   }
 
   addUpdater(object, state, updater, args) {
@@ -118,13 +110,22 @@ class EventManager extends Publisher {
 
   clear() {}
 
-  dispatch(eventName, effectName, ...args) {
+  dispatch(eventName, targetName, ...args) {
     if (this.events.has(eventName)) {
-      const events = this.events.get(eventName);
+      const targets = this.events.get(eventName);
 
-      if (events.has(effectName)) {
-        const handler = events.get(effectName);
-        handler(...args);
+      if (targets.has(targetName)) {
+        const [handler, condition, once] = targets.get(targetName);
+
+        if (condition != null && !condition(this.states, ...args)) {
+          return;
+        }
+
+        handler(this.states, ...args);
+
+        if (once) {
+          this.removeHandler(eventName, targetName, handler, condition);
+        }
       }
     }
   }
