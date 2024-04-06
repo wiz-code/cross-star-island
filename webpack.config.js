@@ -1,6 +1,7 @@
 const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 const babelConfig = require('./src/client/.babelrc');
 
 module.exports = (env, argv) => {
@@ -59,6 +60,11 @@ module.exports = (env, argv) => {
       new HtmlWebpackPlugin({
         template: './src/html/index.html',
       }),
+      new CopyPlugin({
+      patterns: [
+        path.resolve(__dirname, 'assets', '**/*'),
+      ],
+    }),
     ],
 
     resolve: {
@@ -66,15 +72,7 @@ module.exports = (env, argv) => {
     },
 
     devServer: {
-      static: [
-        {
-          directory: path.join(__dirname, 'dist/client'),
-        },
-        {
-          directory: path.join(__dirname, 'assets'),
-          publicPath: '/assets',
-        },
-      ],
+      static: path.join(__dirname, 'dist/client'),
       hot: true,
       open: true,
     },
