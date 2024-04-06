@@ -313,7 +313,7 @@ class FirstPersonControls extends Publisher {
     }
 
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    //this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }

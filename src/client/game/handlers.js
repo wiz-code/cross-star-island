@@ -155,4 +155,16 @@ export const Updaters = [
       },
     },
   ],
+  [
+    'satellite-points',
+    {
+      state: States.alive,
+      update(deltaTime) {
+        if (this.object != null) {
+          const points = this.object.getObjectByName('points');
+          points.rotation.y -= deltaTime * this.data.rotateSpeed;
+        }
+      }
+    },
+  ],
 ];

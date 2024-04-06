@@ -93,7 +93,11 @@ class Game {
 
     this.container = document.getElementById('container');
 
-    this.renderer = new WebGLRenderer({ canvas, antialias: false });
+    this.renderer = new WebGLRenderer({
+      canvas,
+      antialias: false,
+      preserveDrawingBuffer: true,
+    });
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
@@ -224,7 +228,7 @@ class Game {
     });
 
     /// ///////////////
-    const heroName = 'hero-1';
+    const heroName = 'player-1';
     const ctype = 'hero-1';
 
     this.setPlayer(heroName, ctype);
@@ -232,7 +236,6 @@ class Game {
 
     /// ///////////
 
-    // this.loop = new Loop(this.update, this);
     this.update = this.update.bind(this);
 
     if (this.loadingList.length > 0) {
@@ -357,7 +360,6 @@ class Game {
             this.modelManager.addModel(data.name, gltf);
             character.setPosition(data.position, data.phi, data.theta);
             this.characterManager.add(character, data);
-            // vrm.expressionManager.setValue('blink', 1);
 
             const { vrm } = gltf.userData;
 

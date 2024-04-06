@@ -8,10 +8,13 @@ const app = express();
 app.use(favicon(path.join(__dirname, '../../assets/favicon.ico')));
 
 app.use(express.static(path.join(__dirname, '../../dist/client')));
-app.use('/assets', express.static(path.join(__dirname, '../../assets')));
 
 app.get('/', (req, res) => {
   res.send('index');
+});
+
+app.get('/game', (req, res) => {
+  res.redirect('/');
 });
 
 app.use((err, req, res, next) => {

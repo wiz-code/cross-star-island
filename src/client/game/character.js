@@ -147,10 +147,10 @@ class Character extends Entity {
       color: data.wireColor,
     });
     material.face = new MeshBasicMaterial({
-      color: 0xdc143c,
+      color: data.faceColor,
     });
     material.faceWire = new LineBasicMaterial({
-      color: 0xdb6e84,
+      color: data.faceWireColor,
     });
 
     material.points = new PointsMaterial({

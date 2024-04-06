@@ -202,12 +202,15 @@ export const Characters = [
       color: 0x007399,
       wireColor: 0x004d66,
       pointColor: 0xeb4b2f,
+      faceColor: 0xdc143c,
+      faceWireColor: 0xdb6e84,
 
       height: 20,
       radius: 10,
       weight: 1,
 
       speed: 300, // 3,
+      rotateSpeed: 2,
       // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
       turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
       sprint: 2.5,
@@ -224,7 +227,11 @@ export const Characters = [
   [
     'heroine-1',
     {
+      color: 0xFFF0F5,
+      wireColor: 0xFFD700,
       pointColor: 0xeb4b2f,
+      faceColor: 0x87CEEB,
+      faceWireColor: 0xFFD700,
 
       model: 'model-2',
       motions: ['VRMA_01'],
@@ -342,17 +349,7 @@ export const Stages = [
           schedule: {
             spawnedAt: 1,
           },
-          updaters: [
-            {
-              state: States.alive,
-              update(deltaTime) {
-                if (this.object != null) {
-                  const points = this.object.getObjectByName('points');
-                  points.rotation.y -= deltaTime * this.data.rotateSpeed;
-                }
-              },
-            },
-          ],
+          updaters: ['satellite-points'],
         },
         {
           name: 'hero-1',
@@ -369,7 +366,7 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.4,
           },
-          updaters: ['bullet-fire-1'],
+          updaters: ['bullet-fire-1', 'satellite-points'],
         },
         {
           name: 'hero-1',
@@ -386,7 +383,7 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.8,
           },
-          updaters: ['bullet-fire-1'],
+          updaters: ['bullet-fire-1', 'satellite-points'],
         },
         {
           name: 'hero-1',
@@ -403,7 +400,7 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.8,
           },
-          updaters: ['bullet-fire-1'],
+          updaters: ['bullet-fire-1', 'satellite-points'],
         },
         {
           name: 'hero-1',
@@ -419,7 +416,7 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          updaters: ['bullet-fire-1'],
+          updaters: ['bullet-fire-1', 'satellite-points'],
         },
         {
           name: 'hero-1',
@@ -435,7 +432,7 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          updaters: ['bullet-fire-1'],
+          updaters: ['bullet-fire-1', 'satellite-points'],
         },
       ],
       obstacles: [

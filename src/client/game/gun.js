@@ -25,19 +25,19 @@ class Gun extends Publisher {
     this.name = name;
     this.type = 'gun';
     this.data = gunData.get(name);
-    this.ammo = null;
+    this.currentAmmo = null;
     this.ammos = new Map();
     this.fireAt = performance.now();
   }
 
   setAmmoType(ammoType) {
     if (this.ammos.has(ammoType)) {
-      this.ammo = this.ammos.get(ammoType);
+      this.currentAmmo = this.ammos.get(ammoType);
     }
   }
 
   fire(character) {
-    if (this.ammo == null) {
+    if (this.currentAmmo == null) {
       return;
     }
 
@@ -50,7 +50,7 @@ class Gun extends Publisher {
     this.fireAt = now;
 
     const { rotation, povRotation, deltaY } = character;
-    const bullet = this.ammo.list[this.ammo.index];
+    const bullet = this.currentAmmo.list[this.currentAmmo.index];
     bullet.setAlive(true);
 
     const halfRad = (this.data.accuracy / 2) * Rad_1;
@@ -69,7 +69,7 @@ class Gun extends Publisher {
     bullet.velocity.copy(dir).multiplyScalar(this.data.speed);
     bullet.velocity.addScaledVector(character.velocity, 2);
 
-    this.ammo.index = (this.ammo.index + 1) % this.ammo.list.length;
+    this.currentAmmo.index = (this.currentAmmo.index + 1) % this.currentAmmo.list.length;
   }
 
   update(deltaTime) {
