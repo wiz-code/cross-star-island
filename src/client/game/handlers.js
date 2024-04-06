@@ -39,7 +39,7 @@ export const handlers = [
       if (character.guns.has(character.gunType)) {
         const gun = character.guns.get(character.gunType);
         const { ammoTypes } = gun.data;
-        const { name } = gun.ammo;
+        const { name } = gun.currentAmmo;
         const index = ammoTypes.indexOf(name);
 
         if (index > -1) {
