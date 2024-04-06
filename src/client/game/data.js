@@ -69,7 +69,7 @@ export const States = {
 
 export const InitStates = [
   ['stageIndex', 0],
-  ['checkpointIndex', 0],
+  ['checkpointIndex', 2],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
 ];
 
@@ -497,10 +497,10 @@ export const Stages = [
       components: [
         {
           grid: {
-            widthSegments: 24,
-            heightSegments: 6,
+            widthSegments: 28,
+            heightSegments: 12,
             depthSegments: 8,
-            position: { sx: 0, sy: 0.25, sz: 0.25 },
+            position: { sx: 2, sy: -4.25, sz: 0.25 },
           },
           maze: {
             widthSegments: 24,
@@ -521,9 +521,9 @@ export const Stages = [
           offset: { sx: -19.5, sy: -1, sz: 0 },
           grid: {
             widthSegments: 20,
-            heightSegments: 6,
+            heightSegments: 10,
             depthSegments: 8,
-            position: { sx: 0, sy: 0.25, sz: 0.25 },
+            position: { sx: -2.5, sy: 0.25, sz: 0.25 },
           },
           /* arrow: {
             direction: new Vector3(0, -1, 0),
@@ -559,7 +559,7 @@ export const Stages = [
           offset: { sx: -31, sy: 0, sz: 2 },
           grid: {
             widthSegments: 24,
-            heightSegments: 6,
+            heightSegments: 10,
             depthSegments: 12,
             position: { sx: -13, sy: 0.25, sz: 0.25 },
           },
