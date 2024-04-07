@@ -4,26 +4,11 @@ import Entity from './entity';
 import { World } from './settings';
 import { getVectorPos, visibleChildren } from './utils';
 
-let id = 0;
-
-function genId() {
-  id += 1;
-  return id;
-}
-
 class Collidable extends Entity {
   #bounced = false;
 
-  constructor(name, type, object = null) {
+  constructor(name, type) {
     super(name, type);
-
-    /*this.id = `${type}-${genId()}`;
-
-    this.name = name;
-    this.type = type;
-
-    this.params = null;*/
-    this.object = object;
 
     this.collider = new Sphere();
     this.velocity = new Vector3();

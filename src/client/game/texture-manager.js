@@ -1,5 +1,4 @@
 import { Texture } from 'three';
-import { Screen } from './settings';
 import sprites from './sprites';
 
 const { PI } = Math;

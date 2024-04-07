@@ -1,8 +1,6 @@
-import { Vector3, Quaternion, Euler } from 'three';
+import { Vector3, Quaternion } from 'three';
 
-import { World, Camera } from './settings';
-
-const { PI } = Math;
+import { World } from './settings';
 
 export const getVectorPos = (position) => {
   const vector = new Vector3();

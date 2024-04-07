@@ -5,7 +5,7 @@ import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
 import { Box, CssBaseline } from '@mui/material';
 
-import { defaultTheme } from './theme';
+import defaultTheme from './theme';
 import systemSlice from './redux/systemSlice';
 import TitlePage from './components/TitlePage';
 import GamePage from './components/GamePage';

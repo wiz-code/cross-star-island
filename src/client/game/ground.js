@@ -15,10 +15,10 @@ import {
   PlaneGeometry,
   LineSegments,
 } from 'three';
-import { SUBTRACTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
+import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
-import { World, Grid, Ground, Cylinder } from './settings';
+import { World, Ground, Cylinder } from './settings';
 
 const { sin, floor, abs, PI } = Math;
 
@@ -61,7 +61,7 @@ export const createGround = (
     bumpHeight = 1,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
-  } = {},
+  },
   texture,
 ) => {
   const width = widthSegments * widthSpacing;
@@ -147,8 +147,7 @@ export const createMaze = (
     depthSpacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
-    offset = { x: 0, y: 0, z: 0 }, /// ///////////
-  } = {},
+  },
   texture,
 ) => {
   const geom = {};
@@ -164,7 +163,7 @@ export const createMaze = (
     depthSegments,
   );
 
-  vertices = geom.box.getAttribute('position').array.slice(0);
+  let vertices = geom.box.getAttribute('position').array.slice(0);
   const indices = geom.box.getIndex().array.slice(0);
 
   for (let i = 0, l = indices.length; i < l; i += 3) {
@@ -202,7 +201,7 @@ export const createMaze = (
     heightSpacing * heightSegments,
     depthSpacing * depthSegments,
     heightSegments,
-    depthSegments
+    depthSegments,
   );
   geom.plane2 = geom.plane1.clone();
 
@@ -224,20 +223,12 @@ export const createMaze = (
   const evaluator = new Evaluator();
   evaluator.attributes = ['position', 'normal'];
 
-  mesh.surface = evaluator.evaluate(
-    mesh.surface,
-    mesh.brush1,
-    SUBTRACTION
-  );
-  mesh.surface = evaluator.evaluate(
-    mesh.surface,
-    mesh.brush2,
-    SUBTRACTION
-  );
+  mesh.surface = evaluator.evaluate(mesh.surface, mesh.brush1, SUBTRACTION);
+  mesh.surface = evaluator.evaluate(mesh.surface, mesh.brush2, SUBTRACTION);
 
   geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
 
-  let vertices = mesh.surface.geometry.attributes.position.array.slice(0);
+  vertices = mesh.surface.geometry.attributes.position.array.slice(0);
   geom.points = new BufferGeometry();
   geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geom.points.computeBoundingSphere();
@@ -287,7 +278,7 @@ export const createCylinder = (
     heightSegments = 1,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
-  } = {},
+  },
   texture,
 ) => {
   const geom = {};

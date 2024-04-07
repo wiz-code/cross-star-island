@@ -1,8 +1,6 @@
 import { SpriteMaterial, Sprite } from 'three';
 import { Screen } from './settings';
 
-const { PI } = Math;
-
 export const createSight = (texture) => {
   const material = new SpriteMaterial({
     color: 0xffffff,

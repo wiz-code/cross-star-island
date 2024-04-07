@@ -6,10 +6,10 @@ import { Stages } from './data';
 import { createGrid, createFineGrid } from './grid';
 import { createGround, createMaze, createCylinder } from './ground';
 
-const data = new Map(Stages);
+const stageData = new Map(Stages);
 
 const createStage = (name, texture) => {
-  const { components } = data.get(name);
+  const { components } = stageData.get(name);
   const stage = new Group();
 
   for (let i = 0, l = components.length; i < l; i += 1) {

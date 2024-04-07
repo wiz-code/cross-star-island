@@ -5,9 +5,11 @@ import systemSlice from './systemSlice';
 const { reducer: gameReducer } = gameSlice;
 const { reducer: systemReducer } = systemSlice;
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
     game: gameReducer,
     system: systemReducer,
   },
 });
+
+export default store;

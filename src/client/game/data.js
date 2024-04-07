@@ -67,10 +67,19 @@ export const States = {
   stunning: 3,
 };
 
-export const InitStates = [
+export const GlobalStates = [
   ['stageIndex', 0],
   ['checkpointIndex', 0],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
+];
+
+export const GlobalMethods = [
+  [
+    'play-sound',
+    function (key, options) {
+      this.playSound(key, options);
+    },
+  ],
 ];
 
 export const Obstacles = [
@@ -119,7 +128,7 @@ export const Guns = [
   ],
 ];
 
-export const Ammo = [
+export const Ammos = [
   [
     'small-bullet',
     {
@@ -139,15 +148,15 @@ export const Ammo = [
       updaters: [
         {
           state: States.alive,
-          update(deltaTime) {
-            const rotateSpeed = !this.isBounced()
-              ? this.data.rotateSpeed
-              : this.data.rotateSpeed * 0.5;
+          update(target, deltaTime) {
+            const rotateSpeed = !target.isBounced()
+              ? target.data.rotateSpeed
+              : target.data.rotateSpeed * 0.5;
 
-            this.object.rotation.z -= deltaTime * rotateSpeed;
+            target.object.rotation.z -= deltaTime * rotateSpeed;
           },
         },
-      ]
+      ],
     },
   ],
   [
@@ -172,19 +181,21 @@ export const Ammo = [
       updaters: [
         {
           state: States.alive,
-          update(deltaTime) {
-            this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+          update(target, deltaTime) {
+            target.object.rotation.z -= deltaTime * target.data.rotateSpeed;
 
-            if (!this.isBounced()) {
-              if (this.elapsedTime <= this.data.hopDuration) {
-                const ratio = easeOutCubic(this.elapsedTime);
-                this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+            if (!target.isBounced()) {
+              if (target.elapsedTime <= target.data.hopDuration) {
+                const ratio = easeOutCubic(target.elapsedTime);
+                target.collider.center.y +=
+                  deltaTime * ratio * target.data.hopValue;
               } else {
                 const ratio =
-                  1 - easeInQuad(this.elapsedTime - this.data.hopDuration);
+                  1 - easeInQuad(target.elapsedTime - target.data.hopDuration);
 
                 if (ratio >= 0) {
-                  this.collider.center.y += deltaTime * ratio * this.data.hopValue;
+                  target.collider.center.y +=
+                    deltaTime * ratio * target.data.hopValue;
                 }
               }
             }
@@ -217,7 +228,7 @@ export const Characters = [
       urgencyMove: 8,
 
       // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 17.5 / 6, // PI * 2,
+      urgencyTurn: (PI * 17.5) / 6, // PI * 2,
       airSpeed: 100,
       jumpPower: 350,
 
@@ -227,15 +238,15 @@ export const Characters = [
   [
     'heroine-1',
     {
-      color: 0xFFF0F5,
-      wireColor: 0xFFD700,
+      color: 0xfff0f5,
+      wireColor: 0xffd700,
       pointColor: 0xeb4b2f,
-      faceColor: 0x87CEEB,
-      faceWireColor: 0xFFD700,
+      faceColor: 0x87ceeb,
+      faceWireColor: 0xffd700,
 
       model: 'model-2',
       motions: ['VRMA_01'],
-      //pose: 'pose-1',
+      // pose: 'pose-1',
       modelSize: 27.5,
       offsetY: 20,
       rotateSpeed: 2,
@@ -257,6 +268,16 @@ export const Characters = [
       gunTypes: ['normal-gun'],
     },
   ],
+];
+
+export const Sounds = [
+  ['shot', 'ショット.mp3'],
+  ['damage', '打撃1.mp3'],
+  ['jump', 'カーソル移動3.mp3'],
+  ['get-item', '決定11.mp3'],
+  ['dash', '回避.mp3'],
+  ['girl-voice-1', '「すごいすごい」.mp3'],
+  ['goal', 'きらきら輝く1.mp3'],
 ];
 
 export const Items = [
@@ -322,7 +343,7 @@ export const Stages = [
       checkpoints: [
         {
           position: { sx: 8, sy: 4, sz: 0.1 },
-          //position: { sx: -40, sy: 4, sz: 1 },
+          // position: { sx: -40, sy: 4, sz: 1 },
           phi: PI / 2,
         },
         {
@@ -446,21 +467,27 @@ export const Stages = [
         {
           name: 'round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [5000] }],
+          tweeners: [
+            { name: 'rolling-stone-1', state: States.alive, args: [5000] },
+          ],
           spawnedAt: 5,
           updaters: ['rolling-stone-1'],
         },
         {
           name: 'small-round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [2500] }],
+          tweeners: [
+            { name: 'rolling-stone-1', state: States.alive, args: [2500] },
+          ],
           spawnedAt: 2.5,
           updaters: ['rolling-stone-1'],
         },
         {
           name: 'small-round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
-          tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [7500] }],
+          tweeners: [
+            { name: 'rolling-stone-1', state: States.alive, args: [7500] },
+          ],
           spawnedAt: 7.5,
           updaters: ['rolling-stone-1'],
         },

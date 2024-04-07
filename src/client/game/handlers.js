@@ -13,16 +13,16 @@ export const handlers = [
   {
     eventName: 'oob',
     targetName: 'teleport-character',
-    condition(states, character) {
+    condition(character) {
       return character.isFPV();
     },
-    handler(states, character) {
-      const stageIndex = states.get('stageIndex');
+    handler(character) {
+      const stageIndex = globalThis.states.get('stageIndex');
       const stageNameList = compositions.get('stage');
       const stageName = stageNameList[stageIndex];
       const stageData = stages.get(stageName);
 
-      const checkpointIndex = states.get('checkpointIndex');
+      const checkpointIndex = globalThis.states.get('checkpointIndex');
       const checkpoint = stageData.checkpoints[checkpointIndex];
       character.velocity.copy(new Vector3());
       character.setPosition(
@@ -35,8 +35,13 @@ export const handlers = [
   {
     eventName: 'get-item',
     targetName: 'weapon-upgrade',
-    handler(states, character) {
+    handler(character) {
       if (character.guns.has(character.gunType)) {
+        if (character.isFPV() && globalThis.methods.has('play-sound')) {
+          const playSound = globalThis.methods.get('play-sound');
+          playSound('get-item');
+        }
+
         const gun = character.guns.get(character.gunType);
         const { ammoTypes } = gun.data;
         const { name } = gun.currentAmmo;
@@ -55,16 +60,27 @@ export const handlers = [
   {
     eventName: 'get-item',
     targetName: 'checkpoint',
-    handler(states) {
-      const checkpointIndex = states.get('checkpointIndex');
-      states.set('checkpointIndex', checkpointIndex + 1);
+    handler(character) {
+      if (character.isFPV() && globalThis.methods.has('play-sound')) {
+        const playSound = globalThis.methods.get('play-sound');
+        playSound('get-item');
+      }
+
+      const checkpointIndex = globalThis.states.get('checkpointIndex');
+      globalThis.states.set('checkpointIndex', checkpointIndex + 1);
     },
   },
   {
     eventName: 'collision',
     targetName: 'girl-1',
     once: true,
-    handler(states, c1, c2) {
+    handler(c1, c2) {
+      if (globalThis.methods.has('play-sound')) {
+        const playSound = globalThis.methods.get('play-sound');
+        playSound('girl-voice-1');
+        playSound('goal');
+      }
+
       alert('ゴール！　おめでとう！');
     },
   },
@@ -125,8 +141,8 @@ export const Updaters = [
     'rolling-stone-1',
     {
       state: States.alive,
-      update(deltaTime) {
-        this.object.rotation.z -= deltaTime * this.data.rotateSpeed;
+      update(target, deltaTime) {
+        target.object.rotation.z -= deltaTime * target.data.rotateSpeed;
       },
     },
   ],
@@ -134,10 +150,10 @@ export const Updaters = [
     'item-ring-1',
     {
       state: States.alive,
-      update(deltaTime) {
-        const rotateSpeed = deltaTime * this.data.rotateSpeed;
-        this.object.rotation.y -= rotateSpeed;
-        this.object.rotation.z -= rotateSpeed * 2;
+      update(target, deltaTime) {
+        const rotateSpeed = deltaTime * target.data.rotateSpeed;
+        target.object.rotation.y -= rotateSpeed;
+        target.object.rotation.z -= rotateSpeed * 2;
       },
     },
   ],
@@ -145,12 +161,12 @@ export const Updaters = [
     'bullet-fire-1',
     {
       state: States.alive,
-      update(deltaTime) {
-        this.params.elapsedTime += deltaTime;
+      update(target, deltaTime) {
+        target.params.elapsedTime += deltaTime;
 
-        if (this.params.elapsedTime > this.params.fireInterval) {
-          this.params.elapsedTime = 0;
-          this.fire();
+        if (target.params.elapsedTime > target.params.fireInterval) {
+          target.params.elapsedTime = 0;
+          target.fire();
         }
       },
     },
@@ -159,12 +175,12 @@ export const Updaters = [
     'satellite-points',
     {
       state: States.alive,
-      update(deltaTime) {
-        if (this.object != null) {
-          const points = this.object.getObjectByName('points');
-          points.rotation.y -= deltaTime * this.data.rotateSpeed;
+      update(target, deltaTime) {
+        if (target.object != null) {
+          const points = target.object.getObjectByName('points');
+          points.rotation.y -= deltaTime * target.data.rotateSpeed;
         }
-      }
+      },
     },
   ],
 ];

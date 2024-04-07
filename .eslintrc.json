@@ -13,7 +13,8 @@
   "plugins": ["react", "jsx-a11y"],
   "globals": {
     "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly"
+    "SharedArrayBuffer": "readonly",
+    "globalThis": "readonly"
   },
   "parserOptions": {
     "ecmaVersion": 2022,
@@ -23,7 +24,11 @@
     "sourceType": "module"
   },
   "settings": {
-    "import/resolver": "webpack"
+    "import/resolver": {
+      "webpack": {
+        "config": "./webpack.config.js"
+      }
+    }
   },
   "rules": {
     "import/extensions": [
@@ -34,6 +39,7 @@
         "tsx": "never",
         "js": "never",
         "mjs": "never",
+        "cjs": "never",
         "jsx": "never"
       }
     ]

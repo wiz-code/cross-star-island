@@ -19,7 +19,7 @@ export const createGrid = (
     depthSpacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
-  } = {},
+  },
   texture,
 ) => {
   const vertices = [];
@@ -81,7 +81,7 @@ export const createFineGrid = (
     depthSpacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
-  } = {},
+  },
   texture,
 ) => {
   const vertices = [];
