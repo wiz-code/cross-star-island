@@ -122,12 +122,12 @@ class FirstPersonControls extends Publisher {
     this.screen.add(this.centerMark);
 
     this.virticalAngle = {
-      min: -Controls.virticalAngleLimit / 360 * PI * 2,
-      max: Controls.virticalAngleLimit / 360 * PI * 2,
+      min: (-Controls.virticalAngleLimit / 360) * PI * 2,
+      max: (Controls.virticalAngleLimit / 360) * PI * 2,
     };
     this.horizontalAngle = {
-      min: -Controls.horizontalAngleLimit / 360 * PI * 2,
-      max: Controls.horizontalAngleLimit / 360 * PI * 2,
+      min: (-Controls.horizontalAngleLimit / 360) * PI * 2,
+      max: (Controls.horizontalAngleLimit / 360) * PI * 2,
     };
 
     this.viewHalfX = 0;
@@ -261,23 +261,23 @@ class FirstPersonControls extends Publisher {
       return;
     }
 
-    /*if (
+    /* if (
       this.virticalAngle.max <= this.#rotation.theta + this.#wheel ||
       this.virticalAngle.min >= this.#rotation.theta + this.#wheel
     ) {
       const delta = sign(event.deltaY) * Controls.wheelSpeed * Rad_1;
       this.#wheel += delta;
-    }*/
+    } */
 
     const delta = sign(event.deltaY) * Controls.wheelSpeed * Rad_1;
     this.#wheel += delta;
 
-    /*if (
+    /* if (
       this.virticalAngle.max >= rot &&
       this.virticalAngle.min <= rot
     ) {
       this.#wheel += delta;
-    }*/
+    } */
   }
 
   onPointerMove(event) {
@@ -571,7 +571,8 @@ class FirstPersonControls extends Publisher {
         min(this.horizontalAngle.max, this.#rotation.phi),
       );
 
-      let posY = (this.gaugeHalfY * this.#rotation.theta) / this.virticalAngle.max;
+      let posY =
+        (this.gaugeHalfY * this.#rotation.theta) / this.virticalAngle.max;
 
       if (
         this.#rotation.phi === this.horizontalAngle.min ||
@@ -684,8 +685,8 @@ class FirstPersonControls extends Publisher {
     }
 
     if (this.virticalAngle.max <= this.#wheel) {
-        this.#wheel = this.virticalAngle.max;
-      } else if (this.virticalAngle.min >= this.#wheel) {
+      this.#wheel = this.virticalAngle.max;
+    } else if (this.virticalAngle.min >= this.#wheel) {
       this.#wheel = this.virticalAngle.min;
     }
 

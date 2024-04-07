@@ -252,7 +252,7 @@ class Character extends Entity {
     this.pose = null; // promise
     this.motions = null; // promise
 
-    //this.object = null;
+    // this.object = null;
 
     this.fire = this.fire.bind(this);
     this.input = this.input.bind(this);
@@ -300,8 +300,8 @@ class Character extends Entity {
       this.object = group;
 
       scene.traverse((obj) => {
-				obj.frustumCulled = false;
-			});
+        obj.frustumCulled = false;
+      });
 
       return gltf;
     } catch (e) {
@@ -365,7 +365,7 @@ class Character extends Entity {
   setFPV(camera, controls) {
     this.camera = camera;
 
-    //this.camera.rotation.x = -RAD_30;
+    // this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
 
     controls.subscribe('fire', this.fire);
@@ -399,13 +399,18 @@ class Character extends Entity {
     this.#isGrounded = bool;
   }
 
-  /*visible(bool) {
+  /* visible(bool) {
     if (this.object != null) {
       visibleChildren(this.object, bool);
     }
-  }*/
+  } */
 
   jump() {
+    if (this.isFPV() && globalThis.methods.has('play-sound')) {
+      const playSound = globalThis.methods.get('play-sound');
+      playSound('jump');
+    }
+
     this.velocity.y = this.data.jumpPower;
   }
 
@@ -508,6 +513,11 @@ class Character extends Entity {
 
   fire() {
     if (this.guns.has(this.gunType)) {
+      if (this.isFPV() && globalThis.methods.has('play-sound')) {
+        const playSound = globalThis.methods.get('play-sound');
+        playSound('shot');
+      }
+
       const gun = this.guns.get(this.gunType);
       gun.fire(this);
     }
@@ -548,8 +558,13 @@ class Character extends Entity {
 
       if (!this.#states.has(States.urgency)) {
         this.#states.add(States.urgency);
-        this.#urgencyKey = lastKey;///////////
-        this.#urgencyElapsedTime = 0;///////////
+        this.#urgencyKey = lastKey;
+        this.#urgencyElapsedTime = 0;
+
+        if (this.isFPV() && globalThis.methods.has('play-sound')) {
+          const playSound = globalThis.methods.get('play-sound');
+          playSound('dash');
+        }
       }
     }
 
@@ -625,7 +640,8 @@ class Character extends Entity {
     }
   }
 
-  addTweener(tweener, arg) {////////////
+  addTweener(tweener, arg) {
+    /// /////////
     const tween = tweener(this, arg);
     const updater = tween.update.bind(tween);
     this.subscribe('tween', updater);
@@ -734,7 +750,7 @@ class Character extends Entity {
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
 
-    /*if (this.#states.has(States.stunning)) {
+    /* if (this.#states.has(States.stunning)) {
       this.#pausedDuration += deltaTime;
     } else {
       if (this.onUpdate != null) {
@@ -744,7 +760,7 @@ class Character extends Entity {
       if (this.getSubscriberCount() > 0) {
         this.publish('tween', (elapsedTime - this.#pausedDuration) * 1000);
       }
-    }*/
+    } */
   }
 }
 

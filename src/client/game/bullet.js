@@ -1,15 +1,16 @@
 import { Vector3 } from 'three';
 
 import Collidable from './collidable';
-import { Ammo as AmmoData } from './data';
+import { Ammos } from './data';
 
-const ammoData = new Map(AmmoData);
+const ammos = new Map(Ammos);
 
 class Bullet extends Collidable {
   constructor(index, name, object) {
-    super(name, 'ammo', object);
+    super(name, 'ammo');
 
-    this.data = ammoData.get(name);
+    this.data = ammos.get(name);
+    this.setObject(object);
 
     this.index = index;
     this.collider.set(

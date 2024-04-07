@@ -16,7 +16,7 @@ import {
 
 import Bullet from './bullet';
 import { World } from './settings';
-import { Ammo as AmmoData } from './data';
+import { Ammos } from './data';
 import Publisher from './publisher';
 
 class Ammo extends Publisher {
@@ -29,7 +29,7 @@ class Ammo extends Publisher {
   constructor(name, texture) {
     super();
 
-    const dataMap = new Map(AmmoData);
+    const dataMap = new Map(Ammos);
     const ammo = dataMap.get(name);
 
     this.name = name;
@@ -88,11 +88,11 @@ class Ammo extends Publisher {
     }
   }
 
-  /*setAlive(bool) {
+  /* setAlive(bool) {
     this.list.forEach((bullet) => {
       bullet.setAlive(bool);
     });
-  }*/
+  } */
 }
 
 export default Ammo;

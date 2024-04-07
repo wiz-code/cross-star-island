@@ -104,14 +104,23 @@ class CharacterManager extends Publisher {
               object.setBounced(true);
             }
 
-            if (
-              character.isFPV() &&
-              object.type === 'item'
-            ) {
+            if (character.isFPV() && object.type === 'item') {
               object.setAlive(false);
-              this.eventManager.dispatch('get-item', object.name, character, object);
+              this.eventManager.dispatch(
+                'get-item',
+                object.name,
+                character,
+                object,
+              );
+
+              break;
             } else {
               if (!character.isStunning()) {
+                if (globalThis.methods.has('play-sound')) {
+                  const playSound = globalThis.methods.get('play-sound');
+                  playSound('damage');
+                }
+
                 character.setStunning(World.collisionShock);
               }
 

@@ -32,7 +32,7 @@ class ModelLoader {
     this.#promise = new Promise((resolve, reject) => {
       this.#status = 'loading';
 
-      const result = gltfLoader.load(
+      gltfLoader.load(
         this.url,
         (gltf) => {
           this.#status = 'success';
@@ -52,8 +52,6 @@ class ModelLoader {
           reject(error);
         },
       );
-
-      return result;
     });
 
     return this.#promise;

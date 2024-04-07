@@ -48,8 +48,7 @@ class Entity extends Publisher {
   // 関数が渡された場合、実行結果を返す
   setParams(params) {
     if (typeof params === 'function') {
-      const result = params(this);
-      this.params = params;
+      this.params = params(this);
       return;
     }
 

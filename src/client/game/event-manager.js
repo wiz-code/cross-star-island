@@ -2,12 +2,9 @@ import { States } from './data';
 import Publisher from './publisher';
 
 class EventManager extends Publisher {
-  #updaterCache = new Map();
-
-  constructor(states) {
+  constructor() {
     super();
 
-    this.states = states;
     this.schedules = new Map();
     this.events = new Map();
     this.tweens = new Map();
@@ -51,9 +48,7 @@ class EventManager extends Publisher {
 
     const updaterSet = updaters.get(state);
     const params = args ?? [];
-    const boundUpdater = updater.bind(object, ...params);
-    updaterSet.add(boundUpdater);
-    this.#updaterCache.set(updater, boundUpdater);
+    updaterSet.add(updater);
   }
 
   removeUpdater(object, state, updater) {
@@ -62,15 +57,7 @@ class EventManager extends Publisher {
 
       if (updaters.has(state)) {
         const updaterSet = updaters.get(state);
-
-        if (this.#updaterCache.has(updater)) {
-          const boundUpdater = this.#updaterCache.get(updater);
-
-          if (updaterSet.has(boundUpdater)){
-            updaterSet.delete(boundUpdater);
-            this.#updaterCache.delete(updater);
-          }
-        }
+        updaterSet.delete(updater);
       }
     }
   }
@@ -101,7 +88,7 @@ class EventManager extends Publisher {
       if (tweens.has(state)) {
         const tweenset = tweens.get(state);
 
-        if (tweenset.has(updater)){
+        if (tweenset.has(updater)) {
           tweenset.delete(updater);
         }
       }
@@ -117,11 +104,11 @@ class EventManager extends Publisher {
       if (targets.has(targetName)) {
         const [handler, condition, once] = targets.get(targetName);
 
-        if (condition != null && !condition(this.states, ...args)) {
+        if (condition != null && !condition(...args)) {
           return;
         }
 
-        handler(this.states, ...args);
+        handler(...args);
 
         if (once) {
           this.removeHandler(eventName, targetName, handler, condition);
@@ -131,11 +118,13 @@ class EventManager extends Publisher {
   }
 
   update(deltaTime, elapsedTime) {
-    this.updaters.forEach((updaterMap, object) => {
+    this.updaters.forEach((updaterMap, target) => {
       updaterMap.forEach((updaterSet, state) => {
         switch (state) {
           case States.alive: {
-            updaterSet.forEach((updater) => updater(deltaTime, elapsedTime));
+            updaterSet.forEach((updater) =>
+              updater(target, deltaTime, elapsedTime),
+            );
             break;
           }
 
@@ -164,10 +153,3 @@ class EventManager extends Publisher {
 }
 
 export default EventManager;
-
-// イベント種類
-// oob, キャラ接触, アイテム取得
-
-// イベント登録・解除
-
-// イベント状態　待機・準備・開始・終了

@@ -12,7 +12,6 @@ import {
   LineSegments,
   Points,
   Group,
-  Sphere,
   Vector3,
 } from 'three';
 
@@ -27,10 +26,6 @@ class Item extends Collidable {
   #elapsedTime = 0;
 
   static createRing(data, texture) {
-    const halfValue = {
-      radialSegments: floor(data.radialSegments / 2),
-      tubularSegments: floor(data.tubularSegments / 2),
-    };
     const geom = new TorusGeometry(
       data.radius,
       data.tube,

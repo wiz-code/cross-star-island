@@ -69,6 +69,11 @@ export const Ground = {
   pointColor: 0xf4e511,
 };
 
+export const Url = {
+  assets: 'assets',
+  sounds: 'assets/sounds',
+};
+
 export const Controls = {
   lookSpeed: 1,
 
@@ -96,7 +101,7 @@ export const World = {
   Resistance: {
     ground: 4,
     air: 0.4,
-    spin: 6, //12
+    spin: 6, // 12
     ammo: 1.2,
     obstacle: 0.1,
     item: 0.1,

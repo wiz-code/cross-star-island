@@ -6,9 +6,7 @@ import {
   WebGLRenderer,
   Color,
   Clock,
-  Vector3,
   AmbientLight,
-  Float32BufferAttribute,
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -23,20 +21,22 @@ import {
 } from './settings';
 import FirstPersonControls from './controls';
 import {
-  InitStates,
+  GlobalStates,
+  GlobalMethods,
   Characters,
   Stages,
   Compositions,
-  Ammo as AmmoData,
+  Ammos,
   Guns,
+  Sounds,
 } from './data';
 import { handlers, Tweeners, Updaters } from './handlers';
-import Loop from './loop';
 import CollidableManager from './collidable-manager';
 import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import ModelManager from './model-manager';
 import EventManager from './event-manager';
+import SoundManager from './sound-manager';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -83,7 +83,8 @@ class Game {
     this.worldOctree = new Octree();
 
     // ゲーム管理変数
-    this.states = new Map(InitStates);
+    globalThis.states = new Map(GlobalStates);
+    globalThis.methods = new Map(GlobalMethods);
     this.loadingList = [];
 
     this.windowHalf = {
@@ -119,7 +120,7 @@ class Game {
     this.scene.screen = new ThreeScene();
 
     this.modelManager = new ModelManager(this.scene.field);
-    this.eventManager = new EventManager(this.states);
+    this.eventManager = new EventManager();
 
     this.camera.field = new PerspectiveCamera(
       Camera.FOV,
@@ -139,6 +140,14 @@ class Game {
       1000,
     );
 
+    this.soundManager = new SoundManager(this.camera.field, this.scene.field);
+    const promise = this.soundManager.loadSounds();
+    this.loadingList.push(promise);
+    globalThis.methods.forEach((value, key) => {
+      const method = value.bind(this.soundManager);
+      globalThis.methods.set(key, method);
+    });
+
     this.sceneManager.clear();
     this.sceneManager.add('field', this.scene.field, this.camera.field);
     this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
@@ -157,8 +166,9 @@ class Game {
     this.data.stages = new Map(Stages);
     this.data.characters = new Map(Characters);
     this.data.compositions = new Map(Compositions);
-    this.data.ammos = new Map(AmmoData);
+    this.data.ammos = new Map(Ammos);
     this.data.guns = new Map(Guns);
+    this.data.sounds = new Map(Sounds);
     this.data.handlers = handlers;
     this.data.tweeners = new Map(Tweeners);
     this.data.updaters = new Map(Updaters);
@@ -183,14 +193,19 @@ class Game {
           bullet.data.updaters.forEach((param) => {
             if (typeof param === 'string') {
               const updater = this.data.updaters.get(param);
-              this.eventManager.addUpdater(bullet, updater.state, updater.update, updater.args);
+              this.eventManager.addUpdater(
+                bullet,
+                updater.state,
+                updater.update,
+                updater.args,
+              );
             } else {
               const { state, update, args } = param;
               this.eventManager.addUpdater(bullet, state, update, args);
             }
           });
         }
-      })
+      });
       this.ammos.set(name, ammo);
       this.objectManager.add(ammo.list);
     });
@@ -223,8 +238,20 @@ class Game {
     window.addEventListener('resize', this.onResize);
 
     handlers.forEach((object) => {
-      const { eventName, targetName, handler, condition, once = false } = object;
-      this.eventManager.addHandler(eventName, targetName, handler, condition, once);
+      const {
+        eventName,
+        targetName,
+        handler,
+        condition,
+        once = false,
+      } = object;
+      this.eventManager.addHandler(
+        eventName,
+        targetName,
+        handler,
+        condition,
+        once,
+      );
     });
 
     /// ///////////////
@@ -239,14 +266,9 @@ class Game {
     this.update = this.update.bind(this);
 
     if (this.loadingList.length > 0) {
-      Promise.all(this.loadingList).then(
-        (result) => {
-          this.start();
-        },
-        (error) => {
-          console.error(error);
-        },
-      );
+      Promise.allSettled(this.loadingList).then((results) => {
+        this.start();
+      });
     } else {
       this.start();
     }
@@ -273,8 +295,8 @@ class Game {
 
     const { gunTypes } = this.player.data;
 
-    gunTypes.forEach((name, gunIndex) => {
-      const gun = new Gun(name);
+    gunTypes.forEach((gname, gunIndex) => {
+      const gun = new Gun(gname);
       gun.data.ammoTypes.forEach((ammoType, ammoIndex) => {
         const ammo = this.ammos.get(ammoType);
         gun.ammos.set(ammoType, ammo);
@@ -286,7 +308,7 @@ class Game {
       this.player.addGun(gun);
 
       if (gunIndex === 0) {
-        this.player.setGunType(name);
+        this.player.setGunType(gname);
       }
     });
   }
@@ -302,7 +324,7 @@ class Game {
   }
 
   setMode(mode) {
-    this.states.set('mode', mode);
+    globalThis.states.set('mode', mode);
 
     switch (mode) {
       case 'unstarted': {
@@ -327,7 +349,7 @@ class Game {
 
     const stageNameList = this.data.compositions.get('stage');
 
-    const index = stageIndex ?? this.states.get('stageIndex');
+    const index = stageIndex ?? globalThis.states.get('stageIndex');
     const stageName = stageNameList[index];
 
     if (stageName == null) {
@@ -341,7 +363,7 @@ class Game {
     this.worldOctree.fromGraphNode(this.stage);
 
     const { characters, obstacles, items } = stageData;
-    const checkpointIndex = this.states.get('checkpointIndex');
+    const checkpointIndex = globalThis.states.get('checkpointIndex');
     const checkpoint = stageData.checkpoints[checkpointIndex];
 
     this.characterManager.clear();
@@ -391,10 +413,7 @@ class Game {
                   for (let i = 0, l = poses.length; i < l; i += 1) {
                     const [bone, { rotation }] = poses[i];
                     // ポーズデータが左手系のとき右手系に変換する処理
-                    const rot = leftToRightHandedQuaternion.apply(
-                      null,
-                      rotation,
-                    );
+                    const rot = leftToRightHandedQuaternion(...rotation);
                     const object = humanoid.getNormalizedBoneNode(bone);
                     object.quaternion.copy(rot);
                     // object.quaternion.set.apply(object.quaternion, rotation);
@@ -411,7 +430,7 @@ class Game {
 
       gunTypes.forEach((name, gunIndex) => {
         const gun = new Gun(name);
-        gun.data.ammoTypes.forEach((ammoType, ammoIndex) => {
+        gun.data.ammoTypes.forEach((ammoType) => {
           const ammo = this.ammos.get(ammoType);
           gun.ammos.set(ammoType, ammo);
         });
@@ -442,7 +461,12 @@ class Game {
         data.updaters.forEach((param) => {
           if (typeof param === 'string') {
             const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(character, updater.state, updater.update, updater.args);
+            this.eventManager.addUpdater(
+              character,
+              updater.state,
+              updater.update,
+              updater.args,
+            );
           } else {
             const { state, update, args } = param;
             this.eventManager.addUpdater(character, state, update, args);
@@ -474,7 +498,12 @@ class Game {
         data.updaters.forEach((param) => {
           if (typeof param === 'string') {
             const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(item, updater.state, updater.update, updater.args);
+            this.eventManager.addUpdater(
+              item,
+              updater.state,
+              updater.update,
+              updater.args,
+            );
           } else {
             const { state, update, args } = param;
             this.eventManager.addUpdater(item, state, update, args);
@@ -504,7 +533,12 @@ class Game {
         data.updaters.forEach((param) => {
           if (typeof param === 'string') {
             const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(obstacle, updater.state, updater.update, updater.args);
+            this.eventManager.addUpdater(
+              obstacle,
+              updater.state,
+              updater.update,
+              updater.args,
+            );
           } else {
             const { state, update, args } = param;
             this.eventManager.addUpdater(obstacle, state, update, args);
@@ -531,17 +565,17 @@ class Game {
   }
 
   nextStage() {
-    const index = this.states.get('stageIndex');
+    const index = globalThis.states.get('stageIndex');
     const currentIndex = index + 1;
     this.setStage(currentIndex);
-    this.states.set('stageIndex', currentIndex);
+    globalThis.states.set('stageIndex', currentIndex);
   }
 
   rewindStage() {
-    const index = this.states.get('stageIndex');
+    const index = globalThis.states.get('stageIndex');
     const currentIndex = index - 1;
     this.setStage(currentIndex);
-    this.states.set('stageIndex', currentIndex);
+    globalThis.states.set('stageIndex', currentIndex);
   }
 
   dispose() {

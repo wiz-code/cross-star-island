@@ -14,8 +14,6 @@ class ModelManager {
     if (gltf.userData.vrm != null) {
       const model = gltf.userData.vrm;
       this.models.set(name, model);
-
-      return model;
     }
   }
 
@@ -43,7 +41,7 @@ class ModelManager {
       if (!this.actions.has(name)) {
         this.actions.set(name, new Set());
       }
-action.play();//////////////
+      action.play(); /// ///////////
       const actionSet = this.actions.get(name);
       actionSet.add(action);
     });

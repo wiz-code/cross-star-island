@@ -1,6 +1,6 @@
 import { teal } from '@mui/material/colors';
 
-export const defaultTheme = {
+const defaultTheme = {
   typography: {
     fontFamily: [
       '"Helvetica Neue"',
@@ -79,3 +79,5 @@ export const defaultTheme = {
     },
   },
 };
+
+export default defaultTheme;

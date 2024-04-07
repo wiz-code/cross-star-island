@@ -4,7 +4,7 @@ import { Guns } from './data';
 import Publisher from './publisher';
 
 const { random, PI } = Math;
-const Rad_1 = PI / 180;
+const Rad1 = PI / 180;
 
 const gunData = new Map(Guns);
 
@@ -53,7 +53,7 @@ class Gun extends Publisher {
     const bullet = this.currentAmmo.list[this.currentAmmo.index];
     bullet.setAlive(true);
 
-    const halfRad = (this.data.accuracy / 2) * Rad_1;
+    const halfRad = (this.data.accuracy / 2) * Rad1;
     const theta = getRandomInclusive(-halfRad, halfRad);
     const phi = getRandomInclusive(-halfRad, halfRad);
 
@@ -69,7 +69,8 @@ class Gun extends Publisher {
     bullet.velocity.copy(dir).multiplyScalar(this.data.speed);
     bullet.velocity.addScaledVector(character.velocity, 2);
 
-    this.currentAmmo.index = (this.currentAmmo.index + 1) % this.currentAmmo.list.length;
+    this.currentAmmo.index =
+      (this.currentAmmo.index + 1) % this.currentAmmo.list.length;
   }
 
   update(deltaTime) {
