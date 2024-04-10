@@ -22,7 +22,6 @@ class CollidableManager extends Publisher {
     this.scene = scene;
     this.worldOctree = worldOctree;
     this.list = new Set();
-    this.schedules = new Map();
   }
 
   removeAll(key, value) {
@@ -51,8 +50,6 @@ class CollidableManager extends Publisher {
 
     this.scene.add(collidable.object);
     this.list.add(collidable);
-
-    this.schedules.set(collidable, data.spawnedAt);
   }
 
   remove(collidable) {
@@ -141,17 +138,6 @@ class CollidableManager extends Publisher {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    const schedules = Array.from(this.schedules.entries());
-
-    for (let i = 0, l = schedules.length; i < l; i += 1) {
-      const [object, spawnedAt] = schedules[i];
-
-      if (elapsedTime > spawnedAt) {
-        object.setAlive(true);
-        this.schedules.delete(object);
-      }
-    }
-
     const list = Array.from(this.list.keys());
     const len = this.list.size;
 

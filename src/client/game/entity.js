@@ -2,12 +2,22 @@ import Publisher from './publisher';
 import { visibleChildren } from './utils';
 import { States } from './data';
 
-let id = 0;
+const genId = (() => {
+  let id = {};
 
-function genId() {
-  id += 1;
-  return id;
-}
+  const closure = (type = 'id') => {
+    if (id[type] == null) {
+      id[type] = 0;
+    }
+
+    id[type] += 1;
+
+    const typedId = `${type}-${id[type]}`;
+    return typedId;
+  };
+
+  return closure;
+})();
 
 class Entity extends Publisher {
   #states = new Set();
@@ -15,7 +25,7 @@ class Entity extends Publisher {
   constructor(name, type) {
     super();
 
-    this.id = `${type}-${genId()}`;
+    this.id = genId(type);
 
     this.name = name;
     this.type = type;

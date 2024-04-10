@@ -81,7 +81,7 @@ export const handlers = [
         playSound('goal');
       }
 
-      alert('ゴール！　おめでとう！');
+      setTimeout(() => location.href = '/', 2000);
     },
   },
 ];

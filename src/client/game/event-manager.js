@@ -11,6 +11,16 @@ class EventManager extends Publisher {
     this.updaters = new Map();
   }
 
+  addSchedule(object, schedule) {
+    this.schedules.set(object, schedule);
+  }
+
+  removeSchedule(object) {
+    if (this.schedules.has(object)) {
+      this.schedules.delete(object);
+    }
+  }
+
   addHandler(eventName, targetName, handler, condition = null, once = false) {
     if (!this.events.has(eventName)) {
       this.events.set(eventName, new Map());
@@ -118,6 +128,17 @@ class EventManager extends Publisher {
   }
 
   update(deltaTime, elapsedTime) {
+    const schedules = Array.from(this.schedules.entries());
+
+    for (let i = 0, l = schedules.length; i < l; i += 1) {
+      const [object, schedule] = schedules[i];
+
+      if (elapsedTime > schedule.spawnTime) {
+        object.setAlive(true);
+        this.schedules.delete(object);
+      }
+    }
+
     this.updaters.forEach((updaterMap, target) => {
       updaterMap.forEach((updaterSet, state) => {
         switch (state) {
