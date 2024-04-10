@@ -3,15 +3,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-import { Container, Grid } from '@mui/material';
+import { Container, Box } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 
 import Header from './Header';
-
-const ColumnGrid = styled(Grid)(({ theme }) => ({
-  height: '100%',
-  flexDirection: 'column',
-}));
 
 function Layout({ children = null } = {}) {
   const theme = useTheme();
@@ -25,14 +20,10 @@ function Layout({ children = null } = {}) {
   }, []);
 
   return (
-    <ColumnGrid container>
-      <Grid item>
-        <Header />
-      </Grid>
-      <Grid item sx={{ flexGrow: 1 }}>
-        <Container sx={{ height: '100%' }}>{children}</Container>
-      </Grid>
-    </ColumnGrid>
+    <Box sx={{ flexGrow: 1 }}>
+      <Header />
+      <Container maxWidth="md" sx={{ height: '100%' }}>{children}</Container>
+    </Box>
   );
 }
 

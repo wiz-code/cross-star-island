@@ -45,17 +45,15 @@ class CharacterManager extends Publisher {
     this.eventManager = eventManager;
     this.worldOctree = worldOctree;
     this.list = new Set();
-    this.schedules = new Map();
 
     this.collideWith = this.collideWith.bind(this);
     this.collidableManager.subscribe('collideWith', this.collideWith);
   }
 
-  add(character, data) {
+  add(character) {
     if (!this.list.has(character)) {
       if (!character.isFPV()) {
         this.scene.add(character.object);
-        this.schedules.set(character, data.schedule);
       }
 
       this.list.add(character);
@@ -66,7 +64,6 @@ class CharacterManager extends Publisher {
     if (this.list.has(character)) {
       if (!character.isFPV()) {
         this.scene.remove(character.object);
-        this.schedules.delete(character);
       }
 
       this.list.delete(character);
@@ -236,18 +233,6 @@ class CharacterManager extends Publisher {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    const schedules = Array.from(this.schedules.entries());
-
-    for (let i = 0, l = schedules.length; i < l; i += 1) {
-      const [character, schedule] = schedules[i];
-
-      if (elapsedTime > schedule.spawnedAt) {
-        if (!character.isAlive()) {
-          character.setAlive(true);
-        }
-      }
-    }
-
     const list = Array.from(this.list.values());
     const len = list.length;
 

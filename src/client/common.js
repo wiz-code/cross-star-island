@@ -1,8 +1,9 @@
 export const Meta = [
-  ['siteName', 'JavaScript/Three.jsのゲーム部屋'],
-  ['title', 'Dirg ディルグ - Three.jsで制作したFPSゲーム（制作中）'],
+  ['siteName', 'JavaScript/Three.jsのゲーム'],
+  ['title', 'CrossStar Island'],
+  ['subtitle', 'クロススターアイランド'],
   [
     'description',
-    'ローポリながらも3D空間にグリッドを配置して、高度なグラフィックに頼ることなく空間把握を容易にした新感覚一人称シューティングゲーム。',
+    'ローポリながら3D空間に星型のグリッドを配置してプレイヤーの空間把握を容易にした新感覚一人称シューティングゲーム。待ち受ける難所をクリアして美女が待つゴールへたどり着け！',
   ],
 ];

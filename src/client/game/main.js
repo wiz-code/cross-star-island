@@ -475,7 +475,11 @@ class Game {
       }
 
       if (character.object != null) {
-        this.characterManager.add(character, data);
+        this.characterManager.add(character);
+      }
+
+      if (data.schedule != null) {
+        this.eventManager.addSchedule(character, data.schedule);
       }
     });
 
@@ -511,6 +515,10 @@ class Game {
         });
       }
 
+      if (data.schedule != null) {
+        this.eventManager.addSchedule(item, data.schedule);
+      }
+
       this.objectManager.add(item, data);
     });
 
@@ -544,6 +552,10 @@ class Game {
             this.eventManager.addUpdater(obstacle, state, update, args);
           }
         });
+      }
+
+      if (data.schedule != null) {
+        this.eventManager.addSchedule(obstacle, data.schedule);
       }
 
       this.objectManager.add(obstacle, data);

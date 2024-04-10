@@ -343,7 +343,7 @@ export const Stages = [
       checkpoints: [
         {
           position: { sx: 8, sy: 4, sz: 0.1 },
-          // position: { sx: -40, sy: 4, sz: 1 },
+          //position: { sx: -40, sy: 4, sz: 1 },
           phi: PI / 2,
         },
         {
@@ -368,7 +368,7 @@ export const Stages = [
           phi: -PI * 0.5,
           pose: 'pose-1',
           schedule: {
-            spawnedAt: 1,
+            spawnTime: 1,
           },
           updaters: ['satellite-points'],
         },
@@ -381,7 +381,7 @@ export const Stages = [
           ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnedAt: 0,
+            spawnTime: 0,
           },
           params: {
             elapsedTime: 0,
@@ -398,7 +398,7 @@ export const Stages = [
           ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnedAt: 2,
+            spawnTime: 2,
           },
           params: {
             elapsedTime: 0,
@@ -415,7 +415,7 @@ export const Stages = [
           ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnedAt: 4,
+            spawnTime: 4,
           },
           params: {
             elapsedTime: 0,
@@ -431,7 +431,7 @@ export const Stages = [
           theta: -0.1,
           ammoType: 'hop-bullet',
           schedule: {
-            spawnedAt: 5,
+            spawnTime: 5,
           },
           params: {
             elapsedTime: 0,
@@ -447,7 +447,7 @@ export const Stages = [
           theta: -0.25,
           ammoType: 'hop-bullet',
           schedule: {
-            spawnedAt: 5,
+            spawnTime: 5,
           },
           params: {
             elapsedTime: 0,
@@ -461,7 +461,9 @@ export const Stages = [
           name: 'round-stone',
           position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1', state: States.alive }],
-          spawnedAt: 0,
+          schedule: {
+            spawnTime: 0,
+          },
           updaters: ['rolling-stone-1'],
         },
         {
@@ -470,7 +472,9 @@ export const Stages = [
           tweeners: [
             { name: 'rolling-stone-1', state: States.alive, args: [5000] },
           ],
-          spawnedAt: 5,
+          schedule: {
+            spawnTime: 5,
+          },
           updaters: ['rolling-stone-1'],
         },
         {
@@ -479,7 +483,9 @@ export const Stages = [
           tweeners: [
             { name: 'rolling-stone-1', state: States.alive, args: [2500] },
           ],
-          spawnedAt: 2.5,
+          schedule: {
+            spawnTime: 2.5,
+          },
           updaters: ['rolling-stone-1'],
         },
         {
@@ -488,7 +494,9 @@ export const Stages = [
           tweeners: [
             { name: 'rolling-stone-1', state: States.alive, args: [7500] },
           ],
-          spawnedAt: 7.5,
+          schedule: {
+            spawnTime: 7.5,
+          },
           updaters: ['rolling-stone-1'],
         },
       ],
@@ -496,28 +504,36 @@ export const Stages = [
         {
           name: 'checkpoint',
           position: { sx: -8, sy: 2, sz: 0 },
-          spawnedAt: 5,
+          schedule: {
+            spawnTime: 5,
+          },
           updaters: ['item-ring-1'],
         },
         {
           name: 'checkpoint',
           position: { sx: -31, sy: 2, sz: 1.5 },
           // tweeners: [{ name: 'rolling-stone-1', state: States.alive, args: [7500] }],
-          spawnedAt: 5,
+          schedule: {
+            spawnTime: 5,
+          },
           updaters: ['item-ring-1'],
         },
         {
           name: 'checkpoint',
           position: { sx: -40, sy: 2, sz: 1 },
           // tweeners: [{ name: 'rolling-stone-1', args: [7500] }],
-          spawnedAt: 5,
+          schedule: {
+            spawnTime: 5,
+          },
           updaters: ['item-ring-1'],
         },
         {
           name: 'weapon-upgrade',
           position: { sx: -35, sy: -2, sz: -5 },
           // tweeners: [{ name: 'rolling-stone-1', args: [7500] }],
-          spawnedAt: 3,
+          schedule: {
+            spawnTime: 5,
+          },
           updaters: ['item-ring-1'],
         },
       ],
