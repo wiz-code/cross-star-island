@@ -69,11 +69,10 @@ export const Ground = {
   pointColor: 0xf4e511,
 };
 
-const pathname = location.pathname !== '/' ? location.pathname : '';
-
 export const Url = {
-  assets: `${pathname}/assets`,
-  sounds: `${pathname}/assets/sounds`,
+  assets: 'assets/',
+  images: 'assets/images/',
+  sounds: 'assets/sounds/',
 };
 
 export const Controls = {

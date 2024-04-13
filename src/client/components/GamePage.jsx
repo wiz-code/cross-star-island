@@ -85,7 +85,13 @@ function GamePage({ toggleFullScreen }) {
   return (
     <>
       {!gameStarted ? (
-        <Box sx={{ position: 'absolute', left: 'calc(50% - 24px)', top: 'calc(50% - 24px)' }}>
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 'calc(50% - 24px)',
+            top: 'calc(50% - 24px)',
+          }}
+        >
           <CircularProgress />
         </Box>
       ) : null}

@@ -27,7 +27,7 @@ class ModelLoader {
   #status = 'unstarted';
 
   constructor(name, dataType = 'vrm') {
-    this.url = `${Url.assets}/${dataType}/${name}.${dataType}`;
+    this.url = `${Url.assets}${dataType}/${name}.${dataType}`;
   }
 
   async load() {

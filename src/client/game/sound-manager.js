@@ -18,7 +18,7 @@ class SoundManager {
 
   loadFile(name) {
     const file = this.data.get(name);
-    const url = `${Url.sounds}/${file}`;
+    const url = `${Url.sounds}${file}`;
 
     const promise = new Promise((resolve, reject) => {
       this.loader.load(

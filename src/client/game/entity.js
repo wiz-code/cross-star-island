@@ -3,7 +3,7 @@ import { visibleChildren } from './utils';
 import { States } from './data';
 
 const genId = (() => {
-  let id = {};
+  const id = {};
 
   const closure = (type = 'id') => {
     if (id[type] == null) {
