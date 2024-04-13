@@ -1,6 +1,6 @@
 {
   "name": "cross-star-island",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Three.jsフレームワークを用いたFPSゲーム",
   "main": "./dist/client/index.html",
   "author": "masa <wizcode.jp@gmail.com>",
