@@ -614,7 +614,7 @@ class Game {
     this.renderer.setAnimationLoop(this.update);
 
     if (this.player != null) {
-      //this.player.setAlive(true);
+      // this.player.setAlive(true);
       this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
       this.controls.enable(true);
     }

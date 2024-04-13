@@ -133,10 +133,7 @@ class EventManager extends Publisher {
     for (let i = 0, l = schedules.length; i < l; i += 1) {
       const [object, schedule] = schedules[i];
 
-      if (
-        schedule.spawnTime != null &&
-        elapsedTime > schedule.spawnTime
-      ) {
+      if (schedule.spawnTime != null && elapsedTime > schedule.spawnTime) {
         object.setAlive(true);
         this.schedules.delete(object);
       }

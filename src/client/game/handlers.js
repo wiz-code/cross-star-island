@@ -81,7 +81,7 @@ export const handlers = [
         playSound('goal');
       }
 
-      setTimeout(() => location.href = '/', 2000);
+      setTimeout(() => (location.href = '/'), 2000);
     },
   },
 ];

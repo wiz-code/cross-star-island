@@ -1,6 +1,6 @@
 {
   "name": "cross-star-island",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Three.jsフレームワークを用いたFPSゲーム",
   "main": "./dist/client/index.html",
   "author": "masa <wizcode.jp@gmail.com>",
@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "webpack serve",
     "lint": "eslint './src/**/*' -c ./.eslintrc.json --fix",
+    "build:dev": "webpack",
     "build": "webpack --mode production && babel ./src/server --out-dir ./dist/server --config-file ./src/server/.babelrc.js",
     "test": "jest",
     "start": "node ./dist/server/app.js"

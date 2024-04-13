@@ -22,7 +22,9 @@ function Layout({ children = null } = {}) {
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Header />
-      <Container maxWidth="md" sx={{ height: '100%' }}>{children}</Container>
+      <Container maxWidth="md" sx={{ height: '100%' }}>
+        {children}
+      </Container>
     </Box>
   );
 }
