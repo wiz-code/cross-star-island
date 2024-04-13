@@ -1,6 +1,6 @@
 import { VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
-import { Basename } from '../common';
+import { Basepath } from '../common';
 
 const { PI } = Math;
 
@@ -72,9 +72,9 @@ export const Ground = {
 };
 
 export const Url = {
-  assets: `${Basename}assets/`,
-  images: `${Basename}assets/images/`,
-  sounds: `${Basename}assets/sounds/`,
+  assets: `${Basepath}assets/`,
+  images: `${Basepath}assets/images/`,
+  sounds: `${Basepath}assets/sounds/`,
   /*assets: 'assets/',
   images: 'assets/images/',
   sounds: 'assets/sounds/',*/

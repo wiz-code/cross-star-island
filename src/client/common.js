@@ -9,4 +9,4 @@ export const Meta = [
 ];
 
 const pathname = location.pathname;
-export const Basename = `${pathname.substring(0, pathname.lastIndexOf('/'))}/`;
+export const Basepath = `${pathname.substring(0, pathname.lastIndexOf('/'))}/`;
