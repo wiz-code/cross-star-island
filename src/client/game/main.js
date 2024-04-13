@@ -78,11 +78,13 @@ const disposeObject = (object) => {
 class Game {
   #elapsedTime = 0;
 
-  constructor(width, height) {
+  constructor(width, height, callbacks) {
     this.clock = new Clock();
     this.worldOctree = new Octree();
+    this.callbacks = callbacks;
 
     // ゲーム管理変数
+    this.running = false;
     globalThis.states = new Map(GlobalStates);
     globalThis.methods = new Map(GlobalMethods);
     this.loadingList = [];
@@ -607,13 +609,15 @@ class Game {
   }
 
   start() {
-    if (this.player != null) {
-      this.player.setAlive(true);
-      this.controls.enable(true);
-    }
-
+    this.callbacks.setGameStarted(true);
     this.clock.start();
     this.renderer.setAnimationLoop(this.update);
+
+    if (this.player != null) {
+      //this.player.setAlive(true);
+      this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
+      this.controls.enable(true);
+    }
   }
 
   stop() {
@@ -622,6 +626,7 @@ class Game {
       this.controls.enable(false);
     }
 
+    this.callbacks.setGameStarted(false);
     this.clock.stop();
     this.renderer.setAnimationLoop(null);
   }

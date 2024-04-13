@@ -342,8 +342,9 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: { sx: 8, sy: 4, sz: 0.1 },
+          //position: { sx: 8, sy: 4, sz: 0.1 },
           //position: { sx: -40, sy: 4, sz: 1 },
+          position: { sx: -31, sy: 4, sz: 1.5 },
           phi: PI / 2,
         },
         {
@@ -381,7 +382,7 @@ export const Stages = [
           ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnTime: 0,
+            spawnTime: 1,
           },
           params: {
             elapsedTime: 0,
@@ -462,7 +463,7 @@ export const Stages = [
           position: { sx: -26, sy: 4, sz: 0 },
           tweeners: [{ name: 'rolling-stone-1', state: States.alive }],
           schedule: {
-            spawnTime: 0,
+            spawnTime: 1,
           },
           updaters: ['rolling-stone-1'],
         },
@@ -604,7 +605,7 @@ export const Stages = [
             widthSegments: 24,
             heightSegments: 10,
             depthSegments: 12,
-            position: { sx: -13, sy: 0.25, sz: 0.25 },
+            position: { sx: -13, sy: 0.25, sz: -3.25 },
           },
           cylinder: [
             {
