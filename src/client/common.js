@@ -8,8 +8,5 @@ export const Meta = [
   ],
 ];
 
-const Delimiter = '/';
-const Basename = location.pathname !== Delimiter ? location.pathname : Delimiter;
-
-console.log(Basename);
-export { Basename };
+const pathname = location.pathname;
+export const Basename = `${pathname.substring(0, pathname.lastIndexOf('/'))}/`;
