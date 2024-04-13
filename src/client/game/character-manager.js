@@ -159,7 +159,7 @@ class CharacterManager extends Publisher {
         const onGround = result.normal.y > COS_30;
         character.setGrounded(onGround);
 
-        if (!character.isGrounded()) {
+        if (!onGround) {
           character.velocity.addScaledVector(
             result.normal,
             -result.normal.dot(character.velocity),

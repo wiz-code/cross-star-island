@@ -60,7 +60,7 @@ function TitlePage({ toggleFullScreen }) {
         <Row item sx={{ mt: theme.spacing(4) }}>
           <Typography variant="h1" align="center">
             {title}
-            <Typography variant="subtitle1" sx={{ display: 'inline', pl: theme.spacing(2) }}> - {subtitle}</Typography>
+            <Typography variant="subtitle1" component="span" sx={{ display: 'inline', pl: theme.spacing(2) }}> - {subtitle}</Typography>
           </Typography>
         </Row>
         <Row item sx={{ display: 'flex', gap: theme.spacing(1) }}>

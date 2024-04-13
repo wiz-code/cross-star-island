@@ -8,7 +8,7 @@ import React, {
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Button, Box } from '@mui/material';
+import { Button, Box, CircularProgress } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 
 import Game from '../game/main';
@@ -46,6 +46,7 @@ function Controls({ toggleFullScreen }) {
 }
 
 function GamePage({ toggleFullScreen }) {
+  const { gameStarted } = useSelector((state) => state.system);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
   const navicate = useNavigate();
@@ -60,11 +61,14 @@ function GamePage({ toggleFullScreen }) {
     };
   }, []);
 
+  const setGameStarted = useCallback((bool) => {
+    dispatch(systemActions.setGameStarted(bool));
+  }, []);
+
   useEffect(() => {
-    if (game == null && ref.current != null) {
+    if (game == null) {
       const { width, height } = ref.current.getBoundingClientRect();
-      dispatch(systemActions.setGameStarted(true));
-      const gameObject = new Game(width, height);
+      const gameObject = new Game(width, height, { setGameStarted });
       setGame(gameObject);
     }
 
@@ -74,13 +78,17 @@ function GamePage({ toggleFullScreen }) {
         game.stop();
         game.dispose();
         setGame(null);
-        dispatch(systemActions.setGameStarted(false));
       };
     }
-  }, [game, ref.current]);
+  }, [game]);
 
   return (
     <>
+      {!gameStarted ? (
+        <Box sx={{ position: 'absolute', left: 'calc(50% - 24px)', top: 'calc(50% - 24px)' }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
       <GameContainer id="container" ref={ref} />
       <Controls toggleFullScreen={toggleFullScreen} />
     </>
