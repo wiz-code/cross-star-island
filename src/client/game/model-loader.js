@@ -2,6 +2,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation';
 
+import { Url } from './settings';
+
 const { floor } = Math;
 
 const gltfLoader = new GLTFLoader();
@@ -25,7 +27,7 @@ class ModelLoader {
   #status = 'unstarted';
 
   constructor(name, dataType = 'vrm') {
-    this.url = `assets/${dataType}/${name}.${dataType}`;
+    this.url = `${Url.assets}/${dataType}/${name}.${dataType}`;
   }
 
   async load() {
