@@ -271,13 +271,13 @@ export const Characters = [
 ];
 
 export const Sounds = [
-  ['shot', 'ショット.mp3'],
-  ['damage', '打撃1.mp3'],
-  ['jump', 'カーソル移動3.mp3'],
-  ['get-item', '決定11.mp3'],
-  ['dash', '回避.mp3'],
-  ['girl-voice-1', '「すごいすごい」.mp3'],
-  ['goal', 'きらきら輝く1.mp3'],
+  ['shot', 'shot.mp3'],
+  ['damage', 'damage-1.mp3'],
+  ['jump', 'cursor-move-3.mp3'],
+  ['get-item', 'decision-11.mp3'],
+  ['dash', 'evasion.mp3'],
+  ['girl-voice-1', 'sugoi.mp3'],
+  ['goal', 'kirakira-1.mp3'],
 ];
 
 export const Items = [
