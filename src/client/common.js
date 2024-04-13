@@ -9,14 +9,7 @@ export const Meta = [
 ];
 
 const Delimiter = '/';
-let Basename = Delimiter;
+const Basename = location.pathname !== Delimiter ? location.pathname : Delimiter;
 
-const pathname = location.pathname;
-
-if (pathname !== Delimiter) {
-  const paths = pathname.split(Delimiter);
-  paths.pop();
-  Basename = paths.join(Delimiter);
-}
-
+console.log(Basename);
 export { Basename };
