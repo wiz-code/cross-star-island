@@ -19,6 +19,7 @@ import {
 import { styled, useTheme } from '@mui/material/styles';
 
 import Layout from './Layout';
+import { Url } from '../game/settings';
 import { Meta } from '../common';
 
 const meta = new Map(Meta);
@@ -74,7 +75,7 @@ function TitlePage({ toggleFullScreen }) {
               maxHeight: { xs: 360, md: 480 },
               maxWidth: { xs: 480, md: 640 },
             }}
-            src="/assets/images/game-image-1.png"
+            src={`${Url.assets}/images/game-image-1.png`}
             alt="screenshot"
           />
         </Row>
