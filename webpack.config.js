@@ -4,6 +4,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const babelConfig = require('./src/client/.babelrc');
 
+const title = 'CrossStar Island - クロススター・アイランド';
+
 module.exports = (env, argv) => {
   let mode = 'development';
 
@@ -58,6 +60,7 @@ module.exports = (env, argv) => {
 
     plugins: [
       new HtmlWebpackPlugin({
+        title,
         template: './src/html/index.html',
       }),
       new CopyPlugin({
