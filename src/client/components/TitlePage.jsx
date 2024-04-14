@@ -85,7 +85,7 @@ function TitlePage({ gameLink, toggleFullScreen }) {
               maxHeight: { xs: 360, md: 480 },
               maxWidth: { xs: 480, md: 640 },
             }}
-            src={`${Url.images}game-image-1.png`}
+            src="assets/images/game-image-1.png"
             alt="screenshot"
           />
         </Row>
