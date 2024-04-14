@@ -83,7 +83,9 @@ export const handlers = [
         playSound('goal');
       }
 
-      setTimeout(() => (location.href = `${Basepath}index.html`), 2000);
+      let path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+      path = path === '' ? '/' : path;
+      setTimeout(() => (location.href = path), 2000);
     },
   },
 ];

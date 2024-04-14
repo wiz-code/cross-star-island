@@ -15,7 +15,7 @@ const theme = createTheme(defaultTheme);
 
 const Wrapper = styled(Box)(({ theme }) => ({ height: '100vh' }));
 
-function App() {
+function App({ indexPath }) {
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -48,11 +48,11 @@ function App() {
         <Suspense fallback={Loading}>
           <Routes>
             <Route
-              path="/"
+              path={indexPath}
               element={<TitlePage toggleFullScreen={toggleFullScreen} />}
             />
             <Route
-              path="/game"
+              path={indexPath !== '/' ? `${indexPath}/game` : '/game'}
               element={<GamePage toggleFullScreen={toggleFullScreen} />}
             />
           </Routes>
