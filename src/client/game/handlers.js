@@ -2,6 +2,8 @@ import { Vector3 } from 'three';
 import { Tween, Group } from '@tweenjs/tween.js';
 import { States, Compositions, Stages } from './data';
 
+import { Basepath } from '../common';
+
 const { random } = Math;
 
 const getRandomInclusive = (min, max) => random() * (max - min) + min;
@@ -81,7 +83,7 @@ export const handlers = [
         playSound('goal');
       }
 
-      setTimeout(() => (location.href = '/'), 2000);
+      setTimeout(() => (location.href = `${Basepath}index.html`), 2000);
     },
   },
 ];

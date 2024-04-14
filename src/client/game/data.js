@@ -342,7 +342,8 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: { sx: 8, sy: 4, sz: 0.1 },
+          position: { sx: -40, sy: 4, sz: 1 },
+          //position: { sx: 8, sy: 4, sz: 0.1 },
           phi: PI / 2,
         },
         {
