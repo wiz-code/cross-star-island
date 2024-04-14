@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import React, { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
@@ -41,6 +41,14 @@ function App({ indexPath }) {
 
   const Loading = 'loading';
 
+  const gameLink = useMemo(() => {
+    if (indexPath === '/') {
+      return '/game';
+    }
+
+    return `${indexPath}/game`;
+  }, [indexPath]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -49,10 +57,10 @@ function App({ indexPath }) {
           <Routes>
             <Route
               path={indexPath}
-              element={<TitlePage toggleFullScreen={toggleFullScreen} />}
+              element={<TitlePage gameLink={gameLink} toggleFullScreen={toggleFullScreen} />}
             />
             <Route
-              path={indexPath !== '/' ? `${indexPath}/game` : '/game'}
+              path={gameLink}
               element={<GamePage toggleFullScreen={toggleFullScreen} />}
             />
           </Routes>
