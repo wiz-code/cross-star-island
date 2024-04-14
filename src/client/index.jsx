@@ -10,10 +10,21 @@ import App from './App';
 const container = document.getElementById('app');
 const root = createRoot(container);
 
+
+const filename = '/index.html';
+let pathname = location.pathname;
+let indexPath = '/';
+
+if (pathname.includes(filename)) {
+  const lastIndex = pathname.lastIndexOf(filename);
+  pathname = pathname.substring(0, lastIndex);
+  indexPath = filename;
+}
+
 root.render(
   <Provider store={store}>
-    <Router basename={location.pathname}>
-      <App />
+    <Router basename={pathname}>
+      <App indexPath={indexPath} />
     </Router>
   </Provider>,
 );

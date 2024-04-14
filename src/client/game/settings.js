@@ -1,7 +1,5 @@
 import { VSMShadowMap, ACESFilmicToneMapping } from 'three';
 
-import { Basepath } from '../common';
-
 const { PI } = Math;
 
 export const StepsPerFrame = 5;
@@ -72,12 +70,9 @@ export const Ground = {
 };
 
 export const Url = {
-  assets: `${Basepath}assets/`,
-  images: `${Basepath}assets/images/`,
-  sounds: `${Basepath}assets/sounds/`,
-  /*assets: 'assets/',
+  assets: 'assets/',
   images: 'assets/images/',
-  sounds: 'assets/sounds/',*/
+  sounds: 'assets/sounds/',
 };
 
 export const Controls = {
