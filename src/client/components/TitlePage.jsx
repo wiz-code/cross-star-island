@@ -36,7 +36,7 @@ const Row = styled(Grid)(({ theme }) => ({
   margin: theme.spacing(2, 0),
 }));
 
-function TitlePage({ toggleFullScreen }) {
+function TitlePage({ gameLink, toggleFullScreen }) {
   const { gameStarted, isFullscreen } = useSelector((state) => state.system);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -88,6 +88,20 @@ function TitlePage({ toggleFullScreen }) {
             src={`${Url.images}game-image-1.png`}
             alt="screenshot"
           />
+        </Row>
+        <Row
+          container
+          item
+          sx={{ gap: theme.spacing(1), justifyContent: 'center' }}
+        >
+          <Button
+            variant="contained"
+            component={Link}
+            to={gameLink}
+            disabled={gameStarted}
+          >
+            ゲームを開始する
+          </Button>
         </Row>
         <Row item>
           <Typography variant="h5">操作方法</Typography>
@@ -211,20 +225,6 @@ function TitlePage({ toggleFullScreen }) {
               </TableBody>
             </Table>
           </TableContainer>
-        </Row>
-        <Row
-          container
-          item
-          sx={{ gap: theme.spacing(1), justifyContent: 'center' }}
-        >
-          <Button
-            variant="contained"
-            component={Link}
-            to="/game"
-            disabled={gameStarted}
-          >
-            ゲームを開始する
-          </Button>
         </Row>
         <Row
           container
