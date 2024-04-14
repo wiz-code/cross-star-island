@@ -1,14 +1,15 @@
-import React, { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
-import { Box, CssBaseline } from '@mui/material';
+import { Box, CircularProgress, CssBaseline } from '@mui/material';
 
 import defaultTheme from './theme';
 import systemSlice from './redux/systemSlice';
-import TitlePage from './components/TitlePage';
-import GamePage from './components/GamePage';
+
+const TitlePage = lazy(() => import('./components/TitlePage'));
+const GamePage = lazy(() => import('./components/GamePage'));
 
 const { actions: systemActions } = systemSlice;
 const theme = createTheme(defaultTheme);
@@ -39,7 +40,11 @@ function App({ indexPath }) {
     }
   }, [document.fullscreenElement]);
 
-  const Loading = 'loading';
+  const Loading = () => (
+    <Box sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <CircularProgress />
+    </Box>
+  );
 
   const gameLink = useMemo(() => {
     if (indexPath === '/') {
@@ -53,7 +58,7 @@ function App({ indexPath }) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Wrapper>
-        <Suspense fallback={Loading}>
+        <Suspense fallback={<Loading />}>
           <Routes>
             <Route
               path={indexPath}

@@ -75,6 +75,20 @@ function TitlePage({ gameLink, toggleFullScreen }) {
           <Typography variant="body1">{description}</Typography>
         </Row>
         <Row
+          container
+          item
+          sx={{ gap: theme.spacing(1), justifyContent: 'center' }}
+        >
+          <Button
+            variant="contained"
+            component={Link}
+            to={gameLink}
+            disabled={gameStarted}
+          >
+            ゲームを開始する
+          </Button>
+        </Row>
+        <Row
           item
           sx={{ display: 'flex', flexGrow: 1, justifyContent: 'center' }}
         >
@@ -88,20 +102,6 @@ function TitlePage({ gameLink, toggleFullScreen }) {
             src="assets/images/game-image-1.png"
             alt="screenshot"
           />
-        </Row>
-        <Row
-          container
-          item
-          sx={{ gap: theme.spacing(1), justifyContent: 'center' }}
-        >
-          <Button
-            variant="contained"
-            component={Link}
-            to={gameLink}
-            disabled={gameStarted}
-          >
-            ゲームを開始する
-          </Button>
         </Row>
         <Row item>
           <Typography variant="h5">操作方法</Typography>
