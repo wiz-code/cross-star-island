@@ -69,12 +69,6 @@ export const Ground = {
   pointColor: 0xf4e511,
 };
 
-export const Url = {
-  assets: 'assets/',
-  images: 'assets/images/',
-  sounds: 'assets/sounds/',
-};
-
 export const Controls = {
   lookSpeed: 1,
 
@@ -120,4 +114,24 @@ export const Screen = {
   sightSize: 48,
   sightPovSize: 48,
   sightLinesSize: 128,
+};
+
+
+
+const filename = '/index.html';
+const pathname = location.pathname;
+let prefix = '';
+
+if (pathname.includes(filename)) {
+  const lastIndex = pathname.lastIndexOf(filename);
+  prefix = pathname.substring(0, lastIndex + 1);
+}
+
+export const Url = {
+  assets: `${prefix}assets/`,
+  images: `${prefix}assets/images/`,
+  sounds: `${prefix}assets/sounds/`,
+  /*assets: 'assets/',
+  images: 'assets/images/',
+  sounds: 'assets/sounds/',*/
 };

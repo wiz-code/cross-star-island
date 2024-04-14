@@ -20,7 +20,7 @@ if (pathname.includes(filename)) {
   pathname = pathname.substring(0, lastIndex);
   indexPath = filename;
 }
-console.log(indexPath)
+
 root.render(
   <Provider store={store}>
     <Router basename={pathname}>
