@@ -3,12 +3,12 @@ import { Tween, Group } from '@tweenjs/tween.js';
 import { States, Compositions, Stages } from './data';
 
 import { Basepath } from '../common';
+import { addOffsetToPosition } from './utils';
 
 const { random } = Math;
 
 const getRandomInclusive = (min, max) => random() * (max - min) + min;
 
-const stages = new Map(Stages);
 const compositions = new Map(Compositions);
 
 export const handlers = [
@@ -18,17 +18,18 @@ export const handlers = [
     condition(character) {
       return character.isFPV();
     },
-    handler(character) {
-      const stageIndex = globalThis.states.get('stageIndex');
-      const stageNameList = compositions.get('stage');
-      const stageName = stageNameList[stageIndex];
-      const stageData = stages.get(stageName);
+    handler({ states }, character) {
+      const stageIndex = states.get('stageIndex');
+      const stageData = Stages[stageIndex];
 
-      const checkpointIndex = globalThis.states.get('checkpointIndex');
+      const checkpointIndex = states.get('checkpointIndex');
       const checkpoint = stageData.checkpoints[checkpointIndex];
+      const { offset } = stageData.sections[checkpointIndex];
+      const position = addOffsetToPosition(checkpoint.position, offset);
+
       character.velocity.copy(new Vector3());
       character.setPosition(
-        checkpoint.position,
+        position,
         checkpoint.phi,
         checkpoint.theta,
       );
@@ -37,10 +38,10 @@ export const handlers = [
   {
     eventName: 'get-item',
     targetName: 'weapon-upgrade',
-    handler(character) {
+    handler({ methods }, character) {
       if (character.guns.has(character.gunType)) {
-        if (character.isFPV() && globalThis.methods.has('play-sound')) {
-          const playSound = globalThis.methods.get('play-sound');
+        if (character.isFPV() && methods.has('play-sound')) {
+          const playSound = methods.get('play-sound');
           playSound('get-item');
         }
 
@@ -61,29 +62,44 @@ export const handlers = [
   },
   {
     eventName: 'get-item',
-    targetName: 'checkpoint',
-    handler(character) {
-      if (character.isFPV() && globalThis.methods.has('play-sound')) {
-        const playSound = globalThis.methods.get('play-sound');
+    targetName: 'hyper-dash',
+    handler({ states, methods }, character, object) {
+      if (character.isFPV() && methods.has('play-sound')) {
+        const playSound = methods.get('play-sound');
         playSound('get-item');
       }
 
-      const checkpointIndex = globalThis.states.get('checkpointIndex');
-      globalThis.states.set('checkpointIndex', checkpointIndex + 1);
+      character.velocity.addScaledVector(object.params.velocity, 30);
+    },
+  },
+  {
+    eventName: 'get-item',
+    targetName: 'checkpoint',
+    handler({ states, methods }, character) {
+      if (character.isFPV() && methods.has('play-sound')) {
+        const playSound = methods.get('play-sound');
+        playSound('get-item');
+      }
+
+      const checkpointIndex = states.get('checkpointIndex');
+      states.set('checkpointIndex', checkpointIndex + 1);
     },
   },
   {
     eventName: 'collision',
     targetName: 'girl-1',
     once: true,
-    handler(c1, c2) {
-      if (globalThis.methods.has('play-sound')) {
-        const playSound = globalThis.methods.get('play-sound');
+    handler({ methods }, c1, c2) {
+      if (methods.has('play-sound')) {
+        const playSound = methods.get('play-sound');
         playSound('girl-voice-1');
         playSound('goal');
       }
 
-      let path = location.pathname.substring(0, location.pathname.lastIndexOf('/'));
+      let path = location.pathname.substring(
+        0,
+        location.pathname.lastIndexOf('/'),
+      );
       path = path === '' ? '/' : path;
       setTimeout(() => (location.href = path), 2000);
     },
@@ -93,18 +109,25 @@ export const handlers = [
 export const Tweeners = [
   [
     'rolling-stone-1',
-    (target, arg) => {
+    (game, target, arg) => {
       const time = arg ?? 0;
+
+      const stageIndex = game.states.get('stageIndex');
+      const stageData = Stages[stageIndex];
+      const { offset } = stageData.sections[target.params.section];
 
       const group = new Group();
       const tween = new Tween(target.collider.center, group);
       tween
         .onEveryStart(() => {
-          const posZ = getRandomInclusive(-80, 80);
-          target.collider.center.set(-2100, 300, posZ);
+          const randomNum = getRandomInclusive(-2, 2);
+          const initPos = { ...target.params.position };
+          initPos.sx += randomNum;
+          const position = addOffsetToPosition(initPos, offset);
+          target.setPosition(position);
           target.velocity.copy(new Vector3(0, 0, 0));
         })
-        .delay(10000)
+        .delay(8000)
         .repeat(Infinity)
         .start(time);
 
@@ -113,7 +136,7 @@ export const Tweeners = [
   ],
   [
     'avoidance-1',
-    (target, arg) => {
+    (game, target, arg) => {
       const time = arg ?? 0;
       let prevValue = 0;
       const offset = { z: 0 };
@@ -126,7 +149,7 @@ export const Tweeners = [
 
       const group = new Group();
       const tween1 = new Tween(offset, group)
-        .to({ z: -40 }, 1000)
+        .to({ z: -7 }, 1000)
         .onUpdate(update);
       const tween2 = new Tween(offset, group)
         .to({ z: 0 }, 1000)
@@ -145,8 +168,8 @@ export const Updaters = [
     'rolling-stone-1',
     {
       state: States.alive,
-      update(target, deltaTime) {
-        target.object.rotation.z -= deltaTime * target.data.rotateSpeed;
+      update(game, target, deltaTime) {
+        target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
       },
     },
   ],
@@ -154,10 +177,24 @@ export const Updaters = [
     'item-ring-1',
     {
       state: States.alive,
-      update(target, deltaTime) {
+      update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
-        target.object.rotation.y -= rotateSpeed;
+        target.object.rotation.x -= rotateSpeed;
         target.object.rotation.z -= rotateSpeed * 2;
+      },
+    },
+  ],
+  [
+    'item-ring-2',
+    {
+      state: States.alive,
+      update(game, target, deltaTime) {
+        const rotateSpeed = deltaTime * target.data.rotateSpeed;
+
+        if (target.object != null) {
+          const points = target.object.getObjectByName('points');
+          points.rotation.y -= deltaTime * target.data.rotateSpeed;
+        }
       },
     },
   ],
@@ -165,7 +202,7 @@ export const Updaters = [
     'bullet-fire-1',
     {
       state: States.alive,
-      update(target, deltaTime) {
+      update(game, target, deltaTime) {
         target.params.elapsedTime += deltaTime;
 
         if (target.params.elapsedTime > target.params.fireInterval) {
@@ -179,7 +216,7 @@ export const Updaters = [
     'satellite-points',
     {
       state: States.alive,
-      update(target, deltaTime) {
+      update(game, target, deltaTime) {
         if (target.object != null) {
           const points = target.object.getObjectByName('points');
           points.rotation.y -= deltaTime * target.data.rotateSpeed;

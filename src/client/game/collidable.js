@@ -1,4 +1,4 @@
-import { Sphere, Vector3 } from 'three';
+import { Sphere, Vector3, Spherical } from 'three';
 
 import Entity from './entity';
 import { World } from './settings';
@@ -10,13 +10,16 @@ class Collidable extends Entity {
   constructor(name, type) {
     super(name, type);
 
+    this.rotation = new Spherical();
     this.collider = new Sphere();
     this.velocity = new Vector3();
   }
 
-  setPosition(position) {
+  setPosition(position, phi = 0, theta = 0) {
     const pos = getVectorPos(position);
     this.collider.center.copy(pos);
+    this.rotation.phi = phi;
+    this.rotation.theta = theta;
   }
 
   setObject(object) {

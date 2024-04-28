@@ -10,9 +10,8 @@ import App from './App';
 const container = document.getElementById('app');
 const root = createRoot(container);
 
-
 const filename = '/index.html';
-let pathname = location.pathname;
+let { pathname } = location;
 let indexPath = '/';
 
 if (pathname.includes(filename)) {

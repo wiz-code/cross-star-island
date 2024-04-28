@@ -1,4 +1,11 @@
-import React, { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
@@ -40,11 +47,20 @@ function App({ indexPath }) {
     }
   }, [document.fullscreenElement]);
 
-  const Loading = () => (
-    <Box sx={{ height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <CircularProgress />
-    </Box>
-  );
+  function Loading() {
+    return (
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   const gameLink = useMemo(() => {
     if (indexPath === '/') {
@@ -62,7 +78,12 @@ function App({ indexPath }) {
           <Routes>
             <Route
               path={indexPath}
-              element={<TitlePage gameLink={gameLink} toggleFullScreen={toggleFullScreen} />}
+              element={
+                <TitlePage
+                  gameLink={gameLink}
+                  toggleFullScreen={toggleFullScreen}
+                />
+              }
             />
             <Route
               path={gameLink}
