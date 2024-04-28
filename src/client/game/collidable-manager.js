@@ -37,7 +37,7 @@ class CollidableManager extends Publisher {
     }
   }
 
-  add(collidable, data = null) {
+  add(collidable) {
     if (Array.isArray(collidable)) {
       for (let i = 0, l = collidable.length; i < l; i += 1) {
         const object = collidable[i];
@@ -58,6 +58,13 @@ class CollidableManager extends Publisher {
   }
 
   clear() {
+    const list = Array.from(this.list.keys());
+
+    for (let i = 0, l = list.length; i < l; i += 1) {
+      const collidable = list[i];
+      this.scene.remove(collidable.object);
+    }
+
     this.list.clear();
   }
 
@@ -151,6 +158,7 @@ class CollidableManager extends Publisher {
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
       collidable.object.position.copy(collidable.collider.center);
+      collidable.object.rotation.y = collidable.rotation.phi;
     }
   }
 }

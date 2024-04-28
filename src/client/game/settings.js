@@ -13,15 +13,16 @@ export const Scene = {
   background: 0x000000,
   Fog: {
     color: 0x000000,
-    near: 30,
-    far: 1800,
+    near: 60, //30
+    far: 600, //1800
+    density: 0.004,
   },
 };
 export const Camera = {
   FOV: 70,
   Aspect: window.innerWidth / window.innerHeight,
-  near: 5,
-  far: 2000,
+  near: 1, //5
+  far: 800, //2000
   order: 'YXZ',
 };
 
@@ -89,21 +90,21 @@ export const Controls = {
 };
 
 export const World = {
-  oob: -1000,
-  gravity: 800, // 6,
-  resistance: 4, // 10,
+  oob: -240,
+  gravity: 300, //800
+  resistance: 4,
   airResistance: 1,
   Resistance: {
-    ground: 4,
-    air: 0.4,
-    spin: 6, // 12
+    ground: 6, //4
+    air: 0.6, //0.4
+    spin: 6,
     ammo: 1.2,
     obstacle: 0.1,
     item: 0.1,
   },
   collisionShock: 0.8,
-  pointSize: 10,
-  spacing: 80,
+  pointSize: 2, //10
+  spacing: 16, //80
 };
 
 export const Screen = {
@@ -116,10 +117,8 @@ export const Screen = {
   sightLinesSize: 128,
 };
 
-
-
 const filename = '/index.html';
-const pathname = location.pathname;
+const { pathname } = location;
 let prefix = '';
 
 if (pathname.includes(filename)) {
@@ -131,7 +130,7 @@ export const Url = {
   assets: `${prefix}assets/`,
   images: `${prefix}assets/images/`,
   sounds: `${prefix}assets/sounds/`,
-  /*assets: 'assets/',
+  /* assets: 'assets/',
   images: 'assets/images/',
-  sounds: 'assets/sounds/',*/
+  sounds: 'assets/sounds/', */
 };

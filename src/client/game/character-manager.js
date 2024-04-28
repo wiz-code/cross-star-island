@@ -37,9 +37,10 @@ class CharacterManager extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  constructor(scene, collidableManager, eventManager, worldOctree) {
+  constructor(game, scene, collidableManager, eventManager, worldOctree) {
     super();
 
+    this.game = game;
     this.scene = scene;
     this.collidableManager = collidableManager;
     this.eventManager = eventManager;
@@ -113,8 +114,8 @@ class CharacterManager extends Publisher {
               break;
             } else {
               if (!character.isStunning()) {
-                if (globalThis.methods.has('play-sound')) {
-                  const playSound = globalThis.methods.get('play-sound');
+                if (this.game.methods.has('play-sound')) {
+                  const playSound = this.game.methods.get('play-sound');
                   playSound('damage');
                 }
 

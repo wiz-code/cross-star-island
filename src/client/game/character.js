@@ -195,7 +195,7 @@ class Character extends Entity {
   }
 
   static createPoints(data, texture) {
-    const geomSize = data.radius + floor(World.pointSize / 2);
+    const geomSize = data.radius;
 
     let geom = new ConeGeometry(geomSize, geomSize, 3);
     const vertices = geom.attributes.position.array.slice(0);
@@ -225,8 +225,10 @@ class Character extends Entity {
     return mesh;
   }
 
-  constructor(name, ctype, texture) {
+  constructor(game, name, ctype, texture) {
     super(name, 'character');
+
+    this.game = game;
 
     const dataMap = new Map(Characters);
 
@@ -387,6 +389,7 @@ class Character extends Entity {
     this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, phi));
 
     this.collider.start.copy(pos);
+    this.collider.start.y += this.data.radius;
     this.collider.end.copy(pos);
     this.collider.end.y += this.data.height + this.data.radius;
   }
@@ -406,8 +409,8 @@ class Character extends Entity {
   } */
 
   jump() {
-    if (this.isFPV() && globalThis.methods.has('play-sound')) {
-      const playSound = globalThis.methods.get('play-sound');
+    if (this.isFPV() && this.game.methods.has('play-sound')) {
+      const playSound = this.game.methods.get('play-sound');
       playSound('jump');
     }
 
@@ -476,7 +479,7 @@ class Character extends Entity {
       multiplier *= this.data.speed;
 
       if (state === States.urgency) {
-        multiplier *= this.data.urgencyMove;
+        multiplier *= this.data.urgencyMove * 0.6;
       }
     } else {
       multiplier *= this.data.airSpeed;
@@ -513,8 +516,8 @@ class Character extends Entity {
 
   fire() {
     if (this.guns.has(this.gunType)) {
-      if (this.isFPV() && globalThis.methods.has('play-sound')) {
-        const playSound = globalThis.methods.get('play-sound');
+      if (this.isFPV() && this.game.methods.has('play-sound')) {
+        const playSound = this.game.methods.get('play-sound');
         playSound('shot');
       }
 
@@ -561,8 +564,8 @@ class Character extends Entity {
         this.#urgencyKey = lastKey;
         this.#urgencyElapsedTime = 0;
 
-        if (this.isFPV() && globalThis.methods.has('play-sound')) {
-          const playSound = globalThis.methods.get('play-sound');
+        if (this.isFPV() && this.game.methods.has('play-sound')) {
+          const playSound = this.game.methods.get('play-sound');
           playSound('dash');
         }
       }

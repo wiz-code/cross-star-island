@@ -14,8 +14,9 @@ import {
   Group,
   PlaneGeometry,
   LineSegments,
+  Vector3,
 } from 'three';
-import { SUBTRACTION, Brush, Evaluator } from 'three-bvh-csg';
+import { SUBTRACTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { World, Ground, Cylinder } from './settings';
@@ -56,16 +57,15 @@ export const createGround = (
   {
     widthSegments = 10,
     depthSegments = 10,
-    widthSpacing = World.spacing,
-    depthSpacing = World.spacing,
+    spacing = World.spacing,
     bumpHeight = 1,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
   },
   texture,
 ) => {
-  const width = widthSegments * widthSpacing;
-  const depth = depthSegments * depthSpacing;
+  const width = widthSegments * spacing;
+  const depth = depthSegments * spacing;
 
   const data = generateHeight(width, depth);
 
@@ -122,11 +122,10 @@ export const createGround = (
   ground.add(mesh.points);
 
   if (position.sx != null) {
-    const heightSpacing = position.heightSpacing ?? World.spacing;
     ground.position.set(
-      position.sx * widthSpacing,
-      position.sy * heightSpacing,
-      position.sz * depthSpacing,
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
     );
   } else {
     ground.position.set(position.x, position.y, position.z);
@@ -137,14 +136,299 @@ export const createGround = (
   return ground;
 };
 
-export const createMaze = (
+export const createMaze = (list, texture) => {
+  const boxes = [];
+  const mesh = {};
+  const mat = {};
+  mat.surface = new MeshBasicMaterial({
+    color: Ground.color,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Ground.wireColor,
+  });
+  mat.points = new PointsMaterial({
+    color: Ground.pointColor,
+    size: World.pointSize,
+    map: texture.point,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  const evaluator = new Evaluator();
+  evaluator.attributes = ['position', 'normal'];
+
+  for (let i = 0, l = list.length; i < l; i += 1) {
+    const {
+      front = true,
+      back = true,
+      left = true,
+      right = true,
+      top = true,
+      bottom = true,
+      widthSegments = 10,
+      heightSegments = 10,
+      depthSegments = 10,
+      position = { sx: 0, sy: 0, sz: 0 },
+    } = list[i];
+
+    // 前後の面
+    const plane1 = new PlaneGeometry(
+      World.spacing * widthSegments,
+      World.spacing * heightSegments,
+      widthSegments,
+      heightSegments,
+    );
+
+    // 左右の面
+    const plane2 = new PlaneGeometry(
+      World.spacing * depthSegments,
+      World.spacing * heightSegments,
+      depthSegments,
+      heightSegments,
+    );
+
+    // 上下の面
+    const plane3 = new PlaneGeometry(
+      World.spacing * widthSegments,
+      World.spacing * depthSegments,
+      widthSegments,
+      depthSegments,
+    );
+
+    const brushes = [];
+
+    const x = floor(World.spacing * widthSegments * 0.5);
+    const y = floor(World.spacing * heightSegments * 0.5);
+    const z = floor(World.spacing * depthSegments * 0.5);
+
+    let moveX, moveY, moveZ;
+
+    if (position.sx != null) {
+      moveX = World.spacing * position.sx;
+      moveY = World.spacing * position.sy;
+      moveZ = World.spacing * position.sz;
+    } else {
+      moveX = position.x;
+      moveY = position.y;
+      moveZ = position.z;
+    }
+
+    if (front) {
+      const plane = plane1.clone();
+      plane.rotateY(-PI);
+      plane.translate(0, 0, z);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    if (back) {
+      const plane = plane1.clone();
+      plane.translate(0, 0, -z);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    if (right) {
+      const plane = plane2.clone();
+      plane.rotateY(PI * 0.5);
+      plane.translate(-x, 0, 0);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    if (left) {
+      const plane = plane2.clone();
+      plane.rotateY(-PI * 0.5);
+      plane.translate(x, 0, 0);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    if (top) {
+      const plane = plane3.clone();
+      plane.rotateX(PI * 0.5);
+      plane.translate(0, y, 0);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    if (bottom) {
+      const plane = plane3.clone();
+      plane.rotateX(-PI * 0.5);
+      plane.translate(0, -y, 0);
+
+      const brush = new Brush(plane, mat.surface);
+      brush.position.set(moveX, moveY, moveZ);
+      brush.updateMatrixWorld();
+
+      brushes.push(brush);
+    }
+
+    let box;
+
+    for (let j = 0, m = brushes.length; j < m; j += 1) {
+      const brush = brushes[j];
+
+      if (j === 0) {
+        box = brush;
+      } else {
+        box = evaluator.evaluate(box, brush, ADDITION);
+      }
+    }
+
+    box.updateMatrixWorld();
+
+    boxes.push(box);
+  }
+
+  for (let i = 0, l = boxes.length; i < l; i += 1) {
+    const box = boxes[i];
+
+    if (i === 0) {
+      mesh.surface = box;
+    } else if (boxes.length >= 2) {
+      mesh.surface = evaluator.evaluate(mesh.surface, box, ADDITION);
+    }
+  }
+
+  mesh.surface.updateMatrixWorld();
+  mesh.surface.geometry.computeVertexNormals();
+
+  const geom = {};
+  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
+
+  const vertices = mesh.surface.geometry.attributes.position.array.slice(0);
+  const normals = mesh.surface.geometry.attributes.normal.array.slice(0);
+
+  const newVertices = [];
+  const vertexMap = new Map();
+
+  for (let i = 0, l = vertices.length; i < l; i += 3) {
+    const vx1 = vertices[i];
+    const vy1 = vertices[i + 1];
+    const vz1 = vertices[i + 2];
+
+    const key = `${vx1}:${vy1}:${vz1}`;
+
+    if (!vertexMap.has(key)) {
+      vertexMap.set(key, new Set());
+    }
+
+    const set = vertexMap.get(key);
+    set.add(i);
+  }
+
+  const vertexList = Array.from(vertexMap.entries());
+  const normalMap = new Map();
+
+  for (let i = 0, l = vertexList.length; i < l; i += 1) {
+    const [key, vertexSet] = vertexList[i];
+    const indices = Array.from(vertexSet.keys());
+
+    if (!normalMap.has(key)) {
+      normalMap.set(key, []);
+    }
+
+    const list = normalMap.get(key);
+
+    let x = 0, y = 0, z = 0;
+
+    for (let j = 0, m = indices.length; j < m; j += 1) {
+      const index = indices[j];
+
+      const nx = normals[index];
+      const ny = normals[index + 1];
+      const nz = normals[index + 2];
+
+      x += nx;
+      y += ny;
+      z += nz;
+    }
+
+    x /= indices.length;
+    y /= indices.length;
+    z /= indices.length;
+
+    list.push(x, y, z);
+  }
+
+  for (let i = 0, l = vertices.length; i < l; i += 3) {
+    const vx1 = vertices[i];
+    const vy1 = vertices[i + 1];
+    const vz1 = vertices[i + 2];
+
+    const vertex = new Vector3(
+      vx1,
+      vy1,
+      vz1
+    );
+
+    const key = `${vx1}:${vy1}:${vz1}`;
+    const list = normalMap.get(key);
+
+    const normal = new Vector3(
+      list[0],
+      list[1],
+      list[2]
+    );
+
+    vertex.add(normal.normalize().multiplyScalar(1));
+    newVertices.push(vertex.x, vertex.y, vertex.z);
+  }
+
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(newVertices, 3)
+  );
+  geom.points.computeBoundingSphere();
+
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.points = new Points(geom.points, mat.points);
+
+  mesh.surface.name = 'surface';
+  mesh.wireframe.name = 'wireframe';
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  return group;
+};
+
+
+/*export const createMaze = (
   {
+    front = false,
+    back = false,
+    left = true,
+    right = true,
     widthSegments = 10,
     heightSegments = 10,
     depthSegments = 10,
-    widthSpacing = World.spacing,
-    heightSpacing = World.spacing,
-    depthSpacing = World.spacing,
+    spacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
   },
@@ -155,9 +439,9 @@ export const createMaze = (
   const mesh = {};
 
   geom.box = new BoxGeometry(
-    widthSpacing * widthSegments,
-    heightSpacing * heightSegments,
-    depthSpacing * depthSegments,
+    spacing * widthSegments,
+    spacing * heightSegments,
+    spacing * depthSegments,
     widthSegments,
     heightSegments,
     depthSegments,
@@ -198,33 +482,67 @@ export const createMaze = (
   mesh.surface.updateMatrixWorld();
 
   geom.plane1 = new PlaneGeometry(
-    heightSpacing * heightSegments,
-    depthSpacing * depthSegments,
+    spacing * widthSegments,
+    spacing * heightSegments,
+    widthSegments,
     heightSegments,
-    depthSegments,
   );
-  geom.plane2 = geom.plane1.clone();
 
-  const x = floor(widthSpacing * widthSegments * -0.5);
-  geom.plane1.rotateZ(PI / 2);
-  geom.plane1.rotateY(PI / 2);
-  geom.plane1.translate(x, 0, 0);
-
-  mesh.brush1 = new Brush(geom.plane1, mat.surface);
-  mesh.brush1.updateMatrixWorld();
-
-  geom.plane2.rotateZ(-PI / 2);
-  geom.plane2.rotateY(-PI / 2);
-  geom.plane2.translate(-x, 0, 0);
-
-  mesh.brush2 = new Brush(geom.plane2, mat.surface);
-  mesh.brush2.updateMatrixWorld();
+  geom.plane2 = new PlaneGeometry(
+    spacing * depthSegments,
+    spacing * heightSegments,
+    depthSegments,
+    heightSegments,
+  );
 
   const evaluator = new Evaluator();
   evaluator.attributes = ['position', 'normal'];
 
-  mesh.surface = evaluator.evaluate(mesh.surface, mesh.brush1, SUBTRACTION);
-  mesh.surface = evaluator.evaluate(mesh.surface, mesh.brush2, SUBTRACTION);
+  const x = floor(spacing * widthSegments * 0.5);
+  const z = floor(spacing * depthSegments * 0.5);
+
+  if (!front) {
+    const plane = geom.plane1.clone();
+    plane.translate(0, 0, -z);
+
+    const brush = new Brush(plane, mat.surface);
+    brush.updateMatrixWorld();
+
+    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
+  }
+
+  if (!back) {
+    const plane = geom.plane1.clone();
+    plane.rotateY(PI);
+    plane.translate(0, 0, z);
+
+    const brush = new Brush(plane, mat.surface);
+    brush.updateMatrixWorld();
+
+    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
+  }
+
+  if (!left) {
+    const plane = geom.plane2.clone();
+    plane.rotateY(PI * 0.5);
+    plane.translate(-x, 0, 0);
+
+    const brush = new Brush(plane, mat.surface);
+    brush.updateMatrixWorld();
+
+    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
+  }
+
+  if (!right) {
+    const plane = geom.plane2.clone();
+    plane.rotateY(-PI * 0.5);
+    plane.translate(x, 0, 0);
+
+    const brush = new Brush(plane, mat.surface);
+    brush.updateMatrixWorld();
+
+    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
+  }
 
   geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
 
@@ -233,9 +551,9 @@ export const createMaze = (
   geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
   geom.points.computeBoundingSphere();
 
-  const width = widthSpacing * widthSegments;
-  const height = heightSpacing * heightSegments;
-  const depth = depthSpacing * depthSegments;
+  const width = spacing * widthSegments;
+  const height = spacing * heightSegments;
+  const depth = spacing * depthSegments;
   const scaleX = (width - World.pointSize) / width;
   const scaleY = (height - World.pointSize) / height;
   const scaleZ = (depth - World.pointSize) / depth;
@@ -254,7 +572,6 @@ export const createMaze = (
   group.add(mesh.points);
 
   if (position.sx != null) {
-    const spacing = position.spacing ?? World.spacing;
     group.position.set(
       position.sx * spacing,
       position.sy * spacing,
@@ -267,7 +584,7 @@ export const createMaze = (
   group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
 
   return group;
-};
+};*/
 
 export const createCylinder = (
   {
@@ -276,6 +593,7 @@ export const createCylinder = (
     height = 10,
     radialSegments = 8,
     heightSegments = 1,
+    spacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
   },
@@ -336,7 +654,6 @@ export const createCylinder = (
   group.add(mesh.points);
 
   if (position.sx != null) {
-    const spacing = position.spacing ?? World.spacing;
     group.position.set(
       position.sx * spacing,
       position.sy * spacing,

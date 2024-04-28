@@ -2,9 +2,10 @@ import { States } from './data';
 import Publisher from './publisher';
 
 class EventManager extends Publisher {
-  constructor() {
+  constructor(game) {
     super();
 
+    this.game = game;
     this.schedules = new Map();
     this.events = new Map();
     this.tweens = new Map();
@@ -74,7 +75,7 @@ class EventManager extends Publisher {
 
   addTween(object, state, tweener, args) {
     const params = args ?? [];
-    const tween = tweener(object, ...params);
+    const tween = tweener(this.game, object, ...params);
     const updater = tween.update.bind(tween);
 
     if (!this.tweens.has(object)) {
@@ -118,7 +119,7 @@ class EventManager extends Publisher {
           return;
         }
 
-        handler(...args);
+        handler(this.game, ...args);
 
         if (once) {
           this.removeHandler(eventName, targetName, handler, condition);
@@ -144,7 +145,7 @@ class EventManager extends Publisher {
         switch (state) {
           case States.alive: {
             updaterSet.forEach((updater) =>
-              updater(target, deltaTime, elapsedTime),
+              updater(this.game, target, deltaTime, elapsedTime),
             );
             break;
           }

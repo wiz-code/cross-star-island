@@ -19,6 +19,22 @@ export const getVectorPos = (position) => {
   return vector;
 };
 
+export const addOffsetToPosition = (position, offset) => {
+  const result = {};
+
+  if (position.sx != null) {
+    result.sx = position.sx + offset.sx;
+    result.sy = position.sy + offset.sy;
+    result.sz = position.sz + offset.sz;
+  } else {
+    result.x = position.x + offset.x;
+    result.y = position.y + offset.y;
+    result.z = position.z + offset.z;
+  }
+
+  return result;
+};
+
 export const leftToRightHandedQuaternion = (x, y, z, w) =>
   new Quaternion(-x, y, -z, w);
 

@@ -46,7 +46,7 @@ class Obstacle extends Collidable {
     const geom = new IcosahedronGeometry(radius, detail);
     const wireframeGeom = new WireframeGeometry(geom);
 
-    const pointsGeom = new OctahedronGeometry(radius + 4, pointsDetail);
+    const pointsGeom = new OctahedronGeometry(radius + 1, pointsDetail);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();

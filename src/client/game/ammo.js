@@ -46,7 +46,7 @@ class Ammo extends Publisher {
 
     const geom = new OctahedronGeometry(radius, detail);
     const geomWire = new WireframeGeometry(geom);
-    const pointsGeom = new OctahedronGeometry(radius + 4, 0);
+    const pointsGeom = new OctahedronGeometry(radius + 1, 0);
     const pointsVertices = pointsGeom.attributes.position.array.slice(0);
 
     const bufferGeom = new BufferGeometry();

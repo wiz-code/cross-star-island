@@ -1,12 +1,14 @@
 import {
   Scene as ThreeScene,
   Fog,
+  FogExp2,
   PerspectiveCamera,
   OrthographicCamera,
   WebGLRenderer,
   Color,
   Clock,
   AmbientLight,
+  AxesHelper, /// //////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -44,7 +46,7 @@ import Obstacle from './obstacle';
 import Item from './item';
 import TextureManager from './texture-manager';
 import createStage from './stages';
-import { leftToRightHandedQuaternion } from './utils';
+import { leftToRightHandedQuaternion, addOffsetToPosition } from './utils';
 
 const { floor, exp } = Math;
 
@@ -84,9 +86,13 @@ class Game {
     this.callbacks = callbacks;
 
     // ゲーム管理変数
-    this.running = false;
-    globalThis.states = new Map(GlobalStates);
-    globalThis.methods = new Map(GlobalMethods);
+    this.game = {};
+    this.game.states = new Map(GlobalStates);
+    this.game.methods = new Map(GlobalMethods);
+    this.game.ammos = new Map();
+    this.game.characters = new Set();
+    this.game.items = new Set();
+    this.game.obstacles = new Set();
     this.loadingList = [];
 
     this.windowHalf = {
@@ -113,16 +119,20 @@ class Game {
 
     this.scene.field = new ThreeScene();
     this.scene.field.background = new Color(Scene.background);
-    this.scene.field.fog = new Fog(
+    /*this.scene.field.fog = new Fog(
       Scene.Fog.color,
       Scene.Fog.near,
       Scene.Fog.far,
+    );*/
+    this.scene.field.fog = new FogExp2(
+      Scene.Fog.color,
+      Scene.Fog.density
     );
 
     this.scene.screen = new ThreeScene();
 
     this.modelManager = new ModelManager(this.scene.field);
-    this.eventManager = new EventManager();
+    this.eventManager = new EventManager(this.game);
 
     this.camera.field = new PerspectiveCamera(
       Camera.FOV,
@@ -145,9 +155,9 @@ class Game {
     this.soundManager = new SoundManager(this.camera.field, this.scene.field);
     const promise = this.soundManager.loadSounds();
     this.loadingList.push(promise);
-    globalThis.methods.forEach((value, key) => {
+    this.game.methods.forEach((value, key) => {
       const method = value.bind(this.soundManager);
-      globalThis.methods.set(key, method);
+      this.game.methods.set(key, method);
     });
 
     this.sceneManager.clear();
@@ -165,7 +175,6 @@ class Game {
     this.scene.field.add(this.light.ambient);
 
     this.data = {};
-    this.data.stages = new Map(Stages);
     this.data.characters = new Map(Characters);
     this.data.compositions = new Map(Compositions);
     this.data.ammos = new Map(Ammos);
@@ -180,41 +189,16 @@ class Game {
       this.worldOctree,
     );
     this.characterManager = new CharacterManager(
+      this.game,
       this.scene.field,
       this.objectManager,
       this.eventManager,
       this.worldOctree,
     );
 
-    this.ammos = new Map();
-    const ammoNames = Array.from(this.data.ammos.keys());
-    ammoNames.forEach((name) => {
-      const ammo = new Ammo(name, this.texture);
-      ammo.list.forEach((bullet) => {
-        if (bullet.data.updaters != null) {
-          bullet.data.updaters.forEach((param) => {
-            if (typeof param === 'string') {
-              const updater = this.data.updaters.get(param);
-              this.eventManager.addUpdater(
-                bullet,
-                updater.state,
-                updater.update,
-                updater.args,
-              );
-            } else {
-              const { state, update, args } = param;
-              this.eventManager.addUpdater(bullet, state, update, args);
-            }
-          });
-        }
-      });
-      this.ammos.set(name, ammo);
-      this.objectManager.add(ammo.list);
-    });
-
     this.controls = null;
     this.player = null;
-    this.stage = null;
+    this.game.stage = null;
 
     const onResize = function onResize() {
       const { width: containerWidth, height: containerHeight } =
@@ -257,12 +241,15 @@ class Game {
     });
 
     /// ///////////////
-    const heroName = 'player-1';
-    const ctype = 'hero-1';
+    const playerName = 'player-1';
+    const characterType = 'hero-1';
+    this.game.states.set('playerName', playerName);
+    this.game.states.set('characterType', characterType);
 
-    this.setPlayer(heroName, ctype);
     this.setMode('play');
 
+    const axesHelper = new AxesHelper(50);
+    this.scene.field.add(axesHelper);
     /// ///////////
 
     this.update = this.update.bind(this);
@@ -285,7 +272,7 @@ class Game {
   }
 
   setPlayer(name, ctype) {
-    this.player = new Character(name, ctype, this.texture);
+    this.player = new Character(this.game, name, ctype, this.texture);
     this.controls = new FirstPersonControls(
       this.scene.screen,
       this.camera.field,
@@ -300,7 +287,7 @@ class Game {
     gunTypes.forEach((gname, gunIndex) => {
       const gun = new Gun(gname);
       gun.data.ammoTypes.forEach((ammoType, ammoIndex) => {
-        const ammo = this.ammos.get(ammoType);
+        const ammo = this.game.ammos.get(ammoType);
         gun.ammos.set(ammoType, ammo);
 
         if (ammoIndex === 0) {
@@ -313,6 +300,8 @@ class Game {
         this.player.setGunType(gname);
       }
     });
+
+    this.characterManager.add(this.player);
   }
 
   removePlayer() {
@@ -326,7 +315,7 @@ class Game {
   }
 
   setMode(mode) {
-    globalThis.states.set('mode', mode);
+    this.game.states.set('mode', mode);
 
     switch (mode) {
       case 'unstarted': {
@@ -349,31 +338,57 @@ class Game {
   setStage(stageIndex) {
     this.clearStage();
 
-    const stageNameList = this.data.compositions.get('stage');
+    const index = stageIndex ?? this.game.states.get('stageIndex');
 
-    const index = stageIndex ?? globalThis.states.get('stageIndex');
-    const stageName = stageNameList[index];
-
-    if (stageName == null) {
+    if (index == null) {
       return;
     }
 
-    const stageData = this.data.stages.get(stageName);
+    const stageData = Stages[index];
 
-    this.stage = createStage(stageName, this.texture);
-    this.scene.field.add(this.stage);
-    this.worldOctree.fromGraphNode(this.stage);
-
-    const { characters, obstacles, items } = stageData;
-    const checkpointIndex = globalThis.states.get('checkpointIndex');
-    const checkpoint = stageData.checkpoints[checkpointIndex];
+    this.game.stage = {};
+    const terrain = createStage(index, this.texture);
+    this.scene.field.add(terrain);
+    this.worldOctree.fromGraphNode(terrain);
+    this.game.stage.terrain = terrain;
 
     this.characterManager.clear();
-    this.objectManager.removeAll('type', 'obstacle');
-    this.objectManager.removeAll('type', 'item');
+    this.objectManager.clear();
+
+    const ammoNames = Array.from(this.data.ammos.keys());
+    ammoNames.forEach((name) => {
+      const ammo = new Ammo(name, this.texture);
+      ammo.list.forEach((bullet) => {
+        if (bullet.data.updaters != null) {
+          bullet.data.updaters.forEach((param) => {
+            if (typeof param === 'string') {
+              const updater = this.data.updaters.get(param);
+              this.eventManager.addUpdater(
+                bullet,
+                updater.state,
+                updater.update,
+                updater.args,
+              );
+            } else {
+              const { state, update, args } = param;
+              this.eventManager.addUpdater(bullet, state, update, args);
+            }
+          });
+        }
+      });
+      this.game.ammos.set(name, ammo);
+      this.objectManager.add(ammo.list);
+    });
+
+    const { characters, obstacles, items } = stageData;
 
     characters.forEach((data) => {
-      const character = new Character(data.name, data.ctype, this.texture);
+      const character = new Character(
+        this.game,
+        data.name,
+        data.ctype,
+        this.texture,
+      );
       const { gunTypes } = character.data;
 
       if (character.model != null) {
@@ -382,8 +397,7 @@ class Game {
         character.model.then(
           (gltf) => {
             this.modelManager.addModel(data.name, gltf);
-            character.setPosition(data.position, data.phi, data.theta);
-            this.characterManager.add(character, data);
+            this.characterManager.add(character);
 
             const { vrm } = gltf.userData;
 
@@ -428,12 +442,14 @@ class Game {
           },
           (error) => console.error(error),
         );
+      } else {
+        this.characterManager.add(character);
       }
 
       gunTypes.forEach((name, gunIndex) => {
         const gun = new Gun(name);
         gun.data.ammoTypes.forEach((ammoType) => {
-          const ammo = this.ammos.get(ammoType);
+          const ammo = this.game.ammos.get(ammoType);
           gun.ammos.set(ammoType, ammo);
         });
 
@@ -445,8 +461,6 @@ class Game {
           character.setGunType(name);
         }
       });
-
-      character.setPosition(data.position, data.phi, data.theta);
 
       if (data.params != null) {
         character.setParams(data.params);
@@ -476,18 +490,18 @@ class Game {
         });
       }
 
-      if (character.object != null) {
-        this.characterManager.add(character);
-      }
-
       if (data.schedule != null) {
         this.eventManager.addSchedule(character, data.schedule);
       }
+
+      const { offset } = stageData.sections[data.params.section];
+      const position = addOffsetToPosition(data.params.position, offset);
+      character.setPosition(position, data.params.phi, data.params.theta);
+      this.game.characters.add(character);
     });
 
     items.forEach((data) => {
       const item = new Item(data.name, this.texture);
-      item.setPosition(data.position);
 
       if (data.params != null) {
         item.setParams(data.params);
@@ -521,15 +535,19 @@ class Game {
         this.eventManager.addSchedule(item, data.schedule);
       }
 
+      const { offset } = stageData.sections[data.params.section];
+      const position = addOffsetToPosition(data.params.position, offset);
+      const { phi = 0, theta = 0 } = data;
+      item.setPosition(position, phi, theta);
       this.objectManager.add(item, data);
+      this.game.items.add(item);
     });
 
     obstacles.forEach((data) => {
       const obstacle = new Obstacle(data.name, this.texture);
-      obstacle.setPosition(data.position);
 
       if (data.params != null) {
-        obstacle.setParams(data.params);
+        obstacle.setParams({ ...data.params });
       }
 
       if (data.tweeners != null) {
@@ -560,36 +578,51 @@ class Game {
         this.eventManager.addSchedule(obstacle, data.schedule);
       }
 
+      const { offset } = stageData.sections[data.params.section];
+      const position = addOffsetToPosition(data.params.position, offset);
+      obstacle.setPosition(position);
       this.objectManager.add(obstacle, data);
+      this.game.obstacles.add(obstacle);
     });
 
-    this.player.setPosition(
-      checkpoint.position,
-      checkpoint.phi,
-      checkpoint.theta,
-    );
-    this.characterManager.add(this.player);
+    const checkpointIndex = this.game.states.get('checkpointIndex');
+    const checkpoint = stageData.checkpoints[checkpointIndex];
+    const { offset } = stageData.sections[checkpointIndex];
+
+    const playerName = this.game.states.get('playerName');
+    const characterType = this.game.states.get('characterType');
+    this.setPlayer(playerName, characterType);
+
+    const position = addOffsetToPosition(checkpoint.position, offset);
+
+    this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
   }
 
   clearStage() {
-    if (this.stage != null) {
+    if (this.game.stage != null) {
       this.scene.field.clear();
       this.worldOctree.clear();
+      this.game.stage = null;
     }
+
+    this.game.ammos.clear();
+    this.game.characters.clear();
+    this.game.items.clear();
+    this.game.obstacles.clear();
   }
 
   nextStage() {
-    const index = globalThis.states.get('stageIndex');
+    const index = this.game.states.get('stageIndex');
     const currentIndex = index + 1;
     this.setStage(currentIndex);
-    globalThis.states.set('stageIndex', currentIndex);
+    this.game.states.set('stageIndex', currentIndex);
   }
 
   rewindStage() {
-    const index = globalThis.states.get('stageIndex');
+    const index = this.game.states.get('stageIndex');
     const currentIndex = index - 1;
     this.setStage(currentIndex);
-    globalThis.states.set('stageIndex', currentIndex);
+    this.game.states.set('stageIndex', currentIndex);
   }
 
   dispose() {
