@@ -69,7 +69,7 @@ export const States = {
 
 export const GlobalStates = [
   ['stageIndex', 0],
-  ['checkpointIndex', 2],
+  ['checkpointIndex', 0],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
 ];
 
