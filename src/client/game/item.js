@@ -30,9 +30,9 @@ class Item extends Collidable {
   static createTetra(data, texture) {
     const verticesOfTetra = new Float32Array([
       0, 0, 2,
-      0, 0.5, 0,
-      1, 0, -0.2,
-      -1, 0, -0.5,
+      0, 0.3, 0,
+      0.7, 0, -0.5,
+      -0.7, 0, -0.5,
     ]);
     const indices = [
       0, 3, 1,

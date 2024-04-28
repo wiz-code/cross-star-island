@@ -69,7 +69,7 @@ export const States = {
 
 export const GlobalStates = [
   ['stageIndex', 0],
-  ['checkpointIndex', 0],
+  ['checkpointIndex', 2],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
 ];
 
@@ -790,7 +790,7 @@ export const Stages = [
             height: 4,
             radialSegments: 11,
             heightSegments: 1,
-            position: { sx: -9, sy: -0.7, sz: 4.7 },
+            position: { sx: -9, sy: -0.5, sz: 4.8 },
           },
           {
             radiusTop: 12,
