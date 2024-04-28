@@ -537,7 +537,7 @@ class Game {
 
       const { offset } = stageData.sections[data.params.section];
       const position = addOffsetToPosition(data.params.position, offset);
-      const { phi = 0, theta = 0 } = data;
+      const { phi = 0, theta = 0 } = data.params;
       item.setPosition(position, phi, theta);
       this.objectManager.add(item, data);
       this.game.items.add(item);
