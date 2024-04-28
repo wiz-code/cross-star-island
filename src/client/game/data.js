@@ -593,7 +593,7 @@ export const Stages = [
           section: 0,
           position: { sx: 0, sy: 5, sz: -6 },
           phi: 0,
-          velocity: new Vector3(0, 0, 45),
+          velocity: new Vector3(0, 0, 40),
         },
         schedule: {
           spawnTime: 1,
@@ -606,7 +606,7 @@ export const Stages = [
           section: 0,
           position: { sx: 4, sy: 5, sz: 14 },
           phi: PI * 0.5,
-          velocity: new Vector3(50, 0, 0),
+          velocity: new Vector3(60, 0, 0),
         },
         schedule: {
           spawnTime: 1,
@@ -782,7 +782,7 @@ export const Stages = [
             height: 3,
             radialSegments: 10,
             heightSegments: 1,
-            position: { sx: -5, sy: -0.4, sz: 4.8 },
+            position: { sx: -5, sy: -0.3, sz: 4.8 },
           },
           {
             radiusTop: 18,
@@ -790,7 +790,7 @@ export const Stages = [
             height: 4,
             radialSegments: 11,
             heightSegments: 1,
-            position: { sx: -9, sy: -0.5, sz: 4.8 },
+            position: { sx: -9, sy: -0.4, sz: 4.8 },
           },
           {
             radiusTop: 12,
@@ -827,8 +827,13 @@ export const Stages = [
         ],
       },
       {
-        //offset: { sx: -0.8, sy: -1.2, sz: 63.5 },
-        offset: { sx: 12.5, sy: -0.2, sz: 63.5 },
+        offset: { sx: 12.5, sy: 0, sz: 63.5 },
+        grid: {
+          widthSegments: 20,
+          heightSegments: 10,
+          depthSegments: 10,
+          position: { sx: -9.75, sy: -2.25, sz: -0.25 },
+        },
         ground: {
           widthSegments: 10,
           depthSegments: 1,
