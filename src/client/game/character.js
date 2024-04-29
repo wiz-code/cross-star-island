@@ -27,7 +27,7 @@ import ModelLoader from './model-loader';
 
 const { floor, sign, PI } = Math;
 
-const RAD_30 = (30 / 360) * PI * 2;
+const RAD30 = (30 / 360) * PI * 2;
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
 
@@ -195,7 +195,7 @@ class Character extends Entity {
   }
 
   static createPoints(data, texture) {
-    const geomSize = data.radius;
+    const geomSize = data.radius + 0.5;
 
     let geom = new ConeGeometry(geomSize, geomSize, 3);
     const vertices = geom.attributes.position.array.slice(0);
@@ -367,7 +367,6 @@ class Character extends Entity {
   setFPV(camera, controls) {
     this.camera = camera;
 
-    // this.camera.rotation.x = -RAD_30;
     this.camera.getWorldDirection(this.direction);
 
     controls.subscribe('fire', this.fire);
@@ -435,7 +434,7 @@ class Character extends Entity {
     const direction = this.#forward
       .copy(this.direction)
       .multiplyScalar(multiplier);
-    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * -RAD_30);
+    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * RAD30);
     this.velocity.add(direction);
   }
 
@@ -486,7 +485,7 @@ class Character extends Entity {
     }
 
     const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
-    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * -RAD_30);
+    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * RAD30);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
   }

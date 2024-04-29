@@ -20,6 +20,10 @@ class Collidable extends Entity {
     this.collider.center.copy(pos);
     this.rotation.phi = phi;
     this.rotation.theta = theta;
+
+    if (this.object != null) {
+      this.object.rotation.y = this.rotation.phi;
+    }
   }
 
   setObject(object) {

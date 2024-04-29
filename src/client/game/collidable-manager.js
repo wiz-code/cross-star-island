@@ -158,7 +158,6 @@ class CollidableManager extends Publisher {
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
       collidable.object.position.copy(collidable.collider.center);
-      collidable.object.rotation.y = collidable.rotation.phi;
     }
   }
 }
