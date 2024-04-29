@@ -86,8 +86,9 @@ export const Obstacles = [
   [
     'round-stone',
     {
-      radius: 20,
+      radius: 18,
       detail: 1,
+      pointsDetail: 1,
       weight: 6,
 
       color: 0x203b33,
@@ -491,7 +492,7 @@ export const Stages = [
         name: 'round-stone',
         tweeners: [{ name: 'rolling-stone-1', state: States.alive }],
         params: {
-          position: { sx: 0, sy: 6, sz: 6 },
+          position: { sx: 0, sy: 5, sz: 6 },
           section: 1,
         },
         schedule: {
@@ -505,7 +506,7 @@ export const Stages = [
           { name: 'rolling-stone-1', state: States.alive, args: [4000] },
         ],
         params: {
-          position: { sx: 0, sy: 6, sz: 6 },
+          position: { sx: 0, sy: 5, sz: 6 },
           section: 1,
         },
         schedule: {
@@ -519,7 +520,7 @@ export const Stages = [
           { name: 'rolling-stone-1', state: States.alive, args: [2000] },
         ],
         params: {
-          position: { sx: 0, sy: 6, sz: 6 },
+          position: { sx: 0, sy: 4, sz: 6 },
           section: 1,
         },
         schedule: {
@@ -533,7 +534,7 @@ export const Stages = [
           { name: 'rolling-stone-1', state: States.alive, args: [6000] },
         ],
         params: {
-          position: { sx: 0, sy: 6, sz: 6 },
+          position: { sx: 0, sy: 4, sz: 6 },
           section: 1,
         },
         schedule: {
@@ -731,21 +732,21 @@ export const Stages = [
           {
             widthSegments: 5,
             depthSegments: 20,
-            bumpHeight: 0.5,
+            bumpHeight: 0.45,
             position: { sx: 0, sy: 0, sz: 0 },
             rotation: { x: -0.2, y: 0, z: 0 },
           },
           {
             widthSegments: 7,
             depthSegments: 20,
-            bumpHeight: 1,
+            bumpHeight: 0.9,
             position: { sx: -2.4, sy: 1, sz: 0 },
             rotation: { x: 0, y: 0, z: -1.4 },
           },
           {
             widthSegments: 7,
             depthSegments: 20,
-            bumpHeight: 1,
+            bumpHeight: 0.9,
             position: { sx: 2.4, sy: 1, sz: 0 },
             rotation: { x: 0, y: 0, z: 1.4 },
           },

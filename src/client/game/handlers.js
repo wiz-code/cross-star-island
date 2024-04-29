@@ -111,6 +111,7 @@ export const Tweeners = [
     'rolling-stone-1',
     (game, target, arg) => {
       const time = arg ?? 0;
+      const range = 1.8;
 
       const stageIndex = game.states.get('stageIndex');
       const stageData = Stages[stageIndex];
@@ -120,7 +121,7 @@ export const Tweeners = [
       const tween = new Tween(target.collider.center, group);
       tween
         .onEveryStart(() => {
-          const randomNum = getRandomInclusive(-2, 2);
+          const randomNum = getRandomInclusive(-range, range);
           const initPos = { ...target.params.position };
           initPos.sx += randomNum;
           const position = addOffsetToPosition(initPos, offset);
@@ -179,7 +180,8 @@ export const Updaters = [
       state: States.alive,
       update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
-        target.object.rotation.x -= rotateSpeed;
+
+        target.object.rotation.y -= rotateSpeed;
         target.object.rotation.z -= rotateSpeed * 2;
       },
     },
