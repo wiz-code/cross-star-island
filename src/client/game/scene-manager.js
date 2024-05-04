@@ -1,6 +1,43 @@
+import { Color } from 'three';
 import Stats from 'three/addons/libs/stats.module.js';
 
+import { Controls, Screen } from './settings';
+import {
+  createSight,
+  sightLines,
+  createPovIndicator,
+  createCenterMark,
+} from './screen';
+
+const sightColor = {
+  front: new Color(Screen.normalColor),
+  pov: new Color(Screen.sightPovColor),
+};
+const indicatorColor = {
+  normal: new Color(Screen.normalColor),
+  beyondFov: new Color(Screen.warnColor),
+};
+
+const sightLinesColor = {
+  normal: new Color(Screen.sightLinesColor),
+  wheel: new Color(Screen.sightPovColor),
+};
+
 class SceneManager {
+  static createIndicators(texture) {
+    const povSight = createSight(texture);
+    const povSightLines = sightLines(texture);
+    const povIndicator = createPovIndicator(texture);
+    const centerMark = createCenterMark(texture);
+
+    return {
+      povSight,
+      povSightLines,
+      povIndicator,
+      centerMark,
+    };
+  }
+
   constructor(container, renderer) {
     this.container = container;
     this.renderer = renderer;
@@ -11,10 +48,13 @@ class SceneManager {
     this.stats.domElement.style.top = 'auto';
     this.stats.domElement.style.bottom = 0;
 
-    this.enableStats();
+    this.statsEnabled = true;
+    this.container.appendChild(this.stats.domElement);
   }
 
   enableStats(bool = true) {
+    this.statsEnabled = bool;
+
     if (bool) {
       this.container.appendChild(this.stats.domElement);
     } else {
@@ -50,7 +90,9 @@ class SceneManager {
       this.renderer.render(...params);
     }
 
-    this.stats.update();
+    if (this.statsEnabled) {
+      this.stats.update();
+    }
   }
 }
 

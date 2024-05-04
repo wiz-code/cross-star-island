@@ -36,7 +36,7 @@ class Gun extends Publisher {
     }
   }
 
-  fire(character) {
+  fire(character, game) {
     if (this.currentAmmo == null) {
       return;
     }
@@ -47,9 +47,15 @@ class Gun extends Publisher {
       return;
     }
 
+    if (
+      character.hasControls &&
+      character.game.methods.has('play-sound')) {
+      character.game.methods.get('play-sound')('shot');
+    }
+
     this.fireAt = now;
 
-    const { rotation, povRotation, deltaY } = character;
+    const { rotation, povRotation } = character;
     const bullet = this.currentAmmo.list[this.currentAmmo.index];
     bullet.setAlive(true);
 
@@ -57,7 +63,7 @@ class Gun extends Publisher {
     const theta = getRandomInclusive(-halfRad, halfRad);
     const phi = getRandomInclusive(-halfRad, halfRad);
 
-    this.#euler.x = povRotation.theta + rotation.theta + deltaY + theta;
+    this.#euler.x = povRotation.theta + rotation.theta + theta;
     this.#euler.y = povRotation.phi + rotation.phi + phi;
     const dir = this.#dir.clone().applyEuler(this.#euler);
     bullet.object.rotation.copy(this.#euler);

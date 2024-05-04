@@ -87,7 +87,7 @@ class Character extends Entity {
 
   #isGrounded = false;
 
-  #actions = new Set();
+  #inputs = new Map();
 
   #states = new Set();
 
@@ -97,13 +97,15 @@ class Character extends Entity {
 
   #pausedDuration = 0;
 
-  #urgencyKey = '';
+  #urgencyAction = -1;
 
   #urgencyElapsedTime = 0;
 
-  #lastTurnKey = '';
+  #momentum = 0;
 
   #turnElapsedTime = 0;
+
+  #rotateComponent = 0;
 
   static createObject(data, texture) {
     const geometry = {};
@@ -238,17 +240,16 @@ class Character extends Entity {
 
     this.data = dataMap.get(ctype);
 
-    this.rotateComponent = 0;
-    this.povRotation = new Spherical();
-    this.deltaY = 0;
     this.rotation = new Spherical(); // phi and theta
+    this.povRotation = new Spherical();
     this.velocity = new Vector3();
     this.direction = new Vector3(0, 0, -1);
 
     this.gunType = '';
     this.guns = new Map();
-    this.camera = null;
     this.elapsedTime = 0;
+
+    this.hasControls = false;
 
     this.model = null; // promise
     this.pose = null; // promise
@@ -256,9 +257,9 @@ class Character extends Entity {
 
     // this.object = null;
 
-    this.fire = this.fire.bind(this);
+    //this.fire = this.fire.bind(this);
     this.input = this.input.bind(this);
-    this.setPovRotation = this.setPovRotation.bind(this);
+    this.setPovRot = this.setPovRot.bind(this);
 
     if (this.data.model != null) {
       const loader = new ModelLoader(this.data.model);
@@ -355,29 +356,29 @@ class Character extends Entity {
   setAlive(bool = true) {
     super.setAlive(bool);
 
-    if (!this.isFPV()) {
+    if (!this.hasControls) {
       super.visible(bool);
     }
   }
 
-  isFPV() {
-    return this.camera != null;
-  }
+  setControls(controls) {
+    this.hasControls = true;
 
-  setFPV(camera, controls) {
-    this.camera = camera;
-
-    this.camera.getWorldDirection(this.direction);
-
-    controls.subscribe('fire', this.fire);
     controls.subscribe('input', this.input);
-    controls.subscribe('setPovRotation', this.setPovRotation);
+    controls.subscribe('setPovRot', this.setPovRot);
+
+    this.subscribe('onRotate', controls.onRotate);
+    this.subscribe('setCharacterRot', controls.setCharacterRot);
+    this.subscribe('onUnsetControls', controls.onUnsetControls);
   }
 
-  unsetFPV() {
-    if (this.isFPV()) {
-      this.camera = null;
-    }
+  unsetControls() {
+    this.hasControls = false;
+
+    this.publish('onUnsetControls');
+    this.clear('onRotate');
+    this.clear('setCharacterRot');
+    this.clear('onUnsetControls');
   }
 
   setPosition(position, phi = 0, theta = 0) {
@@ -385,12 +386,19 @@ class Character extends Entity {
 
     this.rotation.phi = phi;
     this.rotation.theta = theta;
+
     this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, phi));
+    this.publish('setCharacterRot', this.rotation);
 
     this.collider.start.copy(pos);
     this.collider.start.y += this.data.radius;
     this.collider.end.copy(pos);
     this.collider.end.y += this.data.height + this.data.radius;
+  }
+
+  setPovRot(rot) {
+    this.povRotation.phi = rot.phi;
+    this.povRotation.theta = rot.theta;
   }
 
   isGrounded() {
@@ -407,28 +415,28 @@ class Character extends Entity {
     }
   } */
 
-  jump() {
-    if (this.isFPV() && this.game.methods.has('play-sound')) {
+  jump(value = 1) {
+    if (this.hasControls && this.game.methods.has('play-sound')) {
       const playSound = this.game.methods.get('play-sound');
       playSound('jump');
     }
 
-    this.velocity.y = this.data.jumpPower;
+    this.velocity.y = this.data.jumpPower * value;
   }
 
-  moveForward(deltaTime, state = States.alive) {
+  moveForward(deltaTime, state = States.alive, value = 1) {
     let multiplier = deltaTime;
 
     if (this.#isGrounded) {
-      multiplier *= this.data.speed;
-
       if (state === States.sprint && deltaTime >= 0) {
-        multiplier *= this.data.sprint;
+        multiplier *= this.data.speed * this.data.sprint * value;
       } else if (state === States.urgency) {
-        multiplier *= this.data.urgencyMove;
+        multiplier *= this.data.speed * this.data.urgencyMove;
+      } else {
+        multiplier *= this.data.speed * value;
       }
     } else {
-      multiplier *= this.data.airSpeed;
+      multiplier *= this.data.airSpeed * value;
     }
 
     const direction = this.#forward
@@ -438,20 +446,11 @@ class Character extends Entity {
     this.velocity.add(direction);
   }
 
-  /* rotate(deltaTime, state = States.idle) {
-    this.rotateComponent = deltaTime;
-
-    if (state === States.urgency) {
-      this.rotateComponent *= this.data.urgencyTurn;
-    } else {
-      this.rotateComponent *= this.data.turnSpeed;
-    }
-  } */
-  rotate(deltaTime, direction) {
+  rotate(deltaTime, direction, value = 1) {
     if (this.#states.has(States.urgency)) {
-      this.rotateComponent = this.data.urgencyTurn * deltaTime;
+      this.#rotateComponent = this.data.urgencyTurn * deltaTime;
     } else {
-      if (this.#lastTurnKey === direction) {
+      if (this.#momentum === direction) {
         this.#turnElapsedTime += deltaTime;
 
         if (this.#turnElapsedTime > 1) {
@@ -459,14 +458,11 @@ class Character extends Entity {
         }
       } else {
         this.#turnElapsedTime = deltaTime;
-        this.#lastTurnKey = direction;
+        this.#momentum = direction;
       }
 
-      const turnSpeed =
-        this.#lastTurnKey === Actions.rotateLeft
-          ? this.data.turnSpeed
-          : -this.data.turnSpeed;
-      this.rotateComponent =
+      const turnSpeed = this.#momentum * this.data.turnSpeed * value;
+      this.#rotateComponent =
         turnSpeed * deltaTime * easeOutQuad(this.#turnElapsedTime);
     }
   }
@@ -515,11 +511,6 @@ class Character extends Entity {
 
   fire() {
     if (this.guns.has(this.gunType)) {
-      if (this.isFPV() && this.game.methods.has('play-sound')) {
-        const playSound = this.game.methods.get('play-sound');
-        playSound('shot');
-      }
-
       const gun = this.guns.get(this.gunType);
       gun.fire(this);
     }
@@ -532,118 +523,30 @@ class Character extends Entity {
     this.clear();
   }
 
-  setPovRotation(povRotation, deltaY) {
-    this.deltaY = deltaY;
-    this.povRotation.copy(povRotation);
-  }
-
-  input(keys, lastKey, mashed) {
+  input(inputs, urgencyAction) {
     // 入力操作の処理
-
-    // update()で一度だけアクションを発動する
-    // 緊急行動中はisGroundedがfalseでもジャンプ可にする
-    if (keys.has(Keys.Space) && this.#isGrounded) {
-      this.#actions.add(Actions.jump);
-    }
+    this.#inputs = inputs;
 
     if (this.#states.has(States.stunning)) {
-      this.#actions.clear();
       return;
     }
 
-    // Cキー押し下げ時、追加で対応のキーを押していると緊急回避状態へ移行
-    // ジャンプ中は緊急行動のコマンド受け付けは停止
-    if (mashed) {
-      if (!this.#isGrounded) {
-        return;
-      }
+    if (!this.#states.has(States.urgency)) {
+      if (urgencyAction !== -1) {
+        this.#urgencyAction = urgencyAction;
 
-      if (!this.#states.has(States.urgency)) {
         this.#states.add(States.urgency);
-        this.#urgencyKey = lastKey;
         this.#urgencyElapsedTime = 0;
 
-        if (this.isFPV() && this.game.methods.has('play-sound')) {
+        if (this.hasControls && this.game.methods.has('play-sound')) {
           const playSound = this.game.methods.get('play-sound');
           playSound('dash');
         }
       }
     }
-
-    // 緊急回避中は一部アクションを制限、スタン中はすべてのアクションを更新しない
-    if (this.#states.has(States.urgency)) {
-      const key = Keys[this.#urgencyKey];
-      if (key === Keys.KeyW) {
-        this.#actions.add(Actions.quickMoveForward);
-      } else if (key === Keys.KeyA) {
-        this.#actions.add(Actions.quickTurnLeft);
-      } else if (key === Keys.KeyS) {
-        this.#actions.add(Actions.quickMoveBackward);
-      } else if (key === Keys.KeyD) {
-        this.#actions.add(Actions.quickTurnRight);
-      } else if (key === Keys.KeyQ) {
-        this.#actions.add(Actions.quickMoveLeft);
-      } else if (key === Keys.KeyE) {
-        this.#actions.add(Actions.quickMoveRight);
-      }
-
-      return;
-    }
-
-    if (keys.has(Keys.shift)) {
-      this.#states.add(States.sprint);
-    } else {
-      this.#states.delete(States.sprint);
-    }
-
-    // 前進と後退
-    if (keys.has(Keys.KeyW) && !keys.has(Keys.KeyS)) {
-      this.#actions.add(Actions.moveForward);
-    } else if (keys.has(Keys.KeyS) && !keys.has(Keys.KeyW)) {
-      this.#actions.add(Actions.moveBackward);
-    }
-
-    if (!keys.has(Keys.KeyW)) {
-      this.#actions.delete(Actions.moveForward);
-    }
-
-    if (!keys.has(Keys.KeyS)) {
-      this.#actions.delete(Actions.moveBackward);
-    }
-
-    // 左右回転
-    if (keys.has(Keys.KeyA) && !keys.has(Keys.KeyD)) {
-      this.#actions.add(Actions.rotateLeft);
-    } else if (keys.has(Keys.KeyD) && !keys.has(Keys.KeyA)) {
-      this.#actions.add(Actions.rotateRight);
-    }
-
-    if (!keys.has(Keys.KeyA)) {
-      this.#actions.delete(Actions.rotateLeft);
-    }
-
-    if (!keys.has(Keys.KeyD)) {
-      this.#actions.delete(Actions.rotateRight);
-    }
-
-    // 左右平行移動
-    if (keys.has(Keys.KeyQ) && !keys.has(Keys.KeyE)) {
-      this.#actions.add(Actions.moveLeft);
-    } else if (keys.has(Keys.KeyE) && !keys.has(Keys.KeyQ)) {
-      this.#actions.add(Actions.moveRight);
-    }
-
-    if (!keys.has(Keys.KeyQ)) {
-      this.#actions.delete(Actions.moveLeft);
-    }
-
-    if (!keys.has(Keys.KeyE)) {
-      this.#actions.delete(Actions.moveRight);
-    }
   }
 
   addTweener(tweener, arg) {
-    /// /////////
     const tween = tweener(this, arg);
     const updater = tween.update.bind(tween);
     this.subscribe('tween', updater);
@@ -657,6 +560,7 @@ class Character extends Entity {
     // 自機の動き制御
     if (this.#states.has(States.stunning)) {
       this.#stunningElapsedTime += deltaTime;
+      this.#inputs.clear();
 
       if (this.#stunningDuration <= this.#stunningElapsedTime) {
         this.#states.delete(States.stunning);
@@ -665,60 +569,68 @@ class Character extends Entity {
       }
     }
 
-    if (this.#actions.has(Actions.jump)) {
-      this.#actions.delete(Actions.jump);
-      this.jump();
+    if (this.#inputs.has(Actions.jump) && this.#isGrounded) {
+      const value = this.#inputs.get(Actions.jump);
+      this.jump(value);
+      this.#inputs.delete(Actions.jump)
+    }
+
+    if (this.#inputs.has(Actions.trigger)) {
+      const value = this.#inputs.get(Actions.trigger);
+      this.fire(value);
+      this.#inputs.delete(Actions.trigger)
     }
 
     if (this.#states.has(States.urgency)) {
       this.#urgencyElapsedTime += deltaTime;
 
-      if (Controls.urgencyDuration <= this.#urgencyElapsedTime) {
-        this.#actions.clear();
+      if (Controls.urgencyDuration > this.#urgencyElapsedTime) {
+        if (this.#urgencyAction === Actions.quickMoveForward) {
+          this.moveForward(deltaTime, States.urgency);
+        } else if (this.#urgencyAction === Actions.quickMoveBackward) {
+          this.moveForward(-deltaTime, States.urgency);
+        } else if (this.#urgencyAction === Actions.quickTurnLeft) {
+          this.rotate(deltaTime);
+        } else if (this.#urgencyAction === Actions.quickTurnRight) {
+          this.rotate(-deltaTime);
+        } else if (this.#urgencyAction === Actions.quickMoveLeft) {
+          this.moveSide(-deltaTime, States.urgency);
+        } else if (this.#urgencyAction === Actions.quickMoveRight) {
+          this.moveSide(deltaTime, States.urgency);
+        }
+      } else {
         this.#states.delete(States.urgency);
         this.#urgencyElapsedTime = 0;
-        this.#urgencyKey = '';
+        this.#urgencyAction = -1;
 
         this.#states.add(States.stunning);
         this.#stunningElapsedTime = 0;
         this.#stunningDuration = Controls.stunningDuration;
       }
-
-      if (this.#actions.has(Actions.quickMoveForward)) {
-        this.moveForward(deltaTime, States.urgency);
-      } else if (this.#actions.has(Actions.quickMoveBackward)) {
-        this.moveForward(-deltaTime, States.urgency);
-      } else if (this.#actions.has(Actions.quickTurnLeft)) {
-        this.rotate(deltaTime);
-      } else if (this.#actions.has(Actions.quickTurnRight)) {
-        this.rotate(-deltaTime);
-      } else if (this.#actions.has(Actions.quickMoveLeft)) {
-        this.moveSide(-deltaTime, States.urgency);
-      } else if (this.#actions.has(Actions.quickMoveRight)) {
-        this.moveSide(deltaTime, States.urgency);
-      }
     } else {
-      if (this.#actions.has(Actions.rotateLeft)) {
-        this.rotate(deltaTime, Actions.rotateLeft);
-      } else if (this.#actions.has(Actions.rotateRight)) {
-        this.rotate(deltaTime, Actions.rotateRight);
+      if (this.#inputs.has(Actions.rotateLeft)) {
+        const value = this.#inputs.get(Actions.rotateLeft);
+        this.rotate(deltaTime, 1, value);
+      } else if (this.#inputs.has(Actions.rotateRight)) {
+        const value = this.#inputs.get(Actions.rotateRight);
+        this.rotate(deltaTime, -1, value);
       } else {
-        this.#lastTurnKey = '';
+        this.#momentum = 0;
       }
 
-      if (this.#actions.has(Actions.moveForward)) {
-        if (this.#states.has(States.sprint)) {
-          this.moveForward(deltaTime, States.sprint);
-        } else {
-          this.moveForward(deltaTime);
-        }
-      } else if (this.#actions.has(Actions.moveBackward)) {
-        this.moveForward(-deltaTime);
+      if (this.#inputs.has(Actions.splint)) {
+        this.moveForward(deltaTime, States.sprint);
+      } else if (this.#inputs.has(Actions.moveForward)) {
+        const value = this.#inputs.get(Actions.moveForward);
+        this.moveForward(deltaTime, States.alive, value);
+      } else if (this.#inputs.has(Actions.moveBackward)) {
+        const value = this.#inputs.get(Actions.moveBackward);
+        this.moveForward(-deltaTime, States.alive, value);
       }
 
-      if (this.#actions.has(Actions.moveLeft)) {
+      if (this.#inputs.has(Actions.moveLeft)) {
         this.moveSide(-deltaTime);
-      } else if (this.#actions.has(Actions.moveRight)) {
+      } else if (this.#inputs.has(Actions.moveRight)) {
         this.moveSide(deltaTime);
       }
     }
@@ -730,17 +642,17 @@ class Character extends Entity {
       this.velocity.y -= World.gravity * deltaTime;
     }
 
-    if (this.rotateComponent !== 0) {
-      this.direction.applyAxisAngle(this.#yawAxis, this.rotateComponent);
+    if (this.#rotateComponent !== 0) {
+      this.direction.applyAxisAngle(this.#yawAxis, this.#rotateComponent);
 
-      this.rotation.phi += this.rotateComponent;
+      this.rotation.phi += this.#rotateComponent;
 
-      if (this.isFPV()) {
-        this.publish('onChangeRotateComponent', this.rotateComponent);
+      if (this.hasControls) {
+        this.publish('onRotate', this.rotation.phi, this.#rotateComponent);
       }
 
-      this.rotateComponent = addDamping(
-        this.rotateComponent,
+      this.#rotateComponent = addDamping(
+        this.#rotateComponent,
         dampingCoef * damping.spin,
         minRotateAngle,
       );
@@ -751,18 +663,6 @@ class Character extends Entity {
       .copy(this.velocity)
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
-
-    /* if (this.#states.has(States.stunning)) {
-      this.#pausedDuration += deltaTime;
-    } else {
-      if (this.onUpdate != null) {
-        this.onUpdate(deltaTime, elapsedTime);
-      }
-
-      if (this.getSubscriberCount() > 0) {
-        this.publish('tween', (elapsedTime - this.#pausedDuration) * 1000);
-      }
-    } */
   }
 }
 

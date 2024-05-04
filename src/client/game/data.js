@@ -10,13 +10,11 @@ export const Keys = {
   // event.codeで取得する
   KeyW: 0,
   ArrowUp: 0,
+  KeyS: 1,
+  ArrowDown: 1,
 
-  KeyA: 1,
-  ArrowLeft: 1,
-
-  KeyS: 2,
-  ArrowDown: 2,
-
+  KeyA: 2,
+  ArrowLeft: 2,
   KeyD: 3,
   ArrowRight: 3,
 
@@ -29,11 +27,11 @@ export const Keys = {
   KeyX: 9,
   KeyC: 10,
 
-  Space: 11,
+  Space: 20,
 
   // event.shiftKeyなどの真偽値で取得
-  shift: 20,
-  alt: 21,
+  Shift: 30,
+  Alt: 40,
 };
 
 export const Pointers = {
@@ -45,19 +43,24 @@ export const Pointers = {
 export const Actions = {
   moveForward: 0,
   moveBackward: 1,
-  moveLeft: 2,
-  moveRight: 3,
-  rotateLeft: 4,
-  rotateRight: 5,
+  rotateLeft: 2,
+  rotateRight: 3,
+  moveLeft: 4,
+  moveRight: 5,
+
 
   jump: 10,
+  trigger: 11,
 
-  quickMoveForward: 20,
-  quickMoveBackward: 21,
-  quickTurnLeft: 22,
-  quickTurnRight: 23,
-  quickMoveLeft: 24,
-  quickMoveRight: 25,
+  splint: 20,
+
+  quickMoveForward: 30,
+  quickMoveBackward: 31,
+  quickTurnLeft: 32,
+  quickTurnRight: 33,
+  quickMoveLeft: 34,
+  quickMoveRight: 35,
+
 };
 
 export const States = {
@@ -67,13 +70,14 @@ export const States = {
   stunning: 3,
 };
 
-export const GlobalStates = [
+export const GameStates = [
   ['stageIndex', 0],
   ['checkpointIndex', 0],
+  ['gamepad', false],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
 ];
 
-export const GlobalMethods = [
+export const GameMethods = [
   [
     'play-sound',
     function (key, options) {
@@ -279,6 +283,7 @@ export const Sounds = [
   ['dash', 'evasion.mp3'],
   ['girl-voice-1', 'sugoi.mp3'],
   ['goal', 'kirakira-1.mp3'],
+  ['fast-move', 'fast-move.mp3'],
 ];
 
 export const Items = [

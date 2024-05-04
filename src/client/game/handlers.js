@@ -16,7 +16,7 @@ export const handlers = [
     eventName: 'oob',
     targetName: 'teleport-character',
     condition(character) {
-      return character.isFPV();
+      return character.hasControls;
     },
     handler({ states }, character) {
       const stageIndex = states.get('stageIndex');
@@ -40,7 +40,7 @@ export const handlers = [
     targetName: 'weapon-upgrade',
     handler({ methods }, character) {
       if (character.guns.has(character.gunType)) {
-        if (character.isFPV() && methods.has('play-sound')) {
+        if (character.hasControls && methods.has('play-sound')) {
           const playSound = methods.get('play-sound');
           playSound('get-item');
         }
@@ -64,9 +64,9 @@ export const handlers = [
     eventName: 'get-item',
     targetName: 'hyper-dash',
     handler({ states, methods }, character, object) {
-      if (character.isFPV() && methods.has('play-sound')) {
+      if (character.hasControls && methods.has('play-sound')) {
         const playSound = methods.get('play-sound');
-        playSound('get-item');
+        playSound('fast-move');
       }
 
       character.velocity.addScaledVector(object.params.velocity, 30);
@@ -76,7 +76,7 @@ export const handlers = [
     eventName: 'get-item',
     targetName: 'checkpoint',
     handler({ states, methods }, character) {
-      if (character.isFPV() && methods.has('play-sound')) {
+      if (character.hasControls && methods.has('play-sound')) {
         const playSound = methods.get('play-sound');
         playSound('get-item');
       }

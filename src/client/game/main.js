@@ -22,9 +22,10 @@ import {
   Light,
 } from './settings';
 import FirstPersonControls from './controls';
+import GamepadControls from './gamepad-controls';
 import {
-  GlobalStates,
-  GlobalMethods,
+  GameStates,
+  GameMethods,
   Characters,
   Stages,
   Compositions,
@@ -87,13 +88,15 @@ class Game {
 
     // ゲーム管理変数
     this.game = {};
-    this.game.states = new Map(GlobalStates);
-    this.game.methods = new Map(GlobalMethods);
+    this.game.states = new Map(GameStates);
+    this.game.methods = new Map(GameMethods);
     this.game.ammos = new Map();
     this.game.characters = new Set();
     this.game.items = new Set();
     this.game.obstacles = new Set();
+
     this.loadingList = [];
+    this.cache = { controls: null };
 
     this.windowHalf = {
       width: floor(width / 2),
@@ -112,6 +115,9 @@ class Game {
     this.renderer.setPixelRatio(Renderer.pixelRatio);
     this.renderer.setSize(width, height);
     this.container.appendChild(this.renderer.domElement);
+
+    this.textureManager = new TextureManager();
+    this.texture = this.textureManager.toObject();
     this.sceneManager = new SceneManager(this.container, this.renderer);
 
     this.scene = {};
@@ -130,6 +136,18 @@ class Game {
     );
 
     this.scene.screen = new ThreeScene();
+    const indicators = SceneManager.createIndicators(this.texture);
+    const {
+      povSight,
+      povSightLines,
+      povIndicator,
+      centerMark,
+    } = indicators;
+    this.scene.screen.add(povSight);
+    this.scene.screen.add(povSightLines);
+    this.scene.screen.add(povIndicator.horizontal);
+    this.scene.screen.add(povIndicator.virtical);
+    this.scene.screen.add(centerMark);
 
     this.modelManager = new ModelManager(this.scene.field);
     this.eventManager = new EventManager(this.game);
@@ -164,9 +182,6 @@ class Game {
     this.sceneManager.add('field', this.scene.field, this.camera.field);
     this.sceneManager.add('screen', this.scene.screen, this.camera.screen);
 
-    this.textureManager = new TextureManager();
-    this.texture = this.textureManager.toObject();
-
     this.light = {};
     this.light.ambient = new AmbientLight(
       Light.Ambient.color,
@@ -191,14 +206,65 @@ class Game {
     this.characterManager = new CharacterManager(
       this.game,
       this.scene.field,
+      this.camera.field,
       this.objectManager,
       this.eventManager,
       this.worldOctree,
     );
 
-    this.controls = null;
+    this.controls = new FirstPersonControls(
+      indicators,
+      this.camera.field,
+      this.renderer.domElement,
+    );
     this.player = null;
     this.game.stage = null;
+
+    const onGamepadConnected = (e) => {
+      this.game.states.set('gamepad', true);
+      const { index } = e.gamepad;
+
+      this.controls.onUnsetControls();
+      this.cache.controls = this.controls;
+
+      if (this.cache.gamepad != null) {
+        this.controls = this.cache.gamepad;
+      } else {
+        this.controls = new GamepadControls(
+          index,
+          indicators,
+          this.camera.field,
+          this.renderer.domElement
+        );
+      }
+
+      if (this.player != null) {
+        this.player.setControls(this.controls);
+
+        const index = this.game.states.get('stageIndex');
+        const stageData = Stages[index];
+
+        const checkpointIndex = this.game.states.get('checkpointIndex');
+        const checkpoint = stageData.checkpoints[checkpointIndex];
+        const { offset } = stageData.sections[checkpointIndex];
+
+        const position = addOffsetToPosition(checkpoint.position, offset);
+        this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
+      }
+    };
+
+    const onGamepadDisconnected = () => {
+      this.controls.unsetControls();
+      this.cache.gamepad = this.controls;
+      this.controls = this.cache.controls;
+
+      if (this.player != null) {
+        this.player.setControls(this.controls);
+      }
+    };
+
+    window.addEventListener('gamepadconnected', onGamepadConnected, false);
+    window.addEventListener('gamepaddisconnected', onGamepadDisconnected, false);
 
     const onResize = function onResize() {
       const { width: containerWidth, height: containerHeight } =
@@ -273,14 +339,7 @@ class Game {
 
   setPlayer(name, ctype) {
     this.player = new Character(this.game, name, ctype, this.texture);
-    this.controls = new FirstPersonControls(
-      this.scene.screen,
-      this.camera.field,
-      this.renderer.domElement,
-      this.texture,
-    );
-    this.player.setFPV(this.camera.field, this.controls);
-    this.controls.setRotationComponentListener(this.player);
+    this.player.setControls(this.controls);
 
     const { gunTypes } = this.player.data;
 
@@ -306,7 +365,7 @@ class Game {
 
   removePlayer() {
     if (this.player != null) {
-      this.player.unsetFPV();
+      this.player.unsetControls();
       this.player.dispose();
       this.controls.dispose();
       this.player = null;
@@ -339,11 +398,6 @@ class Game {
     this.clearStage();
 
     const index = stageIndex ?? this.game.states.get('stageIndex');
-
-    if (index == null) {
-      return;
-    }
-
     const stageData = Stages[index];
 
     this.game.stage = {};
@@ -647,9 +701,7 @@ class Game {
     this.renderer.setAnimationLoop(this.update);
 
     if (this.player != null) {
-      // this.player.setAlive(true);
       this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
-      this.controls.enable(true);
     }
   }
 
@@ -672,6 +724,8 @@ class Game {
     const deltaTime = this.clock.getDelta();
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);
+
+    this.controls.input();
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
       this.#elapsedTime += delta;
