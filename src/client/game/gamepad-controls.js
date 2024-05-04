@@ -2,12 +2,7 @@ import { Spherical, Vector3 } from 'three';
 
 import Publisher from './publisher';
 import { Controls, Screen, GameColor } from './settings';
-import { Keys, Pointers, Actions } from './data';
-
-const { abs, sin, cos, sign, max, min, PI } = Math;
-const halfPI = PI / 2;
-const degToRadCoef = PI / 180;
-const Rad_1 = (1 / 360) * PI * 2;
+import { Actions } from './data';
 
 const {
   SightColor: sightColor,
@@ -15,42 +10,42 @@ const {
   SightLinesColor: sightLinesColor,
 } = GameColor;
 
-const onContextmenu = (event) => {
-  event.preventDefault();
-};
+const { abs, sin, cos, sign, max, min, PI } = Math;
+const halfPI = PI / 2;
+const degToRadCoef = PI / 180;
+const Rad_1 = (1 / 360) * PI * 2;
 
-const MashKeys = new Set([
-  'KeyW',
-  'ArrowUp',
+const buttonList = [
+  'a',
+  'b',
+  'x',
+  'y',
+  'lb',
+  'rb',
+  'lt',
+  'rt',
+  'back',
+  'start',
+  'lsb',
+  'rsb',
+  'up',
+  'down',
+  'left',
+  'right',
+  'guide',
+];
+const axisList = ['lsx', 'lsy', 'rsx', 'rsy', 'lt2', 'rt2'];
 
-  'KeyA',
-  'ArrowLeft',
+const buttonMap = new Map(buttonList.map((button, index) => [button, index]));
+const axisMap = new Map(axisList.map((axis, index) => [axis, index]));
 
-  'KeyS',
-  'ArrowDown',
+const nonRepeatableButtonList = ['a', 'b', 'x', 'y', 'lt', 'rt', 'lsb', 'rsb'];
+const nonRepeatableAxisList = ['lt2', 'rt2'];
 
-  'KeyD',
-  'ArrowRight',
-
-  'KeyQ',
-  'KeyE',
-]);
-
-const nonRepeatableKeyList = ['Space'];
-const nonRepeatablePointerList = ['left'];
-
-class FirstPersonControls extends Publisher {
+class GamepadControls extends Publisher {
   #vectorA = new Vector3();
 
   #vectorB = new Vector3();
-
-  #keys = new Set();
-
-  #pointers = new Set();
-
-  #actions = new Set();//////////
-
-  #states = new Set();////////
 
   #inputs = new Map();
 
@@ -58,25 +53,15 @@ class FirstPersonControls extends Publisher {
 
   #characterRot = new Spherical();
 
+  #pendings = new Set();
+
   #wheel = 0;
 
   #dx = 0;
 
   #dy = 0;
 
-  #count = 0;
-
-  #lastKey = '';
-
-  #urgencyKey = '';
-
-  #keyDownTime = 0;
-
-  #keyUpTime = 0;
-
   #mashed = false;
-
-  #mashedKey = '';
 
   #moved = false;
 
@@ -92,8 +77,13 @@ class FirstPersonControls extends Publisher {
 
   #enabled = false;
 
-  constructor(indicators, camera, domElement) {
+  constructor(index, indicators, camera, domElement) {
     super();
+
+    this.index = index;
+    this.buttons = new Map(buttonList.map((value) => ([value, 0])));
+    this.axes = new Map(axisList.map((value) => ([value, 0])));
+    this.cache = {};
 
     this.camera = camera;
     this.domElement = domElement;
@@ -120,22 +110,6 @@ class FirstPersonControls extends Publisher {
 
     this.yawIndicatorRadius = 0;
     this.gaugeHalfY = 0;
-
-    this.onWheel = this.onWheel.bind(this);
-    this.onPointerMove = this.onPointerMove.bind(this);
-    this.onPointerDown = this.onPointerDown.bind(this);
-    this.onPointerUp = this.onPointerUp.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onKeyUp = this.onKeyUp.bind(this);
-
-    document.addEventListener('contextmenu', onContextmenu);
-    this.domElement.addEventListener('wheel', this.onWheel, { passive: false });
-    this.domElement.addEventListener('pointerdown', this.onPointerDown);
-    this.domElement.addEventListener('pointermove', this.onPointerMove);
-    this.domElement.addEventListener('pointerup', this.onPointerUp);
-
-    document.addEventListener('keydown', this.onKeyDown);
-    document.addEventListener('keyup', this.onKeyUp);
 
     this.setCharacterRot = this.setCharacterRot.bind(this);
     this.onRotate = this.onRotate.bind(this);
@@ -207,278 +181,182 @@ class FirstPersonControls extends Publisher {
     this.setOrientation();
   }
 
-  async lock() {
-    if (this.domElement.ownerDocument.pointerLockElement == null) {
-      await this.domElement.requestPointerLock();
-    }
-  }
-
-  unlock() {
-    this.domElement.ownerDocument.exitPointerLock();
-  }
-
-  dispatchAction(type, button) {
-    switch (type) {
-      case 'pointerdown': {
-        if (button === 0) {
-          this.#moved = true;
-        }
-
-        if (button === 1) {
-          //
-        }
-
-        if (button === 2) {
-          this.#povLock = true;
-        }
-
-        break;
-      }
-
-      case 'pointerup': {
-        if (button === 1) {
-          this.#resetWheel = true;
-        } else if (button === 2) {
-          this.#povLock = false;
-          this.#resetPointer = true;
-        }
-
-        break;
-      }
-
-      default: {
-        //
-      }
-    }
-  }
-
-  onWheel(event) {
-    event.preventDefault();
-
-    if (!this.#enabled) {
-      return;
-    }
-
-    const delta = sign(event.deltaY) * Controls.wheelSpeed * Rad_1;
-    this.#wheel += delta;
-  }
-
-  onPointerMove(event) {
-    if (!this.#enabled) {
-      return;
-    }
-
-    this.#moved = true;
-
-    if (this.#pointers.has(Pointers.right)) {
-      if (event.button === Pointers.left) {
-        if (this.#count % 2 === 0) {
-          this.dispatchAction('pointerdown', event.button);
-        }
-
-        this.#count += 1;
-      }
-    }
-
-    this.#dx = max(
-      -Controls.pointerMaxMove,
-      min(event.movementX, Controls.pointerMaxMove),
-    );
-    this.#dy = max(
-      -Controls.pointerMaxMove,
-      min(event.movementY, Controls.pointerMaxMove),
-    );
-  }
-
-  onPointerDown(event) {
-    if (!this.#enabled) {
-      return;
-    }
-
-    this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
-
-    this.dispatchAction(event.type, event.button);
-  }
-
-  onPointerUp(event) {
-    if (!this.#enabled) {
-      return;
-    }
-
-    this.#pointers.delete(event.button);
-    this.dispatchAction(event.type, event.button);
-  }
-
-  onKeyDown(event) {
-    event.preventDefault();
-
-    if (!this.#enabled) {
-      return;
-    }
-
-    if (event.repeat) {
-      return;
-    }
-
-    this.#keys.add(Keys[event.code]);
-
-    if (event.shiftKey) {
-      this.#keys.add(Keys.Shift);
-    }
-
-    if (event.altKey) {
-      this.#keys.add(Keys.Alt);
-    }
-
-    if (MashKeys.has(event.code)) {
-      const now = performance.now();
-
-      if (this.#mashedKey === '') {
-        if (
-          this.#keyUpTime === 0 ||
-          now - this.#keyUpTime > Controls.inputDuration
-        ) {
-          this.#keyDownTime = now;
-          this.#lastKey = event.code;
-        } else {
-          if (
-            this.#lastKey === event.code &&
-            now - this.#keyUpTime <= Controls.inputDuration
-          ) {
-            this.#mashedKey = this.#lastKey;
-            //const code = `Mash-${event.code}`;
-            //this.#inputs.add(code);
-          }
-
-          this.#keyUpTime = 0;
-        }
-      }
-    }
-  }
-
-  onKeyUp(event) {
-    event.preventDefault();
-
-    if (!this.#enabled) {
-      return;
-    }
-
-    this.#keys.delete(Keys[event.code]);
-
-    if (!event.shiftKey) {
-      this.#keys.delete(Keys.Shift);
-    }
-
-    if (!event.altKey) {
-      this.#keys.delete(Keys.Alt);
-    }
-
-    if (MashKeys.has(event.code)) {
-      const now = performance.now();
-
-      if (this.#mashedKey === '') {
-        if (this.#keyDownTime === 0) {
-          this.#keyUpTime = 0;
-          this.#lastKey = '';
-        } else {
-          if (
-            this.#lastKey === event.code &&
-            now - this.#keyDownTime <= Controls.inputDuration
-          ) {
-            this.#keyUpTime = performance.now();
-          }
-
-          this.#keyDownTime = 0;
-        }
-      }
-    }
-  }
-
   dispose() {
-    this.clear();
-
-    document.removeEventListener('contextmenu', onContextmenu);
-    this.domElement.removeEventListener('pointerdown', this.onPointerDown);
-    this.domElement.removeEventListener('pointermove', this.onPointerMove);
-    this.domElement.removeEventListener('pointerup', this.onPointerUp);
-
-    document.removeEventListener('keydown', this.onKeyDown);
-    document.removeEventListener('keyup', this.onKeyUp);
+    // TODO
   }
 
   input() {
-    this.#inputs.clear();
+    const gamepads = navigator.getGamepads();
+    const { axes, buttons } = gamepads[this.index];
 
-    if (this.#keys.has(Keys.Space)) {
-      this.#inputs.set(Actions.jump, 1);
+    for (let i = 0, l = buttons.length; i < l; i += 1) {
+      const button = buttonList[i];
+      const { value } = buttons[i];
+      this.buttons.set(button, value);
     }
 
-    const mashedCode = Keys[this.#mashedKey] ?? -1;
+    for (let i = 0, l = axes.length; i < l; i += 1) {
+      const axis = axisList[i];
+      const value = axes[i];
+      this.axes.set(axis, value);
+    }
+
+    nonRepeatableButtonList.forEach((button) => {
+      const index = buttonMap.get(button);
+      const { value } = buttons[index];
+
+      if (this.#pendings.has(button) && value === 0) {
+        this.#pendings.delete(button);
+
+        if (button === 'rsb') {
+          this.#povLock = false;
+          this.#resetPointer = true;
+        } else if (button === 'y') {
+          this.#resetWheel = true;
+        }
+      }
+    });
+
+    nonRepeatableAxisList.forEach((axis) => {
+      const index = axisMap.get(axis);
+      const value = axes[index];
+
+      if (value < -1 + 1e-4) {
+        this.#pendings.delete(axis);
+      }
+    });
+
+    this.#inputs.clear();
     let urgencyAction = -1;
 
-    if (this.#keys.has(Keys.KeyW) || this.#keys.has(Keys.ArrowUp)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickMoveForward;
-        this.#inputs.set(Actions.quickMoveForward, 1);
-      } else if (this.#keys.has(Keys.Shift)) {
-        this.#inputs.set(Actions.splint, 1);
-      } else {
-        this.#inputs.set(Actions.moveForward, 1);
-      }
-    } else if (this.#keys.has(Keys.KeyS) || this.#keys.has(Keys.ArrowDown)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickMoveBackward;
-        this.#inputs.set(Actions.quickMoveBackward, 1);
-      } else {
-        this.#inputs.set(Actions.moveBackward, 1);
-      }
-    }
+    this.buttons.forEach((value, button) => {
+      const mashed = this.buttons.get('x');
 
-    if (this.#keys.has(Keys.KeyA) || this.#keys.has(Keys.ArrowLeft)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickTurnLeft;
-        this.#inputs.set(Actions.quickTurnLeft, 1);
-      } else {
-        this.#inputs.set(Actions.rotateLeft, 1);
+      if (
+        (button === 'a' || button === 'lt') &&
+        value === 1
+      ) {
+        if (!this.#pendings.has(button)) {
+          this.#pendings.add(button);
+          this.#inputs.set(Actions.jump, value);
+        }
+      } else if (button === 'lb' && value === 1) {
+        if (mashed === 1) {
+          urgencyAction = Actions.quickMoveLeft;
+          this.#inputs.set(Actions.quickMoveLeft, 1);
+        } else {
+          this.#inputs.set(Actions.moveLeft);
+        }
+      } else if (button === 'rb' && value === 1) {
+        if (mashed === 1) {
+          urgencyAction = Actions.quickMoveRight;
+          this.#inputs.set(Actions.quickMoveRight, 1);
+        } else {
+          this.#inputs.set(Actions.moveRight);
+        }
+      } else if (
+        (button === 'rt' || button === 'b') &&
+        value === 1
+      ) {
+        if (!this.#pendings.has(button)) {
+          this.#pendings.add(button);
+          this.#inputs.set(Actions.trigger, value);
+        }
+      } else if (button === 'up' && value === 1) {
+        const delta = Rad_1;
+        this.#wheel += delta;
+      } else if (button === 'down' && value === 1) {
+        const delta = Rad_1;
+        this.#wheel -= delta;
+      } else if (button === 'x' && value === 1) {
+        if (!this.#pendings.has(button)) {
+          this.#pendings.add(button);
+        }
+      } else if (button === 'y' && value === 1) {
+        if (!this.#pendings.has(button)) {
+          this.#pendings.add(button);
+        }
+      } else if (button === 'rsb' && value === 1) {
+        if (!this.#pendings.has(button)) {
+          this.#pendings.add(button);
+          this.#povLock = true;
+        }
       }
-    } else if (this.#keys.has(Keys.KeyD) || this.#keys.has(Keys.ArrowRight)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickTurnRight;
-        this.#inputs.set(Actions.quickTurnRight, 1);
-      } else {
-        this.#inputs.set(Actions.rotateRight, 1);
-      }
-    }
+    });
 
-    if (this.#keys.has(Keys.KeyQ)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickMoveLeft;
-        this.#inputs.set(Actions.quickMoveLeft, 1);
-      } else {
-        this.#inputs.set(Actions.moveLeft, 1);
-      }
-    } else if (this.#keys.has(Keys.KeyE)) {
-      if (this.#keys.has(mashedCode)) {
-        urgencyAction = Actions.quickMoveRight;
-        this.#inputs.set(Actions.quickMoveRight, 1);
-      } else {
-        this.#inputs.set(Actions.moveRight, 1);
-      }
-    }
+    this.axes.forEach((value, axis) => {
+      const mashed = this.buttons.get('x');
 
-    if (this.#pointers.has(Pointers.left)) {
-      this.#inputs.set(Actions.trigger, 1);
-    }
+      if (axis === 'lsy') {
+        if (value < -1e-4) {
+          if (mashed === 1) {
+            urgencyAction = Actions.quickMoveForward;
+            this.#inputs.set(Actions.quickMoveForward, 1);
+          } else {
+            const shift = this.buttons.get('lsb');
+
+            if (shift === 1) {
+              this.#inputs.set(Actions.splint, -value);
+            } else {
+              this.#inputs.set(Actions.moveForward, -value);
+            }
+          }
+        } else if (value > 1e-4) {
+          if (mashed === 1) {
+            urgencyAction = Actions.quickMoveBackward;
+            this.#inputs.set(Actions.quickMoveBackward, 1);
+          } else {
+            this.#inputs.set(Actions.moveBackward, value);
+          }
+        }
+      } else if (axis === 'lsx') {
+        if (value > 1e-4) {
+          if (mashed === 1) {
+            urgencyAction = Actions.quickTurnRight;
+            this.#inputs.set(Actions.quickTurnRight, 1);
+          } else {
+            this.#inputs.set(Actions.rotateRight, value);
+          }
+        } else if (value < -1e-4) {
+          if (mashed === 1) {
+            urgencyAction = Actions.quickTurnLeft;
+            this.#inputs.set(Actions.quickTurnLeft, 1);
+          } else {
+            this.#inputs.set(Actions.rotateLeft, -value);
+          }
+        }
+      } else if (axis === 'rsy') {
+        if (value > 1e-4) {
+          this.#moved = true;
+          this.#dy = value * Controls.stickSpeed;
+        } else if (value < -1e-4) {
+          this.#moved = true;
+          this.#dy = value * Controls.stickSpeed;
+        }
+      } else if (axis === 'rsx') {
+        this.#moved = true;
+
+        if (value > 1e-4) {
+          this.#moved = true;
+          this.#dx = value * Controls.stickSpeed;
+        } else if (value < -1e-4) {
+          this.#moved = true;
+          this.#dx = value * Controls.stickSpeed;
+        }
+      } else if (axis === 'rt2' && value > 0) {
+        if (!this.#pendings.has(axis)) {
+          this.#pendings.add(axis);
+          this.#inputs.set(Actions.trigger, value);
+        }
+      } else if (axis === 'lt2' && value > 0) {
+        if (!this.#pendings.has(axis)) {
+          this.#pendings.add(axis);
+          this.#inputs.set(Actions.jump, value);
+        }
+      }
+    });
 
     this.publish('input', this.#inputs, urgencyAction);
-
-    if (this.#mashedKey !== '') {
-      this.#mashedKey = '';
-    }
-
-    nonRepeatableKeyList.forEach((key) => this.#keys.delete(Keys[key]));
-    nonRepeatablePointerList.forEach((pointer) => this.#pointers.delete(Pointers[pointer]));
   }
 
   update(deltaTime) {
@@ -501,8 +379,7 @@ class FirstPersonControls extends Publisher {
     }
 
     const { lookSpeed } = Controls;
-    const { virtical: pitchIndicator, horizontal: yawIndicator } =
-      this.povIndicator;
+    const { virtical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
 
     if (!this.#resetPointer) {
       if (this.povSight.material.color !== sightColor.pov) {
@@ -666,4 +543,4 @@ class FirstPersonControls extends Publisher {
   }
 }
 
-export default FirstPersonControls;
+export default GamepadControls;

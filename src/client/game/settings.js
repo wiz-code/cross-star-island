@@ -1,4 +1,4 @@
-import { VSMShadowMap, ACESFilmicToneMapping } from 'three';
+import { VSMShadowMap, ACESFilmicToneMapping, Color } from 'three';
 
 const { PI } = Math;
 
@@ -78,6 +78,7 @@ export const Controls = {
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 100,
+  stickSpeed: 15,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
@@ -107,7 +108,7 @@ export const World = {
   spacing: 16, //80
 };
 
-export const Screen = {
+const Screen = {
   normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
   sightLinesColor: 0x9e9e9e,
@@ -116,6 +117,23 @@ export const Screen = {
   sightPovSize: 48,
   sightLinesSize: 128,
 };
+
+export const GameColor = {
+  SightColor: {
+    front: new Color(Screen.normalColor),
+    pov: new Color(Screen.sightPovColor),
+  },
+  IndicatorColor: {
+    normal: new Color(Screen.normalColor),
+    beyondFov: new Color(Screen.warnColor),
+  },
+  SightLinesColor: {
+    normal: new Color(Screen.sightLinesColor),
+    wheel: new Color(Screen.sightPovColor),
+  },
+};
+
+export { Screen };
 
 const filename = '/index.html';
 const { pathname } = location;

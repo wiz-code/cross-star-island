@@ -37,11 +37,12 @@ class CharacterManager extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  constructor(game, scene, collidableManager, eventManager, worldOctree) {
+  constructor(game, scene, camera, collidableManager, eventManager, worldOctree) {
     super();
 
     this.game = game;
     this.scene = scene;
+    this.camera = camera;
     this.collidableManager = collidableManager;
     this.eventManager = eventManager;
     this.worldOctree = worldOctree;
@@ -53,7 +54,7 @@ class CharacterManager extends Publisher {
 
   add(character) {
     if (!this.list.has(character)) {
-      if (!character.isFPV()) {
+      if (!character.hasControls) {
         this.scene.add(character.object);
       }
 
@@ -63,7 +64,7 @@ class CharacterManager extends Publisher {
 
   remove(character) {
     if (this.list.has(character)) {
-      if (!character.isFPV()) {
+      if (!character.hasControls) {
         this.scene.remove(character.object);
       }
 
@@ -73,6 +74,23 @@ class CharacterManager extends Publisher {
 
   clear() {
     this.list.forEach((character) => this.remove(character));
+  }
+
+  effect(object, target) {
+    switch (object.type) {
+      case 'item': {
+        object.setAlive(false);
+        this.eventManager.dispatch(
+          'get-item',
+          object.name,
+          target,
+          object,
+        );
+        break;
+      }
+
+      default: {}
+    }
   }
 
   collideWith(object) {
@@ -102,25 +120,17 @@ class CharacterManager extends Publisher {
               object.setBounced(true);
             }
 
-            if (character.isFPV() && object.type === 'item') {
-              object.setAlive(false);
-              this.eventManager.dispatch(
-                'get-item',
-                object.name,
-                character,
-                object,
-              );
-
+            if (character.hasControls && object.type === 'item') {
+              this.effect(object, character);
               break;
             } else {
-              if (!character.isStunning()) {
-                if (this.game.methods.has('play-sound')) {
-                  const playSound = this.game.methods.get('play-sound');
-                  playSound('damage');
-                }
-
-                character.setStunning(World.collisionShock);
+              if (this.game.methods.has('play-sound')) {
+                const playSound = this.game.methods.get('play-sound');
+                playSound('damage');
               }
+
+              character.setStunning(World.collisionShock);
+
 
               const normal = this.#vecA
                 .subVectors(point, objectCenter)
@@ -254,12 +264,8 @@ class CharacterManager extends Publisher {
       character.object.position.y += character.halfHeight;
       character.object.rotation.y = character.rotation.phi;
 
-      if (character.isFPV()) {
-        character.camera.rotation.x =
-          character.povRotation.theta + character.deltaY;
-        character.camera.rotation.y =
-          character.povRotation.phi + character.rotation.phi;
-        character.camera.position.copy(character.collider.end);
+      if (character.hasControls) {
+        this.camera.position.copy(character.collider.end);
       }
     }
   }
