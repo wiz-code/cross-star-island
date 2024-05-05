@@ -396,9 +396,9 @@ class Character extends Entity {
     this.collider.end.y += this.data.height + this.data.radius;
   }
 
-  setPovRot(rot) {
+  setPovRot(rot, offset) {
     this.povRotation.phi = rot.phi;
-    this.povRotation.theta = rot.theta;
+    this.povRotation.theta = rot.theta + offset;
   }
 
   isGrounded() {
@@ -408,12 +408,6 @@ class Character extends Entity {
   setGrounded(bool) {
     this.#isGrounded = bool;
   }
-
-  /* visible(bool) {
-    if (this.object != null) {
-      visibleChildren(this.object, bool);
-    }
-  } */
 
   jump(value = 1) {
     if (this.hasControls && this.game.methods.has('play-sound')) {

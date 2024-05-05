@@ -653,7 +653,7 @@ class FirstPersonControls extends Publisher {
       this.#wheel = this.virticalAngle.min;
     }
 
-    this.publish('setPovRot', this.#rotation);
+    this.publish('setPovRot', this.#rotation, this.#wheel);
 
     const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.4;
     this.povSightLines.position.setY(posY);
