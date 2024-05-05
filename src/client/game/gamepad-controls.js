@@ -55,7 +55,7 @@ class GamepadControls extends Publisher {
 
   #pendings = new Set();
 
-  #wheel = 0;
+  #pitch = 0;
 
   #dx = 0;
 
@@ -232,10 +232,7 @@ class GamepadControls extends Publisher {
     this.buttons.forEach((value, button) => {
       const mashed = this.buttons.get('x');
 
-      if (
-        (button === 'a' || button === 'lt') &&
-        value === 1
-      ) {
+      if (button === 'a' && value === 1) {
         if (!this.#pendings.has(button)) {
           this.#pendings.add(button);
           this.#inputs.set(Actions.jump, value);
@@ -264,10 +261,10 @@ class GamepadControls extends Publisher {
         }
       } else if (button === 'up' && value === 1) {
         const delta = Rad_1;
-        this.#wheel += delta;
+        this.#pitch += delta;
       } else if (button === 'down' && value === 1) {
         const delta = Rad_1;
-        this.#wheel -= delta;
+        this.#pitch -= delta;
       } else if (button === 'x' && value === 1) {
         if (!this.#pendings.has(button)) {
           this.#pendings.add(button);
@@ -293,9 +290,11 @@ class GamepadControls extends Publisher {
             urgencyAction = Actions.quickMoveForward;
             this.#inputs.set(Actions.quickMoveForward, 1);
           } else {
-            const shift = this.buttons.get('lsb');
-
-            if (shift === 1) {
+            if (
+              this.buttons.get('lsb') === 1 ||
+              this.buttons.get('lt') === 1 ||
+              this.axes.get('lt2') > 0
+            ) {
               this.#inputs.set(Actions.splint, -value);
             } else {
               this.#inputs.set(Actions.moveForward, -value);
@@ -351,7 +350,6 @@ class GamepadControls extends Publisher {
       } else if (axis === 'lt2' && value > 0) {
         if (!this.#pendings.has(axis)) {
           this.#pendings.add(axis);
-          this.#inputs.set(Actions.jump, value);
         }
       }
     });
@@ -498,7 +496,7 @@ class GamepadControls extends Publisher {
       }
     }
 
-    if (this.#wheel === 0) {
+    if (this.#pitch === 0) {
       if (this.povSightLines.material.color !== sightLinesColor.normal) {
         this.povSightLines.material.color = sightLinesColor.normal;
       }
@@ -507,34 +505,34 @@ class GamepadControls extends Publisher {
     }
 
     if (this.#resetWheel) {
-      if (this.#wheel >= 0) {
-        this.#wheel -= deltaTime;
+      if (this.#pitch >= 0) {
+        this.#pitch -= deltaTime;
 
-        if (this.#wheel <= 0) {
-          this.#wheel = 0;
+        if (this.#pitch <= 0) {
+          this.#pitch = 0;
           this.#resetWheel = false;
         }
       } else {
-        this.#wheel += deltaTime;
+        this.#pitch += deltaTime;
 
-        if (this.#wheel >= 0) {
-          this.#wheel = 0;
+        if (this.#pitch >= 0) {
+          this.#pitch = 0;
           this.#resetWheel = false;
         }
       }
     }
 
-    if (this.virticalAngle.max <= this.#wheel) {
-      this.#wheel = this.virticalAngle.max;
-    } else if (this.virticalAngle.min >= this.#wheel) {
-      this.#wheel = this.virticalAngle.min;
+    if (this.virticalAngle.max <= this.#pitch) {
+      this.#pitch = this.virticalAngle.max;
+    } else if (this.virticalAngle.min >= this.#pitch) {
+      this.#pitch = this.virticalAngle.min;
     }
 
-    this.publish('setPovRot', this.#rotation);
+    this.publish('setPovRot', this.#rotation, this.#pitch);
 
-    const posY = (-this.#wheel / halfPI) * this.viewHalfY * 2.4;
+    const posY = (-this.#pitch / halfPI) * this.viewHalfY * 2.4;
     this.povSightLines.position.setY(posY);
-    this.camera.rotation.x = this.#rotation.theta + this.#wheel;
+    this.camera.rotation.x = this.#rotation.theta + this.#pitch;
 
     this.camera.rotation.y = this.#rotation.phi + this.#characterRot.phi;
 
