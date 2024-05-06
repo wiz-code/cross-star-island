@@ -15,24 +15,34 @@ export const handlers = [
   {
     eventName: 'oob',
     targetName: 'teleport-character',
-    condition(character) {
+    /*condition(character) {
       return character.hasControls;
-    },
+    },*/
     handler({ states }, character) {
-      const stageIndex = states.get('stageIndex');
-      const stageData = Stages[stageIndex];
+      if (character.hasControls) {
+        const fall = states.get('fall');
+        states.set('fall', fall + 1);
 
-      const checkpointIndex = states.get('checkpointIndex');
-      const checkpoint = stageData.checkpoints[checkpointIndex];
-      const { offset } = stageData.sections[checkpointIndex];
-      const position = addOffsetToPosition(checkpoint.position, offset);
+        const stageIndex = states.get('stageIndex');
+        const stageData = Stages[stageIndex];
 
-      character.velocity.copy(new Vector3());
-      character.setPosition(
-        position,
-        checkpoint.phi,
-        checkpoint.theta,
-      );
+        const checkpointIndex = states.get('checkpointIndex');
+        const checkpoint = stageData.checkpoints[checkpointIndex];
+        const { offset } = stageData.sections[checkpointIndex];
+        const position = addOffsetToPosition(checkpoint.position, offset);
+
+        character.velocity.copy(new Vector3());
+        character.setPosition(
+          position,
+          checkpoint.phi,
+          checkpoint.theta,
+        );
+
+        return;
+      }
+
+      const pushAway = states.get('push-away');
+      states.set('push-away', pushAway + 1);
     },
   },
   {
@@ -40,9 +50,9 @@ export const handlers = [
     targetName: 'weapon-upgrade',
     handler({ methods }, character) {
       if (character.guns.has(character.gunType)) {
-        if (character.hasControls && methods.has('play-sound')) {
+        if (character.hasControls) {
           const playSound = methods.get('play-sound');
-          playSound('get-item');
+          playSound?.('get-item');
         }
 
         const gun = character.guns.get(character.gunType);
@@ -64,9 +74,9 @@ export const handlers = [
     eventName: 'get-item',
     targetName: 'hyper-dash',
     handler({ states, methods }, character, object) {
-      if (character.hasControls && methods.has('play-sound')) {
+      if (character.hasControls) {
         const playSound = methods.get('play-sound');
-        playSound('fast-move');
+        playSound?.('fast-move');
       }
 
       character.velocity.addScaledVector(object.params.velocity, 30);
@@ -76,9 +86,9 @@ export const handlers = [
     eventName: 'get-item',
     targetName: 'checkpoint',
     handler({ states, methods }, character) {
-      if (character.hasControls && methods.has('play-sound')) {
+      if (character.hasControls) {
         const playSound = methods.get('play-sound');
-        playSound('get-item');
+        playSound?.('get-item');
       }
 
       const checkpointIndex = states.get('checkpointIndex');
@@ -89,19 +99,20 @@ export const handlers = [
     eventName: 'collision',
     targetName: 'girl-1',
     once: true,
-    handler({ methods }, c1, c2) {
-      if (methods.has('play-sound')) {
-        const playSound = methods.get('play-sound');
-        playSound('girl-voice-1');
-        playSound('goal');
-      }
+    handler({ states, methods }, c1, c2) {
+      const playSound = methods.get('play-sound');
+      playSound?.('girl-voice-1');
+      playSound?.('goal');
 
-      let path = location.pathname.substring(
-        0,
-        location.pathname.lastIndexOf('/'),
-      );
-      path = path === '' ? '/' : path;
-      setTimeout(() => (location.href = path), 2000);
+      if (methods.has('clear')) {
+        const time = states.get('time');
+        const fall = states.get('fall');
+        const hit = states.get('hit');
+        const pushAway = states.get('push-away');
+        const checkpointIndex = states.get('checkpointIndex');
+        const clear = methods.get('clear');
+        clear(time, fall, hit, pushAway, checkpointIndex);
+      }
     },
   },
 ];

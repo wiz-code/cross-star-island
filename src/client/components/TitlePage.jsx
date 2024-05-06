@@ -109,7 +109,7 @@ function TitlePage({ gameLink, toggleFullScreen }) {
             component={Paper}
             sx={{ my: theme.spacing(1), backgroundColor: grey[100] }}
           >
-            <Table sx={{ minWidth: 600 }} aria-label="simple table">
+            <Table sx={{ minWidth: 600 }} aria-label="instructions">
               <TableBody>
                 <TableRow>
                   <TableCell component="th" scope="row">

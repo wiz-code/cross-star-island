@@ -72,8 +72,14 @@ class CharacterManager extends Publisher {
     }
   }
 
-  clear() {
+  clearList() {
     this.list.forEach((character) => this.remove(character));
+  }
+
+  dispose() {
+    this.list.forEach((character) => character.dispose());
+    this.clearList();
+    this.clear();
   }
 
   effect(object, target) {
@@ -95,6 +101,8 @@ class CharacterManager extends Publisher {
 
   collideWith(object) {
     const list = Array.from(this.list.keys());
+    const playSound = this.game.methods.get('play-sound');
+    const { states } = this.game;
 
     for (let i = 0, l = list.length; i < l; i += 1) {
       const character = list[i];
@@ -120,17 +128,20 @@ class CharacterManager extends Publisher {
               object.setBounced(true);
             }
 
-            if (character.hasControls && object.type === 'item') {
-              this.effect(object, character);
-              break;
+            if (object.type === 'item') {
+              if (character.hasControls) {
+                this.effect(object, character);
+                break;
+              }
             } else {
-              if (this.game.methods.has('play-sound')) {
-                const playSound = this.game.methods.get('play-sound');
-                playSound('damage');
+              playSound?.('damage');
+
+              if (object.type === 'ammo' && !character.hasControls) {
+                const hits = states.get('hit');
+                states.set('hit', hits + 1);
               }
 
               character.setStunning(World.collisionShock);
-
 
               const normal = this.#vecA
                 .subVectors(point, objectCenter)
@@ -251,7 +262,11 @@ class CharacterManager extends Publisher {
       const character = list[i];
       character.update(deltaTime, elapsedTime, damping);
 
-      if (character.collider.start.y < World.oob) {
+      if (character.isAlive() && character.collider.start.y < World.oob) {
+        if (!character.hasControls) {
+          character.setAlive(false);
+        }
+
         this.eventManager.dispatch('oob', 'teleport-character', character);
       }
     }

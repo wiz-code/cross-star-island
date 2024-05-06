@@ -7,6 +7,7 @@ export const StepsPerFrame = 5;
 export const Game = {
   stepsPerFrame: 5,
   resizeDelayTime: 200,
+  volume: 0.5,
 };
 
 export const Scene = {
@@ -78,7 +79,7 @@ export const Controls = {
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 100,
-  stickSpeed: 10,
+  stickSpeed: 8,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.4,

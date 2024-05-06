@@ -53,19 +53,20 @@ class CollidableManager extends Publisher {
   }
 
   remove(collidable) {
-    this.scene.remove(collidable.object);
-    this.list.delete(collidable);
+    if (this.list.has(collidable)) {
+      this.scene.remove(collidable.object);
+      this.list.delete(collidable);
+    }
   }
 
-  clear() {
-    const list = Array.from(this.list.keys());
+  clearList() {
+    this.list.forEach((collidable) => this.remove(collidable));
+  }
 
-    for (let i = 0, l = list.length; i < l; i += 1) {
-      const collidable = list[i];
-      this.scene.remove(collidable.object);
-    }
-
-    this.list.clear();
+  dispose() {
+    this.list.forEach((collidable) => collidable.dispose());
+    this.clearList();
+    this.clear();
   }
 
   collisions() {

@@ -1,5 +1,5 @@
 import Publisher from './publisher';
-import { visibleChildren } from './utils';
+import { visibleChildren, disposeObject } from './utils';
 import { States } from './data';
 
 const genId = (() => {
@@ -63,6 +63,15 @@ class Entity extends Publisher {
     }
 
     this.params = params;
+  }
+
+  dispose() {
+    if (this.object != null) {
+      this.object.traverse(disposeObject);
+    }
+
+    // リスナーを全削除
+    this.clear();
   }
 
   update() {

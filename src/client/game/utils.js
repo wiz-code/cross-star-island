@@ -43,3 +43,17 @@ export const visibleChildren = (object, bool) => {
     child.visible = bool;
   });
 };
+
+export const disposeObject = (object) => {
+  if (object?.dispose !== undefined) {
+    object.dispose();
+  }
+
+  if (object.geometry?.dispose !== undefined) {
+    object.geometry.dispose();
+  }
+
+  if (object.material?.dispose !== undefined) {
+    object.material.dispose();
+  }
+};
