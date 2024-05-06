@@ -271,6 +271,26 @@ const sprites = {
 
     return context;
   },
+
+  text(context, text, x = 0, y = 0, options = {}) {
+    const { canvas } = context;
+    canvas.width = 512;
+    canvas.height = 48;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.shadowColor = '#000';
+    context.shadowOffsetY = 0;
+    context.shadowBlur = 8;
+
+    context.fillStyle = '#FFF';
+    context.font = '48px "Helvetica Neue",Arial,"メイリオ",Meiryo,"ヒラギノ角ゴ ProN W3","Hiragino Kaku Gothic ProN","ヒラギノ角ゴシック","Hiragino Sans","Roboto",sans-serif';
+    context.textBaseline = 'alphabetic';
+    context.fillText(text, x, y);
+
+    return context;
+  },
 };
 
 export default sprites;

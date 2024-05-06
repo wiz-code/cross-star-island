@@ -510,13 +510,6 @@ class Character extends Entity {
     }
   }
 
-  dispose() {
-    // TODO
-
-    // リスナーを全削除
-    this.clear();
-  }
-
   input(inputs, urgencyAction) {
     // 入力操作の処理
     this.#inputs = inputs;

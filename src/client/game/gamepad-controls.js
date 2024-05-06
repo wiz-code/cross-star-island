@@ -14,6 +14,8 @@ const { abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
+const ErrorValue = 1e-4;
+
 
 const buttonList = [
   'a',
@@ -63,12 +65,6 @@ class GamepadControls extends Publisher {
 
   #mashed = false;
 
-  #moved = false;
-
-  #timeout = false;
-
-  #st = 0;
-
   #resetPointer = false;
 
   #resetWheel = false;
@@ -82,7 +78,16 @@ class GamepadControls extends Publisher {
 
     this.index = index;
     this.buttons = new Map(buttonList.map((value) => ([value, 0])));
-    this.axes = new Map(axisList.map((value) => ([value, 0])));
+    this.axes = new Map(
+      axisList.map((value, index) => {
+        if (index > 3) {
+          return [value, -1];
+        }
+
+        return [value, 0];
+      })
+    );
+
     this.cache = {};
 
     this.camera = camera;
@@ -187,6 +192,12 @@ class GamepadControls extends Publisher {
 
   input() {
     const gamepads = navigator.getGamepads();
+    const gamepad = gamepads[this.index];
+
+    if (gamepad == null) {
+      return;
+    }
+    
     const { axes, buttons } = gamepads[this.index];
 
     for (let i = 0, l = buttons.length; i < l; i += 1) {
@@ -221,7 +232,7 @@ class GamepadControls extends Publisher {
       const index = axisMap.get(axis);
       const value = axes[index];
 
-      if (value < -1 + 1e-4) {
+      if (value < -1 + ErrorValue) {
         this.#pendings.delete(axis);
       }
     });
@@ -285,7 +296,7 @@ class GamepadControls extends Publisher {
       const mashed = this.buttons.get('x');
 
       if (axis === 'lsy') {
-        if (value < -1e-4) {
+        if (value < -ErrorValue) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveForward;
             this.#inputs.set(Actions.quickMoveForward, 1);
@@ -300,7 +311,7 @@ class GamepadControls extends Publisher {
               this.#inputs.set(Actions.moveForward, -value);
             }
           }
-        } else if (value > 1e-4) {
+        } else if (value > ErrorValue) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveBackward;
             this.#inputs.set(Actions.quickMoveBackward, 1);
@@ -309,14 +320,14 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'lsx') {
-        if (value > 1e-4) {
+        if (value > ErrorValue) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnRight;
             this.#inputs.set(Actions.quickTurnRight, 1);
           } else {
             this.#inputs.set(Actions.rotateRight, value);
           }
-        } else if (value < -1e-4) {
+        } else if (value < -ErrorValue) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnLeft;
             this.#inputs.set(Actions.quickTurnLeft, 1);
@@ -325,21 +336,15 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'rsy') {
-        if (value > 1e-4) {
-          this.#moved = true;
+        if (value > ErrorValue) {
           this.#dy = value * Controls.stickSpeed;
-        } else if (value < -1e-4) {
-          this.#moved = true;
+        } else if (value < -ErrorValue) {
           this.#dy = value * Controls.stickSpeed;
         }
       } else if (axis === 'rsx') {
-        this.#moved = true;
-
-        if (value > 1e-4) {
-          this.#moved = true;
+        if (value > ErrorValue) {
           this.#dx = value * Controls.stickSpeed;
-        } else if (value < -1e-4) {
-          this.#moved = true;
+        } else if (value < -ErrorValue) {
           this.#dx = value * Controls.stickSpeed;
         }
       } else if (axis === 'rt2' && value > 0) {
@@ -363,19 +368,6 @@ class GamepadControls extends Publisher {
     }
 
     // 自機の視点制御
-    if (this.#moved) {
-      this.#moved = false;
-      this.#timeout = true;
-      this.#st = performance.now();
-    } else {
-      const now = performance.now();
-
-      if (now - this.#st > Controls.idleTime * 1000) {
-        this.#st = 0;
-        this.#timeout = false;
-      }
-    }
-
     const { lookSpeed } = Controls;
     const { virtical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
 

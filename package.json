@@ -1,6 +1,6 @@
 {
   "name": "cross-star-island",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Three.jsフレームワークを用いたFPSゲーム",
   "main": "./dist/client/index.html",
   "author": "masa <wizcode.jp@gmail.com>",
@@ -46,6 +46,7 @@
     "@reduxjs/toolkit": "^2.2.1",
     "@tweenjs/tween.js": "^23.1.1",
     "core-js": "^3.34.0",
+    "date-fns": "^3.6.0",
     "express": "^4.18.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

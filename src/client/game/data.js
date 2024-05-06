@@ -75,13 +75,27 @@ export const GameStates = [
   ['checkpointIndex', 0],
   ['gamepad', false],
   ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
+  // score state
+  ['time', 0],
+  ['fall', 0],
+  ['hit', 0],
+  ['push-away', 0],
+  ['no-checkpoint', 0],
 ];
 
 export const GameMethods = [
   [
     'play-sound',
     function (key, options) {
-      this.playSound(key, options);
+      this.soundManager.playSound(key, options);
+    },
+  ],
+  [
+    'clear',
+    function (time, fall, hit, pushAway, noCheckpoint) {
+      this.stop();
+      const score = this.scoreManager.calcScore(time, fall, hit, pushAway, noCheckpoint);
+      this.callbacks.setScore(score);
     },
   ],
 ];
@@ -117,7 +131,10 @@ export const Obstacles = [
   ],
 ];
 
-export const Compositions = [['stage', ['firstStage']]];
+export const Compositions = [
+  ['stage', ['firstStage']],
+  ['player', { name: 'player-1', ctype: 'hero-1' }],
+];
 
 export const Guns = [
   [
@@ -409,7 +426,7 @@ export const Stages = [
         ammoType: 'small-bullet',
         tweeners: [{ name: 'avoidance-1', state: States.alive }],
         schedule: {
-          spawnTime: 1,
+          spawnTime: 10,
         },
         params: {
           position: { sx: -22, sy: 3, sz: 4.2 },
@@ -427,7 +444,7 @@ export const Stages = [
         ammoType: 'small-bullet',
         tweeners: [{ name: 'avoidance-1', state: States.alive }],
         schedule: {
-          spawnTime: 2,
+          spawnTime: 12,
         },
         params: {
           position: { sx: -24, sy: 3, sz: 4.2 },
@@ -445,7 +462,7 @@ export const Stages = [
         ammoType: 'small-bullet',
         tweeners: [{ name: 'avoidance-1', state: States.alive }],
         schedule: {
-          spawnTime: 4,
+          spawnTime: 15,
         },
         params: {
           position: { sx: -26, sy: 3, sz: 4.2 },
@@ -599,7 +616,7 @@ export const Stages = [
           section: 0,
           position: { sx: 0, sy: 5, sz: -6 },
           phi: 0,
-          velocity: new Vector3(0, 0, 40),
+          velocity: new Vector3(0, 0, 45),
         },
         schedule: {
           spawnTime: 1,

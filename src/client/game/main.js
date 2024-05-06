@@ -40,6 +40,7 @@ import SceneManager from './scene-manager';
 import ModelManager from './model-manager';
 import EventManager from './event-manager';
 import SoundManager from './sound-manager';
+import ScoreManager from './score-manager';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -47,7 +48,7 @@ import Obstacle from './obstacle';
 import Item from './item';
 import TextureManager from './texture-manager';
 import createStage from './stages';
-import { leftToRightHandedQuaternion, addOffsetToPosition } from './utils';
+import { leftToRightHandedQuaternion, addOffsetToPosition, disposeObject } from './utils';
 
 const { floor, exp } = Math;
 
@@ -63,20 +64,7 @@ const getDamping = (delta) => {
   return dampingData;
 };
 const canvas = document.createElement('canvas');
-
-const disposeObject = (object) => {
-  if (object?.dispose !== undefined) {
-    object.dispose();
-  }
-
-  if (object.geometry?.dispose !== undefined) {
-    object.geometry.dispose();
-  }
-
-  if (object.material?.dispose !== undefined) {
-    object.material.dispose();
-  }
-};
+globalThis.gamepadIndex = -1;
 
 class Game {
   #elapsedTime = 0;
@@ -90,6 +78,7 @@ class Game {
     this.game = {};
     this.game.states = new Map(GameStates);
     this.game.methods = new Map(GameMethods);
+    this.game.methods.forEach((value, key, map) => map.set(key, value.bind(this)));
     this.game.ammos = new Map();
     this.game.characters = new Set();
     this.game.items = new Set();
@@ -172,11 +161,8 @@ class Game {
 
     this.soundManager = new SoundManager(this.camera.field, this.scene.field);
     const promise = this.soundManager.loadSounds();
+    this.scoreManager = new ScoreManager();
     this.loadingList.push(promise);
-    this.game.methods.forEach((value, key) => {
-      const method = value.bind(this.soundManager);
-      this.game.methods.set(key, method);
-    });
 
     this.sceneManager.clear();
     this.sceneManager.add('field', this.scene.field, this.camera.field);
@@ -212,59 +198,63 @@ class Game {
       this.worldOctree,
     );
 
-    this.controls = new FirstPersonControls(
-      indicators,
-      this.camera.field,
-      this.renderer.domElement,
-    );
-    this.player = null;
+    if (globalThis.gamepadIndex > -1) {
+      this.controls = this.createGamepadControls(globalThis.gamepadIndex, indicators);
+    } else {
+      this.controls = new FirstPersonControls(
+        indicators,
+        this.camera.field,
+        this.renderer.domElement,
+      );
+    }
+
     this.game.stage = null;
 
-    const onGamepadConnected = (e) => {
-      this.game.states.set('gamepad', true);
-      const { index } = e.gamepad;
+    const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
+    this.game.states.set('playerName', playerName);
+    this.game.states.set('characterType', characterType);
 
-      this.controls.onUnsetControls();
+    this.player = this.createPlayer(playerName, characterType);
+    this.player.setControls(this.controls);
+    this.characterManager.add(this.player);
+    this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
+
+    const onGamepadConnected = (e) => {
+      const { index } = e.gamepad;
+      this.game.states.set('gamepad', true);
+      globalThis.gamepadIndex = index;
+
       this.cache.controls = this.controls;
 
-      if (this.cache.gamepad != null) {
-        this.controls = this.cache.gamepad;
-      } else {
-        this.controls = new GamepadControls(
-          index,
-          indicators,
-          this.camera.field,
-          this.renderer.domElement
-        );
-      }
+      this.player.unsetControls();
+      this.controls = this.createGamepadControls(index, indicators);
+      this.player.setControls(this.controls);
 
-      if (this.player != null) {
-        this.player.setControls(this.controls);
+      const stageIndex = this.game.states.get('stageIndex');
+      const stageData = Stages[stageIndex];
 
-        const index = this.game.states.get('stageIndex');
-        const stageData = Stages[index];
+      const checkpointIndex = this.game.states.get('checkpointIndex');
+      const checkpoint = stageData.checkpoints[checkpointIndex];
+      const { offset } = stageData.sections[checkpointIndex];
 
-        const checkpointIndex = this.game.states.get('checkpointIndex');
-        const checkpoint = stageData.checkpoints[checkpointIndex];
-        const { offset } = stageData.sections[checkpointIndex];
-
-        const position = addOffsetToPosition(checkpoint.position, offset);
-        this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
-      }
+      const position = addOffsetToPosition(checkpoint.position, offset);
+      this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
     };
 
     const onGamepadDisconnected = () => {
-      this.controls.unsetControls();
-      this.cache.gamepad = this.controls;
-      this.controls = this.cache.controls;
+      this.player.unsetControls();
 
-      if (this.player != null) {
-        this.player.setControls(this.controls);
+      if (this.cache.controls != null) {
+        this.controls = this.cache.controls;
+        this.player.setControls(this.cache.controls);
       }
     };
 
-    window.addEventListener('gamepadconnected', onGamepadConnected, false);
-    window.addEventListener('gamepaddisconnected', onGamepadDisconnected, false);
+    this.onGamepadConnected = onGamepadConnected.bind(this);
+    this.onGamepadDisconnected = onGamepadDisconnected.bind(this);
+
+    window.addEventListener('gamepadconnected', this.onGamepadConnected);
+    window.addEventListener('gamepaddisconnected', this.onGamepadDisconnected);
 
     const onResize = function onResize() {
       const { width: containerWidth, height: containerHeight } =
@@ -307,26 +297,36 @@ class Game {
     });
 
     /// ///////////////
-    const playerName = 'player-1';
-    const characterType = 'hero-1';
-    this.game.states.set('playerName', playerName);
-    this.game.states.set('characterType', characterType);
+
 
     this.setMode('play');
 
-    const axesHelper = new AxesHelper(50);
-    this.scene.field.add(axesHelper);
+    //const axesHelper = new AxesHelper(50);
+    //this.scene.field.add(axesHelper);
     /// ///////////
 
     this.update = this.update.bind(this);
 
     if (this.loadingList.length > 0) {
       Promise.allSettled(this.loadingList).then((results) => {
+        this.callbacks.setGameStarted(true);
         this.start();
       });
     } else {
+      this.callbacks.setGameStarted(true);
       this.start();
     }
+  }
+
+  createGamepadControls(index, indicators) {
+    const controls = new GamepadControls(
+      index,
+      indicators,
+      this.camera.field,
+      this.renderer.domElement
+    );
+
+    return controls;
   }
 
   getElapsedTime() {
@@ -337,39 +337,36 @@ class Game {
     this.#elapsedTime = 0;
   }
 
-  setPlayer(name, ctype) {
-    this.player = new Character(this.game, name, ctype, this.texture);
-    this.player.setControls(this.controls);
+  createPlayer(name, ctype) {
+    const player = new Character(this.game, name, ctype, this.texture);
+    return player;
+  }
 
-    const { gunTypes } = this.player.data;
+  setCharacterWeapon(character, atype = '', gtype = '') {
+    const { gunTypes } = character.data;
 
-    gunTypes.forEach((gname, gunIndex) => {
-      const gun = new Gun(gname);
+    gunTypes.forEach((gunType, gunIndex) => {
+      const gun = new Gun(gunType);
       gun.data.ammoTypes.forEach((ammoType, ammoIndex) => {
         const ammo = this.game.ammos.get(ammoType);
         gun.ammos.set(ammoType, ammo);
-
-        if (ammoIndex === 0) {
-          gun.setAmmoType(ammoType);
-        }
       });
-      this.player.addGun(gun);
 
-      if (gunIndex === 0) {
-        this.player.setGunType(gname);
+      if (atype !== '') {
+        gun.setAmmoType(atype);
+      } else {
+        const [ammoType] = gun.data.ammoTypes;
+        gun.setAmmoType(ammoType);
       }
+
+      character.addGun(gun);
     });
 
-    this.characterManager.add(this.player);
-  }
-
-  removePlayer() {
-    if (this.player != null) {
-      this.player.unsetControls();
-      this.player.dispose();
-      this.controls.dispose();
-      this.player = null;
-      this.controls = null;
+    if (gtype !== '') {
+      character.setGunType(gtype);
+    } else {
+      const [gunType] = gunTypes;
+      character.setGunType(gunType);
     }
   }
 
@@ -406,9 +403,6 @@ class Game {
     this.worldOctree.fromGraphNode(terrain);
     this.game.stage.terrain = terrain;
 
-    this.characterManager.clear();
-    this.objectManager.clear();
-
     const ammoNames = Array.from(this.data.ammos.keys());
     ammoNames.forEach((name) => {
       const ammo = new Ammo(name, this.texture);
@@ -443,7 +437,6 @@ class Game {
         data.ctype,
         this.texture,
       );
-      const { gunTypes } = character.data;
 
       if (character.model != null) {
         this.loadingList.push(character.model);
@@ -455,9 +448,7 @@ class Game {
 
             const { vrm } = gltf.userData;
 
-            if (this.player != null) {
-              vrm.lookAt.target = this.player.object;
-            }
+            vrm.lookAt.target = this.player.object;
 
             if (character.motions != null) {
               character.motions.then(
@@ -500,21 +491,7 @@ class Game {
         this.characterManager.add(character);
       }
 
-      gunTypes.forEach((name, gunIndex) => {
-        const gun = new Gun(name);
-        gun.data.ammoTypes.forEach((ammoType) => {
-          const ammo = this.game.ammos.get(ammoType);
-          gun.ammos.set(ammoType, ammo);
-        });
-
-        const { ammoType } = data;
-        gun.setAmmoType(ammoType);
-        character.addGun(gun);
-
-        if (gunIndex === 0) {
-          character.setGunType(name);
-        }
-      });
+      this.setCharacterWeapon(character, data.ammoType);
 
       if (data.params != null) {
         character.setParams(data.params);
@@ -643,21 +620,33 @@ class Game {
     const checkpoint = stageData.checkpoints[checkpointIndex];
     const { offset } = stageData.sections[checkpointIndex];
 
-    const playerName = this.game.states.get('playerName');
-    const characterType = this.game.states.get('characterType');
-    this.setPlayer(playerName, characterType);
-
     const position = addOffsetToPosition(checkpoint.position, offset);
-
     this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
+    this.setCharacterWeapon(this.player);
   }
 
   clearStage() {
     if (this.game.stage != null) {
+      this.characterManager.list.forEach((character) => {
+        if (character !== this.player) {
+          this.characterManager.remve(character);
+        }
+      });
+
+      this.objectManager.clearList();
+
       this.scene.field.clear();
       this.worldOctree.clear();
       this.game.stage = null;
     }
+
+    this.game.states.set('time', 0);
+    this.game.states.set('fall', 0);
+    this.game.states.set('hit', 0);
+    this.game.states.set('push-away', 0);
+    this.game.states.set('no-checkpoint', 0);
+
+    this.callbacks.setScore(null);
 
     this.game.ammos.clear();
     this.game.characters.clear();
@@ -681,9 +670,12 @@ class Game {
 
   dispose() {
     window.removeEventListener('resize', this.onResize);
-    this.removePlayer();
+    window.removeEventListener('gamepadconnected', this.onGamepadConnected);
+    window.removeEventListener('gamepaddisconnected', this.onGamepadDisconnected);
 
-    this.scene.field.traverse(disposeObject);
+    this.characterManager.dispose();
+    this.objectManager.dispose();
+    this.controls.dispose();
     this.scene.screen.traverse(disposeObject);
 
     this.clearStage();
@@ -693,25 +685,16 @@ class Game {
     this.textureManager.disposeAll();
     this.container.removeChild(this.renderer.domElement);
     this.renderer.dispose();
+
+    this.callbacks.setGameStarted(false);
   }
 
   start() {
-    this.callbacks.setGameStarted(true);
     this.clock.start();
     this.renderer.setAnimationLoop(this.update);
-
-    if (this.player != null) {
-      this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
-    }
   }
 
   stop() {
-    if (this.player != null) {
-      this.player.setAlive(false);
-      this.controls.enable(false);
-    }
-
-    this.callbacks.setGameStarted(false);
     this.clock.stop();
     this.renderer.setAnimationLoop(null);
   }
@@ -737,6 +720,9 @@ class Game {
     this.modelManager.update(deltaTime);
     this.eventManager.update(deltaTime, this.#elapsedTime);
     this.sceneManager.update();
+
+    this.callbacks.setElapsedTime(this.#elapsedTime);
+    this.game.states.set('time', this.#elapsedTime);
   }
 }
 

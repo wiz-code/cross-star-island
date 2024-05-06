@@ -1,7 +1,7 @@
 import { AudioLoader, Audio, AudioListener } from 'three';
 
 import { Sounds } from './data';
-import { Url } from './settings';
+import { Game, Url } from './settings';
 
 class SoundManager {
   constructor(camera, scene) {
@@ -51,6 +51,7 @@ class SoundManager {
           const [name, buffer] = value;
           const sound = new Audio(this.listener);
           sound.setBuffer(buffer);
+          sound.setVolume(Game.volume);
 
           this.list.set(name, sound);
         }
