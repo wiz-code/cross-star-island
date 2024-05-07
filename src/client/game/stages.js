@@ -1,13 +1,12 @@
 import { Vector3, Group, ArrowHelper } from 'three';
 
 import { World } from './settings';
-import { Stages } from './data';
 
 import { createGrid, createFineGrid } from './grid';
 import { createGround, createMaze, createCylinder } from './ground';
 
-const createStage = (index, texture) => {
-  const { sections } = Stages[index];
+const createStage = (stageData, texture) => {
+  const { sections } = stageData;
   const stage = new Group();
 
   for (let i = 0, l = sections.length; i < l; i += 1) {

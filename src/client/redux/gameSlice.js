@@ -7,7 +7,8 @@ const gameSlice = createSlice({
 
   initialState: {
     mode: 'loading',
-    stageIndex: 0,
+    stageIndex: 0,//////
+    stageName: '',
     elapsedTime: 0,
     score: null,
   },
@@ -23,13 +24,13 @@ const gameSlice = createSlice({
       state.mode = action.payload;
     },
     setStage: (state, action) => {
-      state.stageIndex = action.payload;
+      state.stageName = action.payload;
     },
     nextStage: (state) => {
-      state.stageIndex += 1;
+      state.stageName += 1;
     },
     rewindStage: (state) => {
-      state.stageIndex -= 1;
+      state.stageName -= 1;
     },
   },
 });

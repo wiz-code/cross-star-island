@@ -4,25 +4,30 @@ const { floor, max } = Math;
 const key = 'cross-star-island-scores';
 
 class ScoreManager {
-  constructor() {
+  constructor(game) {
+    this.game = game;
     this.scores = [];
     this.load();
   }
 
-  calcScore(time, fall, hit, pushAway, checkpointIndex) {
+  calcScore(time, falls, hits, pushAway, checkpointIndex) {
     const score = {};
     const data = { bonus: 1000 };
 
-    if (time <= 60) {
-      data.time = 1000;
+    const stageName = this.game.states.get('stageName');
+    const stageData = this.game.methods.get('getStageData')?.(stageName);
+    const checkpointNum = stageData.checkpoints.length;
+
+    if (time <= 50) {
+      data.time = 5000;
     } else {
-      data.time = max(floor(500 - time), 0);
+      data.time = max(floor(3000 - time * 10), 0);
     }
 
-    data.fall = fall * -50;
-    data.hit = hit * 1;
-    data.pushAway = pushAway * 100;
-    data.noCheckpoint = 900 - checkpointIndex * 300; //最大でもチェックポイント３つの場合
+    data.falls = falls * -100;
+    data.hits = hits * 5;
+    data.pushAway = pushAway * 400;
+    data.noCheckpoint = checkpointNum * 1000 - (checkpointIndex + 1) * 1000;
     score.data = data;
 
     score.sum = Object.values(data).reduce((acc, cur) => acc + cur);

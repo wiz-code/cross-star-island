@@ -74,9 +74,22 @@ class Game {
     this.worldOctree = new Octree();
     this.callbacks = callbacks;
 
+    this.data = {};
+    this.data.stages = new Map(Stages);
+    this.data.characters = new Map(Characters);
+    this.data.compositions = new Map(Compositions);
+    this.data.ammos = new Map(Ammos);
+    this.data.guns = new Map(Guns);
+    this.data.sounds = new Map(Sounds);
+    this.data.handlers = handlers;
+    this.data.tweeners = new Map(Tweeners);
+    this.data.updaters = new Map(Updaters);
+
     // ゲーム管理変数
     this.game = {};
     this.game.states = new Map(GameStates);
+    const [sname] = this.data.compositions.get('stage');
+    this.game.states.set('stageName', sname);
     this.game.methods = new Map(GameMethods);
     this.game.methods.forEach((value, key, map) => map.set(key, value.bind(this)));
     this.game.ammos = new Map();
@@ -161,7 +174,7 @@ class Game {
 
     this.soundManager = new SoundManager(this.camera.field, this.scene.field);
     const promise = this.soundManager.loadSounds();
-    this.scoreManager = new ScoreManager();
+    this.scoreManager = new ScoreManager(this.game);
     this.loadingList.push(promise);
 
     this.sceneManager.clear();
@@ -174,16 +187,6 @@ class Game {
       Light.Ambient.intensity,
     );
     this.scene.field.add(this.light.ambient);
-
-    this.data = {};
-    this.data.characters = new Map(Characters);
-    this.data.compositions = new Map(Compositions);
-    this.data.ammos = new Map(Ammos);
-    this.data.guns = new Map(Guns);
-    this.data.sounds = new Map(Sounds);
-    this.data.handlers = handlers;
-    this.data.tweeners = new Map(Tweeners);
-    this.data.updaters = new Map(Updaters);
 
     this.objectManager = new CollidableManager(
       this.scene.field,
@@ -230,8 +233,8 @@ class Game {
       this.controls = this.createGamepadControls(index, indicators);
       this.player.setControls(this.controls);
 
-      const stageIndex = this.game.states.get('stageIndex');
-      const stageData = Stages[stageIndex];
+      const stageName = this.game.states.get('stageName');
+      const stageData = this.game.methods.get('getStageData')?.(stageName);
 
       const checkpointIndex = this.game.states.get('checkpointIndex');
       const checkpoint = stageData.checkpoints[checkpointIndex];
@@ -391,14 +394,14 @@ class Game {
     }
   }
 
-  setStage(stageIndex) {
+  setStage(sname) {
     this.clearStage();
 
-    const index = stageIndex ?? this.game.states.get('stageIndex');
-    const stageData = Stages[index];
+    const stageName = sname ?? this.game.states.get('stageName');
+    const stageData = this.game.methods.get('getStageData')?.(stageName);
 
     this.game.stage = {};
-    const terrain = createStage(index, this.texture);
+    const terrain = createStage(stageData, this.texture);
     this.scene.field.add(terrain);
     this.worldOctree.fromGraphNode(terrain);
     this.game.stage.terrain = terrain;
@@ -641,8 +644,8 @@ class Game {
     }
 
     this.game.states.set('time', 0);
-    this.game.states.set('fall', 0);
-    this.game.states.set('hit', 0);
+    this.game.states.set('falls', 0);
+    this.game.states.set('hits', 0);
     this.game.states.set('push-away', 0);
     this.game.states.set('no-checkpoint', 0);
 
@@ -655,17 +658,27 @@ class Game {
   }
 
   nextStage() {
-    const index = this.game.states.get('stageIndex');
-    const currentIndex = index + 1;
-    this.setStage(currentIndex);
-    this.game.states.set('stageIndex', currentIndex);
+    const stageName = this.game.states.get('stageName');
+    const stageNames = this.data.compositions.get('stage');
+    const index = stageNames.indexOf(stageName);
+
+    if (index !== -1) {
+      const nextStageName = stageNames[index + 1];
+      this.setStage(nextStageName);
+      this.game.states.set('stageName', nextStageName);
+    }
   }
 
-  rewindStage() {
-    const index = this.game.states.get('stageIndex');
-    const currentIndex = index - 1;
-    this.setStage(currentIndex);
-    this.game.states.set('stageIndex', currentIndex);
+  prevStage() {
+    const stageName = this.game.states.get('stageName');
+    const stageNames = this.data.compositions.get('stage');
+    const index = stageNames.indexOf(stageName);
+
+    if (index !== -1) {
+      const prevStageName = stageNames[index - 1];
+      this.setStage(prevStageName);
+      this.game.states.set('stageName', prevStageName);
+    }
   }
 
   dispose() {
