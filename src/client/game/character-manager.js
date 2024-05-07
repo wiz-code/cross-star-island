@@ -137,8 +137,8 @@ class CharacterManager extends Publisher {
               playSound?.('damage');
 
               if (object.type === 'ammo' && !character.hasControls) {
-                const hits = states.get('hit');
-                states.set('hit', hits + 1);
+                const hits = states.get('hits');
+                states.set('hits', hits + 1);
               }
 
               character.setStunning(World.collisionShock);
