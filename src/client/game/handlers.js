@@ -18,13 +18,13 @@ export const handlers = [
     /*condition(character) {
       return character.hasControls;
     },*/
-    handler({ states }, character) {
+    handler({ states, methods }, character) {
       if (character.hasControls) {
-        const fall = states.get('fall');
-        states.set('fall', fall + 1);
+        const falls = states.get('falls');
+        states.set('falls', falls + 1);
 
-        const stageIndex = states.get('stageIndex');
-        const stageData = Stages[stageIndex];
+        const stageName = states.get('stageName');
+        const stageData = methods.get('getStageData')?.(stageName);
 
         const checkpointIndex = states.get('checkpointIndex');
         const checkpoint = stageData.checkpoints[checkpointIndex];
@@ -104,15 +104,13 @@ export const handlers = [
       playSound?.('girl-voice-1');
       playSound?.('goal');
 
-      if (methods.has('clear')) {
-        const time = states.get('time');
-        const fall = states.get('fall');
-        const hit = states.get('hit');
-        const pushAway = states.get('push-away');
-        const checkpointIndex = states.get('checkpointIndex');
-        const clear = methods.get('clear');
-        clear(time, fall, hit, pushAway, checkpointIndex);
-      }
+      const time = states.get('time');
+      const falls = states.get('falls');
+      const hits = states.get('hits');
+      const pushAway = states.get('push-away');
+      const checkpointIndex = states.get('checkpointIndex');
+      const clear = methods.get('clear');
+      clear?.(time, falls, hits, pushAway, checkpointIndex);
     },
   },
 ];
@@ -124,8 +122,8 @@ export const Tweeners = [
       const time = arg ?? 0;
       const range = 1.8;
 
-      const stageIndex = game.states.get('stageIndex');
-      const stageData = Stages[stageIndex];
+      const stageName = game.states.get('stageName');
+      const stageData = game.methods.get('getStageData')?.(stageName);
       const { offset } = stageData.sections[target.params.section];
 
       const group = new Group();

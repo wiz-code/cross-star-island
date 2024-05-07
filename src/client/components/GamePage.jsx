@@ -41,7 +41,7 @@ const GameContainer = styled(Box)(({ theme }) => ({
 
 const ScoreItem = styled(Box)(({ theme }) => ({
   color: '#fff',
-  fontSize: '48px',
+  fontSize: '2.8rem',
   position: 'absolute',
   fontFamily: font.proportional,
   textShadow: '0 0 8px rgb(0, 0, 0, 0.4)',
@@ -50,7 +50,7 @@ const ScoreItem = styled(Box)(({ theme }) => ({
 }));
 const ScoreValue = styled(Box)(({ theme }) => ({
   color: '#fff',
-  fontSize: '48px',
+  fontSize: '2.8rem',
   fontStyle: 'italic',
   textAlign: 'right',
   textShadow: '0 0 16px rgb(0, 0, 0, 0.4)',
@@ -71,7 +71,7 @@ function DisplayTime() {
       sx={{
         color: '#fff',
         textAlign: 'right',
-        fontSize: '48px',
+        fontSize: '2.5rem',
         position: 'absolute',
         fontFamily: font.monospaced,
         left: 'calc(50% - 50px)',
@@ -101,9 +101,9 @@ function DisplayScore() {
       <ScoreItem sx={{ top: '20%' }}>TIME</ScoreItem>
       <ScoreValue sx={{ top: '20%' }}>{data.time}</ScoreValue>
       <ScoreItem sx={{ top: '30%' }}>FALLS</ScoreItem>
-      <ScoreValue sx={{ top: '30%' }}>{data.fall}</ScoreValue>
+      <ScoreValue sx={{ top: '30%' }}>{data.falls}</ScoreValue>
       <ScoreItem sx={{ top: '40%' }}>HITS</ScoreItem>
-      <ScoreValue sx={{ top: '40%' }}>{data.hit}</ScoreValue>
+      <ScoreValue sx={{ top: '40%' }}>{data.hits}</ScoreValue>
       <ScoreItem sx={{ top: '50%' }}>PUSH AWAY</ScoreItem>
       <ScoreValue sx={{ top: '50%' }}>{data.pushAway}</ScoreValue>
       <ScoreItem sx={{ top: '60%' }}>NO CHECKPOINT</ScoreItem>

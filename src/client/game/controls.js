@@ -556,9 +556,9 @@ class FirstPersonControls extends Publisher {
         pitchIndicator.material.color = indicatorColor.normal;
       }
 
-      yawIndicator.material.rotation = -this.#rotation.phi;
+      yawIndicator.material.rotation = this.#rotation.phi;
       yawIndicator.position.x =
-        -this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
+        this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
       yawIndicator.position.y =
         this.yawIndicatorRadius * sin(this.#rotation.phi + halfPI);
       pitchIndicator.position.y = posY;
@@ -595,9 +595,9 @@ class FirstPersonControls extends Publisher {
           yawIndicator.material.color = indicatorColor.normal;
         }
 
-        yawIndicator.material.rotation = -this.#rotation.phi;
+        yawIndicator.material.rotation = this.#rotation.phi;
         yawIndicator.position.x =
-          -this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
+          this.yawIndicatorRadius * cos(this.#rotation.phi + halfPI);
         yawIndicator.position.y =
           this.yawIndicatorRadius * sin(this.#rotation.phi + halfPI);
       }
