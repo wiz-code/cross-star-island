@@ -631,7 +631,7 @@ export const Stages = [
             section: 0,
             position: { sx: 0, sy: 5, sz: -6 },
             phi: 0,
-            velocity: new Vector3(0, 10, 35),
+            velocity: new Vector3(0, 1, 35),
           },
           schedule: {
             spawnTime: 1,
