@@ -61,37 +61,38 @@ const ScoreValue = styled(Box)(({ theme }) => ({
 }));
 
 function DisplayTime() {
-  const { gameStarted } = useSelector((state) => state.system);
-  const { elapsedTime } = useSelector((state) => state.game);
+  const { mode, elapsedTime } = useSelector((state) => state.game);
 
-  const time = gameStarted ? elapsedTime : '';
+  if (mode === 'play' || mode === 'clear') {
+    return (
+      <Box
+        sx={{
+          color: '#fff',
+          textAlign: 'right',
+          fontSize: '2.5rem',
+          position: 'absolute',
+          fontFamily: font.monospaced,
+          left: 'calc(50% - 50px)',
+          top: 0,
+        }}
+      >
+        {elapsedTime}
+      </Box>
+    );
+  }
 
-  return (
-    <Box
-      sx={{
-        color: '#fff',
-        textAlign: 'right',
-        fontSize: '2.5rem',
-        position: 'absolute',
-        fontFamily: font.monospaced,
-        left: 'calc(50% - 50px)',
-        top: 0,
-      }}
-    >
-      {time}
-    </Box>
-  );
+  return null;
 }
 
 function DisplayScore() {
-  const { elapsedTime, score } = useSelector((state) => state.game);
+  const { mode, elapsedTime, score } = useSelector((state) => state.game);
   const theme = useTheme();
 
-  if (score == null) {
+  if (mode !== 'clear') {
     return null;
   }
 
-  const { data, sum, highscore } = score;
+  const { data, sum, newRecord, highscore } = score;
   const highscoreData = highscore != null ? `${highscore.value} ${highscore.distance}` : '--';
 
   return (
@@ -109,13 +110,19 @@ function DisplayScore() {
       <ScoreItem sx={{ top: '60%' }}>NO CHECKPOINT</ScoreItem>
       <ScoreValue sx={{ top: '60%' }}>{data.noCheckpoint}</ScoreValue>
       <ScoreItem sx={{ top: '75%' }}>SCORE</ScoreItem>
-      <ScoreValue sx={{ top: '75%', color: yellow[500] }}>{sum}</ScoreValue>
+      <ScoreValue sx={{ top: '75%', color: yellow[500] }}>
+        {!newRecord ? sum : (
+          <>
+            <Typography variant="h4" sx={{ px: theme.spacing(2), display: 'inline' }}>New record!!</Typography>
+            {sum}
+          </>
+        )}</ScoreValue>
       <ScoreItem sx={{ top: '85%' }}>HIGH SCORE</ScoreItem>
       <ScoreValue sx={{ top: '85%' }}>
         {highscore != null ? (
           <>
             <Typography variant="h4" sx={{ px: theme.spacing(2), display: 'inline' }}>
-              {`${highscore.distance} before`}
+              {`${highscore.distance} ago`}
             </Typography>
             {highscore.value}
           </>
@@ -127,17 +134,30 @@ function DisplayScore() {
 
 
 function Controls({ toggleFullScreen }) {
+  const { mode } = useSelector((state) => state.game);
   const { isFullscreen } = useSelector((state) => state.system);
+  const dispatch = useDispatch();
+  const navicate = useNavigate();
   const theme = useTheme();
+
+  const jumpToTitlePage = useCallback(() => {
+    dispatch(gameActions.setMode('unstarted'));
+    navicate('/');
+  }, []);
 
   return (
     <Box
       sx={{
+        display: 'flex',
+        gap: theme.spacing(1),
         position: 'absolute',
         right: theme.spacing(2),
         bottom: theme.spacing(2),
       }}
     >
+      {mode === 'clear' ? (
+        <Button variant="contained" color="info" onClick={jumpToTitlePage}>タイトル画面に戻る</Button>
+      ): null}
       <Button variant="outlined" onClick={toggleFullScreen}>
         {!isFullscreen ? '全画面にする' : '全画面を解除'}
       </Button>
@@ -146,10 +166,9 @@ function Controls({ toggleFullScreen }) {
 }
 
 function GamePage({ toggleFullScreen }) {
-  const { gameStarted } = useSelector((state) => state.system);
+  const { mode } = useSelector((state) => state.game);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
-  const navicate = useNavigate();
   const theme = useTheme();
   const ref = useRef(null);
 
@@ -161,16 +180,16 @@ function GamePage({ toggleFullScreen }) {
     };
   }, []);
 
-  const setGameStarted = useCallback((bool) => {
-    dispatch(systemActions.setGameStarted(bool));
-  }, []);
-
   const setElapsedTime = useCallback((time) => {
     dispatch(gameActions.setElapsedTime(time));
   }, []);
 
   const setScore = useCallback((score) => {
     dispatch(gameActions.setScore(score));
+  }, []);
+
+  const setMode = useCallback((mode) => {
+    dispatch(gameActions.setMode(mode));
   }, []);
 
   useEffect(() => {
@@ -180,9 +199,9 @@ function GamePage({ toggleFullScreen }) {
         width,
         height,
         {
-          setGameStarted,
-          setElapsedTime,
+          setMode,
           setScore,
+          setElapsedTime,
         }
       );
       setGame(gameObject);
@@ -200,7 +219,7 @@ function GamePage({ toggleFullScreen }) {
 
   return (
     <>
-      {!gameStarted ? (
+      {mode === 'loading' ? (
         <Box
           sx={{
             position: 'absolute',

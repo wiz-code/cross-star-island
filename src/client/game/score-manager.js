@@ -2,6 +2,7 @@ import { formatDistance, parseISO } from 'date-fns';
 
 const { floor, max } = Math;
 const key = 'cross-star-island-scores';
+const maxRecords = 100;
 
 class ScoreManager {
   constructor(game) {
@@ -33,6 +34,8 @@ class ScoreManager {
     score.sum = Object.values(data).reduce((acc, cur) => acc + cur);
     const date = new Date().toISOString();
 
+    score.newRecord = this.scores.every((record) => score.sum > record.value);
+
     this.addScore({ value: score.sum, date });
 
     const highscore = this.getHighscore();
@@ -49,6 +52,11 @@ class ScoreManager {
 
   addScore(score) {
     this.scores.push(score);
+
+    if (this.scores.length > maxRecords) {
+      this.scores.slice(maxRecords - this.scores.length);
+    }
+
     this.save();
   }
 

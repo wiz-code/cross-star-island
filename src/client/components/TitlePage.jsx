@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { grey } from '@mui/material/colors';
 
@@ -37,9 +37,9 @@ const Row = styled(Grid)(({ theme }) => ({
 }));
 
 function TitlePage({ gameLink, toggleFullScreen }) {
-  const { gameStarted, isFullscreen } = useSelector((state) => state.system);
+  const { isFullscreen } = useSelector((state) => state.system);
+  const [gameStarted, setGameStarted] = useState(false);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const theme = useTheme();
 
   useEffect(() => {
@@ -50,10 +50,9 @@ function TitlePage({ gameLink, toggleFullScreen }) {
     };
   }, []);
 
-  const playGame = (e) => {
-    e.preventDefault();
-    navigate('/game');
-  };
+  const playGame = useCallback((e) => {
+    setGameStarted(true);
+  }, []);
 
   return (
     <Layout>
@@ -84,6 +83,7 @@ function TitlePage({ gameLink, toggleFullScreen }) {
             component={Link}
             to={gameLink}
             disabled={gameStarted}
+            onClick={playGame}
           >
             ゲームを開始する
           </Button>

@@ -8,7 +8,6 @@ import {
   Color,
   Clock,
   AmbientLight,
-  AxesHelper, /// //////////
 } from 'three';
 import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
@@ -222,6 +221,8 @@ class Game {
     this.characterManager.add(this.player);
     this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
 
+    this.setMode('loading');
+
     const onGamepadConnected = (e) => {
       const { index } = e.gamepad;
       this.game.states.set('gamepad', true);
@@ -299,24 +300,15 @@ class Game {
       );
     });
 
-    /// ///////////////
-
-
-    this.setMode('play');
-
-    //const axesHelper = new AxesHelper(50);
-    //this.scene.field.add(axesHelper);
-    /// ///////////
-
     this.update = this.update.bind(this);
 
     if (this.loadingList.length > 0) {
       Promise.allSettled(this.loadingList).then((results) => {
-        this.callbacks.setGameStarted(true);
+        this.setMode('play');
         this.start();
       });
     } else {
-      this.callbacks.setGameStarted(true);
+      this.setMode('play');
       this.start();
     }
   }
@@ -377,14 +369,19 @@ class Game {
     this.game.states.set('mode', mode);
 
     switch (mode) {
-      case 'unstarted': {
-        //
+      case 'loading': {
+        this.setStage();
+        this.callbacks.setMode('loading');
         break;
       }
 
       case 'play': {
-        this.setStage();
+        this.callbacks.setMode('play');
+        break;
+      }
 
+      case 'clear': {
+        this.callbacks.setMode('clear');
         break;
       }
 
@@ -537,6 +534,9 @@ class Game {
     items.forEach((data) => {
       const item = new Item(data.name, this.texture);
 
+      item.consumable = data.consumable ?? true;
+      item.disableTime = data.disableTime ?? 1;
+
       if (data.params != null) {
         item.setParams(data.params);
       }
@@ -662,23 +662,19 @@ class Game {
     const stageNames = this.data.compositions.get('stage');
     const index = stageNames.indexOf(stageName);
 
-    if (index !== -1) {
-      const nextStageName = stageNames[index + 1];
+    const nextStageName = stageNames[index + 1];
+
+    if (nextStageName != null) {
       this.setStage(nextStageName);
       this.game.states.set('stageName', nextStageName);
     }
   }
 
-  prevStage() {
-    const stageName = this.game.states.get('stageName');
+  rewindStage() {
     const stageNames = this.data.compositions.get('stage');
-    const index = stageNames.indexOf(stageName);
-
-    if (index !== -1) {
-      const prevStageName = stageNames[index - 1];
-      this.setStage(prevStageName);
-      this.game.states.set('stageName', prevStageName);
-    }
+    const [first] = stageNames;
+    this.setStage(first);
+    this.game.states.set('stageName', first);
   }
 
   dispose() {
@@ -698,8 +694,6 @@ class Game {
     this.textureManager.disposeAll();
     this.container.removeChild(this.renderer.domElement);
     this.renderer.dispose();
-
-    this.callbacks.setGameStarted(false);
   }
 
   start() {
