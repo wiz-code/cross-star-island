@@ -86,6 +86,14 @@ class CharacterManager extends Publisher {
     switch (object.type) {
       case 'item': {
         object.setAlive(false);
+
+        if (!object.consumable) {
+          const time = object.disableTime * 1000;
+          setTimeout(() => {
+            object.setAlive(true);
+          }, time);
+        }
+
         this.eventManager.dispatch(
           'get-item',
           object.name,

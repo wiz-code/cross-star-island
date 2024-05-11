@@ -72,10 +72,9 @@ export const States = {
 
 export const GameStates = [
   ['stageName', ''],
-  ['stageIndex', 0],///////
   ['checkpointIndex', 0],
   ['gamepad', false],
-  ['mode', 'unstarted'], // 'unstarted', 'play', 'gameover'
+  ['mode', 'loading'], // 'loading', 'play', 'clear'
   // score state
   ['time', 0],
   ['falls', 0],
@@ -104,7 +103,9 @@ export const GameMethods = [
   [
     'clear',
     function (time, falls, hits, pushAway, noCheckpoint) {
+      this.setMode('clear');
       this.stop();
+
       const score = this.scoreManager.calcScore(time, falls, hits, pushAway, noCheckpoint);
       this.callbacks.setScore(score);
     },
@@ -624,11 +625,13 @@ export const Stages = [
         },
         {
           name: 'hyper-dash',
+          consumable: false,
+          disableTime: 3,
           params: {
             section: 0,
             position: { sx: 0, sy: 5, sz: -6 },
             phi: 0,
-            velocity: new Vector3(0, 0, 45),
+            velocity: new Vector3(0, 10, 35),
           },
           schedule: {
             spawnTime: 1,
@@ -637,11 +640,13 @@ export const Stages = [
         },
         {
           name: 'hyper-dash',
+          consumable: false,
+          disableTime: 3,
           params: {
             section: 0,
             position: { sx: 4, sy: 5, sz: 14 },
             phi: PI * 0.5,
-            velocity: new Vector3(60, 0, 0),
+            velocity: new Vector3(30, 1, 0),
           },
           schedule: {
             spawnTime: 1,
@@ -650,11 +655,13 @@ export const Stages = [
         },
         {
           name: 'hyper-dash',
+          consumable: false,
+          disableTime: 3,
           params: {
             section: 0,
             position: { sx: 28, sy: 5, sz: 18 },
             phi: 0,
-            velocity: new Vector3(0, 0, 45),
+            velocity: new Vector3(0, 1, 35),
           },
           schedule: {
             spawnTime: 1,
