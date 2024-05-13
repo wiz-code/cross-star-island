@@ -62,6 +62,7 @@ class ScoreManager {
 
   clearScores() {
     this.scores.length = 0;
+    this.save();
   }
 
   getHighscore() {

@@ -33,10 +33,24 @@ const font = {
 
 const meta = new Map(Meta);
 
+const Progress = () => (
+  <Box
+    sx={{
+      position: 'absolute',
+      left: 'calc(50% - 24px)',
+      top: 'calc(50% - 24px)',
+    }}
+  >
+    <CircularProgress />
+  </Box>
+);
+
 const GameContainer = styled(Box)(({ theme }) => ({
   width: '100%',
   height: '100%',
+  position: 'absolute',
   overflow: 'clip',
+  zIndex: 100,
 }));
 
 const ScoreItem = styled(Box)(({ theme }) => ({
@@ -67,13 +81,13 @@ function DisplayTime() {
     return (
       <Box
         sx={{
-          color: '#fff',
-          textAlign: 'right',
-          fontSize: '2.5rem',
-          position: 'absolute',
-          fontFamily: font.monospaced,
+          width: 'fit-content',
+          position: 'relative',
           left: 'calc(50% - 50px)',
-          top: 0,
+
+          color: '#fff',
+          fontSize: '2.5rem',
+          fontFamily: font.monospaced,
         }}
       >
         {elapsedTime}
@@ -96,7 +110,12 @@ function DisplayScore() {
   const highscoreData = highscore != null ? `${highscore.value} ${highscore.distance}` : '--';
 
   return (
-    <>
+    <Box sx={{
+      width: '100%',
+      height: '80%',
+      position: 'relative',
+      top: '0%',
+    }}>
       <ScoreItem sx={{ top: '10%' }}>CLEAR BONUS</ScoreItem>
       <ScoreValue sx={{ top: '10%' }}>{data.bonus}</ScoreValue>
       <ScoreItem sx={{ top: '20%' }}>TIME</ScoreItem>
@@ -128,22 +147,24 @@ function DisplayScore() {
           </>
         ) : '--'}
       </ScoreValue>
-    </>
+    </Box>
   );
 }
 
-
-function Controls({ toggleFullScreen }) {
-  const { mode } = useSelector((state) => state.game);
+function Controls({ indexPath, toggleFullScreen, clearRecords }) {
+  const { mode, fps } = useSelector((state) => state.game);
   const { isFullscreen } = useSelector((state) => state.system);
   const dispatch = useDispatch();
   const navicate = useNavigate();
   const theme = useTheme();
 
   const jumpToTitlePage = useCallback(() => {
-    dispatch(gameActions.setMode('unstarted'));
-    navicate('/');
+    navicate(indexPath);
   }, []);
+
+  const visibleFPS = useCallback(() => {
+    dispatch(gameActions.visibleFPS(!fps));
+  }, [fps]);
 
   return (
     <Box
@@ -156,17 +177,23 @@ function Controls({ toggleFullScreen }) {
       }}
     >
       {mode === 'clear' ? (
-        <Button variant="contained" color="info" onClick={jumpToTitlePage}>タイトル画面に戻る</Button>
+        <Button variant="contained" size="small" color="info" onClick={jumpToTitlePage}>タイトル画面に戻る</Button>
       ): null}
-      <Button variant="outlined" onClick={toggleFullScreen}>
+      {mode === 'clear' ? (
+        <Button variant="outlined" size="small" color="error" onClick={clearRecords}>記録を全削除</Button>
+      ): null}
+      <Button variant="outlined" size="small" onClick={visibleFPS}>
+        {!fps ? 'FPSを表示' : 'FPSを非表示'}
+      </Button>
+      <Button variant="outlined" size="small" onClick={toggleFullScreen}>
         {!isFullscreen ? '全画面にする' : '全画面を解除'}
       </Button>
     </Box>
   );
 }
 
-function GamePage({ toggleFullScreen }) {
-  const { mode } = useSelector((state) => state.game);
+function GamePage({ indexPath, toggleFullScreen }) {
+  const { mode, fps } = useSelector((state) => state.game);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -180,6 +207,14 @@ function GamePage({ toggleFullScreen }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (game == null) {
+      return;
+    }
+
+    game.sceneManager.enableStats(fps);
+  }, [game, fps]);
+
   const setElapsedTime = useCallback((time) => {
     dispatch(gameActions.setElapsedTime(time));
   }, []);
@@ -191,6 +226,14 @@ function GamePage({ toggleFullScreen }) {
   const setMode = useCallback((mode) => {
     dispatch(gameActions.setMode(mode));
   }, []);
+
+  const clearRecords = useCallback(() => {
+    if (game == null) {
+      return;
+    }
+
+    game.scoreManager.clearScores()
+  }, [game]);
 
   useEffect(() => {
     if (game == null) {
@@ -212,6 +255,7 @@ function GamePage({ toggleFullScreen }) {
         // TODO: クリーンアップ処理
         game.stop();
         game.dispose();
+        setMode('unstarted');
         setGame(null);
       };
     }
@@ -219,21 +263,28 @@ function GamePage({ toggleFullScreen }) {
 
   return (
     <>
-      {mode === 'loading' ? (
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 'calc(50% - 24px)',
-            top: 'calc(50% - 24px)',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      ) : null}
       <GameContainer id="container" ref={ref} />
-      <DisplayTime />
-      <DisplayScore />
-      <Controls toggleFullScreen={toggleFullScreen} />
+      {mode === 'loading' ? <Progress /> : null}
+      <Box sx={{
+        pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
+        zIndex: 1000,
+        position: 'absolute',
+        top: 0,
+
+        '& > *': {
+          pointerEvents: 'auto',
+        },
+      }}>
+        <DisplayTime />
+        <DisplayScore />
+        <Controls
+          indexPath={indexPath}
+          toggleFullScreen={toggleFullScreen}
+          clearRecords={clearRecords}
+        />
+      </Box>
     </>
   );
 }

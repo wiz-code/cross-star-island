@@ -10,6 +10,7 @@ const gameSlice = createSlice({
     stageName: '',
     elapsedTime: 0,
     score: null,
+    fps: true,
   },
   reducers: {
     setElapsedTime: (state, action) => {
@@ -24,6 +25,9 @@ const gameSlice = createSlice({
     },
     setStage: (state, action) => {
       state.stageName = action.payload;
+    },
+    visibleFPS: (state, action) => {
+      state.fps = action.payload;
     },
   },
 });
