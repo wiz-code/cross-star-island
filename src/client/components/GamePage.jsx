@@ -50,6 +50,7 @@ const GameContainer = styled(Box)(({ theme }) => ({
   height: '100%',
   position: 'absolute',
   overflow: 'clip',
+  zIndex: 100,
 }));
 
 const ScoreItem = styled(Box)(({ theme }) => ({
@@ -264,7 +265,18 @@ function GamePage({ indexPath, toggleFullScreen }) {
     <>
       <GameContainer id="container" ref={ref} />
       {mode === 'loading' ? <Progress /> : null}
-      <Box sx={{ width: '100%', height: '100%', position: 'absolute', top: 0 }}>
+      <Box sx={{
+        pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
+        zIndex: 1000,
+        position: 'absolute',
+        top: 0,
+
+        '& > *': {
+          pointerEvents: 'auto',
+        },
+      }}>
         <DisplayTime />
         <DisplayScore />
         <Controls

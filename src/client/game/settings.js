@@ -20,7 +20,7 @@ export const Scene = {
   },
 };
 export const Camera = {
-  FOV: 70,
+  FOV: 60,//70
   Aspect: window.innerWidth / window.innerHeight,
   near: 1, //5
   far: 800, //2000
