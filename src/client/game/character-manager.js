@@ -37,12 +37,11 @@ class CharacterManager extends Publisher {
 
   #stunningRemainingTime = 0;
 
-  constructor(game, scene, camera, collidableManager, eventManager, worldOctree) {
+  constructor(game, scene, collidableManager, eventManager, worldOctree) {
     super();
 
     this.game = game;
     this.scene = scene;
-    this.camera = camera;
     this.collidableManager = collidableManager;
     this.eventManager = eventManager;
     this.worldOctree = worldOctree;
@@ -283,13 +282,14 @@ class CharacterManager extends Publisher {
 
     for (let i = 0; i < len; i += 1) {
       const character = list[i];
-      character.object.position.copy(character.collider.start);
+      character.updatePos();
+      /*character.object.position.copy(character.collider.start);
       character.object.position.y += character.halfHeight;
       character.object.rotation.y = character.rotation.phi;
 
       if (character.hasControls) {
         this.camera.position.copy(character.collider.end);
-      }
+      }*/
     }
   }
 }

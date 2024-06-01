@@ -231,6 +231,7 @@ class Character extends Entity {
     super(name, 'character');
 
     this.game = game;
+    this.camera = null;
 
     const dataMap = new Map(Characters);
 
@@ -361,8 +362,9 @@ class Character extends Entity {
     }
   }
 
-  setControls(controls) {
+  setControls(controls, camera) {
     this.hasControls = true;
+    this.camera = camera;
 
     controls.subscribe('input', this.input);
     controls.subscribe('setPovRot', this.setPovRot);
@@ -374,6 +376,7 @@ class Character extends Entity {
 
   unsetControls() {
     this.hasControls = false;
+    this.camera = null;
 
     this.publish('onUnsetControls');
     this.clear('onRotate');
@@ -539,10 +542,20 @@ class Character extends Entity {
     this.subscribe('tween', updater);
   }
 
-  update(deltaTime, elapsedTime, damping) {
-    if (!this.isAlive()) {
-      return;
+  updatePos() {
+    this.object.position.copy(this.collider.start);
+    this.object.position.y += this.halfHeight;
+    this.object.rotation.y = this.rotation.phi;
+
+    if (this.hasControls) {
+      this.camera.position.copy(this.collider.end);
     }
+  }
+
+  update(deltaTime, elapsedTime, damping) {
+    /*if (!this.isAlive()) {
+      return;
+    }*/
 
     // 自機の動き制御
     if (this.#states.has(States.stunning)) {
