@@ -553,10 +553,6 @@ class Character extends Entity {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    /*if (!this.isAlive()) {
-      return;
-    }*/
-
     // 自機の動き制御
     if (this.#states.has(States.stunning)) {
       this.#stunningElapsedTime += deltaTime;

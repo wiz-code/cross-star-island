@@ -53,10 +53,6 @@ class Collidable extends Entity {
   }
 
   update(deltaTime, elapsedTime, damping) {
-    /*if (!this.isAlive()) {
-      return;
-    }*/
-
     this.velocity.y -= World.gravity * deltaTime;
     this.velocity.addScaledVector(this.velocity, damping[this.type]);
 

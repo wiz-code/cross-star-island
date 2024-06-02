@@ -34,7 +34,6 @@ import {
 } from './data';
 import { handlers, Tweeners, Updaters } from './handlers';
 import CollidableManager from './collidable-manager';
-//import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import ModelManager from './model-manager';
 import EventManager from './event-manager';
@@ -187,23 +186,12 @@ class Game {
     );
     this.scene.field.add(this.light.ambient);
 
-    /*this.objectManager = new CollidableManager(
-      this.scene.field,
-      this.worldOctree,
-    );*/
     this.objectManager = new CollidableManager(
       this.game,
       this.scene.field,
       this.eventManager,
       this.worldOctree,
     );
-    /*this.characterManager = new CharacterManager(
-      this.game,
-      this.scene.field,
-      this.objectManager,
-      this.eventManager,
-      this.worldOctree,
-    );*/
 
     if (globalThis.gamepadIndex > -1) {
       this.controls = this.createGamepadControls(globalThis.gamepadIndex, indicators);
@@ -217,15 +205,6 @@ class Game {
 
     this.game.stage = null;
     this.player = null;
-
-    /*const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
-    this.game.states.set('playerName', playerName);
-    this.game.states.set('characterType', characterType);
-
-    this.player = this.createPlayer(playerName, characterType);
-    this.player.setControls(this.controls, this.camera.field);
-    this.characterManager.add(this.player);
-    this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });*/
 
     this.setMode('loading');
 
@@ -400,7 +379,6 @@ class Game {
   setStage(sname) {
     this.clearStage();
 
-    /////
     const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
     this.game.states.set('playerName', playerName);
     this.game.states.set('characterType', characterType);
@@ -408,9 +386,7 @@ class Game {
     this.player = this.createPlayer(playerName, characterType);
     this.player.setControls(this.controls, this.camera.field);
     this.objectManager.add(this.player);
-    //this.characterManager.add(this.player);
     this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
-    /////
 
     const stageName = sname ?? this.game.states.get('stageName');
     const stageData = this.game.methods.get('getStageData')?.(stageName);
@@ -444,7 +420,6 @@ class Game {
       });
       this.game.ammos.set(name, ammo);
       ammo.list.forEach((a) => this.objectManager.add(a));
-      //this.objectManager.add(ammo.list);
     });
 
     const { characters, obstacles, items } = stageData;
@@ -464,7 +439,6 @@ class Game {
           (gltf) => {
             this.modelManager.addModel(data.name, gltf);
             this.objectManager.add(character);
-            //this.characterManager.add(character);
 
             const { vrm } = gltf.userData;
 
@@ -509,7 +483,6 @@ class Game {
         );
       } else {
         this.objectManager.add(character);
-        //this.characterManager.add(character);
       }
 
       this.setCharacterWeapon(character, data.ammoType);
@@ -651,12 +624,6 @@ class Game {
 
   clearStage() {
     if (this.game.stage != null) {
-      /*this.characterManager.list.forEach((character) => {
-        if (character !== this.player) {
-          this.characterManager.remve(character);
-        }
-      });*/
-      //this.characterManager.clearList();
       this.objectManager.clearList();
 
       this.scene.field.clear();
@@ -703,7 +670,6 @@ class Game {
     window.removeEventListener('gamepadconnected', this.onGamepadConnected);
     window.removeEventListener('gamepaddisconnected', this.onGamepadDisconnected);
 
-    //this.characterManager.dispose();
     this.objectManager.dispose();
     this.controls.dispose();
     this.scene.screen.traverse(disposeObject);
@@ -741,7 +707,6 @@ class Game {
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
       this.#elapsedTime += delta;
       this.controls.update(delta);
-      //this.characterManager.update(delta, this.#elapsedTime, damping);
       this.objectManager.update(delta, this.#elapsedTime, damping);
     }
 
