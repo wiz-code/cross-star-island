@@ -18,7 +18,6 @@ class Bullet extends Collidable {
       this.data.radius,
     );
     this.elapsedTime = 0;
-    this.owner = null;
 
     this.setAlive(false);
   }
@@ -26,7 +25,6 @@ class Bullet extends Collidable {
   setAlive(bool) {
     super.setAlive(bool);
     this.elapsedTime = 0;
-    this.owner = null;
   }
 
   update(deltaTime, elapsedTime, damping) {

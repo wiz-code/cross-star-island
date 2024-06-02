@@ -34,7 +34,6 @@ import {
 } from './data';
 import { handlers, Tweeners, Updaters } from './handlers';
 import CollidableManager from './collidable-manager';
-import CharacterManager from './character-manager';
 import SceneManager from './scene-manager';
 import ModelManager from './model-manager';
 import EventManager from './event-manager';
@@ -188,14 +187,8 @@ class Game {
     this.scene.field.add(this.light.ambient);
 
     this.objectManager = new CollidableManager(
-      this.scene.field,
-      this.worldOctree,
-    );
-    this.characterManager = new CharacterManager(
       this.game,
       this.scene.field,
-      this.camera.field,
-      this.objectManager,
       this.eventManager,
       this.worldOctree,
     );
@@ -211,15 +204,7 @@ class Game {
     }
 
     this.game.stage = null;
-
-    const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
-    this.game.states.set('playerName', playerName);
-    this.game.states.set('characterType', characterType);
-
-    this.player = this.createPlayer(playerName, characterType);
-    this.player.setControls(this.controls);
-    this.characterManager.add(this.player);
-    this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
+    this.player = null;
 
     this.setMode('loading');
 
@@ -232,7 +217,7 @@ class Game {
 
       this.player.unsetControls();
       this.controls = this.createGamepadControls(index, indicators);
-      this.player.setControls(this.controls);
+      this.player.setControls(this.controls, this.camera.field);
 
       const stageName = this.game.states.get('stageName');
       const stageData = this.game.methods.get('getStageData')?.(stageName);
@@ -250,7 +235,7 @@ class Game {
 
       if (this.cache.controls != null) {
         this.controls = this.cache.controls;
-        this.player.setControls(this.cache.controls);
+        this.player.setControls(this.cache.controls, this.camera.field);
       }
     };
 
@@ -394,6 +379,15 @@ class Game {
   setStage(sname) {
     this.clearStage();
 
+    const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
+    this.game.states.set('playerName', playerName);
+    this.game.states.set('characterType', characterType);
+
+    this.player = this.createPlayer(playerName, characterType);
+    this.player.setControls(this.controls, this.camera.field);
+    this.objectManager.add(this.player);
+    this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
+
     const stageName = sname ?? this.game.states.get('stageName');
     const stageData = this.game.methods.get('getStageData')?.(stageName);
 
@@ -425,7 +419,7 @@ class Game {
         }
       });
       this.game.ammos.set(name, ammo);
-      this.objectManager.add(ammo.list);
+      ammo.list.forEach((a) => this.objectManager.add(a));
     });
 
     const { characters, obstacles, items } = stageData;
@@ -444,7 +438,7 @@ class Game {
         character.model.then(
           (gltf) => {
             this.modelManager.addModel(data.name, gltf);
-            this.characterManager.add(character);
+            this.objectManager.add(character);
 
             const { vrm } = gltf.userData;
 
@@ -488,7 +482,7 @@ class Game {
           (error) => console.error(error),
         );
       } else {
-        this.characterManager.add(character);
+        this.objectManager.add(character);
       }
 
       this.setCharacterWeapon(character, data.ammoType);
@@ -630,12 +624,6 @@ class Game {
 
   clearStage() {
     if (this.game.stage != null) {
-      this.characterManager.list.forEach((character) => {
-        if (character !== this.player) {
-          this.characterManager.remve(character);
-        }
-      });
-
       this.objectManager.clearList();
 
       this.scene.field.clear();
@@ -682,7 +670,6 @@ class Game {
     window.removeEventListener('gamepadconnected', this.onGamepadConnected);
     window.removeEventListener('gamepaddisconnected', this.onGamepadDisconnected);
 
-    this.characterManager.dispose();
     this.objectManager.dispose();
     this.controls.dispose();
     this.scene.screen.traverse(disposeObject);
@@ -720,7 +707,6 @@ class Game {
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
       this.#elapsedTime += delta;
       this.controls.update(delta);
-      this.characterManager.update(delta, this.#elapsedTime, damping);
       this.objectManager.update(delta, this.#elapsedTime, damping);
     }
 
