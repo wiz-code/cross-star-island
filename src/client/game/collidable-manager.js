@@ -173,7 +173,7 @@ class CollidableManager extends Publisher {
     }
 
     this.sap.update();
-    const pairs = [...this.sap.pairs.entries()];
+    const pairs = this.sap.pairs;
 
     for (let i = 0, l = pairs.length; i < l; i += 1) {
       const [a1, a2] = pairs[i];
@@ -331,9 +331,9 @@ class CollidableManager extends Publisher {
           }
         }
       }
-    }//
+    }////
 
-    /*for (let i = 0; i < len; i += 1) {
+    /*for (let i = 0; i < len; i += 1) {////
       const a1 = list[i];
 
       if (a1.isAlive()) {
@@ -495,7 +495,7 @@ class CollidableManager extends Publisher {
           }
         }
       }
-    }*/
+    }*////
   }
 
   update(deltaTime, elapsedTime, damping) {

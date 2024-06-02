@@ -1,32 +1,60 @@
 class Box {
   constructor(minX, minY, minZ, maxX, maxY, maxZ) {
-    this.min = new Map([
-      ['x', minX],
-      ['y', minY],
-      ['z', minZ],
-    ]);
-    this.max = new Map([
-      ['x', maxX],
-      ['y', maxY],
-      ['z', maxZ],
-    ]);
+    this.min = [minX, minY, minZ];
+    this.max = [maxX, maxY, maxZ];
     this.object = null;
   }
 
-  overlaps(box) {
-    const minX1 = this.min.get('x').value;
-    const maxX1 = this.max.get('x').value;
-    const minY1 = this.min.get('y').value;
-    const maxY1 = this.max.get('y').value;
-    const minZ1 = this.min.get('z').value;
-    const maxZ1 = this.max.get('z').value;
+  overlapX(box) {
+    const minX1 = this.min[0].value;
+    const maxX1 = this.max[0].value;
+    const minX2 = box.min[0].value;
+    const maxX2 = box.max[0].value;
 
-    const minX2 = box.min.get('x').value;
-    const maxX2 = box.max.get('x').value;
-    const minY2 = box.min.get('y').value;
-    const maxY2 = box.max.get('y').value;
-    const minZ2 = box.min.get('z').value;
-    const maxZ2 = box.max.get('z').value;
+    return (
+      maxX1 > minX2 &&
+      minX1 < maxX2
+    );
+  }
+
+  overlapY(box) {
+    const minY1 = this.min[1].value;
+    const maxY1 = this.max[1].value;
+    const minY2 = box.min[1].value;
+    const maxY2 = box.max[1].value;
+
+    return (
+      maxY1 > minY2 &&
+      minY1 < maxY2
+    );
+  }
+
+  overlapZ(box) {
+    const minZ1 = this.min[2].value;
+    const maxZ1 = this.max[2].value;
+    const minZ2 = box.min[2].value;
+    const maxZ2 = box.max[2].value;
+
+    return (
+      maxZ1 > minZ2 &&
+      minZ1 < maxZ2
+    );
+  }
+
+  overlaps(box) {
+    const minX1 = this.min[0].value;
+    const maxX1 = this.max[0].value;
+    const minY1 = this.min[1].value;
+    const maxY1 = this.max[1].value;
+    const minZ1 = this.min[2].value;
+    const maxZ1 = this.max[2].value;
+
+    const minX2 = box.min[0].value;
+    const maxX2 = box.max[0].value;
+    const minY2 = box.min[1].value;
+    const maxY2 = box.max[1].value;
+    const minZ2 = box.min[2].value;
+    const maxZ2 = box.max[2].value;
 
     return (
       maxX1 > minX2 &&
