@@ -22,17 +22,9 @@ const insertionSort = (endPoints) => {
 class SweepAndPrune {
   constructor() {
     this.boxes = new Map();
-    this.endPoints = new Map([
-      ['x', []],
-      ['y', []],
-      ['z', []],
-    ]);
-    this.overlappings = new Map([
-      ['x', new Set()],
-      ['y', new Set()],
-      ['z', new Set()],
-    ]);
-    this.pairs = new Map();
+    this.endPoints = [[], [], []];
+    this.overlappings = [[], [], []];
+    this.pairs = [];
 
     this.onAdd = this.onAdd.bind(this);
     this.onRemove = this.onRemove.bind(this);
@@ -57,13 +49,13 @@ class SweepAndPrune {
     epMaxZ.box = box;
     this.boxes.set(object.id, box);
 
-    const endPointsX = this.endPoints.get('x');
+    const endPointsX = this.endPoints[0];
     endPointsX.push(epMinX, epMaxX);
 
-    const endPointsY = this.endPoints.get('y');
+    const endPointsY = this.endPoints[1];
     endPointsY.push(epMinY, epMaxY);
 
-    const endPointsZ = this.endPoints.get('z');
+    const endPointsZ = this.endPoints[2];
     endPointsZ.push(epMinZ, epMaxZ);
 
     insertionSort(endPointsX);
@@ -76,51 +68,58 @@ class SweepAndPrune {
   updateObject(id, bb) {
     const box = this.boxes.get(id);
 
-    const epMinX = box.min.get('x');
-    const epMaxX = box.max.get('x');
+    const epMinX = box.min[0];
+    const epMaxX = box.max[0];
     epMinX.value = bb.min.x;
     epMaxX.value = bb.max.x;
 
-    const epMinY = box.min.get('y');
-    const epMaxY = box.max.get('y');
+    const epMinY = box.min[1];
+    const epMaxY = box.max[1];
     epMinY.value = bb.min.y;
     epMaxY.value = bb.max.y;
 
-    const epMinZ = box.min.get('z');
-    const epMaxZ = box.max.get('z');
+    const epMinZ = box.min[2];
+    const epMaxZ = box.max[2];
     epMinZ.value = bb.min.z;
     epMaxZ.value = bb.max.z;
   }
 
   update() {
-    this.pairs.clear();
-    const endPointsX = this.endPoints.get('x');
-    //const endPointsY = this.endPoints.get('y');
-    //const endPointsZ = this.endPoints.get('z');
+    this.pairs.length = 0;
+    const endPointsX = this.endPoints[0];
+    //const endPointsY = this.endPoints[1];
+    //const endPointsZ = this.endPoints[2];
 
     insertionSort(endPointsX);
     //insertionSort(endPointsY);
     //insertionSort(endPointsZ);
 
-    const overlappingsX = this.overlappings.get('x');
+    const [overlappingsX] = this.overlappings;
 
     for (let i = 0, l = endPointsX.length; i < l; i += 1) {
       const endPointX = endPointsX[i];
+      const object = endPointX.box.object;
+
+      if (!object.isAlive()) {
+        continue;
+      }
 
       if (endPointX.isMin) {
-        const overlappings = [...overlappingsX.keys()];
-
-        for (let j = 0, m = overlappings.length; j < m; j += 1) {
-          const box = overlappings[j];
+        for (let j = 0, m = overlappingsX.length; j < m; j += 1) {
+          const box = overlappingsX[j];
 
           if (endPointX.box.overlaps(box)) {
-            this.pairs.set(endPointX.box.object, box.object);
+            this.pairs.push([endPointX.box.object, box.object]);
           }
         }
 
-        overlappingsX.add(endPointX.box);
+        overlappingsX.push(endPointX.box);
       } else {
-        overlappingsX.delete(endPointX.box);
+        const index = overlappingsX.indexOf(endPointX.box);
+
+        if (index !== -1) {
+          overlappingsX.splice(index, 1);
+        }
       }
     }
   }
@@ -128,9 +127,9 @@ class SweepAndPrune {
   removeObject(object) {
     const box = this.boxes.get(object.id);
 
-    this.endPoints.forEach((endPoints, key) => {
+    this.endPoints.forEach((endPoints, index) => {
       const filtered = endPoints.filter((endPoint) => endPoint.box !== box);
-      this.endPoints.set(key, filtered);
+      this.endPoints[index] = filtered;
     });
 
     this.boxes.delete(object.id);

@@ -13,8 +13,9 @@ class Bullet extends Collidable {
     this.setObject(object);
 
     this.index = index;
+    const distributed = -this.index * this.data.radius * 2 - 1000;
     this.collider.set(
-      new Vector3(0, this.index * this.data.radius * 2 - 1000, 0),
+      new Vector3(distributed, distributed, distributed),
       this.data.radius,
     );
     this.elapsedTime = 0;
