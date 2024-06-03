@@ -23,8 +23,8 @@ class SweepAndPrune {
   constructor() {
     this.boxes = new Map();
     this.endPoints = [[], [], []];
-    this.overlappings = [[], [], []];
-    this.pairs = [];
+    this.overlappings = [new Set(), new Set(), new Set()];
+    this.pairs = new Set();
 
     this.onAdd = this.onAdd.bind(this);
     this.onRemove = this.onRemove.bind(this);
@@ -49,18 +49,14 @@ class SweepAndPrune {
     epMaxZ.box = box;
     this.boxes.set(object.id, box);
 
-    const endPointsX = this.endPoints[0];
+    const [endPointsX, endPointsY, endPointsZ] = this.endPoints;
     endPointsX.push(epMinX, epMaxX);
-
-    const endPointsY = this.endPoints[1];
     endPointsY.push(epMinY, epMaxY);
-
-    const endPointsZ = this.endPoints[2];
     endPointsZ.push(epMinZ, epMaxZ);
 
     insertionSort(endPointsX);
-    //insertionSort(endPointsY);
-    //insertionSort(endPointsZ);
+    insertionSort(endPointsY);
+    insertionSort(endPointsZ);
 
     return box;
   }
@@ -85,40 +81,94 @@ class SweepAndPrune {
   }
 
   update() {
-    this.pairs.length = 0;
-    const endPointsX = this.endPoints[0];
-    //const endPointsY = this.endPoints[1];
-    //const endPointsZ = this.endPoints[2];
+    this.pairs.clear();
+    const [endPointsX, endPointsY, endPointsZ] = this.endPoints;
 
     insertionSort(endPointsX);
-    //insertionSort(endPointsY);
-    //insertionSort(endPointsZ);
+    insertionSort(endPointsY);
+    insertionSort(endPointsZ);
 
-    const [overlappingsX] = this.overlappings;
+    const [overlappingsX, overlappingsY, overlappingsZ] = this.overlappings;
+    const pairsX = [];
+    const pairsY = [];
+    const pairsZ = [];
 
     for (let i = 0, l = endPointsX.length; i < l; i += 1) {
       const endPointX = endPointsX[i];
-      const object = endPointX.box.object;
 
-      if (!object.isAlive()) {
-        continue;
+      if (endPointX.box.object.isAlive()) {
+        if (endPointX.isMin) {
+          for (const box of overlappingsX) {
+            if (endPointX.box.overlapX(box)) {
+              pairsX.push(endPointX.box, box);
+            }
+          }
+
+          overlappingsX.add(endPointX.box);
+        } else {
+          overlappingsX.delete(endPointX.box);
+        }
       }
 
-      if (endPointX.isMin) {
-        for (let j = 0, m = overlappingsX.length; j < m; j += 1) {
-          const box = overlappingsX[j];
+      const endPointY = endPointsY[i];
 
-          if (endPointX.box.overlaps(box)) {
-            this.pairs.push([endPointX.box.object, box.object]);
+      if (endPointY.box.object.isAlive()) {
+        if (endPointY.isMin) {
+          for (const box of overlappingsY) {
+            if (endPointY.box.overlapY(box)) {
+              pairsY.push(endPointY.box, box);
+            }
           }
+
+          overlappingsY.add(endPointY.box);
+        } else {
+          overlappingsY.delete(endPointY.box);
         }
+      }
 
-        overlappingsX.push(endPointX.box);
-      } else {
-        const index = overlappingsX.indexOf(endPointX.box);
+      const endPointZ = endPointsZ[i];
 
-        if (index !== -1) {
-          overlappingsX.splice(index, 1);
+      if (endPointZ.box.object.isAlive()) {
+        if (endPointZ.isMin) {
+          for (const box of overlappingsZ) {
+            if (endPointZ.box.overlapZ(box)) {
+              pairsZ.push(endPointZ.box, box);
+            }
+          }
+
+          overlappingsZ.add(endPointZ.box);
+        } else {
+          overlappingsZ.delete(endPointZ.box);
+        }
+      }
+    }
+
+    for (let i = 0, l = pairsX.length; i < l; i += 2) {
+      const boxX1 = pairsX[i];
+      const boxX2 = pairsX[i + 1];
+
+      for (let j = 0, m = pairsY.length; j < m; j += 2) {
+        const boxY1 = pairsY[j];
+        const boxY2 = pairsY[j + 1];
+
+        if (
+          (boxX1 === boxY1 && boxX2 === boxY2) ||
+          (boxX2 === boxY1 && boxX1 === boxY2)
+        ) {
+          for (let k = 0, n = pairsZ.length; k < n; k += 2) {
+            const boxZ1 = pairsZ[k];
+            const boxZ2 = pairsZ[k + 1];
+
+            if (
+              (boxX1 === boxZ1 && boxX2 === boxZ2) ||
+              (boxX2 === boxZ1 && boxX1 === boxZ2)
+            ) {
+              this.pairs.add([boxX1.object, boxX2.object]);
+              break;
+            }
+          }
+
+          break;
         }
       }
     }
