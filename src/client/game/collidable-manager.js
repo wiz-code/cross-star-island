@@ -173,11 +173,8 @@ class CollidableManager extends Publisher {
     }
 
     this.sap.update();
-    const pairs = this.sap.pairs;
 
-    for (let i = 0, l = pairs.length; i < l; i += 1) {
-      const [a1, a2] = pairs[i];
-
+    for (const [a1, a2] of this.sap.pairs) {
       if (a1.isAlive() && a2.isAlive()) {
         if (a1.type === 'character' && a2.type === 'character') {
           const a1Center = a1.collider.getCenter(this.#vecA);
@@ -192,8 +189,8 @@ class CollidableManager extends Publisher {
             a2Center,
           ];
 
-          for (let j = 0, m = colliders.length; j < m; j += 1) {
-            const point = colliders[j];
+          for (let i = 0, l = colliders.length; i < l; i += 1) {
+            const point = colliders[i];
             const d2 = point.distanceToSquared(a1Center);
 
             if (d2 < r2) {
@@ -246,8 +243,8 @@ class CollidableManager extends Publisher {
             cCenter,
           ];
 
-          for (let j = 0, m = colliders.length; j < m; j += 1) {
-            const point = colliders[j];
+          for (let i = 0, l = colliders.length; i < l; i += 1) {
+            const point = colliders[i];
             const d2 = point.distanceToSquared(oCenter);
 
             if (d2 < r2) {
