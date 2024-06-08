@@ -106,9 +106,9 @@ export const World = {
     ground: -6, //6//4
     air: -0.6, //0.6, //0.4
     spin: 6,
-    ammo: 1.2,
-    obstacle: 0.1,
-    item: 0.1,
+    ammo: -1.2,
+    obstacle: -0.1,
+    item: -0.1,
   },
   collisionShock: 0.8,
   pointSize: 2, //10
