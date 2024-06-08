@@ -99,6 +99,8 @@ class Character extends Entity {
 
   #urgencyElapsedTime = 0;
 
+  #urgencyDuration = 0;
+
   #momentum = 0;
 
   #turnElapsedTime = 0;
@@ -442,12 +444,12 @@ class Character extends Entity {
   }
 
   rotate(deltaTime, direction, value = 1) {
-    const { urgencyTurn, turnLagTime, urgencyDuration } = Controls;
+    const { urgencyTurn, turnLagTime } = Controls;
     const { turnSpeed } = this.data;
 
     if (this.#states.has(States.urgency)) {
-      const t0 = (this.#urgencyElapsedTime - deltaTime) / urgencyDuration;
-      const t1 = this.#urgencyElapsedTime / urgencyDuration;
+      const t0 = (this.#urgencyElapsedTime - deltaTime) / this.#urgencyDuration;
+      const t1 = this.#urgencyElapsedTime / this.#urgencyDuration;
       const r0 = direction * urgencyTurn * easeOutQuad(t0);
       const r1 = direction * urgencyTurn * easeOutQuad(t1);
 
@@ -534,6 +536,16 @@ class Character extends Entity {
         this.#states.add(States.urgency);
         this.#urgencyElapsedTime = 0;
 
+        if (
+          this.#urgencyAction === Actions.quickTurnLeft ||
+          this.#urgencyAction === Actions.quickTurnRight
+        ) {
+          this.#urgencyDuration = Controls.urgencyTurnDuration;
+        } else {
+          this.#urgencyDuration = Controls.urgencyDuration;
+        }
+
+
         if (this.hasControls && this.game.methods.has('play-sound')) {
           const playSound = this.game.methods.get('play-sound');
           playSound('dash');
@@ -586,7 +598,7 @@ class Character extends Entity {
     if (this.#states.has(States.urgency)) {
       this.#urgencyElapsedTime += deltaTime;
 
-      if (Controls.urgencyDuration > this.#urgencyElapsedTime) {
+      if (this.#urgencyDuration > this.#urgencyElapsedTime) {
         if (this.#urgencyAction === Actions.quickMoveForward) {
           this.moveForward(deltaTime, States.urgency);
         } else if (this.#urgencyAction === Actions.quickMoveBackward) {
@@ -608,13 +620,14 @@ class Character extends Entity {
           this.#urgencyAction === Actions.quickTurnLeft ||
           this.#urgencyAction === Actions.quickTurnRight
         ) {
-          this.#stunningDuration = Controls.stunningDuration * 0.5;
+          this.#stunningDuration = Controls.stunningTurnDuration;
         } else {
           this.#stunningDuration = Controls.stunningDuration;
         }
 
         this.#states.delete(States.urgency);
         this.#urgencyElapsedTime = 0;
+        this.#urgencyDuration = 0;
         this.#urgencyAction = -1;
       }
     } else {

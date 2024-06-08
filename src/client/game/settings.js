@@ -82,7 +82,10 @@ export const Controls = {
   stickSpeed: 8,
 
   urgencyDuration: 0.2,
-  stunningDuration: 0.4,
+  stunningDuration: 0.3,
+
+  urgencyTurnDuration: 0.4,
+  stunningTurnDuration: 0.1,
 
   turnLagTime: 1,
   urgencyTurn: 180 / 360 * PI * 2, // (PI * 17.5) / 6, // PI * 2,
