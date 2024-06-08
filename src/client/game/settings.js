@@ -84,6 +84,9 @@ export const Controls = {
   urgencyDuration: 0.2,
   stunningDuration: 0.4,
 
+  turnLagTime: 1,
+  urgencyTurn: 180 / 360 * PI * 2, // (PI * 17.5) / 6, // PI * 2,
+
   inputDuration: 120,
 
   wheelSpeed: 3,
@@ -97,8 +100,8 @@ export const World = {
   resistance: 4,
   airResistance: 1,
   Resistance: {
-    ground: 6, //4
-    air: 0.6, //0.4
+    ground: -6, //6//4
+    air: -0.6, //0.6, //0.4
     spin: 6,
     ammo: 1.2,
     obstacle: 0.1,

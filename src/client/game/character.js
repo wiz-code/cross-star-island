@@ -35,13 +35,13 @@ const addDamping = (component, damping, minValue) => {
   let value = component;
 
   if (value >= 0) {
-    value += damping;
+    value -= damping;
 
     if (value < minValue) {
       value = 0;
     }
   } else {
-    value -= damping;
+    value += damping;
 
     if (value >= -minValue) {
       value = 0;
@@ -51,14 +51,12 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 
-let id = 0;
-
-function genId() {
-  id += 1;
-  return id;
-}
+const quickTurnDamping = (rotateComponent, elapsedTime) => {
+  elapsedTime / Controls.stunningDuration;
+};
 
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
+const easeInQuad = (x) => x * x;
 
 class Character extends Entity {
   #dir = new Vector3(0, 0, -1);
@@ -444,23 +442,31 @@ class Character extends Entity {
   }
 
   rotate(deltaTime, direction, value = 1) {
+    const { urgencyTurn, turnLagTime, urgencyDuration } = Controls;
+    const { turnSpeed } = this.data;
+
     if (this.#states.has(States.urgency)) {
-      this.#rotateComponent = this.data.urgencyTurn * deltaTime;
+      const t0 = (this.#urgencyElapsedTime - deltaTime) / urgencyDuration;
+      const t1 = this.#urgencyElapsedTime / urgencyDuration;
+      const r0 = direction * urgencyTurn * easeOutQuad(t0);
+      const r1 = direction * urgencyTurn * easeOutQuad(t1);
+
+      this.#rotateComponent = r1 - r0;
     } else {
       if (this.#momentum === direction) {
         this.#turnElapsedTime += deltaTime;
-
-        if (this.#turnElapsedTime > 1) {
-          this.#turnElapsedTime = 1;
-        }
       } else {
         this.#turnElapsedTime = deltaTime;
         this.#momentum = direction;
       }
 
-      const turnSpeed = this.#momentum * this.data.turnSpeed * value;
-      this.#rotateComponent =
-        turnSpeed * deltaTime * easeOutQuad(this.#turnElapsedTime);
+      if (this.#turnElapsedTime > turnLagTime) {
+        this.#turnElapsedTime = turnLagTime;
+      }
+
+      const progress = this.#turnElapsedTime / turnLagTime;
+      const speed = this.#momentum * turnSpeed * value;
+      this.#rotateComponent = speed * deltaTime * easeOutQuad(progress);
     }
   }
 
@@ -586,22 +592,30 @@ class Character extends Entity {
         } else if (this.#urgencyAction === Actions.quickMoveBackward) {
           this.moveForward(-deltaTime, States.urgency);
         } else if (this.#urgencyAction === Actions.quickTurnLeft) {
-          this.rotate(deltaTime);
+          this.rotate(deltaTime, 1);
         } else if (this.#urgencyAction === Actions.quickTurnRight) {
-          this.rotate(-deltaTime);
+          this.rotate(deltaTime, -1);
         } else if (this.#urgencyAction === Actions.quickMoveLeft) {
           this.moveSide(-deltaTime, States.urgency);
         } else if (this.#urgencyAction === Actions.quickMoveRight) {
           this.moveSide(deltaTime, States.urgency);
         }
       } else {
+        this.#states.add(States.stunning);
+        this.#stunningElapsedTime = 0;
+
+        if (
+          this.#urgencyAction === Actions.quickTurnLeft ||
+          this.#urgencyAction === Actions.quickTurnRight
+        ) {
+          this.#stunningDuration = Controls.stunningDuration * 0.5;
+        } else {
+          this.#stunningDuration = Controls.stunningDuration;
+        }
+
         this.#states.delete(States.urgency);
         this.#urgencyElapsedTime = 0;
         this.#urgencyAction = -1;
-
-        this.#states.add(States.stunning);
-        this.#stunningElapsedTime = 0;
-        this.#stunningDuration = Controls.stunningDuration;
       }
     } else {
       if (this.#inputs.has(Actions.rotateLeft)) {
@@ -647,11 +661,13 @@ class Character extends Entity {
         this.publish('onRotate', this.rotation.phi, this.#rotateComponent);
       }
 
-      this.#rotateComponent = addDamping(
-        this.#rotateComponent,
-        dampingCoef * damping.spin,
-        minRotateAngle,
-      );
+      if (!this.#states.has(States.urgency)) {
+        this.#rotateComponent = addDamping(
+          this.#rotateComponent,
+          dampingCoef * damping.spin,
+          minRotateAngle,
+        );
+      }
     }
 
     this.velocity.addScaledVector(this.velocity, deltaDamping);

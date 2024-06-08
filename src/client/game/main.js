@@ -55,7 +55,8 @@ const dampingData = {};
 const getDamping = (delta) => {
   for (let i = 0, l = resistances.length; i < l; i += 1) {
     const [key, value] = resistances[i];
-    const result = exp(-value * delta) - 1;
+    //const result = exp(-value * delta) - 1;
+    const result = value * delta;
     dampingData[key] = result;
   }
 
