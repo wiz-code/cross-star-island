@@ -256,13 +256,12 @@ export const Characters = [
 
       speed: 120, // 300,
       rotateSpeed: 2,
+
       // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
       turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
       sprint: 2.5,
       urgencyMove: 8,
 
-      // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: (PI * 17.5) / 6, // PI * 2,
       airSpeed: 50, // 100
       jumpPower: 120, // 350
 
@@ -294,8 +293,6 @@ export const Characters = [
       sprint: 2.5,
       urgencyMove: 8,
 
-      // 1秒間に5/4周する設定にしたいが、緊急行動解除後のスタン中に起こるスライド量が回転角度を狂わせてしまうため、スライド中の角度量を加味する必要がある
-      urgencyTurn: PI * 2,
       airSpeed: 40, //100,
       jumpPower: 150, //350,
 
