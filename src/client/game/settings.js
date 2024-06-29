@@ -2,12 +2,11 @@ import { VSMShadowMap, ACESFilmicToneMapping, Color } from 'three';
 
 const { PI } = Math;
 
-export const StepsPerFrame = 5;
-
 export const Game = {
   stepsPerFrame: 5,
   resizeDelayTime: 200,
   volume: 0.5,
+  EPS: 1e-6,
 };
 
 export const Scene = {
@@ -47,7 +46,7 @@ export const Light = {
 };
 
 export const Grid = {
-  color: 0x406080,
+  color: 0x4d7399, // 0x406080,
   Segments: {
     width: 20, // dev 20, prod 40
     height: 20, // dev 20, prod 40

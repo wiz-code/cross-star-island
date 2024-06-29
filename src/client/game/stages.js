@@ -1,5 +1,6 @@
-import { Vector3, Group, ArrowHelper } from 'three';
-
+import { BufferGeometry, Mesh, Vector3, Group, ArrowHelper, MeshBasicMaterial } from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { MeshBVH } from 'three-mesh-bvh';
 import { World } from './settings';
 
 import { createGrid, createFineGrid } from './grid';
@@ -8,10 +9,12 @@ import { createGround, createMaze, createCylinder } from './ground';
 const createStage = (stageData, texture) => {
   const { sections } = stageData;
   const stage = new Group();
+  const bvhList = [];
 
   for (let i = 0, l = sections.length; i < l; i += 1) {
     const section = sections[i];
     const block = new Group();
+    const bvhs = [];
 
     if (Array.isArray(section.grid)) {
       for (let j = 0, m = section.grid.length; j < m; j += 1) {
@@ -31,36 +34,33 @@ const createStage = (stageData, texture) => {
     if (Array.isArray(section.ground)) {
       for (let j = 0, m = section.ground.length; j < m; j += 1) {
         const data = section.ground[j];
-        const ground = createGround(data, texture);
-        block.add(ground);
+        const { object, bvh } = createGround(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
       }
     } else if (section.ground != null) {
-      const ground = createGround(section.ground, texture);
-      block.add(ground);
+      const { object, bvh } = createGround(section.ground, texture);
+      block.add(object);
+      bvhs.push(bvh);
     }
 
     if (Array.isArray(section.maze)) {
-      const maze = createMaze(section.maze, texture);
-      block.add(maze);
-      /*for (let j = 0, m = section.maze.length; j < m; j += 1) {
-        const data = section.maze[j];
-        const maze = createMaze(data, texture);
-        block.add(maze);
-      }*/
-    } else if (section.maze != null) {
-      const maze = createMaze([section.maze], texture);
-      block.add(maze);
+      const { object, bvh } = createMaze(section.maze, texture);
+      block.add(object);
+      bvhs.push(bvh);
     }
 
     if (Array.isArray(section.cylinder)) {
       for (let j = 0, m = section.cylinder.length; j < m; j += 1) {
         const data = section.cylinder[j];
-        const cylinder = createCylinder(data, texture);
-        block.add(cylinder);
+        const { object, bvh } = createCylinder(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
       }
     } else if (section.cylinder != null) {
-      const sylinder = createCylinder(section.cylinder, texture);
-      block.add(sylinder);
+      const { object, bvh } = createCylinder(section.cylinder, texture);
+      block.add(object);
+      bvhs.push(bvh);
     }
 
     if (section.arrow != null) {
@@ -94,14 +94,41 @@ const createStage = (stageData, texture) => {
           offset.sy * spacing,
           offset.sz * spacing,
         );
+        bvhs.forEach((geom) => {
+          geom.translate(
+            offset.sx * spacing,
+            offset.sy * spacing,
+            offset.sz * spacing,
+          );
+        });
       } else {
         block.position.set(offset.x, offset.y, offset.z);
+        bvhs.forEach((geom) => {
+          geom.translate(
+            offset.x,
+            offset.y,
+            offset.z,
+          );
+        });
       }
     }
 
     stage.add(block);
+    bvhList.push(...bvhs);
   }
-  return stage;
+
+  const merged = mergeGeometries(bvhList);
+  const bvhMesh = new Mesh(
+    merged,
+    new MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      wireframe: true,
+    })
+  );
+  bvhMesh.boundsTree = new MeshBVH(merged);
+
+  return { terrain: stage, bvh: bvhMesh };
 };
 
 export default createStage;
