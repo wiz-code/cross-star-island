@@ -172,7 +172,7 @@ export const Ammos = [
 
       radius: 1.5, //6
       detail: 1,
-      numAmmo: 100, // dev 10, prod 50
+      numAmmo: 100,
 
       weight: 0.08,
       lifetime: 3,
@@ -202,7 +202,7 @@ export const Ammos = [
 
       radius: 1.5, //6
       detail: 1,
-      numAmmo: 50, // dev 10, prod 50
+      numAmmo: 50,
 
       weight: 0.08,
       lifetime: 3,

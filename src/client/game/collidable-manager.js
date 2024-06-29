@@ -1,28 +1,15 @@
-import { Box3, Vector3 } from 'three';
+import { Box3, Vector3, Sphere } from 'three';
+import { Capsule } from 'three/addons/math/Capsule.js';
 
-import { World } from './settings';
+import { Game, World } from './settings';
 import Publisher from './publisher';
 import SweepAndPrune from './sap';
+import { triangleCapsuleIntersect, triangleSphereIntersect, getCapsuleBoundingBox } from './utils';
 
 const { sqrt, cos, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
-
-const vecMin = new Vector3();
-const vecMax = new Vector3();
-
-const getCapsuleBoundingBox = (collider, box) => {
-  vecMin.x = collider.start.x - collider.radius;
-  vecMin.y = collider.start.y - collider.radius;
-  vecMin.z = collider.start.z - collider.radius;
-  vecMax.x = collider.end.x + collider.radius;
-  vecMax.y = collider.end.y + collider.radius;
-  vecMax.z = collider.end.z + collider.radius;
-  box.min = vecMin;
-  box.max = vecMax;
-  return box;
-};
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();
@@ -37,13 +24,22 @@ class CollidableManager extends Publisher {
 
   #box = new Box3();
 
-  constructor(game, scene, eventManager, worldOctree) {
+  #capsule = new Capsule();
+
+  #sphere = new Sphere();
+
+  #v1 = new Vector3();
+
+  #v2 = new Vector3();
+
+  #v3 = new Vector3();
+
+  constructor(game, scene, eventManager) {
     super();
 
     this.game = game;
     this.scene = scene;
     this.eventManager = eventManager;
-    this.worldOctree = worldOctree;
     this.sap = new SweepAndPrune();
     this.list = new Set();
   }
@@ -121,15 +117,34 @@ class CollidableManager extends Publisher {
     const len = this.list.size;
 
     const playSound = this.game.methods.get('play-sound');
-    const { states } = this.game;
+    const { states, meshBVH: { boundsTree } } = this.game;
 
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
 
-      let result;
-
       if (collidable.type === 'character') {
-        const result = this.worldOctree.capsuleIntersect(collidable.collider);
+        let result = false;
+        this.#capsule.copy(collidable.collider);
+        getCapsuleBoundingBox(collidable.collider, this.#box);
+
+        boundsTree.shapecast({
+          intersectsBounds: (box) => box.intersectsBox(this.#box),
+          intersectsTriangle: (triangle) => {
+            const collision = triangleCapsuleIntersect(this.#capsule, triangle);
+
+            if (collision !== false) {
+              result = true;
+              this.#capsule.translate(collision.normal.multiplyScalar(collision.depth));
+            }
+          },
+        });
+
+        if (result) {
+          this.#v3.copy(this.#capsule.getCenter(this.#v1).sub(collidable.collider.getCenter(this.#v2)));
+    			const depth = this.#v3.length();
+          result = { normal: this.#v3.clone().normalize(), depth };
+        }
+
         collidable.setGrounded(false);
 
         if (result !== false) {
@@ -143,14 +158,35 @@ class CollidableManager extends Publisher {
             );
           }
 
-          collidable.collider.translate(
-            result.normal.multiplyScalar(result.depth),
-          );
+          if (result.depth >= Game.EPS) {
+            collidable.collider.translate(
+              result.normal.multiplyScalar(result.depth),
+            );
+          }
         }
-
-        getCapsuleBoundingBox(collidable.collider, this.#box);
       } else {
-        const result = this.worldOctree.sphereIntersect(collidable.collider);
+        let result = false;
+        this.#sphere.copy(collidable.collider);
+        collidable.collider.getBoundingBox(this.#box);
+
+        boundsTree.shapecast({
+          intersectsBounds: (box) => box.intersectsBox(this.#box),
+          intersectsTriangle: (triangle) => {
+            const collision = triangleSphereIntersect(this.#sphere, triangle);
+
+            if (collision !== false) {
+              result = true;
+              this.#sphere.center.add(collision.normal.multiplyScalar(collision.depth));
+            }
+          },
+        });
+
+        if (result) {
+          this.#v3.copy(this.#v1.copy(this.#sphere.center).sub(collidable.collider.center));
+          const depth = this.#v3.length();
+
+          result = { normal: this.#v3.clone().normalize(), depth };
+        }
 
         if (result !== false) {
           if (!collidable.isBounced()) {
@@ -165,11 +201,9 @@ class CollidableManager extends Publisher {
             result.normal.multiplyScalar(result.depth),
           );
         }
-
-        collidable.collider.getBoundingBox(this.#box);
       }
 
-      this.sap.updateObject(collidable.id, this.#box);
+      this.sap.updateObject(collidable);
     }
 
     this.sap.update();

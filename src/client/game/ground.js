@@ -84,6 +84,11 @@ export const createGround = (
     pointsVertices[j + 1] = vertices[j + 1] + World.pointSize / 2;
   }
 
+  geom.bvh = geom.surface.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
   geom.wireframe = new WireframeGeometry(geom.surface);
 
   geom.points = new BufferGeometry();
@@ -95,7 +100,6 @@ export const createGround = (
 
   mat.surface = new MeshBasicMaterial({
     color: Ground.color,
-    // side: DoubleSide,
   });
   mat.wireframe = new LineBasicMaterial({
     color: Ground.wireColor,
@@ -116,24 +120,35 @@ export const createGround = (
   mesh.points = new Points(geom.points, mat.points);
   mesh.points.name = 'points';
 
-  const ground = new Group();
-  ground.add(mesh.surface);
-  ground.add(mesh.wireframe);
-  ground.add(mesh.points);
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
 
   if (position.sx != null) {
-    ground.position.set(
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+    geom.bvh.translate(
       position.sx * spacing,
       position.sy * spacing,
       position.sz * spacing,
     );
   } else {
-    ground.position.set(position.x, position.y, position.z);
+    group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
   }
 
-  ground.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
-
-  return ground;
+  return { object: group, bvh: geom.bvh };
 };
 
 export const createMaze = (list, texture) => {
@@ -315,10 +330,15 @@ export const createMaze = (list, texture) => {
   mesh.surface.geometry.computeVertexNormals();
 
   const geom = {};
+  geom.bvh = mesh.surface.geometry.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
   geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
 
-  const vertices = mesh.surface.geometry.attributes.position.array.slice(0);
-  const normals = mesh.surface.geometry.attributes.normal.array.slice(0);
+  const vertices = mesh.surface.geometry.getAttribute('position').array.slice(0);
+  const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
 
   const newVertices = [];
   const vertexMap = new Map();
@@ -415,176 +435,8 @@ export const createMaze = (list, texture) => {
   group.add(mesh.wireframe);
   group.add(mesh.points);
 
-  return group;
+  return { object: group, bvh: geom.bvh };
 };
-
-
-/*export const createMaze = (
-  {
-    front = false,
-    back = false,
-    left = true,
-    right = true,
-    widthSegments = 10,
-    heightSegments = 10,
-    depthSegments = 10,
-    spacing = World.spacing,
-    position = { x: 0, y: 0, z: 0 },
-    rotation = { x: 0, y: 0, z: 0 },
-  },
-  texture,
-) => {
-  const geom = {};
-  const mat = {};
-  const mesh = {};
-
-  geom.box = new BoxGeometry(
-    spacing * widthSegments,
-    spacing * heightSegments,
-    spacing * depthSegments,
-    widthSegments,
-    heightSegments,
-    depthSegments,
-  );
-
-  let vertices = geom.box.getAttribute('position').array.slice(0);
-  const indices = geom.box.getIndex().array.slice(0);
-
-  for (let i = 0, l = indices.length; i < l; i += 3) {
-    const a = indices[i];
-    const b = indices[i + 1];
-    const c = indices[i + 2];
-    indices[i] = c;
-    indices[i + 1] = b;
-    indices[i + 2] = a;
-  }
-
-  geom.surface = new BufferGeometry();
-  geom.surface.setIndex(new BufferAttribute(indices, 1));
-  geom.surface.setAttribute('position', new BufferAttribute(vertices, 3));
-  geom.surface.computeVertexNormals();
-
-  mat.surface = new MeshBasicMaterial({
-    color: Ground.color,
-  });
-  mat.wireframe = new LineBasicMaterial({
-    color: Ground.wireColor,
-  });
-  mat.points = new PointsMaterial({
-    color: Ground.pointColor,
-    size: World.pointSize,
-    map: texture.point,
-    blending: NormalBlending,
-    alphaTest: 0.5,
-  });
-
-  mesh.surface = new Brush(geom.surface, mat.surface);
-  mesh.surface.updateMatrixWorld();
-
-  geom.plane1 = new PlaneGeometry(
-    spacing * widthSegments,
-    spacing * heightSegments,
-    widthSegments,
-    heightSegments,
-  );
-
-  geom.plane2 = new PlaneGeometry(
-    spacing * depthSegments,
-    spacing * heightSegments,
-    depthSegments,
-    heightSegments,
-  );
-
-  const evaluator = new Evaluator();
-  evaluator.attributes = ['position', 'normal'];
-
-  const x = floor(spacing * widthSegments * 0.5);
-  const z = floor(spacing * depthSegments * 0.5);
-
-  if (!front) {
-    const plane = geom.plane1.clone();
-    plane.translate(0, 0, -z);
-
-    const brush = new Brush(plane, mat.surface);
-    brush.updateMatrixWorld();
-
-    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
-  }
-
-  if (!back) {
-    const plane = geom.plane1.clone();
-    plane.rotateY(PI);
-    plane.translate(0, 0, z);
-
-    const brush = new Brush(plane, mat.surface);
-    brush.updateMatrixWorld();
-
-    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
-  }
-
-  if (!left) {
-    const plane = geom.plane2.clone();
-    plane.rotateY(PI * 0.5);
-    plane.translate(-x, 0, 0);
-
-    const brush = new Brush(plane, mat.surface);
-    brush.updateMatrixWorld();
-
-    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
-  }
-
-  if (!right) {
-    const plane = geom.plane2.clone();
-    plane.rotateY(-PI * 0.5);
-    plane.translate(x, 0, 0);
-
-    const brush = new Brush(plane, mat.surface);
-    brush.updateMatrixWorld();
-
-    mesh.surface = evaluator.evaluate(mesh.surface, brush, SUBTRACTION);
-  }
-
-  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
-
-  vertices = mesh.surface.geometry.attributes.position.array.slice(0);
-  geom.points = new BufferGeometry();
-  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-  geom.points.computeBoundingSphere();
-
-  const width = spacing * widthSegments;
-  const height = spacing * heightSegments;
-  const depth = spacing * depthSegments;
-  const scaleX = (width - World.pointSize) / width;
-  const scaleY = (height - World.pointSize) / height;
-  const scaleZ = (depth - World.pointSize) / depth;
-  geom.points.scale(scaleX, scaleY, scaleZ);
-
-  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
-  mesh.points = new Points(geom.points, mat.points);
-
-  mesh.surface.name = 'surface';
-  mesh.wireframe.name = 'wireframe';
-  mesh.points.name = 'points';
-
-  const group = new Group();
-  group.add(mesh.surface);
-  group.add(mesh.wireframe);
-  group.add(mesh.points);
-
-  if (position.sx != null) {
-    group.position.set(
-      position.sx * spacing,
-      position.sy * spacing,
-      position.sz * spacing,
-    );
-  } else {
-    group.position.set(position.x, position.y, position.z);
-  }
-
-  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
-
-  return group;
-};*/
 
 export const createCylinder = (
   {
@@ -610,6 +462,11 @@ export const createCylinder = (
     radialSegments,
     heightSegments,
   );
+  geom.bvh = geom.surface.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
   geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,
@@ -627,7 +484,6 @@ export const createCylinder = (
 
   mat.surface = new MeshBasicMaterial({
     color: Cylinder.color,
-    // side: DoubleSide,
   });
   mat.wireframe = new LineBasicMaterial({
     color: Cylinder.wireColor,
@@ -653,17 +509,27 @@ export const createCylinder = (
   group.add(mesh.wireframe);
   group.add(mesh.points);
 
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
+
   if (position.sx != null) {
     group.position.set(
       position.sx * spacing,
       position.sy * spacing,
       position.sz * spacing,
     );
+    geom.bvh.translate(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
   } else {
     group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
   }
 
-  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
-
-  return group;
+  return { object: group, bvh: geom.bvh };
 };

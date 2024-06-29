@@ -9,7 +9,6 @@ import {
   Clock,
   AmbientLight,
 } from 'three';
-import { Octree } from 'three/addons/math/Octree.js';
 import { debounce } from 'throttle-debounce';
 
 import {
@@ -70,7 +69,6 @@ class Game {
 
   constructor(width, height, callbacks) {
     this.clock = new Clock();
-    this.worldOctree = new Octree();
     this.callbacks = callbacks;
 
     this.data = {};
@@ -91,6 +89,7 @@ class Game {
     this.game.states.set('stageName', sname);
     this.game.methods = new Map(GameMethods);
     this.game.methods.forEach((value, key, map) => map.set(key, value.bind(this)));
+    this.game.meshBVH = null;
     this.game.ammos = new Map();
     this.game.characters = new Set();
     this.game.items = new Set();
@@ -191,7 +190,6 @@ class Game {
       this.game,
       this.scene.field,
       this.eventManager,
-      this.worldOctree,
     );
 
     if (globalThis.gamepadIndex > -1) {
@@ -393,9 +391,10 @@ class Game {
     const stageData = this.game.methods.get('getStageData')?.(stageName);
 
     this.game.stage = {};
-    const terrain = createStage(stageData, this.texture);
+    const { terrain, bvh } = createStage(stageData, this.texture);
+    this.game.meshBVH = bvh;
     this.scene.field.add(terrain);
-    this.worldOctree.fromGraphNode(terrain);
+    this.scene.field.add(bvh);
     this.game.stage.terrain = terrain;
 
     const ammoNames = Array.from(this.data.ammos.keys());
@@ -628,7 +627,7 @@ class Game {
       this.objectManager.clearList();
 
       this.scene.field.clear();
-      this.worldOctree.clear();
+      this.game.meshBVH = null;
       this.game.stage = null;
     }
 
