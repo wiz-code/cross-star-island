@@ -602,7 +602,7 @@ export const Stages = [
           name: 'checkpoint',
           params: {
             section: 2,
-            position: { sx: -16.5, sy: 3, sz: 4.2 },
+            position: { sx: -16.8, sy: 3, sz: 4.2 },
           },
           schedule: {
             spawnTime: 15,
