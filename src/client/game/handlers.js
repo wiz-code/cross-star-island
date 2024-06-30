@@ -8,8 +8,8 @@ import { addOffsetToPosition } from './utils';
 const { random } = Math;
 
 const getRandomInclusive = (min, max) => random() * (max - min) + min;
-
 const compositions = new Map(Compositions);
+const vec = new Vector3();
 
 export const handlers = [
   {
@@ -148,19 +148,31 @@ export const Tweeners = [
     'avoidance-1',
     (game, target, arg) => {
       const time = arg ?? 0;
-      let prevValue = 0;
+      let initX = 0;
+      let prevZ = 0;
       const offset = { z: 0 };
       const update = ({ z }) => {
-        target.collider.start.z += z - prevValue;
-        target.collider.end.copy(target.collider.start);
-        target.collider.end.y += target.data.height + target.data.radius;
-        prevValue = z;
+        let diffX = 0;
+        const x = target.collider.start.x;
+        const diffZ = z - prevZ;
+
+        if (initX !== 0) {
+          diffX = initX - x;
+        }
+
+        vec.set(diffX, 0, diffZ);
+        target.collider.translate(vec);
+
+        prevZ = z;
       };
 
       const group = new Group();
       const tween1 = new Tween(offset, group)
-        .to({ z: -7 }, 1000)
-        .onUpdate(update);
+        .to({ z: -7.5 }, 1000)
+        .onUpdate(update)
+        .onStart(() => {
+          initX = target.collider.start.x;
+        });
       const tween2 = new Tween(offset, group)
         .to({ z: 0 }, 1000)
         .onUpdate(update);

@@ -1,5 +1,7 @@
-import { Vector3, Plane, Line3, Ray, Quaternion } from 'three';
+import { Vector3, Plane, Line3, Ray, Sphere, Quaternion } from 'three';
 import { Game, World } from './settings';
+
+const { abs, sqrt } = Math;
 
 export const getVectorPos = (position) => {
   const vector = new Vector3();
@@ -65,7 +67,7 @@ export const triangleSphereIntersect = (() => {
   const v4 = new Vector3();
   const line = new Line3();
 
-  return (sphere, triangle, hasControls) => {
+  return (sphere, triangle) => {
     triangle.getPlane(plane);
 
     let depth = plane.distanceToSphere(sphere);
@@ -79,7 +81,7 @@ export const triangleSphereIntersect = (() => {
     if (triangle.containsPoint(v1)) {
   		return {
         normal: plane.normal.clone(),
-        depth: Math.abs(depth),
+        depth: abs(depth),
       };
   	}
 
@@ -109,7 +111,7 @@ export const triangleSphereIntersect = (() => {
       }
   	}
 
-    depth = sphere.radius - Math.sqrt(closest);
+    depth = sphere.radius - sqrt(closest);
 
     if (depth > 0 || depth < -sphere.radius) {
       return false;
@@ -137,7 +139,9 @@ export const triangleCapsuleIntersect = (() => {
   const intersection = new Vector3();
   const reference = new Vector3();
   const center = new Vector3();
+  const midpoint = new Vector3();
   const ray = new Ray();
+  const sphere = new Sphere();
 
   return (capsule, triangle) => {
     triangle.getPlane(plane);
@@ -150,18 +154,22 @@ export const triangleCapsuleIntersect = (() => {
     line1.set(capsule.start, capsule.end);
 
     if (planeNormal.dot(capsuleNormal) === 0) {
-      line1.closestPointToPoint(triangle.a, true, center);
+      let closest = 0;
+      const vertices = [triangle.a, triangle.b, triangle.c];
 
-      const depth = plane.distanceToPoint(center) - capsule.radius;
+    	for (let i = 0, l = vertices.length; i < l; i += 1) {
+        const vertex = vertices[i];
+    		line1.closestPointToPoint(vertex, true, center);
 
-      if (depth > 0 || depth < -capsule.radius) {
-        return false;
-      }
+        v1.subVectors(center, vertex);
+    		const d = v1.lengthSq();
 
-      return {
-        normal: planeNormal.clone(),
-        depth: Math.abs(depth),
-      };
+        if (i === 0 || d < closest) {
+          closest = d;
+        }
+    	}
+
+      return triangleSphereIntersect(sphere.set(center, capsule.radius), triangle);
     }
 
     ray.set(base, capsuleNormal);
@@ -177,7 +185,7 @@ export const triangleCapsuleIntersect = (() => {
 
       return {
         normal: planeNormal.clone(),
-        depth: Math.abs(depth),
+        depth: abs(depth),
       };
     } else {
       let closest = 0;
@@ -212,7 +220,7 @@ export const triangleCapsuleIntersect = (() => {
 
     return {
       normal: v3.clone().normalize(),
-      depth: Math.abs(depth),
+      depth: abs(depth),
     };
   };
 })();
@@ -228,8 +236,7 @@ export const getCapsuleBoundingBox = (() => {
     vecMax.x = collider.end.x + collider.radius;
     vecMax.y = collider.end.y + collider.radius;
     vecMax.z = collider.end.z + collider.radius;
-    box.min.copy(vecMin);
-    box.max.copy(vecMax);
+    box.set(vecMin, vecMax);
     return box;
   };
 })();
