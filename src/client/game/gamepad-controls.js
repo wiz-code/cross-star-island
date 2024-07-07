@@ -97,13 +97,13 @@ class GamepadControls extends Publisher {
     this.povSightLines = indicators.povSightLines;
     this.povIndicator = {
       horizontal: indicators.povIndicator.horizontal,
-      virtical: indicators.povIndicator.virtical,
+      vertical: indicators.povIndicator.vertical,
     };
     this.centerMark = indicators.centerMark;
 
-    this.virticalAngle = {
-      min: (-Controls.virticalAngleLimit / 360) * PI * 2,
-      max: (Controls.virticalAngleLimit / 360) * PI * 2,
+    this.verticalAngle = {
+      min: (-Controls.verticalAngleLimit / 360) * PI * 2,
+      max: (Controls.verticalAngleLimit / 360) * PI * 2,
     };
     this.horizontalAngle = {
       min: (-Controls.horizontalAngleLimit / 360) * PI * 2,
@@ -167,7 +167,7 @@ class GamepadControls extends Publisher {
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
 
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
-    this.povIndicator.virtical.position.setX(
+    this.povIndicator.vertical.position.setX(
       this.viewHalfX - Screen.sightPovSize / 2,
     );
     this.centerMark.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
@@ -369,7 +369,7 @@ class GamepadControls extends Publisher {
 
     // 自機の視点制御
     const { lookSpeed } = Controls;
-    const { virtical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
+    const { vertical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
 
     if (!this.#resetPointer) {
       if (this.povSight.material.color !== sightColor.pov) {
@@ -393,8 +393,8 @@ class GamepadControls extends Publisher {
       this.#rotation.phi -= radY * lookSpeed;
 
       this.#rotation.theta = max(
-        this.virticalAngle.min,
-        min(this.virticalAngle.max, this.#rotation.theta),
+        this.verticalAngle.min,
+        min(this.verticalAngle.max, this.#rotation.theta),
       );
       this.#rotation.phi = max(
         this.horizontalAngle.min,
@@ -402,7 +402,7 @@ class GamepadControls extends Publisher {
       );
 
       let posY =
-        (this.gaugeHalfY * this.#rotation.theta) / this.virticalAngle.max;
+        (this.gaugeHalfY * this.#rotation.theta) / this.verticalAngle.max;
 
       if (
         this.#rotation.phi === this.horizontalAngle.min ||
@@ -413,10 +413,10 @@ class GamepadControls extends Publisher {
         yawIndicator.material.color = indicatorColor.normal;
       }
 
-      if (this.#rotation.theta <= this.virticalAngle.min) {
+      if (this.#rotation.theta <= this.verticalAngle.min) {
         posY = -this.gaugeHalfY;
         pitchIndicator.material.color = indicatorColor.beyondFov;
-      } else if (this.#rotation.theta >= this.virticalAngle.max) {
+      } else if (this.#rotation.theta >= this.verticalAngle.max) {
         posY = this.gaugeHalfY;
         pitchIndicator.material.color = indicatorColor.beyondFov;
       } else if (pitchIndicator.material.color !== indicatorColor.normal) {
@@ -514,10 +514,10 @@ class GamepadControls extends Publisher {
       }
     }
 
-    if (this.virticalAngle.max <= this.#pitch) {
-      this.#pitch = this.virticalAngle.max;
-    } else if (this.virticalAngle.min >= this.#pitch) {
-      this.#pitch = this.virticalAngle.min;
+    if (this.verticalAngle.max <= this.#pitch) {
+      this.#pitch = this.verticalAngle.max;
+    } else if (this.verticalAngle.min >= this.#pitch) {
+      this.#pitch = this.verticalAngle.min;
     }
 
     this.publish('setPovRot', this.#rotation, this.#pitch);

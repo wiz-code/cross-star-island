@@ -44,19 +44,19 @@ export const createPovIndicator = (texture) => {
   const sprite = {};
 
   const material = {};
-  material.virtical = new SpriteMaterial({
+  material.vertical = new SpriteMaterial({
     color: 0xffffff,
-    map: texture.virticalIndicator,
+    map: texture.verticalIndicator,
   });
   material.direction = new SpriteMaterial({
     color: 0xffffff,
     map: texture.directionIndicator,
   });
 
-  sprite.virtical = new Sprite(material.virtical);
-  sprite.virtical.visible = false;
-  sprite.virtical.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
-  sprite.virtical.position.setZ(-10);
+  sprite.vertical = new Sprite(material.vertical);
+  sprite.vertical.visible = false;
+  sprite.vertical.scale.set(Screen.sightPovSize, Screen.sightPovSize, 0);
+  sprite.vertical.position.setZ(-10);
 
   sprite.horizontal = new Sprite(material.direction);
   sprite.horizontal.visible = false;

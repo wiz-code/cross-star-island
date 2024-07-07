@@ -9,8 +9,8 @@ import { triangleCapsuleIntersect, triangleSphereIntersect, getCapsuleBoundingBo
 
 const { sqrt, cos, PI } = Math;
 
-const RAD_30 = (30 / 360) * PI * 2;
-const COS_30 = cos(RAD_30);
+const RAD_45 = (45 / 360) * PI * 2;
+const COS_45 = cos(RAD_45);
 const PASSING_SCORE = 100;
 
 class CollidableManager extends Publisher {
@@ -191,7 +191,7 @@ class CollidableManager extends Publisher {
         collidable.setGrounded(false);
 
         if (result !== false) {
-          const onGround = result.normal.y > COS_30;
+          const onGround = result.normal.y > COS_45;
           collidable.setGrounded(onGround);
 
           if (!onGround) {

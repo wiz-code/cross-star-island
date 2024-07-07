@@ -193,7 +193,7 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
 }
 
 function GamePage({ indexPath, toggleFullScreen }) {
-  const { mode, fps } = useSelector((state) => state.game);
+  const { mode, fps, vrm } = useSelector((state) => state.game);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -245,7 +245,8 @@ function GamePage({ indexPath, toggleFullScreen }) {
           setMode,
           setScore,
           setElapsedTime,
-        }
+        },
+        { vrm }
       );
       setGame(gameObject);
     }
@@ -259,12 +260,12 @@ function GamePage({ indexPath, toggleFullScreen }) {
         setGame(null);
       };
     }
-  }, [game]);
+  }, [game, vrm]);
 
   return (
     <>
-      <GameContainer id="container" ref={ref} />
       {mode === 'loading' ? <Progress /> : null}
+      <GameContainer id="container" ref={ref} />
       <Box sx={{
         pointerEvents: 'none',
         width: '100%',

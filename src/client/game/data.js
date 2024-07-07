@@ -501,7 +501,7 @@ export const Stages = [
             spawnTime: 5,
           },
           params: {
-            position: { sx: 6, sy: 2, sz: 7 },
+            position: { sx: 5.9, sy: 2.5, sz: 7 },
             phi: (60 * PI * 2) / 360,
             theta: (-8 * PI * 2) / 360,
             section: 2,
@@ -535,7 +535,7 @@ export const Stages = [
             },
           ],
           params: {
-            position: { sx: -10, sy: 3, sz: 14 },
+            position: { sx: -10, sy: 3, sz: 13.9 },
             phi: (-6 * PI * 2) / 360,
             theta: (-12 * PI * 2) / 360,
             section: 2,
@@ -642,7 +642,7 @@ export const Stages = [
           name: 'weapon-upgrade',
           params: {
             section: 2,
-            position: { sx: -11, sy: -3, sz: 8 },
+            position: { sx: -11, sy: -2, sz: 6 },
           },
           schedule: {
             spawnTime: 5,

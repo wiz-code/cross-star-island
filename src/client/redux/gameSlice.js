@@ -11,6 +11,7 @@ const gameSlice = createSlice({
     elapsedTime: 0,
     score: null,
     fps: true,
+    vrm: true,
   },
   reducers: {
     setElapsedTime: (state, action) => {
@@ -28,6 +29,9 @@ const gameSlice = createSlice({
     },
     visibleFPS: (state, action) => {
       state.fps = action.payload;
+    },
+    toggleVRM: (state, action) => {
+      state.vrm = action.payload;
     },
   },
 });
