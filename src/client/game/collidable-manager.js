@@ -11,7 +11,7 @@ const { sqrt, cos, PI } = Math;
 
 const RAD_30 = (30 / 360) * PI * 2;
 const COS_30 = cos(RAD_30);
-const PASSING_SCORE = 10;
+const PASSING_SCORE = 100;
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();
@@ -39,6 +39,8 @@ class CollidableManager extends Publisher {
   #v2 = new Vector3();
 
   #v3 = new Vector3();
+
+  #vec = new Vector3();
 
   constructor(game, scene, eventManager) {
     super();
@@ -120,33 +122,36 @@ class CollidableManager extends Publisher {
 
   collisions() {
     const list = Array.from(this.list.keys());
-    const len = this.list.size;
 
     const playSound = this.game.methods.get('play-sound');
-    const { states, meshBVH } = this.game;
+    const { states, meshBVH, refitSet } = this.game;
+    const { geometry, boundsTree } = meshBVH;
+    const { userData: { movableBVH } } = geometry;
 
-    for (let i = 0; i < len; i += 1) {
+    for (let i = 0, l = this.list.size; i < l; i += 1) {
       const collidable = list[i];
+      const { type, collider, velocity } = collidable;
 
-      if (collidable.type === 'character') {
+      if (type === 'character') {
         let result = false;
-        
-        this.#capsule.copy(collidable.collider);
-        this.#capsule.getCenter(this.#center)
-        getCapsuleBoundingBox(collidable.collider, this.#box);
 
-        meshBVH.boundsTree.shapecast({
+        this.#capsule.copy(collider);
+        this.#capsule.getCenter(this.#center)
+        getCapsuleBoundingBox(collider, this.#box);
+
+        boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box.distanceToPoint(this.#center) - this.#capsule.radius;
+            return box.clampPoint(this.#center, this.#vec).distanceToSquared(this.#center);
+            //return box.distanceToPoint(this.#center);
           },
-          intersectsBounds: (box, isLeaf, score) => {
-            if (score < PASSING_SCORE) {
-              return box.intersectsBox(this.#box);
+          intersectsBounds: (box, isLeaf, score, depth, nodeIndex) => {
+            if (box.intersectsBox(this.#box)) {
+              return INTERSECTED;
             }
 
-            return false;
+            return NOT_INTERSECTED;
           },
-          intersectsTriangle: (triangle) => {
+          intersectsTriangle: (triangle, triangleIndex) => {
             const collision = triangleCapsuleIntersect(this.#capsule, triangle);
 
             if (collision !== false) {
@@ -156,10 +161,29 @@ class CollidableManager extends Publisher {
 
             return false;
           },
+          intersectsRange: (offset, count, contained, depth, nodeIndex) => {
+            for (let j = 0; j < count; j += 1) {
+              const i1 = (offset + j) * 3;
+              const vertexIndex = geometry.index.getX(i1);
+
+              for (const block of movableBVH.values()) {
+                const offsetEnd = block.offset + block.count;
+
+                if (
+                  block.offset <= vertexIndex &&
+                  vertexIndex <= offsetEnd
+                ) {
+                  refitSet.add(nodeIndex);
+                }
+              }
+            }
+          },
         });
 
         if (result) {
-          this.#v3.copy(this.#capsule.getCenter(this.#v1).sub(collidable.collider.getCenter(this.#v2)));
+          this.#v3.copy(
+            this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2))
+          );
     			const depth = this.#v3.length();
           result = { normal: this.#v3.clone().normalize(), depth };
         }
@@ -171,33 +195,34 @@ class CollidableManager extends Publisher {
           collidable.setGrounded(onGround);
 
           if (!onGround) {
-            collidable.velocity.addScaledVector(
+            velocity.addScaledVector(
               result.normal,
-              -result.normal.dot(collidable.velocity),
+              -result.normal.dot(velocity),
             );
           }
 
           if (result.depth >= Game.EPS) {
-            collidable.collider.translate(
+            collider.translate(
               result.normal.multiplyScalar(result.depth),
             );
           }
         }
       } else {
         let result = false;
-        this.#sphere.copy(collidable.collider);
-        collidable.collider.getBoundingBox(this.#box);
+        this.#sphere.copy(collider);
+        collider.getBoundingBox(this.#box);
 
-        meshBVH.boundsTree.shapecast({
+        boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box.distanceToPoint(this.#sphere.center) - this.#sphere.radius;
+            return box.clampPoint(this.#center, this.#vec).distanceToSquared(this.#center);
+            //return box.distanceToPoint(this.#sphere.center);
           },
           intersectsBounds: (box, isLeaf, score) => {
-            if (score < PASSING_SCORE) {
-              return box.intersectsBox(this.#box);
+            if (box.intersectsBox(this.#box)) {
+              return INTERSECTED;
             }
 
-            return false;
+            return NOT_INTERSECTED;
           },
           intersectsTriangle: (triangle) => {
             const collision = triangleSphereIntersect(this.#sphere, triangle);
@@ -212,7 +237,7 @@ class CollidableManager extends Publisher {
         });
 
         if (result) {
-          this.#v3.copy(this.#v1.copy(this.#sphere.center).sub(collidable.collider.center));
+          this.#v3.copy(this.#v1.copy(this.#sphere.center).sub(collider.center));
           const depth = this.#v3.length();
 
           result = { normal: this.#v3.clone().normalize(), depth };
@@ -223,11 +248,11 @@ class CollidableManager extends Publisher {
             collidable.setBounced(true);
           }
 
-          collidable.velocity.addScaledVector(
+          velocity.addScaledVector(
             result.normal,
-            -result.normal.dot(collidable.velocity) * 1.5,
+            -result.normal.dot(velocity) * 1.5,
           );
-          collidable.collider.center.add(
+          collider.center.add(
             result.normal.multiplyScalar(result.depth),
           );
         }

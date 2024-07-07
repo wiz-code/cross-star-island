@@ -55,6 +55,9 @@ const generateHeight = (width, height) => {
 
 export const createGround = (
   {
+    name = '',
+    movable = false,
+
     widthSegments = 10,
     depthSegments = 10,
     spacing = World.spacing,
@@ -88,6 +91,14 @@ export const createGround = (
   geom.bvh = geom.bvh.toNonIndexed();
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
 
   geom.wireframe = new WireframeGeometry(geom.surface);
 
@@ -148,6 +159,8 @@ export const createGround = (
     geom.bvh.translate(position.x, position.y, position.z);
   }
 
+  geom.bvh.userData.object = group;
+
   return { object: group, bvh: geom.bvh };
 };
 
@@ -172,7 +185,24 @@ export const createMaze = (list, texture) => {
   const evaluator = new Evaluator();
   evaluator.attributes = ['position', 'normal'];
 
+  let name = '', movable = false;
+
   for (let i = 0, l = list.length; i < l; i += 1) {
+    if (i === 0) {
+      const {
+        name: mazeName,
+        movable: mazeMovable,
+      } = list[i];
+
+      if (mazeName !== '') {
+        name = mazeName;
+      }
+
+      if (mazeMovable) {
+        movable = true;
+      }
+    }
+
     const {
       front = true,
       back = true,
@@ -185,6 +215,8 @@ export const createMaze = (list, texture) => {
       depthSegments = 10,
       position = { sx: 0, sy: 0, sz: 0 },
     } = list[i];
+
+
 
     // 前後の面
     const plane1 = new PlaneGeometry(
@@ -335,6 +367,14 @@ export const createMaze = (list, texture) => {
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
 
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
+
   geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
 
   const vertices = mesh.surface.geometry.getAttribute('position').array.slice(0);
@@ -435,11 +475,16 @@ export const createMaze = (list, texture) => {
   group.add(mesh.wireframe);
   group.add(mesh.points);
 
+  geom.bvh.userData.object = group;
+
   return { object: group, bvh: geom.bvh };
 };
 
 export const createCylinder = (
   {
+    name = '',
+    movable = false,
+
     radiusTop = 5,
     radiusBottom = 5,
     height = 10,
@@ -466,6 +511,14 @@ export const createCylinder = (
   geom.bvh = geom.bvh.toNonIndexed();
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
 
   geom.points = new CylinderGeometry(
     radiusTop,
@@ -530,6 +583,8 @@ export const createCylinder = (
     group.position.set(position.x, position.y, position.z);
     geom.bvh.translate(position.x, position.y, position.z);
   }
+
+  geom.bvh.userData.object = group;
 
   return { object: group, bvh: geom.bvh };
 };

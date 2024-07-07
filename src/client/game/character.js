@@ -554,11 +554,11 @@ class Character extends Entity {
     }
   }
 
-  addTweener(tweener, arg) {
+  /*addTweener(tweener, arg) {
     const tween = tweener(this, arg);
     const updater = tween.update.bind(tween);
     this.subscribe('tween', updater);
-  }
+  }*/
 
   updatePos() {
     this.object.position.copy(this.collider.start);

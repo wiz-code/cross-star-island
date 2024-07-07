@@ -1,6 +1,6 @@
-import { BufferGeometry, Mesh, Vector3, Group, ArrowHelper, MeshBasicMaterial } from 'three';
+import { BufferGeometry, Mesh, Box3, Vector3, Group, ArrowHelper, MeshBasicMaterial } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { MeshBVH } from 'three-mesh-bvh';
+import { MeshBVH, MeshBVHHelper } from 'three-mesh-bvh';
 import { World } from './settings';
 
 import { createGrid, createFineGrid } from './grid';
@@ -10,6 +10,8 @@ const createStage = (stageData, texture) => {
   const { sections } = stageData;
   const stage = new Group();
   const bvhList = [];
+  const movableBVH = new Map();
+  let totalCount = 0;
 
   for (let i = 0, l = sections.length; i < l; i += 1) {
     const section = sections[i];
@@ -63,27 +65,6 @@ const createStage = (stageData, texture) => {
       bvhs.push(bvh);
     }
 
-    if (section.arrow != null) {
-      let direction = new Vector3(0, 0, -1);
-
-      if (section.arrow.direction != null) {
-        direction = section.arrow.direction.normalize();
-      }
-
-      const position = section.arrow.position ?? new Vector3(0, 0, 0);
-      const length = section.arrow.length ?? 1;
-      const color = section.arrow.color ?? 0xffffff;
-      const arrow = new ArrowHelper(
-        direction,
-        position,
-        length,
-        color,
-        length * 0.6,
-        length * 0.2,
-      );
-      block.add(arrow);
-    }
-
     if (section.offset != null) {
       const { offset } = section;
 
@@ -113,11 +94,29 @@ const createStage = (stageData, texture) => {
       }
     }
 
+    bvhs.forEach((bvh) => {
+      const name = bvh.name !== '' ? bvh.name : bvh.id;
+      const count = bvh.getAttribute('position').count;
+
+      if (bvh.userData.movable) {
+        const data = {
+          object: bvh.userData.object,
+          offset: totalCount,
+          count,
+        };
+        movableBVH.set(name, data);
+      }
+
+      totalCount += count;
+    });
+
     stage.add(block);
     bvhList.push(...bvhs);
   }
 
   const merged = mergeGeometries(bvhList);
+  merged.userData.movableBVH = movableBVH;
+
   const bvhMesh = new Mesh(
     merged,
     new MeshBasicMaterial({
@@ -128,7 +127,9 @@ const createStage = (stageData, texture) => {
   );
   bvhMesh.boundsTree = new MeshBVH(merged);
 
-  return { terrain: stage, bvh: bvhMesh };
+  const helper = new MeshBVHHelper(bvhMesh.boundsTree, 8);
+
+  return { terrain: stage, bvh: bvhMesh, helper };
 };
 
 export default createStage;

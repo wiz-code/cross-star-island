@@ -10,6 +10,21 @@ const { random } = Math;
 const getRandomInclusive = (min, max) => random() * (max - min) + min;
 const compositions = new Map(Compositions);
 const vec = new Vector3();
+const vec2 = new Vector3();
+
+const clearStage = ({ states, methods }, c1, c2, punishment = false) => {
+  const playSound = methods.get('play-sound');
+  !punishment && playSound?.('girl-voice-1');
+  playSound?.('goal');
+
+  const time = states.get('time');
+  const falls = states.get('falls');
+  const hits = states.get('hits');
+  const pushAway = states.get('push-away');
+  const checkpointIndex = states.get('checkpointIndex');
+  const clear = methods.get('clear');
+  clear?.(time, falls, hits, pushAway, checkpointIndex, punishment);
+};
 
 export const handlers = [
   {
@@ -31,13 +46,18 @@ export const handlers = [
         const { offset } = stageData.sections[checkpointIndex];
         const position = addOffsetToPosition(checkpoint.position, offset);
 
-        character.velocity.copy(new Vector3());
+        character.velocity.set(0, 0, 0);
         character.setPosition(
           position,
           checkpoint.phi,
           checkpoint.theta,
         );
 
+        return;
+      }
+
+      if (character.name === 'girl-1') {
+        clearStage({ states, methods }, character, null, true);
         return;
       }
 
@@ -99,19 +119,7 @@ export const handlers = [
     eventName: 'collision',
     targetName: 'girl-1',
     once: true,
-    handler({ states, methods }, c1, c2) {
-      const playSound = methods.get('play-sound');
-      playSound?.('girl-voice-1');
-      playSound?.('goal');
-
-      const time = states.get('time');
-      const falls = states.get('falls');
-      const hits = states.get('hits');
-      const pushAway = states.get('push-away');
-      const checkpointIndex = states.get('checkpointIndex');
-      const clear = methods.get('clear');
-      clear?.(time, falls, hits, pushAway, checkpointIndex);
-    },
+    handler: clearStage,
   },
 ];
 
@@ -183,21 +191,132 @@ export const Tweeners = [
       return group;
     },
   ],
+  [
+    'avoidance-2',
+    (game, target, ...args) => {
+      const [
+        time = 0,
+        direction = 'x-axis',
+        to = -20,
+        duration = 2000,
+      ] = args;
+      const object = { value: 0 };
+      let prev = 0;
+
+      const update = ({ value }) => {
+        const delta = value - prev;
+
+        if (direction === 'x-axis') {
+          vec2.set(delta, 0, 0);
+        } else if (direction === 'z-axis') {
+          vec2.set(0, 0, delta);
+        }
+
+        target.collider.translate(vec2);
+        prev = value;
+      };
+
+      const group = new Group();
+      const tween1 = new Tween(object, group)
+        .to({ value: to }, duration)
+        .onUpdate(update);
+      const tween2 = new Tween(object, group)
+        .to({ value: 0 }, duration)
+        .onUpdate(update);
+
+      tween1.chain(tween2).start(time);
+      tween2.chain(tween1);
+
+      return group;
+    },
+  ],
+  [
+    'updown-move',
+    (game, target, ...args) => {
+      const [
+        time = 0,
+        direction = 'y-axis',
+        to = -20,
+        duration = 5000,
+      ] = args;
+      const { object: mesh, offset, count } = target.data;
+      const position = target.geometry.getAttribute('position');
+      const object = { value: 0 };
+
+      let prev = 0;
+
+      const update = ({ value }) => {
+        const delta = value - prev;
+
+        for (let i = 0; i < count; i += 1) {
+          const index = offset + i;
+
+          if (direction === 'y-axis') {
+            const posY = position.getY(index);
+            position.setY(index, posY + delta);
+          } else if (direction === 'x-axis') {
+            const posX = position.getX(index);
+            position.setX(index, posX + delta);
+          } else {
+            const posZ = position.getZ(index);
+            position.setZ(index, posZ + delta);
+          }
+        }
+
+        prev = value;
+        position.needsUpdate = true;
+
+        if (direction === 'y-axis') {
+          mesh.translateY(delta);
+        } else if (direction === 'x-axis') {
+          mesh.translateX(delta);
+        } else {
+          mesh.translateZ(delta);
+        }
+
+      };
+
+      const group = new Group();
+      const tween1 = new Tween(object, group)
+        .to({ value: to }, duration)
+        .onUpdate(update)
+        .onStart(() => {
+          //
+        });
+      const tween2 = new Tween(object, group)
+        .to({ value: 0 }, duration)
+        .onUpdate(update);
+
+      tween1.chain(tween2).start(time);
+      tween2.chain(tween1);
+
+      return group;
+    },
+  ],
 ];
 
 export const Updaters = [
   [
     'rolling-stone-1',
-    {
+    (game, target, deltaTime) => {
+      target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
+    },
+    /*{
       state: States.alive,
       update(game, target, deltaTime) {
         target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
       },
-    },
+    },*/
   ],
   [
     'item-ring-1',
-    {
+    (game, target, deltaTime) => {
+      const rotateSpeed = deltaTime * target.data.rotateSpeed;
+
+      target.object.rotation.y -= rotateSpeed;
+      target.object.rotation.z -= rotateSpeed * 2;
+    },
+    /*{
       state: States.alive,
       update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
@@ -205,11 +324,19 @@ export const Updaters = [
         target.object.rotation.y -= rotateSpeed;
         target.object.rotation.z -= rotateSpeed * 2;
       },
-    },
+    },*/
   ],
   [
     'item-ring-2',
-    {
+    (game, target, deltaTime) => {
+      const rotateSpeed = deltaTime * target.data.rotateSpeed;
+
+      if (target.object != null) {
+        const points = target.object.getObjectByName('points');
+        points.rotation.y -= deltaTime * target.data.rotateSpeed;
+      }
+    },
+    /*{
       state: States.alive,
       update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
@@ -219,11 +346,19 @@ export const Updaters = [
           points.rotation.y -= deltaTime * target.data.rotateSpeed;
         }
       },
-    },
+    },*/
   ],
   [
     'bullet-fire-1',
-    {
+    (game, target, deltaTime) => {
+      target.params.elapsedTime += deltaTime;
+
+      if (target.params.elapsedTime > target.params.fireInterval) {
+        target.params.elapsedTime = 0;
+        target.fire();
+      }
+    },
+    /*{
       state: States.alive,
       update(game, target, deltaTime) {
         target.params.elapsedTime += deltaTime;
@@ -233,11 +368,17 @@ export const Updaters = [
           target.fire();
         }
       },
-    },
+    },*/
   ],
   [
     'satellite-points',
-    {
+    (game, target, deltaTime) => {
+      if (target.object != null) {
+        const points = target.object.getObjectByName('points');
+        points.rotation.y -= deltaTime * target.data.rotateSpeed;
+      }
+    },
+    /*{
       state: States.alive,
       update(game, target, deltaTime) {
         if (target.object != null) {
@@ -245,6 +386,6 @@ export const Updaters = [
           points.rotation.y -= deltaTime * target.data.rotateSpeed;
         }
       },
-    },
+    },*/
   ],
 ];

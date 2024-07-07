@@ -98,7 +98,7 @@ export const Controls = {
 
 export const World = {
   oob: -240,
-  gravity: 300, //800
+  gravity: 300,
   resistance: 4,
   airResistance: 1,
   Resistance: {

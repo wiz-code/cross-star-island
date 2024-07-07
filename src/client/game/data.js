@@ -102,11 +102,11 @@ export const GameMethods = [
   ],
   [
     'clear',
-    function (time, falls, hits, pushAway, noCheckpoint) {
+    function (time, falls, hits, pushAway, noCheckpoint, punishment) {
       this.setMode('clear');
       this.stop();
 
-      const score = this.scoreManager.calcScore(time, falls, hits, pushAway, noCheckpoint);
+      const score = this.scoreManager.calcScore(time, falls, hits, pushAway, noCheckpoint, punishment);
       this.callbacks.setScore(score);
     },
   ],
@@ -428,7 +428,7 @@ export const Stages = [
           schedule: {
             spawnTime: 1,
           },
-          updaters: ['satellite-points'],
+          updaters: [{ name: 'satellite-points', state: States.alive }],
         },
         {
           name: 'enemy-1',
@@ -446,7 +446,10 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.4,
           },
-          updaters: ['bullet-fire-1', 'satellite-points'],
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
         },
         {
           name: 'enemy-2',
@@ -454,7 +457,7 @@ export const Stages = [
           ammoType: 'small-bullet',
           tweeners: [{ name: 'avoidance-1', state: States.alive }],
           schedule: {
-            spawnTime: 12,
+            spawnTime: 12.5,
           },
           params: {
             position: { sx: -24, sy: 3, sz: 4.2 },
@@ -464,7 +467,10 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.8,
           },
-          updaters: ['bullet-fire-1', 'satellite-points'],
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
         },
         {
           name: 'enemy-3',
@@ -482,7 +488,10 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 0.8,
           },
-          updaters: ['bullet-fire-1', 'satellite-points'],
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
         },
         {
           name: 'enemy-4',
@@ -499,7 +508,17 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          updaters: ['bullet-fire-1', 'satellite-points'],
+          tweeners: [
+            {
+              name: 'avoidance-2',
+              state: States.alive,
+              args: [5000, 'z-axis', 10, 2000],
+            },
+          ],
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
         },
         {
           name: 'enemy-5',
@@ -508,6 +527,13 @@ export const Stages = [
           schedule: {
             spawnTime: 5,
           },
+          tweeners: [
+            {
+              name: 'avoidance-2',
+              state: States.alive,
+              args: [5000, 'x-axis', 10, 2000],
+            },
+          ],
           params: {
             position: { sx: -10, sy: 3, sz: 14 },
             phi: (-6 * PI * 2) / 360,
@@ -516,7 +542,10 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          updaters: ['bullet-fire-1', 'satellite-points'],
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
         },
       ],
       obstacles: [
@@ -530,7 +559,7 @@ export const Stages = [
           schedule: {
             spawnTime: 0,
           },
-          updaters: ['rolling-stone-1'],
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
         {
           name: 'round-stone',
@@ -544,7 +573,7 @@ export const Stages = [
           schedule: {
             spawnTime: 4,
           },
-          updaters: ['rolling-stone-1'],
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
         {
           name: 'small-round-stone',
@@ -558,7 +587,7 @@ export const Stages = [
           schedule: {
             spawnTime: 2,
           },
-          updaters: ['rolling-stone-1'],
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
         {
           name: 'small-round-stone',
@@ -572,7 +601,7 @@ export const Stages = [
           schedule: {
             spawnTime: 6,
           },
-          updaters: ['rolling-stone-1'],
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
       ],
       items: [
@@ -585,7 +614,7 @@ export const Stages = [
           schedule: {
             spawnTime: 5,
           },
-          updaters: ['item-ring-1'],
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
         {
           name: 'checkpoint',
@@ -596,7 +625,7 @@ export const Stages = [
           schedule: {
             spawnTime: 10,
           },
-          updaters: ['item-ring-1'],
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
         {
           name: 'checkpoint',
@@ -607,7 +636,7 @@ export const Stages = [
           schedule: {
             spawnTime: 15,
           },
-          updaters: ['item-ring-1'],
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
         {
           name: 'weapon-upgrade',
@@ -618,7 +647,7 @@ export const Stages = [
           schedule: {
             spawnTime: 5,
           },
-          updaters: ['item-ring-1'],
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
         {
           name: 'hyper-dash',
@@ -633,7 +662,7 @@ export const Stages = [
           schedule: {
             spawnTime: 1,
           },
-          updaters: ['item-ring-2'],
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
         },
         {
           name: 'hyper-dash',
@@ -648,7 +677,7 @@ export const Stages = [
           schedule: {
             spawnTime: 1,
           },
-          updaters: ['item-ring-2'],
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
         },
         {
           name: 'hyper-dash',
@@ -663,7 +692,30 @@ export const Stages = [
           schedule: {
             spawnTime: 1,
           },
-          updaters: ['item-ring-2'],
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+      ],
+      movables: [
+        {
+          name: 'moving-platform-1',
+          params: {},
+          tweeners: [
+            { name: 'updown-move', state: States.alive, args: [0, 'y-axis', -60, 5000] },
+          ],
+        },
+        {
+          name: 'moving-platform-2',
+          params: {},
+          tweeners: [
+            { name: 'updown-move', state: States.alive, args: [5000, 'z-axis', 10, 2000] },
+          ],
+        },
+        {
+          name: 'moving-platform-3',
+          params: {},
+          tweeners: [
+            { name: 'updown-move', state: States.alive, args: [5000, 'x-axis', 10, 2000] },
+          ],
         },
       ],
       sections: [
@@ -824,6 +876,9 @@ export const Stages = [
               position: { sx: -5, sy: -0.3, sz: 4.8 },
             },
             {
+              name: 'moving-platform-1',
+              movable: true,
+
               radiusTop: 18,
               radiusBottom: 14,
               height: 4,
@@ -832,6 +887,9 @@ export const Stages = [
               position: { sx: -9, sy: -0.4, sz: 4.8 },
             },
             {
+              name: 'moving-platform-2',
+              movable: true,
+
               radiusTop: 12,
               radiusBottom: 9,
               height: 3,
@@ -840,6 +898,9 @@ export const Stages = [
               position: { sx: 6, sy: 1.2, sz: 7 },
             },
             {
+              name: 'moving-platform-3',
+              movable: true,
+
               radiusTop: 12,
               radiusBottom: 9,
               height: 3,
@@ -853,7 +914,7 @@ export const Stages = [
               height: 3,
               radialSegments: 7,
               heightSegments: 1,
-              position: { sx: -11, sy: -4, sz: 8 },
+              position: { sx: -11, sy: -4, sz: 6 },
             },
             {
               radiusTop: 15,

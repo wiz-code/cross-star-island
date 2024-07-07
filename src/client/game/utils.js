@@ -3,6 +3,23 @@ import { Game, World } from './settings';
 
 const { abs, sqrt } = Math;
 
+export const genId = (() => {
+  const id = {};
+
+  const closure = (type = 'id') => {
+    if (id[type] == null) {
+      id[type] = 0;
+    }
+
+    id[type] += 1;
+
+    const typedId = `${type}-${id[type]}`;
+    return typedId;
+  };
+
+  return closure;
+})();
+
 export const getVectorPos = (position) => {
   const vector = new Vector3();
 
@@ -67,16 +84,22 @@ export const triangleSphereIntersect = (() => {
   const v4 = new Vector3();
   const line = new Line3();
 
-  return (sphere, triangle) => {
-    triangle.getPlane(plane);
+  return (sphere, triangle, pl = null) => {
+    const { center, radius } = sphere;
+
+    if (pl == null) {
+      triangle.getPlane(plane);
+    } else {
+      plane.copy(pl);
+    }
 
     let depth = plane.distanceToSphere(sphere);
 
-    if (depth > 0 || depth < -sphere.radius) {
+    if (depth > 0 || depth < -radius) {
       return false;
     }
 
-    plane.projectPoint(sphere.center, v1);
+    plane.projectPoint(center, v1);
 
     if (triangle.containsPoint(v1)) {
   		return {
@@ -91,14 +114,14 @@ export const triangleSphereIntersect = (() => {
   		[triangle.c, triangle.a],
   	];
 
-    const r2 = sphere.radius * sphere.radius;
+    const r2 = radius * radius;
     let closest = 0;
 
   	for (let i = 0, l = lines.length; i < l; i += 1) {
   		line.set(lines[i][0], lines[i][1]);
-  		line.closestPointToPoint(sphere.center, true, v2);
+  		line.closestPointToPoint(center, true, v2);
 
-      v3.subVectors(sphere.center, v2);
+      v3.subVectors(center, v2);
 
   		const d = v3.lengthSq();
 
@@ -111,9 +134,9 @@ export const triangleSphereIntersect = (() => {
       }
   	}
 
-    depth = sphere.radius - sqrt(closest);
+    depth = radius - sqrt(closest);
 
-    if (depth > 0 || depth < -sphere.radius) {
+    if (depth > 0 || depth < -radius) {
       return false;
     }
 
@@ -144,14 +167,15 @@ export const triangleCapsuleIntersect = (() => {
   const sphere = new Sphere();
 
   return (capsule, triangle) => {
+    const { start, end, radius } = capsule;
     triangle.getPlane(plane);
 
-    capsuleNormal.subVectors(capsule.end, capsule.start).normalize();
+    capsuleNormal.subVectors(end, start).normalize();
     planeNormal.copy(plane.normal);
-    lineEndOffset.copy(capsuleNormal).multiplyScalar(capsule.radius);
-    tip.copy(capsule.end).add(lineEndOffset);
-    base.copy(capsule.start).sub(lineEndOffset);
-    line1.set(capsule.start, capsule.end);
+    lineEndOffset.copy(capsuleNormal).multiplyScalar(radius);
+    tip.copy(end).add(lineEndOffset);
+    base.copy(start).sub(lineEndOffset);
+    line1.set(start, end);
 
     if (planeNormal.dot(capsuleNormal) === 0) {
       let closest = 0;
@@ -169,7 +193,7 @@ export const triangleCapsuleIntersect = (() => {
         }
     	}
 
-      return triangleSphereIntersect(sphere.set(center, capsule.radius), triangle);
+      return triangleSphereIntersect(sphere.set(center, radius), triangle, plane);
     }
 
     ray.set(base, capsuleNormal);
@@ -177,16 +201,7 @@ export const triangleCapsuleIntersect = (() => {
 
     if (triangle.containsPoint(intersection)) {
       line1.closestPointToPoint(intersection, true, center);
-      const depth = plane.distanceToPoint(center) - capsule.radius;
-
-      if (depth > 0 || depth < -capsule.radius) {
-        return false;
-      }
-
-      return {
-        normal: planeNormal.clone(),
-        depth: abs(depth),
-      };
+      return triangleSphereIntersect(sphere.set(center, radius), triangle, plane);
     } else {
       let closest = 0;
       const lines = [
@@ -210,18 +225,7 @@ export const triangleCapsuleIntersect = (() => {
     }
 
     line1.closestPointToPoint(reference, true, center);
-
-    v3.subVectors(center, reference);
-    const depth = v3.length() - capsule.radius;
-
-    if (depth > 0 || depth < -capsule.radius) {
-      return false;
-    }
-
-    return {
-      normal: v3.clone().normalize(),
-      depth: abs(depth),
-    };
+    return triangleSphereIntersect(sphere.set(center, radius), triangle, plane);
   };
 })();
 
@@ -240,3 +244,10 @@ export const getCapsuleBoundingBox = (() => {
     return box;
   };
 })();
+
+export const getOffsetPos = (position, offset, count) => {
+  const { array } = position;
+  const typedOffsetEnd = offset + (count * 3);
+  const pos = array.subarray(offset, typedOffsetEnd);
+  return pos;
+};

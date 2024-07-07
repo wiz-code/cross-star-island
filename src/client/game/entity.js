@@ -1,23 +1,6 @@
 import Publisher from './publisher';
-import { visibleChildren, disposeObject } from './utils';
+import { genId, visibleChildren, disposeObject } from './utils';
 import { States } from './data';
-
-const genId = (() => {
-  const id = {};
-
-  const closure = (type = 'id') => {
-    if (id[type] == null) {
-      id[type] = 0;
-    }
-
-    id[type] += 1;
-
-    const typedId = `${type}-${id[type]}`;
-    return typedId;
-  };
-
-  return closure;
-})();
 
 class Entity extends Publisher {
   #states = new Set();
@@ -35,6 +18,10 @@ class Entity extends Publisher {
     this.object = null;
     this.collider = null;
     this.velocity = null;
+  }
+
+  getStates() {
+    return this.#states;
   }
 
   isAlive() {
