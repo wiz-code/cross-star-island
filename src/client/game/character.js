@@ -227,7 +227,7 @@ class Character extends Entity {
     return mesh;
   }
 
-  constructor(game, name, ctype, texture) {
+  constructor(game, name, ctype, useVRM = true, texture) {
     super(name, 'character');
 
     this.game = game;
@@ -262,7 +262,7 @@ class Character extends Entity {
     this.input = this.input.bind(this);
     this.setPovRot = this.setPovRot.bind(this);
 
-    if (this.data.model != null) {
+    if (useVRM && this.data.model != null) {
       const loader = new ModelLoader(this.data.model);
       this.model = this.loadModelData(loader, texture);
 

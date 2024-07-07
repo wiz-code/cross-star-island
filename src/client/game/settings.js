@@ -93,7 +93,7 @@ export const Controls = {
 
   wheelSpeed: 3,
   horizontalAngleLimit: 160,
-  virticalAngleLimit: 80,
+  verticalAngleLimit: 80,
 };
 
 export const World = {

@@ -8,8 +8,6 @@ import {
   Color,
   Clock,
   AmbientLight,
-  Vector3,/////////////////////
-  Ray,///////////////////////////
 } from 'three';
 import { debounce } from 'throttle-debounce';
 
@@ -70,9 +68,10 @@ globalThis.gamepadIndex = -1;
 class Game {
   #elapsedTime = 0;
 
-  constructor(width, height, callbacks) {this.vec = new Vector3();this.ray = new Ray();/////////////////////
+  constructor(width, height, callbacks, params) {
     this.clock = new Clock();
     this.callbacks = callbacks;
+    this.params = params;
 
     this.data = {};
     this.data.stages = new Map(Stages);
@@ -150,7 +149,7 @@ class Game {
     this.scene.screen.add(povSight);
     this.scene.screen.add(povSightLines);
     this.scene.screen.add(povIndicator.horizontal);
-    this.scene.screen.add(povIndicator.virtical);
+    this.scene.screen.add(povIndicator.vertical);
     this.scene.screen.add(centerMark);
 
     this.modelManager = new ModelManager(this.scene.field);
@@ -321,7 +320,7 @@ class Game {
   }
 
   createPlayer(name, ctype) {
-    const player = new Character(this.game, name, ctype, this.texture);
+    const player = new Character(this.game, name, ctype, false, this.texture);
     return player;
   }
 
@@ -424,6 +423,7 @@ class Game {
         this.game,
         data.name,
         data.ctype,
+        this.params.vrm,
         this.texture,
       );
 

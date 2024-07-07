@@ -15,17 +15,20 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Checkbox,
 } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 
 import Layout from './Layout';
 import { Url } from '../game/settings';
 import { Meta } from '../common';
+import gameSlice from '../redux/gameSlice';
 
 const meta = new Map(Meta);
 const title = meta.get('title');
 const subtitle = meta.get('subtitle');
 const description = meta.get('description');
+const { actions: gameActions } = gameSlice;
 
 const ColumnGrid = styled(Grid)(({ theme }) => ({
   height: '100%',
@@ -38,6 +41,7 @@ const Row = styled(Grid)(({ theme }) => ({
 
 function TitlePage({ gameLink, toggleFullScreen }) {
   const { isFullscreen } = useSelector((state) => state.system);
+  const { vrm } = useSelector((state) => state.game);
   const [gameStarted, setGameStarted] = useState(false);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -50,9 +54,17 @@ function TitlePage({ gameLink, toggleFullScreen }) {
     };
   }, []);
 
+  const label = useMemo(() => (
+    { inputProps: { 'aria-label': 'VRMファイルを読み込みます' } }
+  ));
+
   const playGame = useCallback((e) => {
     setGameStarted(true);
   }, []);
+
+  const toggleVRM = useCallback(() => {
+    dispatch(gameActions.toggleVRM(!vrm));
+  }, [vrm]);
 
   return (
     <Layout>
@@ -76,8 +88,21 @@ function TitlePage({ gameLink, toggleFullScreen }) {
         <Row
           container
           item
-          sx={{ gap: theme.spacing(1), justifyContent: 'center' }}
+          sx={{ gap: theme.spacing(2), justifyContent: 'center' }}
         >
+          <Box sx={{ mb: theme.spacing(-1) }}>
+            <Checkbox
+              {...label}
+              checked={vrm}
+              onChange={toggleVRM}
+            />
+            <Typography
+              variant="body1"
+              component="span"
+            >
+              VRMファイルを読み込む
+            </Typography>
+          </Box>
           <Button
             variant="contained"
             component={Link}
