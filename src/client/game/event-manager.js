@@ -46,7 +46,7 @@ class EventManager extends Publisher {
     }
   }
 
-  addUpdater(object, state, updater, args) {
+  addUpdater(object, state, updater) {
     if (!this.updaters.has(object)) {
       this.updaters.set(object, new Map());
     }
@@ -58,7 +58,6 @@ class EventManager extends Publisher {
     }
 
     const updaterSet = updaters.get(state);
-    const params = args ?? [];
     updaterSet.add(updater);
   }
 
@@ -141,34 +140,20 @@ class EventManager extends Publisher {
     }
 
     this.updaters.forEach((updaterMap, target) => {
-      updaterMap.forEach((updaterSet, state) => {
-        switch (state) {
-          case States.alive: {
-            updaterSet.forEach((updater) =>
-              updater(this.game, target, deltaTime, elapsedTime),
-            );
-            break;
-          }
-
-          default: {
-            //
-          }
-        }
+      target.getStates().forEach((state) => {
+        const updaterSet = updaterMap.get(state);
+        updaterSet.forEach((updater) =>
+          updater(this.game, target, deltaTime, elapsedTime),
+        );
       });
     });
 
-    this.tweens.forEach((tweenMap, object) => {
-      tweenMap.forEach((tweenSet, state) => {
-        switch (state) {
-          case States.alive: {
-            tweenSet.forEach((updater) => updater(elapsedTime * 1000));
-            break;
-          }
-
-          default: {
-            //
-          }
-        }
+    this.tweens.forEach((tweenMap, target) => {
+      target.getStates().forEach((state) => {
+        const tweenSet = tweenMap.get(state);
+        tweenSet.forEach((tween) =>
+          tween(elapsedTime * 1000),
+        );
       });
     });
   }

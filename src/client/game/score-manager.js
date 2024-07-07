@@ -11,9 +11,10 @@ class ScoreManager {
     this.load();
   }
 
-  calcScore(time, falls, hits, pushAway, checkpointIndex) {
+  calcScore(time, falls, hits, pushAway, checkpointIndex, punishment = false) {
     const score = {};
     const data = { bonus: 1000 };
+    data.bonus = !punishment ? data.bonus : 0;
 
     const stageName = this.game.states.get('stageName');
     const stageData = this.game.methods.get('getStageData')?.(stageName);

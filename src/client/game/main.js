@@ -8,6 +8,8 @@ import {
   Color,
   Clock,
   AmbientLight,
+  Vector3,/////////////////////
+  Ray,///////////////////////////
 } from 'three';
 import { debounce } from 'throttle-debounce';
 
@@ -43,6 +45,7 @@ import Ammo from './ammo';
 import Gun from './gun';
 import Obstacle from './obstacle';
 import Item from './item';
+import Movable from './movable';
 import TextureManager from './texture-manager';
 import createStage from './stages';
 import { leftToRightHandedQuaternion, addOffsetToPosition, disposeObject } from './utils';
@@ -67,7 +70,7 @@ globalThis.gamepadIndex = -1;
 class Game {
   #elapsedTime = 0;
 
-  constructor(width, height, callbacks) {
+  constructor(width, height, callbacks) {this.vec = new Vector3();this.ray = new Ray();/////////////////////
     this.clock = new Clock();
     this.callbacks = callbacks;
 
@@ -90,6 +93,7 @@ class Game {
     this.game.methods = new Map(GameMethods);
     this.game.methods.forEach((value, key, map) => map.set(key, value.bind(this)));
     this.game.meshBVH = null;
+    this.game.refitSet = new Set();
     this.game.ammos = new Map();
     this.game.characters = new Set();
     this.game.items = new Set();
@@ -391,10 +395,11 @@ class Game {
     const stageData = this.game.methods.get('getStageData')?.(stageName);
 
     this.game.stage = {};
-    const { terrain, bvh } = createStage(stageData, this.texture);
+    const { terrain, bvh, movableBVH,/* */ helper/* */ } = createStage(stageData, this.texture);
     this.game.meshBVH = bvh;
     this.scene.field.add(terrain);
     this.scene.field.add(bvh);
+    //this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
     const ammoNames = Array.from(this.data.ammos.keys());
@@ -403,18 +408,8 @@ class Game {
       ammo.list.forEach((bullet) => {
         if (bullet.data.updaters != null) {
           bullet.data.updaters.forEach((param) => {
-            if (typeof param === 'string') {
-              const updater = this.data.updaters.get(param);
-              this.eventManager.addUpdater(
-                bullet,
-                updater.state,
-                updater.update,
-                updater.args,
-              );
-            } else {
-              const { state, update, args } = param;
-              this.eventManager.addUpdater(bullet, state, update, args);
-            }
+            const { state, update } = param;
+            this.eventManager.addUpdater(bullet, state, update);
           });
         }
       });
@@ -422,7 +417,7 @@ class Game {
       ammo.list.forEach((a) => this.objectManager.add(a));
     });
 
-    const { characters, obstacles, items } = stageData;
+    const { characters, obstacles, items, movables } = stageData;
 
     characters.forEach((data) => {
       const character = new Character(
@@ -499,19 +494,9 @@ class Game {
       }
 
       if (data.updaters != null) {
-        data.updaters.forEach((param) => {
-          if (typeof param === 'string') {
-            const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(
-              character,
-              updater.state,
-              updater.update,
-              updater.args,
-            );
-          } else {
-            const { state, update, args } = param;
-            this.eventManager.addUpdater(character, state, update, args);
-          }
+        data.updaters.forEach(({ name, state }) => {
+          const updater = this.data.updaters.get(name);
+          this.eventManager.addUpdater(character, state, updater);
         });
       }
 
@@ -543,19 +528,9 @@ class Game {
       }
 
       if (data.updaters != null) {
-        data.updaters.forEach((param) => {
-          if (typeof param === 'string') {
-            const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(
-              item,
-              updater.state,
-              updater.update,
-              updater.args,
-            );
-          } else {
-            const { state, update, args } = param;
-            this.eventManager.addUpdater(item, state, update, args);
-          }
+        data.updaters.forEach(({ name, state }) => {
+          const updater = this.data.updaters.get(name);
+          this.eventManager.addUpdater(item, state, updater);
         });
       }
 
@@ -586,19 +561,9 @@ class Game {
       }
 
       if (data.updaters != null) {
-        data.updaters.forEach((param) => {
-          if (typeof param === 'string') {
-            const updater = this.data.updaters.get(param);
-            this.eventManager.addUpdater(
-              obstacle,
-              updater.state,
-              updater.update,
-              updater.args,
-            );
-          } else {
-            const { state, update, args } = param;
-            this.eventManager.addUpdater(obstacle, state, update, args);
-          }
+        data.updaters.forEach(({ name, state }) => {
+          const updater = this.data.updaters.get(name);
+          this.eventManager.addUpdater(obstacle, state, updater);
         });
       }
 
@@ -611,6 +576,23 @@ class Game {
       obstacle.setPosition(position);
       this.objectManager.add(obstacle, data);
       this.game.obstacles.add(obstacle);
+    });
+
+    movables.forEach((data) => {
+      const { name } = data;
+      const movable = new Movable(name);
+      movable.setGeometry(bvh.geometry);
+
+      if (data.params != null) {
+        movable.setParams({ ...data.params });
+      }
+
+      if (data.tweeners != null) {
+        data.tweeners.forEach(({ name, state, args }) => {
+          const tweener = this.data.tweeners.get(name);
+          this.eventManager.addTween(movable, state, tweener, args);
+        });
+      }
     });
 
     const checkpointIndex = this.game.states.get('checkpointIndex');
@@ -701,6 +683,7 @@ class Game {
     const deltaTime = this.clock.getDelta();
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);
+    const { refitSet, meshBVH: { boundsTree } } = this.game;
 
     this.controls.input();
 
@@ -713,6 +696,12 @@ class Game {
     this.modelManager.update(deltaTime);
     this.eventManager.update(deltaTime, this.#elapsedTime);
     this.sceneManager.update();
+
+    if (refitSet.size > 0) {
+      boundsTree.refit(refitSet);
+      refitSet.clear();
+    }
+    //this.helper.update();/////////////
 
     this.callbacks.setElapsedTime(this.#elapsedTime);
     this.game.states.set('time', this.#elapsedTime);
