@@ -13,6 +13,8 @@ class Collidable extends Entity {
     this.rotation = new Spherical();
     this.collider = new Sphere();
     this.velocity = new Vector3();
+
+    this.parent = null;
   }
 
   setPosition(position, phi = 0, theta = 0) {
@@ -48,9 +50,9 @@ class Collidable extends Entity {
     super.visible(bool);
   }
 
-  updatePos() {
+  /* updatePos() {
     this.object.position.copy(this.collider.center);
-  }
+  } */
 
   update(deltaTime, elapsedTime, damping) {
     this.velocity.y -= World.gravity * deltaTime;

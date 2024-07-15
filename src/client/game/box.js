@@ -11,10 +11,7 @@ class Box {
     const minX2 = box.min[0].value;
     const maxX2 = box.max[0].value;
 
-    return (
-      maxX1 > minX2 &&
-      minX1 < maxX2
-    );
+    return maxX1 > minX2 && minX1 < maxX2;
   }
 
   overlapY(box) {
@@ -23,10 +20,7 @@ class Box {
     const minY2 = box.min[1].value;
     const maxY2 = box.max[1].value;
 
-    return (
-      maxY1 > minY2 &&
-      minY1 < maxY2
-    );
+    return maxY1 > minY2 && minY1 < maxY2;
   }
 
   overlapZ(box) {
@@ -35,10 +29,7 @@ class Box {
     const minZ2 = box.min[2].value;
     const maxZ2 = box.max[2].value;
 
-    return (
-      maxZ1 > minZ2 &&
-      minZ1 < maxZ2
-    );
+    return maxZ1 > minZ2 && minZ1 < maxZ2;
   }
 
   overlaps(box) {

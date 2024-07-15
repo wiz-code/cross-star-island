@@ -38,6 +38,7 @@ import ModelManager from './model-manager';
 import EventManager from './event-manager';
 import SoundManager from './sound-manager';
 import ScoreManager from './score-manager';
+import MovableManager from './movable-manager';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -46,7 +47,11 @@ import Item from './item';
 import Movable from './movable';
 import TextureManager from './texture-manager';
 import createStage from './stages';
-import { leftToRightHandedQuaternion, addOffsetToPosition, disposeObject } from './utils';
+import {
+  leftToRightHandedQuaternion,
+  addOffsetToPosition,
+  disposeObject,
+} from './utils';
 
 const { floor, exp } = Math;
 
@@ -55,7 +60,7 @@ const dampingData = {};
 const getDamping = (delta) => {
   for (let i = 0, l = resistances.length; i < l; i += 1) {
     const [key, value] = resistances[i];
-    //const result = exp(-value * delta) - 1;
+    // const result = exp(-value * delta) - 1;
     const result = value * delta;
     dampingData[key] = result;
   }
@@ -87,12 +92,12 @@ class Game {
     // ゲーム管理変数
     this.game = {};
     this.game.states = new Map(GameStates);
-    const [sname] = this.data.compositions.get('stage');
+    const [sname] = this.data.compositions.get('stage'); /// ////////////
     this.game.states.set('stageName', sname);
     this.game.methods = new Map(GameMethods);
-    this.game.methods.forEach((value, key, map) => map.set(key, value.bind(this)));
-    this.game.meshBVH = null;
-    this.game.refitSet = new Set();
+    this.game.methods.forEach((value, key, map) =>
+      map.set(key, value.bind(this)),
+    );
     this.game.ammos = new Map();
     this.game.characters = new Set();
     this.game.items = new Set();
@@ -128,24 +133,16 @@ class Game {
 
     this.scene.field = new ThreeScene();
     this.scene.field.background = new Color(Scene.background);
-    /*this.scene.field.fog = new Fog(
+    /* this.scene.field.fog = new Fog(
       Scene.Fog.color,
       Scene.Fog.near,
       Scene.Fog.far,
-    );*/
-    this.scene.field.fog = new FogExp2(
-      Scene.Fog.color,
-      Scene.Fog.density
-    );
+    ); */
+    this.scene.field.fog = new FogExp2(Scene.Fog.color, Scene.Fog.density);
 
     this.scene.screen = new ThreeScene();
     const indicators = SceneManager.createIndicators(this.texture);
-    const {
-      povSight,
-      povSightLines,
-      povIndicator,
-      centerMark,
-    } = indicators;
+    const { povSight, povSightLines, povIndicator, centerMark } = indicators;
     this.scene.screen.add(povSight);
     this.scene.screen.add(povSightLines);
     this.scene.screen.add(povIndicator.horizontal);
@@ -176,6 +173,7 @@ class Game {
     this.soundManager = new SoundManager(this.camera.field, this.scene.field);
     const promise = this.soundManager.loadSounds();
     this.scoreManager = new ScoreManager(this.game);
+    this.movableManager = new MovableManager(this.game); /// ///////
     this.loadingList.push(promise);
 
     this.sceneManager.clear();
@@ -192,11 +190,16 @@ class Game {
     this.objectManager = new CollidableManager(
       this.game,
       this.scene.field,
+      this.camera.field,
       this.eventManager,
+      this.movableManager,
     );
 
     if (globalThis.gamepadIndex > -1) {
-      this.controls = this.createGamepadControls(globalThis.gamepadIndex, indicators);
+      this.controls = this.createGamepadControls(
+        globalThis.gamepadIndex,
+        indicators,
+      );
     } else {
       this.controls = new FirstPersonControls(
         indicators,
@@ -291,10 +294,12 @@ class Game {
 
     if (this.loadingList.length > 0) {
       Promise.allSettled(this.loadingList).then((results) => {
+        this.objectManager.setAlive(false);
         this.setMode('play');
         this.start();
       });
     } else {
+      this.objectManager.setAlive(false);
       this.setMode('play');
       this.start();
     }
@@ -305,7 +310,7 @@ class Game {
       index,
       indicators,
       this.camera.field,
-      this.renderer.domElement
+      this.renderer.domElement,
     );
 
     return controls;
@@ -381,24 +386,29 @@ class Game {
   setStage(sname) {
     this.clearStage();
 
-    const { name: playerName, ctype: characterType } = this.data.compositions.get('player');
+    const { name: playerName, ctype: characterType } =
+      this.data.compositions.get('player');
     this.game.states.set('playerName', playerName);
     this.game.states.set('characterType', characterType);
 
     this.player = this.createPlayer(playerName, characterType);
     this.player.setControls(this.controls, this.camera.field);
     this.objectManager.add(this.player);
-    this.eventManager.addSchedule(this.player, { spawnTime: 0.5 });
+    this.eventManager.addSchedule(this.player, { spawnTime: 0 });
 
     const stageName = sname ?? this.game.states.get('stageName');
     const stageData = this.game.methods.get('getStageData')?.(stageName);
 
     this.game.stage = {};
-    const { terrain, bvh, movableBVH,/* */ helper/* */ } = createStage(stageData, this.texture);
+    const { terrain, bvh, movableBVH, helper } = createStage(
+      stageData,
+      this.texture,
+    );
     this.game.meshBVH = bvh;
+    this.movableManager.setBVH(bvh);
     this.scene.field.add(terrain);
     this.scene.field.add(bvh);
-    //this.helper = helper;this.scene.field.add(helper);//////////
+    // this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
     const ammoNames = Array.from(this.data.ammos.keys());
@@ -416,7 +426,12 @@ class Game {
       ammo.list.forEach((a) => this.objectManager.add(a));
     });
 
-    const { characters, obstacles, items, movables } = stageData;
+    const {
+      characters = [],
+      obstacles = [],
+      items = [],
+      movables = [],
+    } = stageData;
 
     characters.forEach((data) => {
       const character = new Character(
@@ -582,6 +597,7 @@ class Game {
       const { name } = data;
       const movable = new Movable(name);
       movable.setGeometry(bvh.geometry);
+      this.movableManager.addObject(movable);
 
       if (data.params != null) {
         movable.setParams({ ...data.params });
@@ -650,7 +666,10 @@ class Game {
   dispose() {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('gamepadconnected', this.onGamepadConnected);
-    window.removeEventListener('gamepaddisconnected', this.onGamepadDisconnected);
+    window.removeEventListener(
+      'gamepaddisconnected',
+      this.onGamepadDisconnected,
+    );
 
     this.objectManager.dispose();
     this.controls.dispose();
@@ -683,7 +702,6 @@ class Game {
     const deltaTime = this.clock.getDelta();
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);
-    const { refitSet, meshBVH: { boundsTree } } = this.game;
 
     this.controls.input();
 
@@ -695,13 +713,11 @@ class Game {
 
     this.modelManager.update(deltaTime);
     this.eventManager.update(deltaTime, this.#elapsedTime);
+    this.objectManager.updatePos();
     this.sceneManager.update();
 
-    if (refitSet.size > 0) {
-      boundsTree.refit(refitSet);
-      refitSet.clear();
-    }
-    //this.helper.update();/////////////
+    this.movableManager.update();
+    // this.helper.update();/////////////
 
     this.callbacks.setElapsedTime(this.#elapsedTime);
     this.game.states.set('time', this.#elapsedTime);

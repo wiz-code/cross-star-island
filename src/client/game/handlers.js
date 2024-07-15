@@ -30,9 +30,9 @@ export const handlers = [
   {
     eventName: 'oob',
     targetName: 'teleport-character',
-    /*condition(character) {
+    /* condition(character) {
       return character.hasControls;
-    },*/
+    }, */
     handler({ states, methods }, character) {
       if (character.hasControls) {
         const falls = states.get('falls');
@@ -47,11 +47,7 @@ export const handlers = [
         const position = addOffsetToPosition(checkpoint.position, offset);
 
         character.velocity.set(0, 0, 0);
-        character.setPosition(
-          position,
-          checkpoint.phi,
-          checkpoint.theta,
-        );
+        character.setPosition(position, checkpoint.phi, checkpoint.theta);
 
         return;
       }
@@ -154,52 +150,8 @@ export const Tweeners = [
   ],
   [
     'avoidance-1',
-    (game, target, arg) => {
-      const time = arg ?? 0;
-      let initX = 0;
-      let prevZ = 0;
-      const offset = { z: 0 };
-      const update = ({ z }) => {
-        let diffX = 0;
-        const x = target.collider.start.x;
-        const diffZ = z - prevZ;
-
-        if (initX !== 0) {
-          diffX = initX - x;
-        }
-
-        vec.set(diffX, 0, diffZ);
-        target.collider.translate(vec);
-
-        prevZ = z;
-      };
-
-      const group = new Group();
-      const tween1 = new Tween(offset, group)
-        .to({ z: -7.5 }, 1000)
-        .onUpdate(update)
-        .onStart(() => {
-          initX = target.collider.start.x;
-        });
-      const tween2 = new Tween(offset, group)
-        .to({ z: 0 }, 1000)
-        .onUpdate(update);
-
-      tween1.chain(tween2).start(time);
-      tween2.chain(tween1);
-
-      return group;
-    },
-  ],
-  [
-    'avoidance-2',
     (game, target, ...args) => {
-      const [
-        time = 0,
-        direction = 'x-axis',
-        to = -20,
-        duration = 2000,
-      ] = args;
+      const [time = 0, direction = 'x-axis', to = -20, duration = 2000] = args;
       const object = { value: 0 };
       let prev = 0;
 
@@ -221,25 +173,24 @@ export const Tweeners = [
         .to({ value: to }, duration)
         .onUpdate(update);
       const tween2 = new Tween(object, group)
+        .to({ value: -to }, duration * 2)
+        .onUpdate(update);
+      const tween3 = new Tween(object, group)
         .to({ value: 0 }, duration)
         .onUpdate(update);
 
       tween1.chain(tween2).start(time);
-      tween2.chain(tween1);
+      tween2.chain(tween3);
+      tween3.chain(tween1);
 
       return group;
     },
   ],
   [
-    'updown-move',
+    'swing-motion-1',
     (game, target, ...args) => {
-      const [
-        time = 0,
-        direction = 'y-axis',
-        to = -20,
-        duration = 5000,
-      ] = args;
-      const { object: mesh, offset, count } = target.data;
+      const [time = 0, direction = 'x-axis', to = -20, duration = 5000] = args;
+      const { object: mesh, offset, count } = target;
       const position = target.geometry.getAttribute('position');
       const object = { value: 0 };
 
@@ -251,12 +202,12 @@ export const Tweeners = [
         for (let i = 0; i < count; i += 1) {
           const index = offset + i;
 
-          if (direction === 'y-axis') {
-            const posY = position.getY(index);
-            position.setY(index, posY + delta);
-          } else if (direction === 'x-axis') {
+          if (direction === 'x-axis') {
             const posX = position.getX(index);
             position.setX(index, posX + delta);
+          } else if (direction === 'y-axis') {
+            const posY = position.getY(index);
+            position.setY(index, posY + delta);
           } else {
             const posZ = position.getZ(index);
             position.setZ(index, posZ + delta);
@@ -273,22 +224,22 @@ export const Tweeners = [
         } else {
           mesh.translateZ(delta);
         }
-
       };
 
       const group = new Group();
       const tween1 = new Tween(object, group)
         .to({ value: to }, duration)
-        .onUpdate(update)
-        .onStart(() => {
-          //
-        });
+        .onUpdate(update);
       const tween2 = new Tween(object, group)
+        .to({ value: -to }, duration * 2)
+        .onUpdate(update);
+      const tween3 = new Tween(object, group)
         .to({ value: 0 }, duration)
         .onUpdate(update);
 
       tween1.chain(tween2).start(time);
-      tween2.chain(tween1);
+      tween2.chain(tween3);
+      tween3.chain(tween1);
 
       return group;
     },
@@ -301,12 +252,12 @@ export const Updaters = [
     (game, target, deltaTime) => {
       target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
     },
-    /*{
+    /* {
       state: States.alive,
       update(game, target, deltaTime) {
         target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
       },
-    },*/
+    }, */
   ],
   [
     'item-ring-1',
@@ -316,7 +267,7 @@ export const Updaters = [
       target.object.rotation.y -= rotateSpeed;
       target.object.rotation.z -= rotateSpeed * 2;
     },
-    /*{
+    /* {
       state: States.alive,
       update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
@@ -324,7 +275,7 @@ export const Updaters = [
         target.object.rotation.y -= rotateSpeed;
         target.object.rotation.z -= rotateSpeed * 2;
       },
-    },*/
+    }, */
   ],
   [
     'item-ring-2',
@@ -336,7 +287,7 @@ export const Updaters = [
         points.rotation.y -= deltaTime * target.data.rotateSpeed;
       }
     },
-    /*{
+    /* {
       state: States.alive,
       update(game, target, deltaTime) {
         const rotateSpeed = deltaTime * target.data.rotateSpeed;
@@ -346,7 +297,7 @@ export const Updaters = [
           points.rotation.y -= deltaTime * target.data.rotateSpeed;
         }
       },
-    },*/
+    }, */
   ],
   [
     'bullet-fire-1',
@@ -358,7 +309,7 @@ export const Updaters = [
         target.fire();
       }
     },
-    /*{
+    /* {
       state: States.alive,
       update(game, target, deltaTime) {
         target.params.elapsedTime += deltaTime;
@@ -368,7 +319,7 @@ export const Updaters = [
           target.fire();
         }
       },
-    },*/
+    }, */
   ],
   [
     'satellite-points',
@@ -378,7 +329,7 @@ export const Updaters = [
         points.rotation.y -= deltaTime * target.data.rotateSpeed;
       }
     },
-    /*{
+    /* {
       state: States.alive,
       update(game, target, deltaTime) {
         if (target.object != null) {
@@ -386,6 +337,6 @@ export const Updaters = [
           points.rotation.y -= deltaTime * target.data.rotateSpeed;
         }
       },
-    },*/
+    }, */
   ],
 ];

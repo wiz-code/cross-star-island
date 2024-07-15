@@ -1,11 +1,14 @@
 import { Box3, Vector3, Sphere, Matrix4 } from 'three';
 import { NOT_INTERSECTED, INTERSECTED, CONTAINED } from 'three-mesh-bvh';
-import { Capsule } from 'three/addons/math/Capsule.js';
 
+import Capsule from './capsule';
 import { Game, World } from './settings';
 import Publisher from './publisher';
 import SweepAndPrune from './sap';
-import { triangleCapsuleIntersect, triangleSphereIntersect, getCapsuleBoundingBox } from './utils';
+import {
+  triangleCapsuleIntersect,
+  triangleSphereIntersect,
+} from './utils';
 
 const { sqrt, cos, PI } = Math;
 
@@ -42,12 +45,20 @@ class CollidableManager extends Publisher {
 
   #vec = new Vector3();
 
-  constructor(game, scene, eventManager) {
+  #parent = null;
+
+  #intersected = null;
+
+  #triangleIndexSet = new Set();
+
+  constructor(game, scene, camera, eventManager, movableManager) {
     super();
 
     this.game = game;
     this.scene = scene;
+    this.camera = camera;
     this.eventManager = eventManager;
+    this.movableManager = movableManager;
     this.sap = new SweepAndPrune();
     this.list = new Set();
   }
@@ -60,7 +71,7 @@ class CollidableManager extends Publisher {
         this.scene.add(collidable.object);
       }
 
-      getCapsuleBoundingBox(collidable.collider, box);
+      collidable.collider.getBoundingBox(box);
     } else {
       this.scene.add(collidable.object);
       collidable.collider.getBoundingBox(box);
@@ -89,6 +100,10 @@ class CollidableManager extends Publisher {
     this.list.forEach((collidable) => this.remove(collidable));
   }
 
+  setAlive(bool) {
+    this.list.forEach((collidable) => collidable.setAlive(bool));
+  }
+
   dispose() {
     this.list.forEach((collidable) => collidable.dispose());
     this.clearList();
@@ -107,16 +122,12 @@ class CollidableManager extends Publisher {
           }, time);
         }
 
-        this.eventManager.dispatch(
-          'get-item',
-          object.name,
-          target,
-          object,
-        );
+        this.eventManager.dispatch('get-item', object.name, target, object);
         break;
       }
 
-      default: {}
+      default: {
+      }
     }
   }
 
@@ -124,25 +135,34 @@ class CollidableManager extends Publisher {
     const list = Array.from(this.list.keys());
 
     const playSound = this.game.methods.get('play-sound');
-    const { states, meshBVH, refitSet } = this.game;
-    const { geometry, boundsTree } = meshBVH;
-    const { userData: { movableBVH } } = geometry;
+    const { states } = this.game;
+    const {
+      refitSet,
+      geometry,
+      boundsTree,
+      list: movableList,
+    } = this.movableManager;
 
     for (let i = 0, l = this.list.size; i < l; i += 1) {
       const collidable = list[i];
       const { type, collider, velocity } = collidable;
+      this.#parent = null; /// /////////////////
+      this.#intersected = null; /// ////////
+      this.#triangleIndexSet.clear();
 
-      if (type === 'character') {
+      if (collider instanceof Capsule) {
         let result = false;
 
         this.#capsule.copy(collider);
-        this.#capsule.getCenter(this.#center)
-        getCapsuleBoundingBox(collider, this.#box);
+        this.#capsule.getCenter(this.#center);
+        collider.getBoundingBox(this.#box);
 
         boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box.clampPoint(this.#center, this.#vec).distanceToSquared(this.#center);
-            //return box.distanceToPoint(this.#center);
+            return box
+              .clampPoint(this.#center, this.#vec)
+              .distanceToSquared(this.#center);
+            // return box.distanceToPoint(this.#center);
           },
           intersectsBounds: (box, isLeaf, score, depth, nodeIndex) => {
             if (box.intersectsBox(this.#box)) {
@@ -155,8 +175,14 @@ class CollidableManager extends Publisher {
             const collision = triangleCapsuleIntersect(this.#capsule, triangle);
 
             if (collision !== false) {
+              if (this.#intersected != null) {
+                this.#triangleIndexSet.add(triangleIndex);
+              }
+
               result = true;
-              this.#capsule.translate(collision.normal.multiplyScalar(collision.depth));
+              this.#capsule.translate(
+                collision.normal.multiplyScalar(collision.depth),
+              );
             }
 
             return false;
@@ -166,13 +192,11 @@ class CollidableManager extends Publisher {
               const i1 = (offset + j) * 3;
               const vertexIndex = geometry.index.getX(i1);
 
-              for (const block of movableBVH.values()) {
-                const offsetEnd = block.offset + block.count;
+              for (const movable of movableList.values()) {
+                const offsetEnd = movable.offset + movable.count;
 
-                if (
-                  block.offset <= vertexIndex &&
-                  vertexIndex <= offsetEnd
-                ) {
+                if (movable.offset <= vertexIndex && vertexIndex <= offsetEnd) {
+                  this.#intersected = movable;
                   refitSet.add(nodeIndex);
                 }
               }
@@ -182,9 +206,9 @@ class CollidableManager extends Publisher {
 
         if (result) {
           this.#v3.copy(
-            this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2))
+            this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2)),
           );
-    			const depth = this.#v3.length();
+          const depth = this.#v3.length();
           result = { normal: this.#v3.clone().normalize(), depth };
         }
 
@@ -201,21 +225,36 @@ class CollidableManager extends Publisher {
             );
           }
 
+          if (this.#triangleIndexSet.size > 0) {
+            for (const index of this.#triangleIndexSet) {
+              const vindex = geometry.index.getX(index * 3);
+
+              if (
+                this.#intersected.offset <= vindex &&
+                vindex <= this.#intersected.offset + this.#intersected.count
+              ) {
+                this.#parent = this.#intersected; /// ///////////
+                collider.translate(this.#parent.velocity);
+                break;
+              }
+            }
+          }
+
           if (result.depth >= Game.EPS) {
-            collider.translate(
-              result.normal.multiplyScalar(result.depth),
-            );
+            collider.translate(result.normal.multiplyScalar(result.depth));
           }
         }
-      } else {
+      } else if (collider instanceof Sphere) {
         let result = false;
         this.#sphere.copy(collider);
         collider.getBoundingBox(this.#box);
 
         boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box.clampPoint(this.#center, this.#vec).distanceToSquared(this.#center);
-            //return box.distanceToPoint(this.#sphere.center);
+            return box
+              .clampPoint(this.#center, this.#vec)
+              .distanceToSquared(this.#center);
+            // return box.distanceToPoint(this.#sphere.center);
           },
           intersectsBounds: (box, isLeaf, score) => {
             if (box.intersectsBox(this.#box)) {
@@ -229,7 +268,9 @@ class CollidableManager extends Publisher {
 
             if (collision !== false) {
               result = true;
-              this.#sphere.center.add(collision.normal.multiplyScalar(collision.depth));
+              this.#sphere.center.add(
+                collision.normal.multiplyScalar(collision.depth),
+              );
             }
 
             return false;
@@ -237,7 +278,9 @@ class CollidableManager extends Publisher {
         });
 
         if (result) {
-          this.#v3.copy(this.#v1.copy(this.#sphere.center).sub(collider.center));
+          this.#v3.copy(
+            this.#v1.copy(this.#sphere.center).sub(collider.center),
+          );
           const depth = this.#v3.length();
 
           result = { normal: this.#v3.clone().normalize(), depth };
@@ -252,9 +295,7 @@ class CollidableManager extends Publisher {
             result.normal,
             -result.normal.dot(velocity) * 1.5,
           );
-          collider.center.add(
-            result.normal.multiplyScalar(result.depth),
-          );
+          collider.center.add(result.normal.multiplyScalar(result.depth));
         }
       }
 
@@ -272,11 +313,7 @@ class CollidableManager extends Publisher {
           const r2 = r * r;
 
           let collided = false;
-          const colliders = [
-            a2.collider.start,
-            a2.collider.end,
-            a2Center,
-          ];
+          const colliders = [a2.collider.start, a2.collider.end, a2Center];
 
           for (let i = 0, l = colliders.length; i < l; i += 1) {
             const point = colliders[i];
@@ -285,9 +322,7 @@ class CollidableManager extends Publisher {
             if (d2 < r2) {
               collided = true;
 
-              const normal = this.#vecA
-                .subVectors(point, a1Center)
-                .normalize();
+              const normal = this.#vecA.subVectors(point, a1Center).normalize();
               const v1 = this.#vecB
                 .copy(normal)
                 .multiplyScalar(normal.dot(a2.velocity));
@@ -311,7 +346,8 @@ class CollidableManager extends Publisher {
             }
           }
         } else if (a1.type === 'character' || a2.type === 'character') {
-          let character, object;
+          let character;
+          let object;
 
           if (a1.type === 'character') {
             character = a1;
@@ -444,10 +480,30 @@ class CollidableManager extends Publisher {
     }
 
     this.collisions();
+  }
+
+  updatePos() {
+    const list = Array.from(this.list.keys());
+    const len = this.list.size;
 
     for (let i = 0; i < len; i += 1) {
       const collidable = list[i];
-      collidable.updatePos();
+
+      if (collidable.isAlive()) {
+        if (collidable.collider instanceof Capsule) {
+          const { object } = collidable;
+
+          object.position.copy(collidable.collider.start);
+          object.position.y += collidable.halfHeight;
+          object.rotation.y = collidable.rotation.phi; /// //////
+
+          if (collidable.hasControls) {
+            this.camera.position.copy(collidable.collider.end);
+          }
+        } else if (collidable.collider instanceof Sphere) {
+          collidable.object.position.copy(collidable.collider.center);
+        }
+      }
     }
   }
 }

@@ -48,9 +48,9 @@ class FirstPersonControls extends Publisher {
 
   #pointers = new Set();
 
-  #actions = new Set();//////////
+  #actions = new Set(); /// ///////
 
-  #states = new Set();////////
+  #states = new Set(); /// /////
 
   #inputs = new Map();
 
@@ -142,7 +142,7 @@ class FirstPersonControls extends Publisher {
     this.onUnsetControls = this.onUnsetControls.bind(this);
 
     this.handleResize();
-    //this.setOrientation();
+    // this.setOrientation();
 
     this.enable();
   }
@@ -347,8 +347,8 @@ class FirstPersonControls extends Publisher {
             now - this.#keyUpTime <= Controls.inputDuration
           ) {
             this.#mashedKey = this.#lastKey;
-            //const code = `Mash-${event.code}`;
-            //this.#inputs.add(code);
+            // const code = `Mash-${event.code}`;
+            // this.#inputs.add(code);
           }
 
           this.#keyUpTime = 0;
@@ -478,7 +478,9 @@ class FirstPersonControls extends Publisher {
     }
 
     nonRepeatableKeyList.forEach((key) => this.#keys.delete(Keys[key]));
-    nonRepeatablePointerList.forEach((pointer) => this.#pointers.delete(Pointers[pointer]));
+    nonRepeatablePointerList.forEach((pointer) =>
+      this.#pointers.delete(Pointers[pointer]),
+    );
   }
 
   update(deltaTime) {

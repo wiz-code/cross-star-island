@@ -47,9 +47,7 @@ class Gun extends Publisher {
       return;
     }
 
-    if (
-      character.hasControls &&
-      character.game.methods.has('play-sound')) {
+    if (character.hasControls && character.game.methods.has('play-sound')) {
       character.game.methods.get('play-sound')('shot');
     }
 

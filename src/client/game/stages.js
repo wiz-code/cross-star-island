@@ -1,10 +1,23 @@
-import { BufferGeometry, Mesh, Box3, Vector3, Group, ArrowHelper, MeshBasicMaterial } from 'three';
+import {
+  BufferGeometry,
+  Mesh,
+  Box3,
+  Vector3,
+  Group,
+  ArrowHelper,
+  MeshBasicMaterial,
+} from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MeshBVH, MeshBVHHelper } from 'three-mesh-bvh';
 import { World } from './settings';
 
 import { createGrid, createFineGrid } from './grid';
-import { createGround, createMaze, createCylinder } from './ground';
+import {
+  createGround,
+  createMaze,
+  createCylinder,
+  createColumn,
+} from './ground';
 
 const createStage = (stageData, texture) => {
   const { sections } = stageData;
@@ -65,6 +78,19 @@ const createStage = (stageData, texture) => {
       bvhs.push(bvh);
     }
 
+    if (Array.isArray(section.column)) {
+      for (let j = 0, m = section.column.length; j < m; j += 1) {
+        const data = section.column[j];
+        const { object, bvh } = createColumn(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
+      }
+    } else if (section.column != null) {
+      const { object, bvh } = createColumn(section.column, texture);
+      block.add(object);
+      bvhs.push(bvh);
+    }
+
     if (section.offset != null) {
       const { offset } = section;
 
@@ -85,18 +111,14 @@ const createStage = (stageData, texture) => {
       } else {
         block.position.set(offset.x, offset.y, offset.z);
         bvhs.forEach((geom) => {
-          geom.translate(
-            offset.x,
-            offset.y,
-            offset.z,
-          );
+          geom.translate(offset.x, offset.y, offset.z);
         });
       }
     }
 
     bvhs.forEach((bvh) => {
       const name = bvh.name !== '' ? bvh.name : bvh.id;
-      const count = bvh.getAttribute('position').count;
+      const { count } = bvh.getAttribute('position');
 
       if (bvh.userData.movable) {
         const data = {
@@ -123,7 +145,7 @@ const createStage = (stageData, texture) => {
       transparent: true,
       opacity: 0,
       wireframe: true,
-    })
+    }),
   );
   bvhMesh.boundsTree = new MeshBVH(merged);
 

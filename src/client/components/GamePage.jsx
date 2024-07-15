@@ -8,12 +8,7 @@ import React, {
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import {
-  Button,
-  Box,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
+import { Button, Box, Typography, CircularProgress } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 import { yellow } from '@mui/material/colors';
 
@@ -28,22 +23,25 @@ const { actions: gameActions } = gameSlice;
 
 const font = {
   monospaced: '"MS Gothic","TakaoGothic","Noto Sans CJK JP",Monospace',
-  proportional: '"Helvetica Neue", Arial, Roboto, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif',
+  proportional:
+    '"Helvetica Neue", Arial, Roboto, "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif',
 };
 
 const meta = new Map(Meta);
 
-const Progress = () => (
-  <Box
-    sx={{
-      position: 'absolute',
-      left: 'calc(50% - 24px)',
-      top: 'calc(50% - 24px)',
-    }}
-  >
-    <CircularProgress />
-  </Box>
-);
+function Progress() {
+  return (
+    <Box
+      sx={{
+        position: 'absolute',
+        left: 'calc(50% - 24px)',
+        top: 'calc(50% - 24px)',
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
 
 const GameContainer = styled(Box)(({ theme }) => ({
   width: '100%',
@@ -107,15 +105,18 @@ function DisplayScore() {
   }
 
   const { data, sum, newRecord, highscore } = score;
-  const highscoreData = highscore != null ? `${highscore.value} ${highscore.distance}` : '--';
+  const highscoreData =
+    highscore != null ? `${highscore.value} ${highscore.distance}` : '--';
 
   return (
-    <Box sx={{
-      width: '100%',
-      height: '80%',
-      position: 'relative',
-      top: '0%',
-    }}>
+    <Box
+      sx={{
+        width: '100%',
+        height: '80%',
+        position: 'relative',
+        top: '0%',
+      }}
+    >
       <ScoreItem sx={{ top: '10%' }}>CLEAR BONUS</ScoreItem>
       <ScoreValue sx={{ top: '10%' }}>{data.bonus}</ScoreValue>
       <ScoreItem sx={{ top: '20%' }}>TIME</ScoreItem>
@@ -130,22 +131,35 @@ function DisplayScore() {
       <ScoreValue sx={{ top: '60%' }}>{data.noCheckpoint}</ScoreValue>
       <ScoreItem sx={{ top: '75%' }}>SCORE</ScoreItem>
       <ScoreValue sx={{ top: '75%', color: yellow[500] }}>
-        {!newRecord ? sum : (
+        {!newRecord ? (
+          sum
+        ) : (
           <>
-            <Typography variant="h4" sx={{ px: theme.spacing(2), display: 'inline' }}>New record!!</Typography>
+            <Typography
+              variant="h4"
+              sx={{ px: theme.spacing(2), display: 'inline' }}
+            >
+              New record!!
+            </Typography>
             {sum}
           </>
-        )}</ScoreValue>
+        )}
+      </ScoreValue>
       <ScoreItem sx={{ top: '85%' }}>HIGH SCORE</ScoreItem>
       <ScoreValue sx={{ top: '85%' }}>
         {highscore != null ? (
           <>
-            <Typography variant="h4" sx={{ px: theme.spacing(2), display: 'inline' }}>
+            <Typography
+              variant="h4"
+              sx={{ px: theme.spacing(2), display: 'inline' }}
+            >
               {`${highscore.distance} ago`}
             </Typography>
             {highscore.value}
           </>
-        ) : '--'}
+        ) : (
+          '--'
+        )}
       </ScoreValue>
     </Box>
   );
@@ -177,11 +191,25 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
       }}
     >
       {mode === 'clear' ? (
-        <Button variant="contained" size="small" color="info" onClick={jumpToTitlePage}>タイトル画面に戻る</Button>
-      ): null}
+        <Button
+          variant="contained"
+          size="small"
+          color="info"
+          onClick={jumpToTitlePage}
+        >
+          タイトル画面に戻る
+        </Button>
+      ) : null}
       {mode === 'clear' ? (
-        <Button variant="outlined" size="small" color="error" onClick={clearRecords}>記録を全削除</Button>
-      ): null}
+        <Button
+          variant="outlined"
+          size="small"
+          color="error"
+          onClick={clearRecords}
+        >
+          記録を全削除
+        </Button>
+      ) : null}
       <Button variant="outlined" size="small" onClick={visibleFPS}>
         {!fps ? 'FPSを表示' : 'FPSを非表示'}
       </Button>
@@ -232,7 +260,7 @@ function GamePage({ indexPath, toggleFullScreen }) {
       return;
     }
 
-    game.scoreManager.clearScores()
+    game.scoreManager.clearScores();
   }, [game]);
 
   useEffect(() => {
@@ -246,7 +274,7 @@ function GamePage({ indexPath, toggleFullScreen }) {
           setScore,
           setElapsedTime,
         },
-        { vrm }
+        { vrm },
       );
       setGame(gameObject);
     }
@@ -266,18 +294,20 @@ function GamePage({ indexPath, toggleFullScreen }) {
     <>
       {mode === 'loading' ? <Progress /> : null}
       <GameContainer id="container" ref={ref} />
-      <Box sx={{
-        pointerEvents: 'none',
-        width: '100%',
-        height: '100%',
-        zIndex: 1000,
-        position: 'absolute',
-        top: 0,
+      <Box
+        sx={{
+          pointerEvents: 'none',
+          width: '100%',
+          height: '100%',
+          zIndex: 1000,
+          position: 'absolute',
+          top: 0,
 
-        '& > *': {
-          pointerEvents: 'auto',
-        },
-      }}>
+          '& > *': {
+            pointerEvents: 'auto',
+          },
+        }}
+      >
         <DisplayTime />
         <DisplayScore />
         <Controls

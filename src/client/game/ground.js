@@ -16,10 +16,12 @@ import {
   LineSegments,
   Vector3,
 } from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SUBTRACTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
 import { World, Ground, Cylinder } from './settings';
+import { getPointsVertices } from './utils';
 
 const { sin, floor, abs, PI } = Math;
 
@@ -79,13 +81,16 @@ export const createGround = (
   geom.surface = new PlaneGeometry(width, depth, widthSegments, depthSegments);
   geom.surface.rotateX(-PI / 2);
 
-  const vertices = geom.surface.attributes.position.array;
-  const pointsVertices = vertices.slice(0);
+  const vertices = geom.surface.getAttribute('position').array;
+  const normals = geom.surface.getAttribute('normal').array;
+  // const pointsVertices = vertices.slice(0);
 
   for (let i = 0, j = 0, l = vertices.length; i < l; i += 1, j += 3) {
     vertices[j + 1] = data[i] * bumpHeight;
-    pointsVertices[j + 1] = vertices[j + 1] + World.pointSize / 2;
+    // pointsVertices[j + 1] = vertices[j + 1] + World.pointSize / 2;
   }
+
+  const pointsVertices = getPointsVertices(vertices, normals);
 
   geom.bvh = geom.surface.clone();
   geom.bvh = geom.bvh.toNonIndexed();
@@ -107,7 +112,7 @@ export const createGround = (
     'position',
     new Float32BufferAttribute(pointsVertices, 3),
   );
-  geom.points.computeBoundingSphere();
+  // geom.points.computeBoundingSphere();
 
   mat.surface = new MeshBasicMaterial({
     color: Ground.color,
@@ -136,7 +141,6 @@ export const createGround = (
   group.add(mesh.wireframe);
   group.add(mesh.points);
 
-
   // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
   group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
   geom.bvh.rotateY(rotation.y);
@@ -163,7 +167,8 @@ export const createGround = (
 
   return { object: group, bvh: geom.bvh };
 };
-
+const evaluator = new Evaluator();
+evaluator.attributes = ['position', 'normal'];
 export const createMaze = (list, texture) => {
   const boxes = [];
   const mesh = {};
@@ -182,17 +187,15 @@ export const createMaze = (list, texture) => {
     alphaTest: 0.5,
   });
 
-  const evaluator = new Evaluator();
-  evaluator.attributes = ['position', 'normal'];
+  // const evaluator = new Evaluator();
+  // evaluator.attributes = ['position', 'normal'];
 
-  let name = '', movable = false;
+  let name = '';
+  let movable = false;
 
   for (let i = 0, l = list.length; i < l; i += 1) {
     if (i === 0) {
-      const {
-        name: mazeName,
-        movable: mazeMovable,
-      } = list[i];
+      const { name: mazeName, movable: mazeMovable } = list[i];
 
       if (mazeName !== '') {
         name = mazeName;
@@ -215,8 +218,6 @@ export const createMaze = (list, texture) => {
       depthSegments = 10,
       position = { sx: 0, sy: 0, sz: 0 },
     } = list[i];
-
-
 
     // 前後の面
     const plane1 = new PlaneGeometry(
@@ -248,7 +249,9 @@ export const createMaze = (list, texture) => {
     const y = floor(World.spacing * heightSegments * 0.5);
     const z = floor(World.spacing * depthSegments * 0.5);
 
-    let moveX, moveY, moveZ;
+    let moveX;
+    let moveY;
+    let moveZ;
 
     if (position.sx != null) {
       moveX = World.spacing * position.sx;
@@ -377,10 +380,12 @@ export const createMaze = (list, texture) => {
 
   geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
 
-  const vertices = mesh.surface.geometry.getAttribute('position').array.slice(0);
+  const vertices = mesh.surface.geometry
+    .getAttribute('position')
+    .array.slice(0);
   const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
 
-  const newVertices = [];
+  /* const newVertices = [];
   const vertexMap = new Map();
 
   for (let i = 0, l = vertices.length; i < l; i += 3) {
@@ -454,14 +459,15 @@ export const createMaze = (list, texture) => {
 
     vertex.add(normal.normalize().multiplyScalar(1));
     newVertices.push(vertex.x, vertex.y, vertex.z);
-  }
+  } */
+  const newVertices = getPointsVertices(vertices, normals);
 
   geom.points = new BufferGeometry();
   geom.points.setAttribute(
     'position',
-    new Float32BufferAttribute(newVertices, 3)
+    new Float32BufferAttribute(newVertices, 3),
   );
-  geom.points.computeBoundingSphere();
+  // geom.points.computeBoundingSphere();
 
   mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
   mesh.points = new Points(geom.points, mat.points);
@@ -490,6 +496,7 @@ export const createCylinder = (
     height = 10,
     radialSegments = 8,
     heightSegments = 1,
+    openEnded = false,
     spacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
@@ -506,6 +513,7 @@ export const createCylinder = (
     height,
     radialSegments,
     heightSegments,
+    openEnded,
   );
   geom.bvh = geom.surface.clone();
   geom.bvh = geom.bvh.toNonIndexed();
@@ -520,20 +528,25 @@ export const createCylinder = (
     geom.bvh.userData.movable = true;
   }
 
-  geom.points = new CylinderGeometry(
+  /* geom.points = new CylinderGeometry(
     radiusTop,
     radiusBottom,
     height + World.pointSize * 1.2,
     radialSegments,
     heightSegments,
-  );
+  ); */
 
-  const vertices = geom.points.attributes.position.array.slice(0);
+  const vertices = geom.surface.getAttribute('position').array.slice(0);
+  const normals = geom.surface.getAttribute('normal').array.slice(0);
   geom.wireframe = new WireframeGeometry(geom.surface);
 
+  const pointsVertices = getPointsVertices(vertices, normals);
   geom.points = new BufferGeometry();
-  geom.points.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-  geom.points.computeBoundingSphere();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(pointsVertices, 3),
+  );
+  // geom.points.computeBoundingSphere();
 
   mat.surface = new MeshBasicMaterial({
     color: Cylinder.color,
@@ -585,6 +598,154 @@ export const createCylinder = (
   }
 
   geom.bvh.userData.object = group;
+
+  return { object: group, bvh: geom.bvh };
+};
+
+export const createColumn = (
+  {
+    name = '',
+    movable = false,
+
+    radiusEnd = 12,
+    radiusShaft = 8,
+    heightShaft = 10,
+    heightEnd = 2,
+    radialSegments = 8,
+    heightSegments = 4,
+    openEnded = true,
+    spacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  },
+  texture,
+) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  geom.capital = new CylinderGeometry(
+    radiusEnd,
+    radiusShaft,
+    heightEnd,
+    radialSegments,
+    1,
+    openEnded,
+  );
+  geom.base = new CylinderGeometry(
+    radiusShaft,
+    radiusEnd,
+    heightEnd,
+    radialSegments,
+    1,
+    openEnded,
+  );
+  geom.shaft = new CylinderGeometry(
+    radiusShaft,
+    radiusShaft,
+    heightShaft,
+    radialSegments,
+    heightSegments,
+    openEnded,
+  );
+
+  mat.surface = new MeshBasicMaterial({
+    color: Cylinder.color,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Cylinder.wireColor,
+  });
+  mat.points = new PointsMaterial({
+    color: Cylinder.pointColor,
+    size: World.pointSize,
+    map: texture.point,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  const y = (heightShaft + heightEnd) * 0.5;
+  let moveX;
+  let moveY;
+  let moveZ;
+
+  if (position.sx != null) {
+    moveX = World.spacing * position.sx;
+    moveY = World.spacing * position.sy;
+    moveZ = World.spacing * position.sz;
+  } else {
+    moveX = position.x;
+    moveY = position.y;
+    moveZ = position.z;
+  }
+
+  geom.capital.translate(0, heightShaft + heightEnd * 1.5, 0);
+  geom.shaft.translate(0, heightShaft * 0.5 + heightEnd, 0);
+  geom.base.translate(0, heightEnd * 0.5, 0);
+  const merged = mergeGeometries([geom.capital, geom.shaft, geom.base]);
+  mesh.surface = new Mesh(merged, mat.surface);
+
+  geom.bvh = mesh.surface.geometry.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
+
+  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
+
+  const vertices = mesh.surface.geometry
+    .getAttribute('position')
+    .array.slice(0);
+  const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
+  const newVertices = getPointsVertices(vertices, normals);
+
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(newVertices, 3),
+  );
+
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.points = new Points(geom.points, mat.points);
+
+  mesh.surface.name = 'surface';
+  mesh.wireframe.name = 'wireframe';
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  geom.bvh.userData.object = group;
+
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
+
+  if (position.sx != null) {
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+    geom.bvh.translate(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
+  }
 
   return { object: group, bvh: geom.bvh };
 };

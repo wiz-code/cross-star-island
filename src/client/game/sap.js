@@ -23,7 +23,9 @@ const insertionSort = (endPoints) => {
 
 class SweepAndPrune {
   #bb = new Box3();
+
   #overlappings = new Set();
+
   #intersections = [new Set(), new Set(), new Set()];
 
   constructor() {
@@ -67,11 +69,7 @@ class SweepAndPrune {
   }
 
   updateObject(object) {
-    if (object.type === 'character') {
-      getCapsuleBoundingBox(object.collider, this.#bb);
-    } else {
-      object.collider.getBoundingBox(this.#bb);
-    }
+    object.collider.getBoundingBox(this.#bb);
 
     const box = this.boxes.get(object.id);
 
@@ -127,7 +125,8 @@ class SweepAndPrune {
     for (let i = 0, l = endPointsY.length; i < l; i += 1) {
       const { isMin, box: epBox } = endPointsY[i];
 
-      if (intersectionX.has(epBox)) { // X軸で交差していないBoxは除外
+      if (intersectionX.has(epBox)) {
+        // X軸で交差していないBoxは除外
         if (isMin) {
           for (const box of this.#overlappings) {
             if (epBox.overlapY(box)) {
@@ -149,7 +148,8 @@ class SweepAndPrune {
     for (let i = 0, l = endPointsZ.length; i < l; i += 1) {
       const { isMin, box: epBox } = endPointsZ[i];
 
-      if (intersectionY.has(epBox)) { // X, Y軸で交差していないBoxは除外
+      if (intersectionY.has(epBox)) {
+        // X, Y軸で交差していないBoxは除外
         if (isMin) {
           for (const box of this.#overlappings) {
             if (epBox.overlapZ(box)) {
