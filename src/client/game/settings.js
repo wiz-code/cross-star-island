@@ -13,16 +13,16 @@ export const Scene = {
   background: 0x000000,
   Fog: {
     color: 0x000000,
-    near: 60, //30
-    far: 600, //1800
+    near: 60, // 30
+    far: 600, // 1800
     density: 0.004,
   },
 };
 export const Camera = {
-  FOV: 60,//70
+  FOV: 60, // 70
   Aspect: window.innerWidth / window.innerHeight,
-  near: 1, //5
-  far: 800, //2000
+  near: 1, // 5
+  far: 800, // 2000
   order: 'YXZ',
 };
 
@@ -87,7 +87,7 @@ export const Controls = {
   stunningTurnDuration: 0.1,
 
   turnLagTime: 1,
-  urgencyTurn: 180 / 360 * PI * 2, // (PI * 17.5) / 6, // PI * 2,
+  urgencyTurn: (180 / 360) * PI * 2, // (PI * 17.5) / 6, // PI * 2,
 
   inputDuration: 120,
 
@@ -102,16 +102,16 @@ export const World = {
   resistance: 4,
   airResistance: 1,
   Resistance: {
-    ground: -6, //6//4
-    air: -0.6, //0.6, //0.4
+    ground: -6, // 6//4
+    air: -0.6, // 0.6, //0.4
     spin: 6,
     ammo: -1.2,
     obstacle: -0.1,
     item: -0.1,
   },
   collisionShock: 0.8,
-  pointSize: 2, //10
-  spacing: 16, //80
+  pointSize: 2, // 10
+  spacing: 16, // 80
 };
 
 const Screen = {

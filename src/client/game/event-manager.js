@@ -151,9 +151,7 @@ class EventManager extends Publisher {
     this.tweens.forEach((tweenMap, target) => {
       target.getStates().forEach((state) => {
         const tweenSet = tweenMap.get(state);
-        tweenSet.forEach((tween) =>
-          tween(elapsedTime * 1000),
-        );
+        tweenSet.forEach((tween) => tween(elapsedTime * 1000));
       });
     });
   }

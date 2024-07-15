@@ -102,37 +102,34 @@ export const triangleSphereIntersect = (() => {
     plane.projectPoint(center, v1);
 
     if (triangle.containsPoint(v1)) {
-  		return {
+      return {
         normal: plane.normal.clone(),
         depth: abs(depth),
       };
-  	}
+    }
 
     const lines = [
-  		[triangle.a, triangle.b],
-  		[triangle.b, triangle.c],
-  		[triangle.c, triangle.a],
-  	];
+      [triangle.a, triangle.b],
+      [triangle.b, triangle.c],
+      [triangle.c, triangle.a],
+    ];
 
     const r2 = radius * radius;
     let closest = 0;
 
-  	for (let i = 0, l = lines.length; i < l; i += 1) {
-  		line.set(lines[i][0], lines[i][1]);
-  		line.closestPointToPoint(center, true, v2);
+    for (let i = 0, l = lines.length; i < l; i += 1) {
+      line.set(lines[i][0], lines[i][1]);
+      line.closestPointToPoint(center, true, v2);
 
       v3.subVectors(center, v2);
 
-  		const d = v3.lengthSq();
+      const d = v3.lengthSq();
 
-      if (
-        d < r2 &&
-        (i === 0 || d < closest)
-      ) {
+      if (d < r2 && (i === 0 || d < closest)) {
         v4.copy(v3);
         closest = d;
       }
-  	}
+    }
 
     depth = radius - sqrt(closest);
 
@@ -152,11 +149,9 @@ export const triangleCapsuleIntersect = (() => {
   const v1 = new Vector3();
   const v2 = new Vector3();
   const v3 = new Vector3();
-  const tip = new Vector3();
   const base = new Vector3();
   const line1 = new Line3();
   const line2 = new Line3();
-  const capsuleNormal = new Vector3();
   const planeNormal = new Vector3();
   const lineEndOffset = new Vector3();
   const intersection = new Vector3();
@@ -167,61 +162,66 @@ export const triangleCapsuleIntersect = (() => {
   const sphere = new Sphere();
 
   return (capsule, triangle) => {
-    const { start, end, radius } = capsule;
+    const { start, end, radius, normal } = capsule;
     triangle.getPlane(plane);
 
-    capsuleNormal.subVectors(end, start).normalize();
     planeNormal.copy(plane.normal);
-    lineEndOffset.copy(capsuleNormal).multiplyScalar(radius);
-    tip.copy(end).add(lineEndOffset);
+    lineEndOffset.copy(normal).multiplyScalar(radius);
     base.copy(start).sub(lineEndOffset);
     line1.set(start, end);
 
-    if (planeNormal.dot(capsuleNormal) === 0) {
+    if (planeNormal.dot(normal) === 0) {
       let closest = 0;
       const vertices = [triangle.a, triangle.b, triangle.c];
 
-    	for (let i = 0, l = vertices.length; i < l; i += 1) {
+      for (let i = 0, l = vertices.length; i < l; i += 1) {
         const vertex = vertices[i];
-    		line1.closestPointToPoint(vertex, true, center);
+        line1.closestPointToPoint(vertex, true, center);
 
         v1.subVectors(center, vertex);
-    		const d = v1.lengthSq();
+        const d = v1.lengthSq();
 
         if (i === 0 || d < closest) {
           closest = d;
         }
-    	}
+      }
 
-      return triangleSphereIntersect(sphere.set(center, radius), triangle, plane);
+      return triangleSphereIntersect(
+        sphere.set(center, radius),
+        triangle,
+        plane,
+      );
     }
 
-    ray.set(base, capsuleNormal);
+    ray.set(base, normal);
     ray.intersectPlane(plane, intersection);
 
     if (triangle.containsPoint(intersection)) {
       line1.closestPointToPoint(intersection, true, center);
-      return triangleSphereIntersect(sphere.set(center, radius), triangle, plane);
-    } else {
-      let closest = 0;
-      const lines = [
-    		[triangle.a, triangle.b],
-    		[triangle.b, triangle.c],
-    		[triangle.c, triangle.a],
-    	];
+      return triangleSphereIntersect(
+        sphere.set(center, radius),
+        triangle,
+        plane,
+      );
+    }
+    let closest = 0;
+    const lines = [
+      [triangle.a, triangle.b],
+      [triangle.b, triangle.c],
+      [triangle.c, triangle.a],
+    ];
 
-    	for (let i = 0, l = lines.length; i < l; i += 1) {
-    		line2.set(lines[i][0], lines[i][1]);
-    		line2.closestPointToPoint(intersection, true, v1);
+    for (let i = 0, l = lines.length; i < l; i += 1) {
+      line2.set(lines[i][0], lines[i][1]);
+      line2.closestPointToPoint(intersection, true, v1);
 
-        v2.subVectors(intersection, v1);
-    		const d = v2.lengthSq();
+      v2.subVectors(intersection, v1);
+      const d = v2.lengthSq();
 
-        if (i === 0 || d < closest) {
-          reference.copy(v1);
-          closest = d;
-        }
-    	}
+      if (i === 0 || d < closest) {
+        reference.copy(v1);
+        closest = d;
+      }
     }
 
     line1.closestPointToPoint(reference, true, center);
@@ -229,25 +229,77 @@ export const triangleCapsuleIntersect = (() => {
   };
 })();
 
-export const getCapsuleBoundingBox = (() => {
-  const vecMin = new Vector3();
-  const vecMax = new Vector3();
-
-  return (collider, box) => {
-    vecMin.x = collider.start.x - collider.radius;
-    vecMin.y = collider.start.y - collider.radius;
-    vecMin.z = collider.start.z - collider.radius;
-    vecMax.x = collider.end.x + collider.radius;
-    vecMax.y = collider.end.y + collider.radius;
-    vecMax.z = collider.end.z + collider.radius;
-    box.set(vecMin, vecMax);
-    return box;
-  };
-})();
-
 export const getOffsetPos = (position, offset, count) => {
   const { array } = position;
-  const typedOffsetEnd = offset + (count * 3);
+  const typedOffsetEnd = offset + count * 3;
   const pos = array.subarray(offset, typedOffsetEnd);
   return pos;
+};
+
+export const getPointsVertices = (vertices, normals) => {
+  const newVertices = [];
+  const vertexMap = new Map();
+
+  for (let i = 0, l = vertices.length; i < l; i += 3) {
+    const vx1 = vertices[i];
+    const vy1 = vertices[i + 1];
+    const vz1 = vertices[i + 2];
+
+    const key = `${vx1}:${vy1}:${vz1}`;
+
+    if (!vertexMap.has(key)) {
+      vertexMap.set(key, new Set());
+    }
+
+    const vset = vertexMap.get(key);
+    vset.add(i);
+  }
+
+  const vertexList = Array.from(vertexMap.entries());
+  const normalMap = new Map();
+
+  for (let i = 0, l = vertexList.length; i < l; i += 1) {
+    const [key, vertexSet] = vertexList[i];
+    const indices = Array.from(vertexSet.keys());
+
+    if (!normalMap.has(key)) {
+      normalMap.set(key, new Vector3());
+    }
+
+    const vec = normalMap.get(key);
+
+    let x = 0;
+    let y = 0;
+    let z = 0;
+
+    for (let j = 0, m = indices.length; j < m; j += 1) {
+      const index = indices[j];
+
+      const nx = normals[index];
+      const ny = normals[index + 1];
+      const nz = normals[index + 2];
+
+      x += nx;
+      y += ny;
+      z += nz;
+    }
+
+    vec.set(x, y, z).normalize();
+  }
+
+  for (let i = 0, l = vertices.length; i < l; i += 3) {
+    const vx1 = vertices[i];
+    const vy1 = vertices[i + 1];
+    const vz1 = vertices[i + 2];
+
+    const vertex = new Vector3(vx1, vy1, vz1);
+
+    const key = `${vx1}:${vy1}:${vz1}`;
+    const normal = normalMap.get(key);
+
+    vertex.add(normal);
+    newVertices.push(vertex.x, vertex.y, vertex.z);
+  }
+
+  return newVertices;
 };

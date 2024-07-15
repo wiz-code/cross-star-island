@@ -54,9 +54,9 @@ function TitlePage({ gameLink, toggleFullScreen }) {
     };
   }, []);
 
-  const label = useMemo(() => (
-    { inputProps: { 'aria-label': 'VRMファイルを読み込みます' } }
-  ));
+  const label = useMemo(() => ({
+    inputProps: { 'aria-label': 'VRMファイルを読み込みます' },
+  }));
 
   const playGame = useCallback((e) => {
     setGameStarted(true);
@@ -91,15 +91,8 @@ function TitlePage({ gameLink, toggleFullScreen }) {
           sx={{ gap: theme.spacing(2), justifyContent: 'center' }}
         >
           <Box sx={{ mb: theme.spacing(-1) }}>
-            <Checkbox
-              {...label}
-              checked={vrm}
-              onChange={toggleVRM}
-            />
-            <Typography
-              variant="body1"
-              component="span"
-            >
+            <Checkbox {...label} checked={vrm} onChange={toggleVRM} />
+            <Typography variant="body1" component="span">
               VRMファイルを読み込む
             </Typography>
           </Box>

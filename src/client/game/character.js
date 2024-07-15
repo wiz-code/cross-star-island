@@ -17,8 +17,8 @@ import {
   Points,
   Group,
 } from 'three';
-import { Capsule } from 'three/addons/math/Capsule.js';
 
+import Capsule from './capsule';
 import { Keys, Actions, States, Characters } from './data';
 import Entity from './entity';
 import { World, Controls } from './settings';
@@ -58,8 +58,10 @@ const quickTurnDamping = (rotateComponent, elapsedTime) => {
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
 const easeInQuad = (x) => x * x;
 
+const initDir = new Vector3(0, 0, -1);
+
 class Character extends Entity {
-  #dir = new Vector3(0, 0, -1);
+  #dir = new Vector3();
 
   #vel = new Vector3(0, 0, 0);
 
@@ -231,7 +233,6 @@ class Character extends Entity {
     super(name, 'character');
 
     this.game = game;
-    this.camera = null;
 
     const dataMap = new Map(Characters);
 
@@ -258,7 +259,7 @@ class Character extends Entity {
 
     // this.object = null;
 
-    //this.fire = this.fire.bind(this);
+    // this.fire = this.fire.bind(this);
     this.input = this.input.bind(this);
     this.setPovRot = this.setPovRot.bind(this);
 
@@ -287,8 +288,6 @@ class Character extends Entity {
     const end = start.clone();
     end.y = this.data.height + this.data.radius;
     this.collider.set(start, end, this.data.radius);
-
-    this.setAlive(false);
   }
 
   async loadModelData(loader, texture) {
@@ -362,9 +361,8 @@ class Character extends Entity {
     }
   }
 
-  setControls(controls, camera) {
+  setControls(controls) {
     this.hasControls = true;
-    this.camera = camera;
 
     controls.subscribe('input', this.input);
     controls.subscribe('setPovRot', this.setPovRot);
@@ -376,7 +374,6 @@ class Character extends Entity {
 
   unsetControls() {
     this.hasControls = false;
-    this.camera = null;
 
     this.publish('onUnsetControls');
     this.clear('onRotate');
@@ -390,7 +387,9 @@ class Character extends Entity {
     this.rotation.phi = phi;
     this.rotation.theta = theta;
 
-    this.direction.copy(this.#dir.clone().applyAxisAngle(this.#yawAxis, phi));
+    this.direction.copy(
+      this.#dir.copy(initDir).applyAxisAngle(this.#yawAxis, phi),
+    );
     this.publish('setCharacterRot', this.rotation);
 
     this.collider.start.copy(pos);
@@ -545,7 +544,6 @@ class Character extends Entity {
           this.#urgencyDuration = Controls.urgencyDuration;
         }
 
-
         if (this.hasControls && this.game.methods.has('play-sound')) {
           const playSound = this.game.methods.get('play-sound');
           playSound('dash');
@@ -554,13 +552,13 @@ class Character extends Entity {
     }
   }
 
-  /*addTweener(tweener, arg) {
+  /* addTweener(tweener, arg) {
     const tween = tweener(this, arg);
     const updater = tween.update.bind(tween);
     this.subscribe('tween', updater);
-  }*/
+  } */
 
-  updatePos() {
+  /* updatePos() {
     this.object.position.copy(this.collider.start);
     this.object.position.y += this.halfHeight;
     this.object.rotation.y = this.rotation.phi;
@@ -568,7 +566,7 @@ class Character extends Entity {
     if (this.hasControls) {
       this.camera.position.copy(this.collider.end);
     }
-  }
+  } */
 
   update(deltaTime, elapsedTime, damping) {
     // 自機の動き制御
@@ -586,13 +584,13 @@ class Character extends Entity {
     if (this.#inputs.has(Actions.jump) && this.#isGrounded) {
       const value = this.#inputs.get(Actions.jump);
       this.jump(value);
-      this.#inputs.delete(Actions.jump)
+      this.#inputs.delete(Actions.jump);
     }
 
     if (this.#inputs.has(Actions.trigger)) {
       const value = this.#inputs.get(Actions.trigger);
       this.fire(value);
-      this.#inputs.delete(Actions.trigger)
+      this.#inputs.delete(Actions.trigger);
     }
 
     if (this.#states.has(States.urgency)) {

@@ -29,17 +29,9 @@ class Item extends Collidable {
 
   static createTetra(data, texture) {
     const verticesOfTetra = new Float32Array([
-      0, 0, 2,
-      0, 0.3, 0,
-      0.7, 0, -0.5,
-      -0.7, 0, -0.5,
+      0, 0, 2, 0, 0.3, 0, 0.7, 0, -0.5, -0.7, 0, -0.5,
     ]);
-    const indices = [
-      0, 3, 1,
-      0, 1, 2,
-      0, 2, 3,
-      1, 3, 2,
-    ];
+    const indices = [0, 3, 1, 0, 1, 2, 0, 2, 3, 1, 3, 2];
     const geom = new BufferGeometry();
     geom.setIndex(indices);
     geom.setAttribute('position', new BufferAttribute(verticesOfTetra, 3));
@@ -95,7 +87,12 @@ class Item extends Collidable {
       data.tubularSegments,
     );
     const wireGeom = new EdgesGeometry(geom);
-    let pointsGeom = new RingGeometry(data.radius - 1.5, data.radius + 1.5, 4, 0);
+    let pointsGeom = new RingGeometry(
+      data.radius - 1.5,
+      data.radius + 1.5,
+      4,
+      0,
+    );
     const vertices = pointsGeom.attributes.position.array.slice(0);
     pointsGeom = new BufferGeometry();
     pointsGeom.setAttribute(
@@ -144,7 +141,6 @@ class Item extends Collidable {
     this.object = Item[this.data.method](this.data, texture);
 
     this.setObject(this.object);
-    this.setAlive(false);
   }
 
   update(deltaTime, elapsedTime, damping) {

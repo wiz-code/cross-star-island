@@ -16,7 +16,6 @@ const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
 const ErrorValue = 1e-4;
 
-
 const buttonList = [
   'a',
   'b',
@@ -77,7 +76,7 @@ class GamepadControls extends Publisher {
     super();
 
     this.index = index;
-    this.buttons = new Map(buttonList.map((value) => ([value, 0])));
+    this.buttons = new Map(buttonList.map((value) => [value, 0]));
     this.axes = new Map(
       axisList.map((value, index) => {
         if (index > 3) {
@@ -85,7 +84,7 @@ class GamepadControls extends Publisher {
         }
 
         return [value, 0];
-      })
+      }),
     );
 
     this.cache = {};
@@ -121,7 +120,7 @@ class GamepadControls extends Publisher {
     this.onUnsetControls = this.onUnsetControls.bind(this);
 
     this.handleResize();
-    //this.setOrientation();
+    // this.setOrientation();
 
     this.enable();
   }
@@ -262,10 +261,7 @@ class GamepadControls extends Publisher {
         } else {
           this.#inputs.set(Actions.moveRight);
         }
-      } else if (
-        (button === 'rt' || button === 'b') &&
-        value === 1
-      ) {
+      } else if ((button === 'rt' || button === 'b') && value === 1) {
         if (!this.#pendings.has(button)) {
           this.#pendings.add(button);
           this.#inputs.set(Actions.trigger, value);
@@ -300,16 +296,14 @@ class GamepadControls extends Publisher {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveForward;
             this.#inputs.set(Actions.quickMoveForward, 1);
+          } else if (
+            this.buttons.get('lsb') === 1 ||
+            this.buttons.get('lt') === 1 ||
+            this.axes.get('lt2') > 0
+          ) {
+            this.#inputs.set(Actions.splint, -value);
           } else {
-            if (
-              this.buttons.get('lsb') === 1 ||
-              this.buttons.get('lt') === 1 ||
-              this.axes.get('lt2') > 0
-            ) {
-              this.#inputs.set(Actions.splint, -value);
-            } else {
-              this.#inputs.set(Actions.moveForward, -value);
-            }
+            this.#inputs.set(Actions.moveForward, -value);
           }
         } else if (value > ErrorValue) {
           if (mashed === 1) {
@@ -369,7 +363,8 @@ class GamepadControls extends Publisher {
 
     // 自機の視点制御
     const { lookSpeed } = Controls;
-    const { vertical: pitchIndicator, horizontal: yawIndicator } = this.povIndicator;
+    const { vertical: pitchIndicator, horizontal: yawIndicator } =
+      this.povIndicator;
 
     if (!this.#resetPointer) {
       if (this.povSight.material.color !== sightColor.pov) {

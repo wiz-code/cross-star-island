@@ -48,7 +48,6 @@ export const Actions = {
   moveLeft: 4,
   moveRight: 5,
 
-
   jump: 10,
   trigger: 11,
 
@@ -60,7 +59,6 @@ export const Actions = {
   quickTurnRight: 33,
   quickMoveLeft: 34,
   quickMoveRight: 35,
-
 };
 
 export const States = {
@@ -106,7 +104,14 @@ export const GameMethods = [
       this.setMode('clear');
       this.stop();
 
-      const score = this.scoreManager.calcScore(time, falls, hits, pushAway, noCheckpoint, punishment);
+      const score = this.scoreManager.calcScore(
+        time,
+        falls,
+        hits,
+        pushAway,
+        noCheckpoint,
+        punishment,
+      );
       this.callbacks.setScore(score);
     },
   ],
@@ -144,7 +149,7 @@ export const Obstacles = [
 ];
 
 export const Compositions = [
-  ['stage', ['firstStage']],
+  ['stage', ['firstStage', 'secondStage']],
   ['player', { name: 'player-1', ctype: 'hero-1' }],
 ];
 
@@ -152,7 +157,7 @@ export const Guns = [
   [
     'normal-gun',
     {
-      speed: 600, //2000
+      speed: 600, // 2000
       fireInterval: 300,
       accuracy: 3,
       recoil: 1, /// /////
@@ -170,7 +175,7 @@ export const Ammos = [
       wireColor: 0xf7ca79,
       pointColor: 0xf45c41,
 
-      radius: 1.5, //6
+      radius: 1.5, // 6
       detail: 1,
       numAmmo: 100,
 
@@ -200,7 +205,7 @@ export const Ammos = [
       wireColor: 0x424a76,
       pointColor: 0xf45c41,
 
-      radius: 1.5, //6
+      radius: 1.5, // 6
       detail: 1,
       numAmmo: 50,
 
@@ -209,7 +214,7 @@ export const Ammos = [
 
       rotateSpeed: 10,
 
-      hopValue: 120, //350
+      hopValue: 120, // 350
       hopDuration: 0.5,
 
       updaters: [
@@ -250,9 +255,9 @@ export const Characters = [
       faceColor: 0xdc143c,
       faceWireColor: 0xdb6e84,
 
-      height: 4,//20
-      radius: 2,//10
-      weight: 1,//
+      height: 4, // 20
+      radius: 2, // 10
+      weight: 1, //
 
       speed: 120, // 300,
       rotateSpeed: 2,
@@ -280,12 +285,12 @@ export const Characters = [
       model: 'model-2',
       motions: ['VRMA_01'],
       // pose: 'pose-1',
-      modelSize: 4.5,//27.5
-      offsetY: 3,//20
+      modelSize: 4.5, // 27.5
+      offsetY: 3, // 20
       rotateSpeed: 2,
 
-      height: 4, //20
-      radius: 2, //10
+      height: 4, // 20
+      radius: 2, // 10
       weight: 1,
 
       speed: 150, // 300,
@@ -293,8 +298,8 @@ export const Characters = [
       sprint: 2.5,
       urgencyMove: 8,
 
-      airSpeed: 40, //100,
-      jumpPower: 150, //350,
+      airSpeed: 40, // 100,
+      jumpPower: 150, // 350,
 
       gunTypes: ['normal-gun'],
     },
@@ -318,8 +323,8 @@ export const Items = [
     {
       method: 'createRing',
 
-      radius: 5,//20
-      tube: 0.8,//3
+      radius: 5, // 20
+      tube: 0.8, // 3
       radialSegments: 6,
       tubularSegments: 12,
       weight: 1,
@@ -345,8 +350,8 @@ export const Items = [
     {
       method: 'createRing',
 
-      radius: 5,//20
-      tube: 0.8, //3
+      radius: 5, // 20
+      tube: 0.8, // 3
       radialSegments: 6,
       tubularSegments: 12,
 
@@ -397,7 +402,7 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: { sx: 0.1, sy: 1.5, sz: -10 },
+          position: { sx: 0.1, sy: 3, sz: -10 },
           phi: PI,
         },
         {
@@ -410,7 +415,7 @@ export const Stages = [
         },
         // 最終チェックポイント
         {
-          //position: { sx: 12.5, sy: 3, sz: 0 },
+          // position: { sx: 12.5, sy: 3, sz: 0 },
           position: { sx: 0.1, sy: 5, sz: 0 },
           phi: PI / 2,
         },
@@ -434,15 +439,21 @@ export const Stages = [
           name: 'enemy-1',
           ctype: 'hero-1',
           ammoType: 'small-bullet',
-          tweeners: [{ name: 'avoidance-1', state: States.alive }],
+          tweeners: [
+            {
+              name: 'avoidance-1',
+              state: States.alive,
+              args: [10000, 'z-axis', 4, 500],
+            },
+          ],
           schedule: {
             spawnTime: 10,
           },
           params: {
-            position: { sx: -22, sy: 3, sz: 4.2 },
+            position: { sx: -4, sy: 3, sz: 0 },
             phi: -PI / 2,
             theta: -0.1,
-            section: 2,
+            section: 3,
             elapsedTime: 0,
             fireInterval: 0.4,
           },
@@ -455,15 +466,21 @@ export const Stages = [
           name: 'enemy-2',
           ctype: 'hero-1',
           ammoType: 'small-bullet',
-          tweeners: [{ name: 'avoidance-1', state: States.alive }],
+          tweeners: [
+            {
+              name: 'avoidance-1',
+              state: States.alive,
+              args: [12500, 'z-axis', 4, 500],
+            },
+          ],
           schedule: {
             spawnTime: 12.5,
           },
           params: {
-            position: { sx: -24, sy: 3, sz: 4.2 },
+            position: { sx: -6, sy: 3, sz: 0 },
             phi: (82 * -PI) / 180,
             theta: -0.1,
-            section: 2,
+            section: 3,
             elapsedTime: 0,
             fireInterval: 0.8,
           },
@@ -476,15 +493,21 @@ export const Stages = [
           name: 'enemy-3',
           ctype: 'hero-1',
           ammoType: 'small-bullet',
-          tweeners: [{ name: 'avoidance-1', state: States.alive }],
+          tweeners: [
+            {
+              name: 'avoidance-1',
+              state: States.alive,
+              args: [15000, 'z-axis', 4, 500],
+            },
+          ],
           schedule: {
             spawnTime: 15,
           },
           params: {
-            position: { sx: -26, sy: 3, sz: 4.2 },
+            position: { sx: -8, sy: 3, sz: 0 },
             phi: (98 * -PI) / 180,
             theta: -0.1,
-            section: 2,
+            section: 3,
             elapsedTime: 0,
             fireInterval: 0.8,
           },
@@ -508,13 +531,13 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          tweeners: [
+          /* tweeners: [
             {
-              name: 'avoidance-2',
+              name: 'avoidance-1',
               state: States.alive,
               args: [5000, 'z-axis', 10, 2000],
             },
-          ],
+          ], */
           updaters: [
             { name: 'bullet-fire-1', state: States.alive },
             { name: 'satellite-points', state: States.alive },
@@ -527,15 +550,15 @@ export const Stages = [
           schedule: {
             spawnTime: 5,
           },
-          tweeners: [
+          /* tweeners: [
             {
-              name: 'avoidance-2',
+              name: 'avoidance-1',
               state: States.alive,
               args: [5000, 'x-axis', 10, 2000],
             },
-          ],
+          ], */
           params: {
-            position: { sx: -10, sy: 3, sz: 13.9 },
+            position: { sx: -9.9, sy: 2.5, sz: 13.9 },
             phi: (-6 * PI * 2) / 360,
             theta: (-12 * PI * 2) / 360,
             section: 2,
@@ -557,7 +580,7 @@ export const Stages = [
             section: 1,
           },
           schedule: {
-            spawnTime: 0,
+            spawnTime: 5,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -571,7 +594,7 @@ export const Stages = [
             section: 1,
           },
           schedule: {
-            spawnTime: 4,
+            spawnTime: 5,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -585,7 +608,7 @@ export const Stages = [
             section: 1,
           },
           schedule: {
-            spawnTime: 2,
+            spawnTime: 5,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -599,7 +622,7 @@ export const Stages = [
             section: 1,
           },
           schedule: {
-            spawnTime: 6,
+            spawnTime: 5,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -700,21 +723,44 @@ export const Stages = [
           name: 'moving-platform-1',
           params: {},
           tweeners: [
-            { name: 'updown-move', state: States.alive, args: [0, 'y-axis', -60, 5000] },
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [0, 'y-axis', -32, 5000],
+            },
           ],
         },
         {
           name: 'moving-platform-2',
           params: {},
           tweeners: [
-            { name: 'updown-move', state: States.alive, args: [5000, 'z-axis', 10, 2000] },
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [5000, 'z-axis', 10, 2000],
+            },
           ],
         },
         {
           name: 'moving-platform-3',
           params: {},
           tweeners: [
-            { name: 'updown-move', state: States.alive, args: [5000, 'x-axis', 10, 2000] },
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [5000, 'x-axis', 10, 2000],
+            },
+          ],
+        },
+        {
+          name: 'moving-platform-4',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [5000, 'z-axis', 15, 1500],
+            },
           ],
         },
       ],
@@ -884,7 +930,7 @@ export const Stages = [
               height: 4,
               radialSegments: 11,
               heightSegments: 1,
-              position: { sx: -9, sy: -0.4, sz: 4.8 },
+              position: { sx: -9, sy: -2.4, sz: 4.8 },
             },
             {
               name: 'moving-platform-2',
@@ -917,6 +963,9 @@ export const Stages = [
               position: { sx: -11, sy: -4, sz: 6 },
             },
             {
+              name: 'moving-platform-4',
+              movable: true,
+
               radiusTop: 15,
               radiusBottom: 12,
               height: 4,
@@ -957,6 +1006,83 @@ export const Stages = [
               radialSegments: 15,
               heightSegments: 1,
               position: { sx: -13, sy: -0.4, sz: 0 },
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  [
+    'secondStage',
+    {
+      checkpoints: [
+        {
+          position: { sx: 0, sy: 5, sz: 0 },
+          phi: PI,
+        },
+      ],
+      movables: [
+        {
+          name: 'moving-platform-1',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [0, 'x-axis', -32, 5000],
+            },
+          ],
+        },
+      ],
+      sections: [
+        {
+          offset: { sx: 0, sy: 0, sz: 0 },
+          grid: {
+            widthSegments: 20,
+            heightSegments: 10,
+            depthSegments: 10,
+            position: { sx: 0.25, sy: 0.25, sz: 0.25 },
+          },
+          ground: {
+            widthSegments: 2,
+            depthSegments: 8,
+            bumpHeight: 0,
+            position: { sx: 0, sy: 0, sz: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+          },
+          cylinder: [
+            {
+              name: 'moving-platform-1',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 8,
+              height: 3,
+              radialSegments: 7,
+              heightSegments: 1,
+              position: { sx: 0, sy: -1, sz: 5 },
+            },
+          ],
+          column: [
+            /* {
+              radiusShaft: 12,
+              radiusEnd: 18,
+              heightShaft: 74,
+              heightEnd: 6,
+              radialSegments: 8,
+              heightSegments: 8,
+              openEnded: true,
+              position: { sx: 0, sy: 0, sz: 0 },
+            }, */
+            {
+              radiusShaft: 12,
+              radiusEnd: 18,
+              heightShaft: 74,
+              heightEnd: 6,
+              radialSegments: 8,
+              heightSegments: 8,
+              openEnded: false,
+              position: { sx: 0, sy: -8, sz: 8 },
             },
           ],
         },

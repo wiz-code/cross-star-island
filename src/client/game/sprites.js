@@ -285,7 +285,8 @@ const sprites = {
     context.shadowBlur = 8;
 
     context.fillStyle = '#FFF';
-    context.font = '48px "Helvetica Neue",Arial,"メイリオ",Meiryo,"ヒラギノ角ゴ ProN W3","Hiragino Kaku Gothic ProN","ヒラギノ角ゴシック","Hiragino Sans","Roboto",sans-serif';
+    context.font =
+      '48px "Helvetica Neue",Arial,"メイリオ",Meiryo,"ヒラギノ角ゴ ProN W3","Hiragino Kaku Gothic ProN","ヒラギノ角ゴシック","Hiragino Sans","Roboto",sans-serif';
     context.textBaseline = 'alphabetic';
     context.fillText(text, x, y);
 

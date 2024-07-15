@@ -62,8 +62,6 @@ function App({ indexPath }) {
     );
   }
 
-
-
   const gameLink = useMemo(() => {
     if (indexPath === '/') {
       return '/game';
@@ -89,7 +87,12 @@ function App({ indexPath }) {
             />
             <Route
               path={gameLink}
-              element={<GamePage indexPath={indexPath} toggleFullScreen={toggleFullScreen} />}
+              element={
+                <GamePage
+                  indexPath={indexPath}
+                  toggleFullScreen={toggleFullScreen}
+                />
+              }
             />
           </Routes>
         </Suspense>
