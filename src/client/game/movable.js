@@ -38,13 +38,18 @@ class Movable extends Entity {
     //
   }
 
-  dispose() {
-    this.params = null;
-
+  clearObject() {
     this.geometry = null;
     this.offset = 0;
     this.count = 0;
     this.object = null;
+  }
+
+  dispose() {
+    this.params = null;
+    this.velocity.set(0, 0, 0);
+
+    this.clearObject();
 
     // リスナーを全削除
     this.clear();

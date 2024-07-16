@@ -11,6 +11,9 @@ class MovableManager extends Publisher {
     super();
 
     this.bvh = null;
+    this.geometry = null;
+    this.boundsTree = null;
+    this.data = null;
     this.refitSet = new Set();
     this.list = new Map();
   }
@@ -31,9 +34,33 @@ class MovableManager extends Publisher {
     }
   }
 
-  removeObject() {}
+  removeObject(movable) {
+    if (this.list.has(movable.name)) {
+      movable.clearObject();
+      this.list.delete(movable.name);
+    }
+  }
+
+  clearBVH() {
+    this.bvh = null;
+    this.refitSet.clear();
+    this.list.clear();
+
+    this.geometry = null;
+    this.boundsTree = null;
+    this.data = null;
+  }
+
+  dispose() {
+    this.clearBVH();
+    this.clear();
+  }
 
   update() {
+    if (this.bvh == null) {
+      return;
+    }
+
     for (const movable of this.list.values()) {
       movable.update();
     }

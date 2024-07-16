@@ -9,6 +9,7 @@ import {
   Clock,
   AmbientLight,
 } from 'three';
+import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 import { debounce } from 'throttle-debounce';
 
 import {
@@ -39,6 +40,7 @@ import EventManager from './event-manager';
 import SoundManager from './sound-manager';
 import ScoreManager from './score-manager';
 import MovableManager from './movable-manager';
+import GridProcessor from './grid-processor';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -118,6 +120,11 @@ class Game {
       antialias: false,
       preserveDrawingBuffer: true,
     });
+    /*this.renderer = new WebGPURenderer({
+      canvas,
+      antialias: false,
+      preserveDrawingBuffer: true,
+    });*/
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
@@ -174,6 +181,7 @@ class Game {
     const promise = this.soundManager.loadSounds();
     this.scoreManager = new ScoreManager(this.game);
     this.movableManager = new MovableManager(this.game); /// ///////
+    this.gridProcessor = new GridProcessor();/////////
     this.loadingList.push(promise);
 
     this.sceneManager.clear();
@@ -408,6 +416,8 @@ class Game {
     this.movableManager.setBVH(bvh);
     this.scene.field.add(terrain);
     this.scene.field.add(bvh);
+    const grids = terrain.getObjectsByProperty('type', 'grid');
+    this.gridProcessor.addList(grids);
     // this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
@@ -623,6 +633,7 @@ class Game {
   clearStage() {
     if (this.game.stage != null) {
       this.objectManager.clearList();
+      this.movableManager.clearBVH();
 
       this.scene.field.clear();
       this.game.meshBVH = null;
@@ -717,6 +728,7 @@ class Game {
     this.sceneManager.update();
 
     this.movableManager.update();
+    this.gridProcessor.update(deltaTime);
     // this.helper.update();/////////////
 
     this.callbacks.setElapsedTime(this.#elapsedTime);
