@@ -79,7 +79,7 @@ export const createPovIndicator = (texture) => {
 
   sprite.horizontal = new Sprite(material.direction);
   sprite.horizontal.visible = false;
-  sprite.horizontal.scale.set(128, 128, 0);
+  sprite.horizontal.scale.set(Screen.horizontalIndicatorSize, Screen.horizontalIndicatorSize, 0);
   sprite.horizontal.position.setZ(-10);
 
   return sprite;
