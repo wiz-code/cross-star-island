@@ -5,6 +5,7 @@ import { Controls, Screen } from './settings';
 import {
   createSight,
   sightLines,
+  createVerticalFrame,/////////
   createPovIndicator,
   createCenterMark,
 } from './screen';
@@ -29,12 +30,14 @@ class SceneManager {
     const povSightLines = sightLines(texture);
     const povIndicator = createPovIndicator(texture);
     const centerMark = createCenterMark(texture);
+    const verticalFrame = createVerticalFrame(texture);
 
     return {
       povSight,
       povSightLines,
       povIndicator,
       centerMark,
+      verticalFrame,////////
     };
   }
 

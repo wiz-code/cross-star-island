@@ -32,18 +32,25 @@ const createStage = (stageData, texture) => {
     const bvhs = [];
 
     if (Array.isArray(section.grid)) {
+      const gridGroup = new Group();
+
       for (let j = 0, m = section.grid.length; j < m; j += 1) {
         const data = section.grid[j];
         const grid = createGrid(data, texture);
         const fineGrid = createFineGrid(data, texture);
-        block.add(grid);
-        block.add(fineGrid);
+        gridGroup.add(grid);
+        gridGroup.add(fineGrid);
+        gridGroup.type = 'grid';
+        block.add(gridGroup);
       }
     } else if (section.grid != null) {
+      const gridGroup = new Group();
       const grid = createGrid(section.grid, texture);
       const fineGrid = createFineGrid(section.grid, texture);
-      block.add(grid);
-      block.add(fineGrid);
+      gridGroup.add(grid);
+      gridGroup.add(fineGrid);
+      gridGroup.type = 'grid';
+      block.add(gridGroup);
     }
 
     if (Array.isArray(section.ground)) {

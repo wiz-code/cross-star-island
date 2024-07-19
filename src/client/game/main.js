@@ -9,6 +9,7 @@ import {
   Clock,
   AmbientLight,
 } from 'three';
+import WebGPURenderer from 'three/addons/renderers/webgpu/WebGPURenderer.js';
 import { debounce } from 'throttle-debounce';
 
 import {
@@ -39,6 +40,7 @@ import EventManager from './event-manager';
 import SoundManager from './sound-manager';
 import ScoreManager from './score-manager';
 import MovableManager from './movable-manager';
+import GridProcessor from './grid-processor';
 import Character from './character';
 import Ammo from './ammo';
 import Gun from './gun';
@@ -54,6 +56,7 @@ import {
 } from './utils';
 
 const { floor, exp } = Math;
+const FPS30 = 1 / 30;
 
 const resistances = Object.entries(World.Resistance);
 const dampingData = {};
@@ -71,7 +74,9 @@ const canvas = document.createElement('canvas');
 globalThis.gamepadIndex = -1;
 
 class Game {
+  #count = 0;
   #elapsedTime = 0;
+  #accumulatedTime = 0;
 
   constructor(width, height, callbacks, params) {
     this.clock = new Clock();
@@ -118,6 +123,11 @@ class Game {
       antialias: false,
       preserveDrawingBuffer: true,
     });
+    /*this.renderer = new WebGPURenderer({
+      canvas,
+      antialias: false,
+      preserveDrawingBuffer: true,
+    });*/
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
@@ -142,12 +152,13 @@ class Game {
 
     this.scene.screen = new ThreeScene();
     const indicators = SceneManager.createIndicators(this.texture);
-    const { povSight, povSightLines, povIndicator, centerMark } = indicators;
+    const { povSight, povSightLines, povIndicator, centerMark, verticalFrame } = indicators;
     this.scene.screen.add(povSight);
     this.scene.screen.add(povSightLines);
     this.scene.screen.add(povIndicator.horizontal);
     this.scene.screen.add(povIndicator.vertical);
-    this.scene.screen.add(centerMark);
+    //this.scene.screen.add(centerMark);
+    this.scene.screen.add(verticalFrame);
 
     this.modelManager = new ModelManager(this.scene.field);
     this.eventManager = new EventManager(this.game);
@@ -174,6 +185,7 @@ class Game {
     const promise = this.soundManager.loadSounds();
     this.scoreManager = new ScoreManager(this.game);
     this.movableManager = new MovableManager(this.game); /// ///////
+    this.gridProcessor = new GridProcessor();/////////
     this.loadingList.push(promise);
 
     this.sceneManager.clear();
@@ -408,6 +420,8 @@ class Game {
     this.movableManager.setBVH(bvh);
     this.scene.field.add(terrain);
     this.scene.field.add(bvh);
+    const grids = terrain.getObjectsByProperty('type', 'grid');
+    this.gridProcessor.addList(grids);
     // this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
@@ -623,6 +637,7 @@ class Game {
   clearStage() {
     if (this.game.stage != null) {
       this.objectManager.clearList();
+      this.movableManager.clearBVH();
 
       this.scene.field.clear();
       this.game.meshBVH = null;
@@ -700,23 +715,38 @@ class Game {
 
   update() {
     const deltaTime = this.clock.getDelta();
-    const delta = deltaTime / GameSettings.stepsPerFrame;
+    this.#accumulatedTime += deltaTime;
+
+    if (deltaTime > FPS30) {
+      this.#count += 1;
+
+      if (this.#count % 2 === 0) {
+        return;
+      }
+    }
+
+    let elapsedTime = this.#elapsedTime;
+    this.#elapsedTime += this.#accumulatedTime;
+
+    const delta = this.#accumulatedTime / GameSettings.stepsPerFrame;
+    this.#accumulatedTime = 0;
     const damping = getDamping(delta);
 
     this.controls.input();
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {
-      this.#elapsedTime += delta;
+      elapsedTime += delta;
       this.controls.update(delta);
-      this.objectManager.update(delta, this.#elapsedTime, damping);
+      this.objectManager.update(delta, elapsedTime, damping);
     }
 
-    this.modelManager.update(deltaTime);
-    this.eventManager.update(deltaTime, this.#elapsedTime);
+    this.modelManager.update(this.#elapsedTime);
+    this.eventManager.update(this.#elapsedTime);
     this.objectManager.updatePos();
     this.sceneManager.update();
 
     this.movableManager.update();
+    this.gridProcessor.update(this.#elapsedTime);
     // this.helper.update();/////////////
 
     this.callbacks.setElapsedTime(this.#elapsedTime);

@@ -241,6 +241,7 @@ class Character extends Entity {
     }
 
     this.data = dataMap.get(ctype);
+    this.useVRM = useVRM;/////////////
 
     this.rotation = new Spherical(); // phi and theta
     this.povRotation = new Spherical();
@@ -356,9 +357,11 @@ class Character extends Entity {
   setAlive(bool = true) {
     super.setAlive(bool);
 
-    if (!this.hasControls) {
-      super.visible(bool);
+    if (this.useVRM || this.hasControls) {
+      return;
     }
+
+    super.visible(bool);
   }
 
   setControls(controls) {

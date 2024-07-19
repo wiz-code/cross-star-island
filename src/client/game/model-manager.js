@@ -3,6 +3,8 @@ import { VRMUtils } from '@pixiv/three-vrm';
 import { createVRMAnimationClip } from '@pixiv/three-vrm-animation';
 
 class ModelManager {
+  #prevTime = 0;
+
   constructor() {
     this.models = new Map();
     this.mixers = new Map();
@@ -99,7 +101,10 @@ class ModelManager {
     }
   }
 
-  update(deltaTime) {
+  update(elapsedTime) {
+    const deltaTime = elapsedTime - this.#prevTime;
+    this.#prevTime = elapsedTime;
+
     const models = Array.from(this.models.values());
     const mixers = Array.from(this.mixers.values());
 

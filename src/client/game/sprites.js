@@ -22,6 +22,80 @@ const sprites = {
     return context;
   },
 
+  verticalFrame(context) {
+    const { canvas } = context;
+    canvas.width = 256;
+    canvas.height = 256;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 256, 256);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(0, 36);
+    context.lineTo(3, 36);
+    context.lineTo(3, 38);
+    context.lineTo(1, 38);
+    context.lineTo(1, 218);
+    context.lineTo(3, 218);
+    context.lineTo(3, 220);
+    context.lineTo(0, 220);
+    context.closePath();
+    context.fill();
+
+    context.beginPath();
+    context.moveTo(256, 36);
+    context.lineTo(253, 36);
+    context.lineTo(253, 38);
+    context.lineTo(255, 38);
+    context.lineTo(255, 218);
+    context.lineTo(253, 218);
+    context.lineTo(253, 220);
+    context.lineTo(256, 220);
+    context.closePath();
+    context.fill();
+
+    context.beginPath();
+    context.moveTo(7, 124);
+    context.lineTo(7, 132);
+    context.lineTo(3, 128);
+    context.closePath();
+    context.fill();
+
+    context.beginPath();
+    context.moveTo(249, 124);
+    context.lineTo(249, 132);
+    context.lineTo(253, 128);
+    context.closePath();
+    context.fill();
+
+    return context;
+  },
+
+  verticalIndicator(context) {
+    const { canvas } = context;
+    canvas.width = 256;
+    canvas.height = 256;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 256, 256);
+    context.fillStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(7, 124);
+    context.lineTo(7, 132);
+    context.lineTo(3, 128);
+    context.closePath();
+    context.fill();
+
+    context.beginPath();
+    context.moveTo(249, 124);
+    context.lineTo(249, 132);
+    context.lineTo(253, 128);
+    context.closePath();
+    context.fill();
+
+    return context;
+  },
+
   crossStar(context) {
     const { canvas } = context;
     canvas.width = 128;

@@ -118,10 +118,14 @@ const Screen = {
   normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
   sightLinesColor: 0x9e9e9e,
+  verticalFrame: 0x9e9e9e,
   warnColor: 0xffc107,
   sightSize: 48,
-  sightPovSize: 48,
+  sightPovSize: 512,//48,
   sightLinesSize: 128,
+  verticalFrameSize: 512,
+  gaugeHeight: 184 - 2,
+
 };
 
 export const GameColor = {

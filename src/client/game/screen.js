@@ -27,7 +27,22 @@ export const sightLines = (texture) => {
   return sprite;
 };
 
-export const createCenterMark = (texture) => {
+export const createVerticalFrame = (texture) => {
+  const material = new SpriteMaterial({
+    color: Screen.verticalFrame,
+    map: texture.verticalFrame,
+    transparent: true,
+    opacity: 0.3,
+  });
+
+  const sprite = new Sprite(material);
+  sprite.scale.set(Screen.verticalFrameSize, Screen.verticalFrameSize, 0);
+  sprite.position.set(0, 0, -10);
+
+  return sprite;
+};
+
+export const createCenterMark = (texture) => {///////////////
   const material = new SpriteMaterial({
     color: 0xffffff,
     map: texture.centerMark,
@@ -44,6 +59,10 @@ export const createPovIndicator = (texture) => {
   const sprite = {};
 
   const material = {};
+  /*material.vertical = new SpriteMaterial({
+    color: 0xffffff,
+    map: texture.verticalIndicator,
+  });*/
   material.vertical = new SpriteMaterial({
     color: 0xffffff,
     map: texture.verticalIndicator,
