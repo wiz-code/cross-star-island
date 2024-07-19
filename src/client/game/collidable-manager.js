@@ -146,8 +146,8 @@ class CollidableManager extends Publisher {
     for (let i = 0, l = this.list.size; i < l; i += 1) {
       const collidable = list[i];
       const { type, collider, velocity } = collidable;
-      this.#parent = null; /// /////////////////
-      this.#intersected = null; /// ////////
+      this.#parent = null;
+      this.#intersected = null;
       this.#triangleIndexSet.clear();
 
       if (collider instanceof Capsule) {
@@ -233,7 +233,7 @@ class CollidableManager extends Publisher {
                 this.#intersected.offset <= vindex &&
                 vindex <= this.#intersected.offset + this.#intersected.count
               ) {
-                this.#parent = this.#intersected; /// ///////////
+                this.#parent = this.#intersected;
                 collider.translate(this.#parent.velocity);
                 break;
               }

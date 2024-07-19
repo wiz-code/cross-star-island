@@ -402,7 +402,7 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: { sx: 0.1, sy: 3, sz: -10 },
+          position: { sx: 0.1, sy: 2, sz: -10 },
           phi: PI,
         },
         {
@@ -726,7 +726,7 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [0, 'y-axis', -32, 5000],
+              args: [0, 'y-axis', -32, 3000],
             },
           ],
         },

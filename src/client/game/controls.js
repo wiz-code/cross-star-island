@@ -104,7 +104,7 @@ class FirstPersonControls extends Publisher {
       horizontal: indicators.povIndicator.horizontal,
       vertical: indicators.povIndicator.vertical,
     };
-    this.centerMark = indicators.centerMark;
+    //this.centerMark = indicators.centerMark;
 
     this.verticalAngle = {
       min: (-Controls.verticalAngleLimit / 360) * PI * 2,
@@ -182,16 +182,16 @@ class FirstPersonControls extends Publisher {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-
-    this.gaugeHalfY = this.viewHalfY - 32;
+    this.gaugeHalfY = Screen.gaugeHeight;//this.viewHalfY - 32;
 
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
 
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
-    this.povIndicator.vertical.position.setX(
+    /*this.povIndicator.vertical.position.setX(
       this.viewHalfX - Screen.sightPovSize / 2,
-    );
-    this.centerMark.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
+    );*/
+
+    //this.centerMark.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
     this.povSightLines.position.setX(0);
     this.povSightLines.position.setY(0);
   }
@@ -296,7 +296,7 @@ class FirstPersonControls extends Publisher {
     }
 
     this.#pointers.add(event.button);
-    //this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }

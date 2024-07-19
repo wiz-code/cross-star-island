@@ -2,6 +2,8 @@ import { States } from './data';
 import Publisher from './publisher';
 
 class EventManager extends Publisher {
+  #prevTime = 0;
+
   constructor(game) {
     super();
 
@@ -127,7 +129,10 @@ class EventManager extends Publisher {
     }
   }
 
-  update(deltaTime, elapsedTime) {
+  update(elapsedTime) {
+    const deltaTime = elapsedTime - this.#prevTime;
+    this.#prevTime = elapsedTime;
+
     const schedules = Array.from(this.schedules.entries());
 
     for (let i = 0, l = schedules.length; i < l; i += 1) {

@@ -12,21 +12,27 @@ const offsetX = 0.08;
 const offsetY = 0.02;
 
 const frequencies = [2, -3, 5, -8, 12];
-const fluctuation = (t) => {
-  let sum = 0;
+const fluctuation = (...tList) => {
   const len = frequencies.length;
+  const sums = [];
 
-  for (let i = 0; i < len; i += 1) {
-    const f = frequencies[i];
-    const amplitude = 1 / f * sin(f * t);
-    sum += amplitude;
+  for (let i = 0, l = tList.length; i < l; i += 1) {
+    const t = tList[i];
+    let sum = 0;
+
+    for (let j = 0; j < len; j += 1) {
+      const f = frequencies[j];
+      const amplitude = 1 / f * sin(f * t);
+      sum += amplitude;
+    }
+
+    sums.push(sum / len);
   }
 
-  return sum / len;
+  return sums;
 };
 
 class GridProcessor extends Publisher {
-  #t = 0;
   #vec = new Vector3();
 
   constructor(game) {
@@ -47,11 +53,8 @@ class GridProcessor extends Publisher {
     this.set.delete(grid);
   }
 
-  update(deltaTime) {
-    this.#t += deltaTime;
-
-    const fx = fluctuation(this.#t * coefX);
-    const fy = fluctuation(this.#t * coefY);
+  update(elapsedTime) {
+    const [fx, fy] = fluctuation(elapsedTime * coefX, elapsedTime * coefY);
 
     for (const grid of this.set) {
       const position = grid.position;
