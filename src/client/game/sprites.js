@@ -43,14 +43,14 @@ const sprites = {
     context.fill();
 
     context.beginPath();
-    context.moveTo(256, 36);
-    context.lineTo(253, 36);
-    context.lineTo(253, 38);
-    context.lineTo(255, 38);
-    context.lineTo(255, 218);
-    context.lineTo(253, 218);
+    context.moveTo(256, 32);
+    context.lineTo(253, 32);
+    context.lineTo(253, 34);
+    context.lineTo(255, 34);
+    context.lineTo(255, 220);
     context.lineTo(253, 220);
-    context.lineTo(256, 220);
+    context.lineTo(253, 224);
+    context.lineTo(256, 224);
     context.closePath();
     context.fill();
 

@@ -184,7 +184,7 @@ class FirstPersonControls extends Publisher {
     this.viewHalfY = this.domElement.offsetHeight / 2;
     this.gaugeHalfY = Screen.gaugeHeight;//this.viewHalfY - 32;
 
-    this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
+    this.yawIndicatorRadius = Screen.horizontalIndicatorSize;//this.viewHalfY / 2 - 96;
 
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
     /*this.povIndicator.vertical.position.setX(
