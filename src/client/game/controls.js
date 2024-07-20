@@ -67,6 +67,10 @@ class FirstPersonControls extends Publisher {
 
   #y1 = 0;
 
+  #px = 0;
+
+  #py = 0;
+
   #count = 0;
 
   #lastKey = '';
@@ -275,8 +279,11 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    this.#x0 = event.screenX;
-    this.#y0 = event.screenY;
+    this.#x0 = this.#px + event.movementX;
+    this.#y0 = this.#py + event.movementY;
+
+    this.#px = this.#x0;
+    this.#py = this.#y0;
   }
 
   onPointerDown(event) {
@@ -484,8 +491,8 @@ class FirstPersonControls extends Publisher {
     } = Controls;
 
     // 自機の視点制御
-    let dx = (this.#x0 - this.#x1) * momentum;
-    let dy = (this.#y0 - this.#y1) * momentum;
+    let dx = (this.#x0 - this.#x1) / momentum;
+    let dy = (this.#y0 - this.#y1) / momentum;
 
     this.#x1 += dx;
     this.#y1 += dy;

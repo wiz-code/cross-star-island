@@ -95,7 +95,7 @@ export const Controls = {
   horizontalAngleLimit: 160,
   verticalAngleLimit: 80,
 
-  momentum: 0.2,
+  momentum: 10,
 };
 
 export const World = {
