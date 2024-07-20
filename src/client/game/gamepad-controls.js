@@ -14,7 +14,7 @@ const { abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
-const ErrorValue = 1e-4;
+const EPS = 1e-4;
 
 const buttonList = [
   'a',
@@ -58,9 +58,17 @@ class GamepadControls extends Publisher {
 
   #pitch = 0;
 
-  #dx = 0;
+  #x0 = 0;
 
-  #dy = 0;
+  #y0 = 0;
+
+  #x1 = 0;
+
+  #y1 = 0;
+
+  #px = 0;
+
+  #py = 0;
 
   #mashed = false;
 
@@ -98,7 +106,6 @@ class GamepadControls extends Publisher {
       horizontal: indicators.povIndicator.horizontal,
       vertical: indicators.povIndicator.vertical,
     };
-    this.centerMark = indicators.centerMark;
 
     this.verticalAngle = {
       min: (-Controls.verticalAngleLimit / 360) * PI * 2,
@@ -160,16 +167,11 @@ class GamepadControls extends Publisher {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-
-    this.gaugeHalfY = this.viewHalfY - 32;
+    this.gaugeHalfY = Screen.gaugeHeight;
 
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
-
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
-    this.povIndicator.vertical.position.setX(
-      this.viewHalfX - Screen.sightPovSize / 2,
-    );
-    this.centerMark.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
+
     this.povSightLines.position.setX(0);
     this.povSightLines.position.setY(0);
   }
@@ -231,7 +233,7 @@ class GamepadControls extends Publisher {
       const index = axisMap.get(axis);
       const value = axes[index];
 
-      if (value < -1 + ErrorValue) {
+      if (value < -1 + EPS) {
         this.#pendings.delete(axis);
       }
     });
@@ -292,7 +294,7 @@ class GamepadControls extends Publisher {
       const mashed = this.buttons.get('x');
 
       if (axis === 'lsy') {
-        if (value < -ErrorValue) {
+        if (value < -EPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveForward;
             this.#inputs.set(Actions.quickMoveForward, 1);
@@ -305,7 +307,7 @@ class GamepadControls extends Publisher {
           } else {
             this.#inputs.set(Actions.moveForward, -value);
           }
-        } else if (value > ErrorValue) {
+        } else if (value > EPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveBackward;
             this.#inputs.set(Actions.quickMoveBackward, 1);
@@ -314,14 +316,14 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'lsx') {
-        if (value > ErrorValue) {
+        if (value > EPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnRight;
             this.#inputs.set(Actions.quickTurnRight, 1);
           } else {
             this.#inputs.set(Actions.rotateRight, value);
           }
-        } else if (value < -ErrorValue) {
+        } else if (value < -EPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnLeft;
             this.#inputs.set(Actions.quickTurnLeft, 1);
@@ -330,16 +332,20 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'rsy') {
-        if (value > ErrorValue) {
-          this.#dy = value * Controls.stickSpeed;
-        } else if (value < -ErrorValue) {
-          this.#dy = value * Controls.stickSpeed;
+        if (value > EPS) {
+          this.#y0 = this.#py + value * Controls.stickSpeed;
+          this.#py = this.#y0;
+        } else if (value < -EPS) {
+          this.#y0 = this.#py + value * Controls.stickSpeed;
+          this.#py = this.#y0;
         }
       } else if (axis === 'rsx') {
-        if (value > ErrorValue) {
-          this.#dx = value * Controls.stickSpeed;
-        } else if (value < -ErrorValue) {
-          this.#dx = value * Controls.stickSpeed;
+        if (value > EPS) {
+          this.#x0 = this.#px + value * Controls.stickSpeed;
+          this.#px = this.#x0;
+        } else if (value < -EPS) {
+          this.#x0 = this.#px + value * Controls.stickSpeed;
+          this.#px = this.#x0;
         }
       } else if (axis === 'rt2' && value > 0) {
         if (!this.#pendings.has(axis)) {
@@ -362,7 +368,12 @@ class GamepadControls extends Publisher {
     }
 
     // 自機の視点制御
-    const { lookSpeed } = Controls;
+    const {
+      lookSpeed,
+      momentum,
+      restoreMinAngle,
+      restoreSpeed,
+    } = Controls;
     const { vertical: pitchIndicator, horizontal: yawIndicator } =
       this.povIndicator;
 
@@ -379,12 +390,18 @@ class GamepadControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      const degX = (90 * this.#dy) / this.gaugeHalfY;
+      let dx = (this.#x0 - this.#x1) / momentum;
+      let dy = (this.#y0 - this.#y1) / momentum;
+
+      this.#x1 += dx;
+      this.#y1 += dy;
+
+      const degX = (90 * dy) / this.gaugeHalfY;
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * lookSpeed;
 
-      const degY = (135 * this.#dx) / this.viewHalfX;
-      const radY = degY * degToRadCoef;
+      const degY = (135 * dx) / this.viewHalfX;
+      const radY = degY * degToRadCoef * 1.5;
       this.#rotation.phi -= radY * lookSpeed;
 
       this.#rotation.theta = max(
@@ -426,12 +443,12 @@ class GamepadControls extends Publisher {
       pitchIndicator.position.y = posY;
     } else {
       if (this.#rotation.theta !== 0) {
-        if (abs(this.#rotation.theta) < Controls.restoreMinAngle) {
+        if (abs(this.#rotation.theta) < restoreMinAngle) {
           this.#rotation.theta = 0;
         } else {
           const rx =
-            -this.#rotation.theta * deltaTime * Controls.restoreSpeed +
-            sign(-this.#rotation.theta) * Controls.restoreMinAngle;
+            -this.#rotation.theta * deltaTime * restoreSpeed +
+            sign(-this.#rotation.theta) * restoreMinAngle;
           this.#rotation.theta += rx;
         }
 
@@ -444,12 +461,12 @@ class GamepadControls extends Publisher {
       }
 
       if (this.#rotation.phi !== 0) {
-        if (abs(this.#rotation.phi) < Controls.restoreMinAngle) {
+        if (abs(this.#rotation.phi) < restoreMinAngle) {
           this.#rotation.phi = 0;
         } else {
           const dr =
-            this.#rotation.phi * deltaTime * Controls.restoreSpeed +
-            sign(this.#rotation.phi) * Controls.restoreMinAngle;
+            this.#rotation.phi * deltaTime * restoreSpeed +
+            sign(this.#rotation.phi) * restoreMinAngle;
           this.#rotation.phi -= dr;
         }
 
@@ -522,9 +539,6 @@ class GamepadControls extends Publisher {
     this.camera.rotation.x = this.#rotation.theta + this.#pitch;
 
     this.camera.rotation.y = this.#rotation.phi + this.#characterRot.phi;
-
-    this.#dx = 0;
-    this.#dy = 0;
   }
 }
 
