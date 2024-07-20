@@ -10,7 +10,7 @@ const {
   SightLinesColor: sightLinesColor,
 } = GameColor;
 
-const { abs, sin, cos, sign, max, min, PI } = Math;
+const { floor, abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
@@ -390,8 +390,8 @@ class GamepadControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      let dx = (this.#x0 - this.#x1) / momentum;
-      let dy = (this.#y0 - this.#y1) / momentum;
+      let dx = floor(this.#x0 - this.#x1) / momentum;
+      let dy = floor(this.#y0 - this.#y1) / momentum;
 
       this.#x1 += dx;
       this.#y1 += dy;
