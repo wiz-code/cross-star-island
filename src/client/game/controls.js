@@ -87,8 +87,6 @@ class FirstPersonControls extends Publisher {
 
   #moved = false;
 
-  #t = 0;
-
   #resetPointer = false;
 
   #resetWheel = false;
@@ -186,7 +184,7 @@ class FirstPersonControls extends Publisher {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-    this.gaugeHalfY = Screen.gaugeHeight;//this.viewHalfY - 32;
+    this.gaugeHalfY = Screen.gaugeHeight;
 
     this.yawIndicatorRadius = Screen.horizontalIndicatorSize;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
@@ -484,7 +482,6 @@ class FirstPersonControls extends Publisher {
 
     const {
       lookSpeed,
-      pointerMaxMove,
       momentum,
       restoreMinAngle,
       restoreSpeed,
