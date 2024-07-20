@@ -1,10 +1,10 @@
 import { Spherical, Vector3 } from 'three';
 
 import Publisher from './publisher';
-import { Controls, Screen, GameColor } from './settings';
+import { Game, Controls, Screen, GameColor } from './settings';
 import { Keys, Pointers, Actions } from './data';
 
-const { abs, sin, cos, sign, max, min, PI } = Math;
+const { floor,abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
@@ -488,8 +488,8 @@ class FirstPersonControls extends Publisher {
     } = Controls;
 
     // 自機の視点制御
-    let dx = (this.#x0 - this.#x1) / momentum;
-    let dy = (this.#y0 - this.#y1) / momentum;
+    let dx = floor(this.#x0 - this.#x1) / momentum;
+    let dy = floor(this.#y0 - this.#y1) / momentum;
 
     this.#x1 += dx;
     this.#y1 += dy;
