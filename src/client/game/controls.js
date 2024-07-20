@@ -19,6 +19,9 @@ const onContextmenu = (event) => {
   event.preventDefault();
 };
 
+const easeOutQuad = (x) => 1 - (1 - x) ** 2;
+const easeOutExpo = (x) => x === 1 ? 1 : 1 - 2 ** (-10 * x);
+
 const MashKeys = new Set([
   'KeyW',
   'ArrowUp',
@@ -48,10 +51,6 @@ class FirstPersonControls extends Publisher {
 
   #pointers = new Set();
 
-  #actions = new Set(); /// ///////
-
-  #states = new Set(); /// /////
-
   #inputs = new Map();
 
   #rotation = new Spherical();
@@ -60,9 +59,13 @@ class FirstPersonControls extends Publisher {
 
   #wheel = 0;
 
-  #dx = 0;
+  #x0 = 0;
 
-  #dy = 0;
+  #y0 = 0;
+
+  #x1 = 0;
+
+  #y1 = 0;
 
   #count = 0;
 
@@ -80,9 +83,7 @@ class FirstPersonControls extends Publisher {
 
   #moved = false;
 
-  #timeout = false;
-
-  #st = 0;
+  #t = 0;
 
   #resetPointer = false;
 
@@ -104,7 +105,6 @@ class FirstPersonControls extends Publisher {
       horizontal: indicators.povIndicator.horizontal,
       vertical: indicators.povIndicator.vertical,
     };
-    //this.centerMark = indicators.centerMark;
 
     this.verticalAngle = {
       min: (-Controls.verticalAngleLimit / 360) * PI * 2,
@@ -184,14 +184,9 @@ class FirstPersonControls extends Publisher {
     this.viewHalfY = this.domElement.offsetHeight / 2;
     this.gaugeHalfY = Screen.gaugeHeight;//this.viewHalfY - 32;
 
-    this.yawIndicatorRadius = Screen.horizontalIndicatorSize;//this.viewHalfY / 2 - 96;
-
+    this.yawIndicatorRadius = Screen.horizontalIndicatorSize;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
-    /*this.povIndicator.vertical.position.setX(
-      this.viewHalfX - Screen.sightPovSize / 2,
-    );*/
 
-    //this.centerMark.position.setX(this.viewHalfX - Screen.sightPovSize / 2 + 7);
     this.povSightLines.position.setX(0);
     this.povSightLines.position.setY(0);
   }
@@ -280,14 +275,8 @@ class FirstPersonControls extends Publisher {
       }
     }
 
-    this.#dx = max(
-      -Controls.pointerMaxMove,
-      min(event.movementX, Controls.pointerMaxMove),
-    );
-    this.#dy = max(
-      -Controls.pointerMaxMove,
-      min(event.movementY, Controls.pointerMaxMove),
-    );
+    this.#x0 = event.screenX;
+    this.#y0 = event.screenY;
   }
 
   onPointerDown(event) {
@@ -347,8 +336,6 @@ class FirstPersonControls extends Publisher {
             now - this.#keyUpTime <= Controls.inputDuration
           ) {
             this.#mashedKey = this.#lastKey;
-            // const code = `Mash-${event.code}`;
-            // this.#inputs.add(code);
           }
 
           this.#keyUpTime = 0;
@@ -488,21 +475,21 @@ class FirstPersonControls extends Publisher {
       return;
     }
 
+    const {
+      lookSpeed,
+      pointerMaxMove,
+      momentum,
+      restoreMinAngle,
+      restoreSpeed,
+    } = Controls;
+
     // 自機の視点制御
-    if (this.#moved) {
-      this.#moved = false;
-      this.#timeout = true;
-      this.#st = performance.now();
-    } else {
-      const now = performance.now();
+    let dx = (this.#x0 - this.#x1) * momentum;
+    let dy = (this.#y0 - this.#y1) * momentum;
 
-      if (now - this.#st > Controls.idleTime * 1000) {
-        this.#st = 0;
-        this.#timeout = false;
-      }
-    }
+    this.#x1 += dx;
+    this.#y1 += dy;
 
-    const { lookSpeed } = Controls;
     const { vertical: pitchIndicator, horizontal: yawIndicator } =
       this.povIndicator;
 
@@ -519,11 +506,11 @@ class FirstPersonControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      const degX = (90 * this.#dy) / this.gaugeHalfY;
+      const degX = (90 * dy) / this.gaugeHalfY;
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * lookSpeed;
 
-      const degY = (135 * this.#dx) / this.viewHalfX;
+      const degY = (135 * dx) / this.viewHalfX;
       const radY = degY * degToRadCoef;
       this.#rotation.phi -= radY * lookSpeed;
 
@@ -566,12 +553,12 @@ class FirstPersonControls extends Publisher {
       pitchIndicator.position.y = posY;
     } else {
       if (this.#rotation.theta !== 0) {
-        if (abs(this.#rotation.theta) < Controls.restoreMinAngle) {
+        if (abs(this.#rotation.theta) < restoreMinAngle) {
           this.#rotation.theta = 0;
         } else {
           const rx =
-            -this.#rotation.theta * deltaTime * Controls.restoreSpeed +
-            sign(-this.#rotation.theta) * Controls.restoreMinAngle;
+            -this.#rotation.theta * deltaTime * restoreSpeed +
+            sign(-this.#rotation.theta) * restoreMinAngle;
           this.#rotation.theta += rx;
         }
 
@@ -584,12 +571,12 @@ class FirstPersonControls extends Publisher {
       }
 
       if (this.#rotation.phi !== 0) {
-        if (abs(this.#rotation.phi) < Controls.restoreMinAngle) {
+        if (abs(this.#rotation.phi) < restoreMinAngle) {
           this.#rotation.phi = 0;
         } else {
           const dr =
-            this.#rotation.phi * deltaTime * Controls.restoreSpeed +
-            sign(this.#rotation.phi) * Controls.restoreMinAngle;
+            this.#rotation.phi * deltaTime * restoreSpeed +
+            sign(this.#rotation.phi) * restoreMinAngle;
           this.#rotation.phi -= dr;
         }
 
@@ -662,9 +649,6 @@ class FirstPersonControls extends Publisher {
     this.camera.rotation.x = this.#rotation.theta + this.#wheel;
 
     this.camera.rotation.y = this.#rotation.phi + this.#characterRot.phi;
-
-    this.#dx = 0;
-    this.#dy = 0;
   }
 }
 
