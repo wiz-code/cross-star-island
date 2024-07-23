@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, Sphere, Box3 } from 'three';
 
 import Collidable from './collidable';
 import { Ammos } from './data';
@@ -14,10 +14,25 @@ class Bullet extends Collidable {
 
     this.index = index;
     const distributed = -this.index * this.data.radius * 2 - 1000;
-    this.collider.set(
-      new Vector3(distributed, distributed, distributed),
-      this.data.radius,
-    );
+
+    if (this.data.collider === 'sphere') {
+      this.setCollider(
+        new Sphere(
+          new Vector3(distributed, distributed, distributed),
+          this.data.radius,
+        ),
+      );
+    } else if (this.data.collider === 'box3') {
+      const boundingBox = new Box3();
+      const sphere = new Sphere(
+        new Vector3(distributed, distributed, distributed),
+        this.data.radius,
+      );
+      sphere.getBoundingBox(boundingBox);
+
+      this.setCollider(boundingBox);
+    }
+
     this.elapsedTime = 0;
   }
 

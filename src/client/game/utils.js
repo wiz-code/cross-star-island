@@ -1,5 +1,6 @@
-import { Vector3, Plane, Line3, Ray, Sphere, Quaternion } from 'three';
+import { Box3, Vector3, Plane, Line3, Ray, Sphere, Quaternion } from 'three';
 import { Game, World } from './settings';
+import Capsule from './capsule';
 
 const { abs, sqrt } = Math;
 
@@ -303,3 +304,32 @@ export const getPointsVertices = (vertices, normals) => {
 
   return newVertices;
 };
+
+const getCollider = () => {};
+const translateCollider = () => {};
+
+export const getCollisionParams = (object, vec) => {
+  let center;
+  let radius;
+
+  if (object.collider instanceof Capsule) {
+    center = object.collider.getCenter(vec);
+    ({ radius } = object.collider);
+  } else if (object.collider instanceof Sphere) {
+    ({ center } = object.collider);
+    ({ radius } = object.collider);
+  } else if (object.collider instanceof Box3) {
+    center = object.collider.getCenter(vec);
+    ({ radius } = object.data);
+  }
+
+  return { center, radius };
+};
+
+const easeInSine = (x) => 1 - cos((x * PI) / 2);
+const easeInQuad = (x) => x ** 2;
+const easeInCubic = (x) => x ** 3;
+const easeInQuart = (x) => x ** 4;
+const easeInExpo = (x) => (x === 0 ? 0 : 2 ** (10 * x - 10));
+const easeOutQuad = (x) => 1 - (1 - x) ** 2;
+const easeInOutQuad = (x) => (x < 0.5 ? 2 * x ** 2 : 1 - (-2 * x + 2) ** 2 / 2);

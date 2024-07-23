@@ -6,9 +6,9 @@ const { PI } = Math;
 const textureMap = new Map([
   ['point', ['crossStar']],
   ['pointThin', ['crossStarThin']],
-  //['verticalIndicator', ['isoscelesTriangle', -PI / 2]],
+  // ['verticalIndicator', ['isoscelesTriangle', -PI / 2]],
   ['directionIndicator', ['direction']],
-  ['centerMark', ['isoscelesTriangle', -PI / 2, true]],//////////
+  ['centerMark', ['isoscelesTriangle', -PI / 2, true]], /// ///////
   ['sight', ['sight']],
   ['sightLines', ['sightLines']],
   ['verticalFrame', ['verticalFrame']],

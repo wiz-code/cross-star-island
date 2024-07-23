@@ -100,6 +100,18 @@ export const handlers = [
   },
   {
     eventName: 'get-item',
+    targetName: 'hyper-jump',
+    handler({ states, methods }, character, object) {
+      if (character.hasControls) {
+        const playSound = methods.get('play-sound');
+        playSound?.('jump');
+      }
+
+      character.velocity.addScaledVector(object.params.velocity, 30);
+    },
+  },
+  {
+    eventName: 'get-item',
     targetName: 'checkpoint',
     handler({ states, methods }, character) {
       if (character.hasControls) {

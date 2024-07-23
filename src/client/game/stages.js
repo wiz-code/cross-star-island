@@ -8,7 +8,7 @@ import {
   MeshBasicMaterial,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { MeshBVH, MeshBVHHelper } from 'three-mesh-bvh';
+import { MeshBVH, MeshBVHHelper, SAH } from 'three-mesh-bvh';
 import { World } from './settings';
 
 import { createGrid, createFineGrid } from './grid';
@@ -17,7 +17,10 @@ import {
   createMaze,
   createCylinder,
   createColumn,
-} from './ground';
+  createTower,
+  createRingTower,
+  createTowerStairs,
+} from './terrain';
 
 const createStage = (stageData, texture) => {
   const { sections } = stageData;
@@ -98,6 +101,45 @@ const createStage = (stageData, texture) => {
       bvhs.push(bvh);
     }
 
+    if (Array.isArray(section.tower)) {
+      for (let j = 0, m = section.tower.length; j < m; j += 1) {
+        const data = section.tower[j];
+        const { object, bvh } = createTower(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
+      }
+    } else if (section.tower != null) {
+      const { object, bvh } = createTower(section.tower, texture);
+      block.add(object);
+      bvhs.push(bvh);
+    }
+
+    if (Array.isArray(section.ringTower)) {
+      for (let j = 0, m = section.ringTower.length; j < m; j += 1) {
+        const data = section.ringTower[j];
+        const { object, bvh } = createRingTower(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
+      }
+    } else if (section.ringTower != null) {
+      const { object, bvh } = createRingTower(section.ringTower, texture);
+      block.add(object);
+      bvhs.push(bvh);
+    }
+
+    if (Array.isArray(section.towerStairs)) {
+      for (let j = 0, m = section.towerStairs.length; j < m; j += 1) {
+        const data = section.towerStairs[j];
+        const { object, bvh } = createTowerStairs(data, texture);
+        block.add(object);
+        bvhs.push(bvh);
+      }
+    } else if (section.towerStairs != null) {
+      const { object, bvh } = createTowerStairs(section.towerStairs, texture);
+      block.add(object);
+      bvhs.push(bvh);
+    }
+
     if (section.offset != null) {
       const { offset } = section;
 
@@ -154,7 +196,7 @@ const createStage = (stageData, texture) => {
       wireframe: true,
     }),
   );
-  bvhMesh.boundsTree = new MeshBVH(merged);
+  bvhMesh.boundsTree = new MeshBVH(merged, { strategy: SAH });
 
   const helper = new MeshBVHHelper(bvhMesh.boundsTree, 8);
 

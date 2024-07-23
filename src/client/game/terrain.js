@@ -14,16 +14,20 @@ import {
   Group,
   PlaneGeometry,
   LineSegments,
+  Vector2,
   Vector3,
+  FrontSide,
+  BackSide,
+  DoubleSide,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SUBTRACTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
 import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
 
-import { World, Ground, Cylinder } from './settings';
+import { World, Ground, Cylinder, Tower, Column } from './settings';
 import { getPointsVertices } from './utils';
 
-const { sin, floor, abs, PI } = Math;
+const { sin, cos, floor, ceil, abs, PI } = Math;
 
 let seed = PI / 4;
 const customRandom = () => {
@@ -53,6 +57,510 @@ const generateHeight = (width, height) => {
   }
 
   return data;
+};
+
+export const createTower = (
+  {
+    name = '',
+    movable = false,
+
+    radius,
+    height,
+    radialSegments = 8,
+    heightSegments = 4,
+    inside = false,
+    spacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  },
+  texture,
+) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
+
+  const width = radius * sin(PI / radialSegments) * 2;
+  const widthSegments = ceil(width / spacing);
+
+  const offsetX = -radius * cos(phi * 0.5);
+  const radialPoint = new Vector2(offsetX, 0);
+  const center = new Vector2(0, 0);
+  const geomList = [];
+
+  geom.wall = new PlaneGeometry(width, height, widthSegments, heightSegments);
+  geom.wall.rotateY((PI / 2) * (inside ? 1 : -1));
+  geom.wall = geom.wall.toNonIndexed();
+  geom.wall.deleteAttribute('uv');
+  geom.wall.setIndex(null);
+
+  for (let i = 0; i < radialSegments; i += 1) {
+    const rotate = phi * i;
+    const wall = geom.wall.clone();
+    wall.rotateY(rotate);
+    wall.translate(radialPoint.x, height * 0.5, radialPoint.y);
+
+    radialPoint.rotateAround(center, -phi);
+    geomList.push(wall);
+  }
+
+  mat.surface = new MeshBasicMaterial({
+    color: Tower.color,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Tower.wireColor,
+  });
+  mat.points = new PointsMaterial({
+    color: Tower.pointColor,
+    size: World.pointSize,
+    map: texture.point,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  const merged = mergeGeometries(geomList);
+  mesh.surface = new Mesh(merged, mat.surface);
+
+  geom.bvh = mesh.surface.geometry.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
+
+  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
+
+  const vertices = mesh.surface.geometry
+    .getAttribute('position')
+    .array.slice(0);
+  const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
+  const newVertices = getPointsVertices(vertices, normals);
+
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(newVertices, 3),
+  );
+
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.points = new Points(geom.points, mat.points);
+
+  mesh.surface.name = 'surface';
+  mesh.wireframe.name = 'wireframe';
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  geom.bvh.userData.object = group;
+
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
+
+  if (position.sx != null) {
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+    geom.bvh.translate(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
+  }
+
+  return { object: group, bvh: geom.bvh };
+};
+
+export const createRingTower = (
+  {
+    name = '',
+    movable = false,
+
+    radius,
+    width,
+    height,
+    depth,
+    radialSegments = 8,
+    widthSegments = 4,
+    heightSegments = 4,
+    depthSegments = 4,
+    spacing = World.spacing,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  },
+  texture,
+) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
+
+  const offsetX = -radius * cos(phi * 0.5) - depth * 0.5;
+  const radialPoint = new Vector2(offsetX, 0);
+  const center = new Vector2(0, 0);
+  const geomList = [];
+
+  geom.wall = new BoxGeometry(
+    width,
+    height,
+    depth,
+    widthSegments,
+    heightSegments,
+    depthSegments,
+  );
+  // geom.wall.rotateY(PI / 2);
+  geom.wall = geom.wall.toNonIndexed();
+  geom.wall.deleteAttribute('uv');
+  geom.wall.setIndex(null);
+
+  for (let i = 0; i < radialSegments; i += 1) {
+    const rotate = phi * i;
+    const wall = geom.wall.clone();
+    wall.rotateY(rotate);
+    wall.translate(radialPoint.x, height * 0.5, radialPoint.y);
+
+    radialPoint.rotateAround(center, -phi);
+    geomList.push(wall);
+  }
+
+  mat.surface = new MeshBasicMaterial({
+    color: Tower.color,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Tower.wireColor,
+  });
+  mat.points = new PointsMaterial({
+    color: Tower.pointColor,
+    size: World.pointSize,
+    map: texture.point,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  const merged = mergeGeometries(geomList);
+  mesh.surface = new Mesh(merged, mat.surface);
+
+  geom.bvh = mesh.surface.geometry.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
+
+  geom.wireframe = new WireframeGeometry(mesh.surface.geometry);
+
+  const vertices = mesh.surface.geometry
+    .getAttribute('position')
+    .array.slice(0);
+  const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
+  const newVertices = getPointsVertices(vertices, normals);
+
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(newVertices, 3),
+  );
+
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.points = new Points(geom.points, mat.points);
+
+  mesh.surface.name = 'surface';
+  mesh.wireframe.name = 'wireframe';
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  geom.bvh.userData.object = group;
+
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
+
+  if (position.sx != null) {
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+    geom.bvh.translate(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
+  }
+
+  return { object: group, bvh: geom.bvh };
+};
+
+export const createTowerStairs = (
+  {
+    radialSegments,
+    innerRadius,
+    outerRadius,
+    incline,
+    height,
+    heightSegments,
+    spacing = World.spacing,
+    movable = false,
+
+    position = { x: 0, y: 0, z: 0 },
+    rotation = { x: 0, y: 0, z: 0 },
+  },
+  texture,
+) => {
+  const geom = {};
+  const mat = {};
+  const mesh = {};
+
+  const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
+
+  const horizontalDepth = innerRadius * sin(PI / radialSegments) * 2;
+  const depth = horizontalDepth / cos(incline);
+  const width = (outerRadius - innerRadius) * cos(phi * 0.5);
+  const depthSegments = ceil(depth / spacing);
+
+  const inclineHeight = depth * sin(incline);
+  const steps = floor(height / inclineHeight);
+
+  const radialPoint = new Vector2(
+    0,
+    -outerRadius * cos(phi * 0.5) - depth * 0.25,
+  );
+
+  const lp = new Vector2(
+    outerRadius * sin(phi * 0.5),
+    -outerRadius * cos(phi * 0.5),
+  );
+  const rp = new Vector2(
+    -outerRadius * sin(phi * 0.5),
+    -outerRadius * cos(phi * 0.5),
+  );
+
+  const x1 = innerRadius * sin(PI / radialSegments);
+  const z1 = -innerRadius * cos(PI / radialSegments);
+  const x2 = x1;
+  const z2 = z1 - width;
+  const x3 = x1 - horizontalDepth;
+  const z3 = z2;
+  const x4 = x3;
+  const z4 = z1;
+
+  const v1 = new Vector2(x1, z1);
+  const v2 = new Vector2(x2, z2);
+  const v3 = new Vector2(x3, z3);
+  const v4 = new Vector2(x4, z4);
+
+  geom.slope = new PlaneGeometry(width, depth, 1, depthSegments);
+  geom.slope.rotateY(PI / 2);
+  geom.slope.rotateZ(PI / 2 - incline);
+  geom.slope.translate(0, inclineHeight / 2, 0);
+
+  geom.slope = geom.slope.toNonIndexed();
+  geom.slope.deleteAttribute('uv');
+  geom.slope.setIndex(null);
+
+  geom.wall = new BoxGeometry(
+    depth * 0.5,
+    height,
+    depth * 0.5,
+    2,
+    heightSegments,
+    2,
+  );
+  geom.wall = geom.wall.toNonIndexed();
+  geom.wall.deleteAttribute('uv');
+  geom.wall.setIndex(null);
+
+  const landing = new BufferGeometry();
+
+  const center = new Vector2(0, 0);
+  const vec = new Vector2(0, z1 - width / 2);
+
+  const geomList = [];
+
+  for (let i = 0; i < radialSegments; i += 1) {
+    const rotate = phi * i;
+    const wall = geom.wall.clone();
+    wall.rotateY(rotate);
+    wall.translate(radialPoint.x, height * 0.5, radialPoint.y);
+
+    radialPoint.rotateAround(center, -phi);
+    // geomList.push(wall);
+  }
+
+  for (let i = 0; i < steps; i += 1) {
+    const step = steps[i];
+    const rotate = phi * i;
+    const slope = geom.slope.clone();
+
+    slope.rotateY(rotate);
+    slope.translate(vec.x, inclineHeight * i, vec.y);
+
+    const l1 = landing.clone();
+    const l2 = landing.clone();
+
+    const leftVertices = [
+      v1.x,
+      inclineHeight * i,
+      v1.y,
+      lp.x,
+      inclineHeight * i,
+      lp.y,
+      v2.x,
+      inclineHeight * i,
+      v2.y,
+    ];
+    const rightVertices = [
+      v3.x,
+      inclineHeight * (i + 1),
+      v3.y,
+      rp.x,
+      inclineHeight * (i + 1),
+      rp.y,
+      v4.x,
+      inclineHeight * (i + 1),
+      v4.y,
+    ];
+
+    l1.setAttribute('position', new Float32BufferAttribute(leftVertices, 3));
+    l2.setAttribute('position', new Float32BufferAttribute(rightVertices, 3));
+    l1.computeVertexNormals();
+    l2.computeVertexNormals();
+
+    l1.deleteAttribute('uv');
+    l2.deleteAttribute('uv');
+
+    // l1.rotateY(PI / 2);
+    // l2.rotateY(PI / 2);
+
+    vec.rotateAround(center, -phi);
+    v1.rotateAround(center, -phi);
+    v2.rotateAround(center, -phi);
+    v3.rotateAround(center, -phi);
+    v4.rotateAround(center, -phi);
+    lp.rotateAround(center, -phi);
+    rp.rotateAround(center, -phi);
+
+    geomList.push(l1, l2, slope);
+  }
+
+  geom.surface = mergeGeometries(geomList);
+
+  const vertices = geom.surface.getAttribute('position').array;
+  const normals = geom.surface.getAttribute('normal').array;
+
+  const pointsVertices = getPointsVertices(vertices, normals);
+
+  geom.bvh = geom.surface.clone();
+  geom.bvh = geom.bvh.toNonIndexed();
+  geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
+  geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
+
+  if (name !== '') {
+    geom.bvh.name = name;
+  }
+
+  if (movable) {
+    geom.bvh.userData.movable = true;
+  }
+
+  geom.wireframe = new WireframeGeometry(geom.surface);
+
+  geom.points = new BufferGeometry();
+  geom.points.setAttribute(
+    'position',
+    new Float32BufferAttribute(pointsVertices, 3),
+  );
+  // geom.points.computeBoundingSphere();
+
+  mat.surface = new MeshBasicMaterial({
+    color: Tower.stairColor,
+    side: DoubleSide,
+  });
+  mat.wireframe = new LineBasicMaterial({
+    color: Ground.wireColor,
+  });
+
+  mat.points = new PointsMaterial({
+    color: Ground.pointColor,
+    size: World.pointSize,
+    map: texture.point,
+    blending: NormalBlending,
+    alphaTest: 0.5,
+  });
+
+  mesh.surface = new Mesh(geom.surface, mat.surface);
+  mesh.surface.name = 'surface';
+  mesh.wireframe = new LineSegments(geom.wireframe, mat.wireframe);
+  mesh.wireframe.name = 'wireframe';
+  mesh.points = new Points(geom.points, mat.points);
+  mesh.points.name = 'points';
+
+  const group = new Group();
+  group.add(mesh.surface);
+  group.add(mesh.wireframe);
+  group.add(mesh.points);
+
+  // BVHジオメトリーは先に回転、次に移動の順番にする必要がある
+  group.rotation.set(rotation.x, rotation.y, rotation.z, 'YXZ');
+  geom.bvh.rotateY(rotation.y);
+  geom.bvh.rotateX(rotation.x);
+  geom.bvh.rotateZ(rotation.z);
+
+  if (position.sx != null) {
+    group.position.set(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+    geom.bvh.translate(
+      position.sx * spacing,
+      position.sy * spacing,
+      position.sz * spacing,
+    );
+  } else {
+    group.position.set(position.x, position.y, position.z);
+    geom.bvh.translate(position.x, position.y, position.z);
+  }
+
+  geom.bvh.userData.object = group;
+
+  return { object: group, bvh: geom.bvh };
 };
 
 export const createGround = (
@@ -614,6 +1122,7 @@ export const createColumn = (
     radialSegments = 8,
     heightSegments = 4,
     openEnded = true,
+    side = FrontSide,
     spacing = World.spacing,
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
@@ -650,13 +1159,14 @@ export const createColumn = (
   );
 
   mat.surface = new MeshBasicMaterial({
-    color: Cylinder.color,
+    color: Column.color,
+    side,
   });
   mat.wireframe = new LineBasicMaterial({
-    color: Cylinder.wireColor,
+    color: Column.wireColor,
   });
   mat.points = new PointsMaterial({
-    color: Cylinder.pointColor,
+    color: Column.pointColor,
     size: World.pointSize,
     map: texture.point,
     blending: NormalBlending,

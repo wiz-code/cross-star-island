@@ -28,6 +28,7 @@ const font = {
 };
 
 const meta = new Map(Meta);
+const stages = new Map(meta.get('stages'));
 
 function Progress() {
   return (
@@ -104,9 +105,10 @@ function DisplayScore() {
     return null;
   }
 
-  const { data, sum, newRecord, highscore } = score;
+  const { stageName, data, sum, newRecord, highscore } = score;
   const highscoreData =
     highscore != null ? `${highscore.value} ${highscore.distance}` : '--';
+  const stageDisplayName = stages.has(stageName) ? stages.get(stageName) : '';
 
   return (
     <Box
@@ -117,6 +119,15 @@ function DisplayScore() {
         top: '0%',
       }}
     >
+      <ScoreItem
+        sx={{
+          top: '5%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        {stageDisplayName}
+      </ScoreItem>
       <ScoreItem sx={{ top: '10%' }}>CLEAR BONUS</ScoreItem>
       <ScoreValue sx={{ top: '10%' }}>{data.bonus}</ScoreValue>
       <ScoreItem sx={{ top: '20%' }}>TIME</ScoreItem>
@@ -221,7 +232,7 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
 }
 
 function GamePage({ indexPath, toggleFullScreen }) {
-  const { mode, fps, vrm } = useSelector((state) => state.game);
+  const { mode, fps, stageName, vrm } = useSelector((state) => state.game);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -274,7 +285,7 @@ function GamePage({ indexPath, toggleFullScreen }) {
           setScore,
           setElapsedTime,
         },
-        { vrm },
+        { stageName, vrm },
       );
       setGame(gameObject);
     }
@@ -288,7 +299,7 @@ function GamePage({ indexPath, toggleFullScreen }) {
         setGame(null);
       };
     }
-  }, [game, vrm]);
+  }, [game, stageName, vrm]);
 
   return (
     <>

@@ -70,6 +70,21 @@ export const Ground = {
   pointColor: 0xf4e511,
 };
 
+export const Tower = {
+  color: 0x665747, // 0x806d59,
+  stairColor: 0x806d59,
+
+  wireColor: 0x332000,
+  pointColor: 0xf4e511,
+};
+
+export const Column = {
+  color: 0x665747,
+
+  wireColor: 0x332000,
+  pointColor: 0xf4e511,
+};
+
 export const Controls = {
   lookSpeed: 1,
 
@@ -78,7 +93,7 @@ export const Controls = {
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 100,
-  stickSpeed: 8,
+  stickSpeed: 2, // 8,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.3,
@@ -109,7 +124,7 @@ export const World = {
     spin: 6,
     ammo: -1.2,
     obstacle: -0.1,
-    item: -0.1,
+    item: -2, // -0.1,
   },
   collisionShock: 0.8,
   pointSize: 2, // 10
@@ -126,9 +141,8 @@ const Screen = {
   sightPovSize: 384, // 512,//48,
   sightLinesSize: 128 * 0.75,
   horizontalIndicatorSize: 128 * 0.75,
-  verticalFrameSize: 384, //512,
+  verticalFrameSize: 384, // 512,
   gaugeHeight: 384 * 0.75 * 0.5 - 6,
-
 };
 
 export const GameColor = {

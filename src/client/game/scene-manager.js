@@ -5,7 +5,7 @@ import { Controls, Screen } from './settings';
 import {
   createSight,
   sightLines,
-  createVerticalFrame,/////////
+  createVerticalFrame, /// //////
   createPovIndicator,
   createCenterMark,
 } from './screen';
@@ -37,7 +37,7 @@ class SceneManager {
       povSightLines,
       povIndicator,
       centerMark,
-      verticalFrame,////////
+      verticalFrame, /// /////
     };
   }
 

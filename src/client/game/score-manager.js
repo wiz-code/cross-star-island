@@ -1,7 +1,7 @@
 import { formatDistance, parseISO } from 'date-fns';
 
 const { floor, max } = Math;
-const key = 'cross-star-island-scores';
+const KEY = 'cross-star-island-scores';
 const maxRecords = 100;
 
 class ScoreManager {
@@ -20,6 +20,8 @@ class ScoreManager {
     const stageData = this.game.methods.get('getStageData')?.(stageName);
     const checkpointNum = stageData.checkpoints.length;
 
+    score.stageName = stageName;
+
     if (time <= 50) {
       data.time = 5000;
     } else {
@@ -37,9 +39,9 @@ class ScoreManager {
 
     score.newRecord = this.scores.every((record) => score.sum > record.value);
 
-    this.addScore({ value: score.sum, date });
+    this.addScore({ stageName, value: score.sum, date });
 
-    const highscore = this.getHighscore();
+    const highscore = this.getHighscore(stageName);
 
     if (highscore != null) {
       const distance = this.formatDistance(highscore.date);
@@ -66,7 +68,7 @@ class ScoreManager {
     this.save();
   }
 
-  getHighscore() {
+  getHighscore(stageName) {
     if (this.scores.length === 0) {
       return null;
     }
@@ -75,7 +77,7 @@ class ScoreManager {
     let highscoreIndex = 0;
 
     this.scores.forEach((score, index) => {
-      if (score.value > highscore) {
+      if (score.stageName === stageName && score.value > highscore) {
         highscore = score.value;
         highscoreIndex = index;
       }
@@ -89,7 +91,7 @@ class ScoreManager {
   }
 
   load() {
-    const data = localStorage.getItem(key);
+    const data = localStorage.getItem(KEY);
 
     if (data != null) {
       this.scores = JSON.parse(data);
@@ -98,7 +100,7 @@ class ScoreManager {
 
   save() {
     const json = JSON.stringify(this.scores);
-    localStorage.setItem(key, json);
+    localStorage.setItem(KEY, json);
   }
 
   update() {
