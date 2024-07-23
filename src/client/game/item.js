@@ -69,11 +69,8 @@ class Item extends Collidable {
     geom.rotateX(rotation.x);
     geom.rotateZ(rotation.z);
     geom.scale(data.radius, data.radius, data.radius);
-    //geom.translate(0, data.radius * -0.8, data.radius * -0.5);
-    geom.translate(
-      position.x,
-      position.y,
-      position.z + data.radius * 0.5);
+    // geom.translate(0, data.radius * -0.8, data.radius * -0.5);
+    geom.translate(position.x, position.y, position.z + data.radius * 0.5);
 
     const wireGeom = new EdgesGeometry(geom);
 

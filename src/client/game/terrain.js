@@ -80,7 +80,7 @@ export const createTower = (
   const mesh = {};
 
   const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
-  const phi = (180 - interiorAngle) / 360 * PI * 2;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
 
   const width = radius * sin(PI / radialSegments) * 2;
   const widthSegments = ceil(width / spacing);
@@ -91,7 +91,7 @@ export const createTower = (
   const geomList = [];
 
   geom.wall = new PlaneGeometry(width, height, widthSegments, heightSegments);
-  geom.wall.rotateY(PI / 2 * (inside ? 1 : -1));
+  geom.wall.rotateY((PI / 2) * (inside ? 1 : -1));
   geom.wall = geom.wall.toNonIndexed();
   geom.wall.deleteAttribute('uv');
   geom.wall.setIndex(null);
@@ -213,15 +213,22 @@ export const createRingTower = (
   const mesh = {};
 
   const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
-  const phi = (180 - interiorAngle) / 360 * PI * 2;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
 
   const offsetX = -radius * cos(phi * 0.5) - depth * 0.5;
   const radialPoint = new Vector2(offsetX, 0);
   const center = new Vector2(0, 0);
   const geomList = [];
 
-  geom.wall = new BoxGeometry(width, height, depth, widthSegments, heightSegments, depthSegments);
-  //geom.wall.rotateY(PI / 2);
+  geom.wall = new BoxGeometry(
+    width,
+    height,
+    depth,
+    widthSegments,
+    heightSegments,
+    depthSegments,
+  );
+  // geom.wall.rotateY(PI / 2);
   geom.wall = geom.wall.toNonIndexed();
   geom.wall.deleteAttribute('uv');
   geom.wall.setIndex(null);
@@ -340,7 +347,7 @@ export const createTowerStairs = (
   const mesh = {};
 
   const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
-  const phi = (180 - interiorAngle) / 360 * PI * 2;
+  const phi = ((180 - interiorAngle) / 360) * PI * 2;
 
   const horizontalDepth = innerRadius * sin(PI / radialSegments) * 2;
   const depth = horizontalDepth / cos(incline);
@@ -350,7 +357,10 @@ export const createTowerStairs = (
   const inclineHeight = depth * sin(incline);
   const steps = floor(height / inclineHeight);
 
-  const radialPoint = new Vector2(0, -outerRadius * cos(phi * 0.5) - depth * 0.25);
+  const radialPoint = new Vector2(
+    0,
+    -outerRadius * cos(phi * 0.5) - depth * 0.25,
+  );
 
   const lp = new Vector2(
     outerRadius * sin(phi * 0.5),
@@ -361,14 +371,14 @@ export const createTowerStairs = (
     -outerRadius * cos(phi * 0.5),
   );
 
-  let x1 = innerRadius * sin(PI / radialSegments);
-  let z1 = -innerRadius * cos(PI / radialSegments);
-  let x2 = x1;
-  let z2 = z1 - width;
-  let x3 = x1 - horizontalDepth;
-  let z3 = z2;
-  let x4 = x3;
-  let z4 = z1;
+  const x1 = innerRadius * sin(PI / radialSegments);
+  const z1 = -innerRadius * cos(PI / radialSegments);
+  const x2 = x1;
+  const z2 = z1 - width;
+  const x3 = x1 - horizontalDepth;
+  const z3 = z2;
+  const x4 = x3;
+  const z4 = z1;
 
   const v1 = new Vector2(x1, z1);
   const v2 = new Vector2(x2, z2);
@@ -384,7 +394,14 @@ export const createTowerStairs = (
   geom.slope.deleteAttribute('uv');
   geom.slope.setIndex(null);
 
-  geom.wall = new BoxGeometry(depth * 0.5, height, depth * 0.5, 2, heightSegments, 2);
+  geom.wall = new BoxGeometry(
+    depth * 0.5,
+    height,
+    depth * 0.5,
+    2,
+    heightSegments,
+    2,
+  );
   geom.wall = geom.wall.toNonIndexed();
   geom.wall.deleteAttribute('uv');
   geom.wall.setIndex(null);
@@ -396,7 +413,6 @@ export const createTowerStairs = (
 
   const geomList = [];
 
-
   for (let i = 0; i < radialSegments; i += 1) {
     const rotate = phi * i;
     const wall = geom.wall.clone();
@@ -404,7 +420,7 @@ export const createTowerStairs = (
     wall.translate(radialPoint.x, height * 0.5, radialPoint.y);
 
     radialPoint.rotateAround(center, -phi);
-    //geomList.push(wall);
+    // geomList.push(wall);
   }
 
   for (let i = 0; i < steps; i += 1) {
@@ -415,38 +431,42 @@ export const createTowerStairs = (
     slope.rotateY(rotate);
     slope.translate(vec.x, inclineHeight * i, vec.y);
 
-    let l1 = landing.clone();
-    let l2 = landing.clone();
+    const l1 = landing.clone();
+    const l2 = landing.clone();
 
     const leftVertices = [
-      v1.x, inclineHeight * i, v1.y,
-      lp.x, inclineHeight * i, lp.y,
-      v2.x, inclineHeight * i, v2.y,
-
-
+      v1.x,
+      inclineHeight * i,
+      v1.y,
+      lp.x,
+      inclineHeight * i,
+      lp.y,
+      v2.x,
+      inclineHeight * i,
+      v2.y,
     ];
     const rightVertices = [
-      v3.x, inclineHeight * (i + 1), v3.y,
-      rp.x, inclineHeight * (i + 1), rp.y,
-      v4.x, inclineHeight * (i + 1), v4.y,
+      v3.x,
+      inclineHeight * (i + 1),
+      v3.y,
+      rp.x,
+      inclineHeight * (i + 1),
+      rp.y,
+      v4.x,
+      inclineHeight * (i + 1),
+      v4.y,
     ];
 
-    l1.setAttribute(
-      'position',
-      new Float32BufferAttribute(leftVertices, 3),
-    );
-    l2.setAttribute(
-      'position',
-      new Float32BufferAttribute(rightVertices, 3),
-    );
+    l1.setAttribute('position', new Float32BufferAttribute(leftVertices, 3));
+    l2.setAttribute('position', new Float32BufferAttribute(rightVertices, 3));
     l1.computeVertexNormals();
     l2.computeVertexNormals();
 
     l1.deleteAttribute('uv');
     l2.deleteAttribute('uv');
 
-    //l1.rotateY(PI / 2);
-    //l2.rotateY(PI / 2);
+    // l1.rotateY(PI / 2);
+    // l2.rotateY(PI / 2);
 
     vec.rotateAround(center, -phi);
     v1.rotateAround(center, -phi);

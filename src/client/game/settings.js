@@ -71,7 +71,7 @@ export const Ground = {
 };
 
 export const Tower = {
-  color: 0x665747,//0x806d59,
+  color: 0x665747, // 0x806d59,
   stairColor: 0x806d59,
 
   wireColor: 0x332000,
@@ -124,7 +124,7 @@ export const World = {
     spin: 6,
     ammo: -1.2,
     obstacle: -0.1,
-    item: -2,//-0.1,
+    item: -2, // -0.1,
   },
   collisionShock: 0.8,
   pointSize: 2, // 10

@@ -119,11 +119,15 @@ function DisplayScore() {
         top: '0%',
       }}
     >
-      <ScoreItem sx={{
-        top: '5%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      }}>{stageDisplayName}</ScoreItem>
+      <ScoreItem
+        sx={{
+          top: '5%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        {stageDisplayName}
+      </ScoreItem>
       <ScoreItem sx={{ top: '10%' }}>CLEAR BONUS</ScoreItem>
       <ScoreValue sx={{ top: '10%' }}>{data.bonus}</ScoreValue>
       <ScoreItem sx={{ top: '20%' }}>TIME</ScoreItem>

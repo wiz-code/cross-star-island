@@ -483,9 +483,7 @@ class CollidableManager extends Publisher {
           const rr = r * r;
 
           if (d2 < rr) {
-            const normal = this.#vecA
-              .subVectors(c1, c2)
-              .normalize();
+            const normal = this.#vecA.subVectors(c1, c2).normalize();
             const v1 = this.#vecB
               .copy(normal)
               .multiplyScalar(normal.dot(a1.velocity));
