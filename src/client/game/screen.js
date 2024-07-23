@@ -42,7 +42,8 @@ export const createVerticalFrame = (texture) => {
   return sprite;
 };
 
-export const createCenterMark = (texture) => {///////////////
+export const createCenterMark = (texture) => {
+  /// ////////////
   const material = new SpriteMaterial({
     color: 0xffffff,
     map: texture.centerMark,
@@ -59,10 +60,10 @@ export const createPovIndicator = (texture) => {
   const sprite = {};
 
   const material = {};
-  /*material.vertical = new SpriteMaterial({
+  /* material.vertical = new SpriteMaterial({
     color: 0xffffff,
     map: texture.verticalIndicator,
-  });*/
+  }); */
   material.vertical = new SpriteMaterial({
     color: 0xffffff,
     map: texture.verticalIndicator,
@@ -79,7 +80,11 @@ export const createPovIndicator = (texture) => {
 
   sprite.horizontal = new Sprite(material.direction);
   sprite.horizontal.visible = false;
-  sprite.horizontal.scale.set(Screen.horizontalIndicatorSize, Screen.horizontalIndicatorSize, 0);
+  sprite.horizontal.scale.set(
+    Screen.horizontalIndicatorSize,
+    Screen.horizontalIndicatorSize,
+    0,
+  );
   sprite.horizontal.position.setZ(-10);
 
   return sprite;

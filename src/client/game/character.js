@@ -241,7 +241,7 @@ class Character extends Entity {
     }
 
     this.data = dataMap.get(ctype);
-    this.useVRM = useVRM;/////////////
+    this.useVRM = useVRM; /// //////////
 
     this.rotation = new Spherical(); // phi and theta
     this.povRotation = new Spherical();

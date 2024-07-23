@@ -75,7 +75,9 @@ globalThis.gamepadIndex = -1;
 
 class Game {
   #count = 0;
+
   #elapsedTime = 0;
+
   #accumulatedTime = 0;
 
   constructor(width, height, callbacks, params) {
@@ -97,8 +99,7 @@ class Game {
     // ゲーム管理変数
     this.game = {};
     this.game.states = new Map(GameStates);
-    const [sname] = this.data.compositions.get('stage'); /// ////////////
-    this.game.states.set('stageName', sname);
+    this.game.states.set('stageName', this.params.stageName);
     this.game.methods = new Map(GameMethods);
     this.game.methods.forEach((value, key, map) =>
       map.set(key, value.bind(this)),
@@ -123,11 +124,11 @@ class Game {
       antialias: false,
       preserveDrawingBuffer: true,
     });
-    /*this.renderer = new WebGPURenderer({
+    /* this.renderer = new WebGPURenderer({
       canvas,
       antialias: false,
       preserveDrawingBuffer: true,
-    });*/
+    }); */
     this.renderer.autoClear = false;
     this.renderer.setClearColor(new Color(0x000000));
     this.renderer.setPixelRatio(Renderer.pixelRatio);
@@ -152,12 +153,13 @@ class Game {
 
     this.scene.screen = new ThreeScene();
     const indicators = SceneManager.createIndicators(this.texture);
-    const { povSight, povSightLines, povIndicator, centerMark, verticalFrame } = indicators;
+    const { povSight, povSightLines, povIndicator, centerMark, verticalFrame } =
+      indicators;
     this.scene.screen.add(povSight);
     this.scene.screen.add(povSightLines);
     this.scene.screen.add(povIndicator.horizontal);
     this.scene.screen.add(povIndicator.vertical);
-    //this.scene.screen.add(centerMark);
+    // this.scene.screen.add(centerMark);
     this.scene.screen.add(verticalFrame);
 
     this.modelManager = new ModelManager(this.scene.field);
@@ -185,7 +187,7 @@ class Game {
     const promise = this.soundManager.loadSounds();
     this.scoreManager = new ScoreManager(this.game);
     this.movableManager = new MovableManager(this.game); /// ///////
-    this.gridProcessor = new GridProcessor();/////////
+    this.gridProcessor = new GridProcessor(); /// //////
     this.loadingList.push(promise);
 
     this.sceneManager.clear();

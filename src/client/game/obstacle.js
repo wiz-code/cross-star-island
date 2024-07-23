@@ -12,6 +12,8 @@ import {
   Group,
   Float32BufferAttribute,
   Vector3,
+  Sphere,
+  Box3,
   NormalBlending,
 } from 'three';
 
@@ -32,6 +34,7 @@ class Obstacle extends Collidable {
     this.data = obstacleData.get(name);
 
     const {
+      collider,
       radius,
       detail,
 
@@ -41,7 +44,15 @@ class Obstacle extends Collidable {
     } = this.data;
     const pointsDetail = this.data.pointsDetail ?? detail;
 
-    this.collider.set(new Vector3(), radius);
+    if (collider === 'sphere') {
+      this.setCollider(new Sphere(new Vector3(), radius));
+    } else if (collider === 'box3') {
+      const boundingBox = new Box3();
+      const sphere = new Sphere(new Vector3(), radius);
+      sphere.getBoundingBox(boundingBox);
+
+      this.setCollider(boundingBox);
+    }
 
     const geom = new IcosahedronGeometry(radius, detail);
     const wireframeGeom = new WireframeGeometry(geom);

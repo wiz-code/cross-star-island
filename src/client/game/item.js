@@ -14,31 +14,67 @@ import {
   LineSegments,
   Points,
   Group,
+  Box3,
+  Sphere,
+  Vector2,
   Vector3,
+  Shape,
+  ExtrudeGeometry,
+  ShapeGeometry, /// ////
 } from 'three';
 
 import { World } from './settings';
 import Collidable from './collidable';
 import { Items } from './data';
 
-const { floor } = Math;
+const { floor, PI } = Math;
 const itemData = new Map(Items);
 
 class Item extends Collidable {
   #elapsedTime = 0;
 
   static createTetra(data, texture) {
-    const verticesOfTetra = new Float32Array([
-      0, 0, 2, 0, 0.3, 0, 0.7, 0, -0.5, -0.7, 0, -0.5,
-    ]);
-    const indices = [0, 3, 1, 0, 1, 2, 0, 2, 3, 1, 3, 2];
-    const geom = new BufferGeometry();
-    geom.setIndex(indices);
-    geom.setAttribute('position', new BufferAttribute(verticesOfTetra, 3));
+    const {
+      position = { x: 0, y: 0, z: 0 },
+      rotation = { x: PI / 2, y: 0, z: 0 },
+    } = data;
 
+    const path1 = [
+      new Vector2(0, 0),
+      new Vector2(0.7, -0.7),
+      new Vector2(0.7, -1),
+      new Vector2(0, -0.3),
+      new Vector2(-0.7, -1),
+      new Vector2(-0.7, -0.7),
+    ];
+    const path2 = [
+      new Vector2(0, -0.9),
+      new Vector2(0.7, -1.6),
+      new Vector2(0.7, -1.9),
+      new Vector2(0, -1.2),
+      new Vector2(-0.7, -1.9),
+      new Vector2(-0.7, -1.6),
+    ];
+    const shapes = [
+      new Shape().setFromPoints(path1),
+      new Shape().setFromPoints(path2),
+    ];
+    const geom = new ExtrudeGeometry(shapes, {
+      steps: 1,
+      depth: 0.02,
+      bevelEnabled: false,
+    });
+
+    geom.rotateY(rotation.y);
+    geom.rotateX(rotation.x);
+    geom.rotateZ(rotation.z);
     geom.scale(data.radius, data.radius, data.radius);
-    geom.translate(0, data.radius * -0.8, data.radius * -0.5);
-    geom.computeBoundingBox();
+    //geom.translate(0, data.radius * -0.8, data.radius * -0.5);
+    geom.translate(
+      position.x,
+      position.y,
+      position.z + data.radius * 0.5);
+
     const wireGeom = new EdgesGeometry(geom);
 
     let pointsGeom = new TetrahedronGeometry(data.radius + 1, 0);
@@ -49,7 +85,7 @@ class Item extends Collidable {
       new Float32BufferAttribute(vertices, 3),
     );
     pointsGeom.translate(0, -data.radius, 0);
-    pointsGeom.computeBoundingSphere();
+    // pointsGeom.computeBoundingSphere();
 
     const mat = new MeshBasicMaterial({ color: data.color });
     const wireMat = new LineBasicMaterial({
@@ -137,7 +173,17 @@ class Item extends Collidable {
     }
 
     this.data = itemData.get(name);
-    this.collider.set(new Vector3(), this.data.radius);
+
+    if (this.data.collider === 'sphere') {
+      this.setCollider(new Sphere(new Vector3(), this.data.radius));
+    } else if (this.data.collider === 'box3') {
+      const boundingBox = new Box3();
+      const sphere = new Sphere(new Vector3(), this.data.radius);
+      sphere.getBoundingBox(boundingBox);
+
+      this.setCollider(boundingBox);
+    }
+
     this.object = Item[this.data.method](this.data, texture);
 
     this.setObject(this.object);

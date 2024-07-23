@@ -8,6 +8,7 @@ import SweepAndPrune from './sap';
 import {
   triangleCapsuleIntersect,
   triangleSphereIntersect,
+  getCollisionParams,
 } from './utils';
 
 const { sqrt, cos, PI } = Math;
@@ -27,6 +28,8 @@ class CollidableManager extends Publisher {
 
   #vecE = new Vector3();
 
+  #vecF = new Vector3();
+
   #box = new Box3();
 
   #matrix = new Matrix4();
@@ -44,6 +47,12 @@ class CollidableManager extends Publisher {
   #v3 = new Vector3();
 
   #vec = new Vector3();
+
+  #c1 = new Vector3();
+
+  #c2 = new Vector3();
+
+  #boxCenter = new Vector3();
 
   #parent = null;
 
@@ -72,9 +81,12 @@ class CollidableManager extends Publisher {
       }
 
       collidable.collider.getBoundingBox(box);
-    } else {
+    } else if (collidable.collider instanceof Sphere) {
       this.scene.add(collidable.object);
       collidable.collider.getBoundingBox(box);
+    } else if (collidable.collider instanceof Box3) {
+      this.scene.add(collidable.object);
+      box.copy(collidable.collider);
     }
 
     this.list.add(collidable);
@@ -205,11 +217,9 @@ class CollidableManager extends Publisher {
         });
 
         if (result) {
-          this.#v3.copy(
-            this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2)),
-          );
-          const depth = this.#v3.length();
-          result = { normal: this.#v3.clone().normalize(), depth };
+          this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2));
+          const depth = this.#v1.length();
+          result = { normal: this.#v1.clone().normalize(), depth };
         }
 
         collidable.setGrounded(false);
@@ -244,17 +254,24 @@ class CollidableManager extends Publisher {
             collider.translate(result.normal.multiplyScalar(result.depth));
           }
         }
-      } else if (collider instanceof Sphere) {
+      } else {
         let result = false;
-        this.#sphere.copy(collider);
-        collider.getBoundingBox(this.#box);
+        let center;
+
+        if (collider instanceof Sphere) {
+          center = collider.center;
+          this.#sphere.copy(collider);
+          this.#sphere.getBoundingBox(this.#box);
+        } else if (collider instanceof Box3) {
+          this.#box.copy(collider);
+          center = collider.getCenter(this.#v2);
+          this.#sphere.set(center, collidable.data.radius);
+        }
 
         boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box
-              .clampPoint(this.#center, this.#vec)
-              .distanceToSquared(this.#center);
-            // return box.distanceToPoint(this.#sphere.center);
+            return box.clampPoint(center, this.#vec).distanceToSquared(center);
+            // return box.distanceToPoint(center);
           },
           intersectsBounds: (box, isLeaf, score) => {
             if (box.intersectsBox(this.#box)) {
@@ -278,12 +295,9 @@ class CollidableManager extends Publisher {
         });
 
         if (result) {
-          this.#v3.copy(
-            this.#v1.copy(this.#sphere.center).sub(collider.center),
-          );
-          const depth = this.#v3.length();
-
-          result = { normal: this.#v3.clone().normalize(), depth };
+          this.#v1.copy(this.#sphere.center).sub(center);
+          const depth = this.#v1.length();
+          result = { normal: this.#v1.clone().normalize(), depth };
         }
 
         if (result !== false) {
@@ -295,7 +309,12 @@ class CollidableManager extends Publisher {
             result.normal,
             -result.normal.dot(velocity) * 1.5,
           );
-          collider.center.add(result.normal.multiplyScalar(result.depth));
+
+          if (collider instanceof Sphere) {
+            collider.center.add(result.normal.multiplyScalar(result.depth));
+          } else if (collider instanceof Box3) {
+            collider.translate(result.normal.multiplyScalar(result.depth));
+          }
         }
       }
 
@@ -306,23 +325,24 @@ class CollidableManager extends Publisher {
 
     for (const [a1, a2] of this.sap.pairs) {
       if (a1.isAlive() && a2.isAlive()) {
-        if (a1.type === 'character' && a2.type === 'character') {
-          const a1Center = a1.collider.getCenter(this.#vecA);
-          const a2Center = a2.collider.getCenter(this.#vecB);
-          const r = a1.data.radius + a2.data.radius;
-          const r2 = r * r;
+        if (a1.collider instanceof Capsule && a2.collider instanceof Capsule) {
+          const { center: c1, radius: r1 } = getCollisionParams(a1, this.#c1);
+          const { center: c2, radius: r2 } = getCollisionParams(a2, this.#c2);
+
+          const r = r1 + r2;
+          const rr = r * r;
 
           let collided = false;
-          const colliders = [a2.collider.start, a2.collider.end, a2Center];
+          const colliders = [a2.collider.start, a2.collider.end, c2];
 
           for (let i = 0, l = colliders.length; i < l; i += 1) {
             const point = colliders[i];
-            const d2 = point.distanceToSquared(a1Center);
+            const d2 = point.distanceToSquared(c1);
 
-            if (d2 < r2) {
+            if (d2 < rr) {
               collided = true;
 
-              const normal = this.#vecA.subVectors(point, a1Center).normalize();
+              const normal = this.#vecA.subVectors(point, c1).normalize();
               const v1 = this.#vecB
                 .copy(normal)
                 .multiplyScalar(normal.dot(a2.velocity));
@@ -339,99 +359,132 @@ class CollidableManager extends Publisher {
               a1.collider.translate(normal.multiplyScalar(-d));
               a2.collider.translate(normal.multiplyScalar(d));
             }
-
-            if (collided) {
-              this.eventManager.dispatch('collision', a1.name, a1, a2);
-              this.eventManager.dispatch('collision', a2.name, a2, a1);
-            }
-          }
-        } else if (a1.type === 'character' || a2.type === 'character') {
-          let character;
-          let object;
-
-          if (a1.type === 'character') {
-            character = a1;
-            object = a2;
-          } else if (a2.type === 'character') {
-            character = a2;
-            object = a1;
           }
 
-          const cCenter = character.collider.getCenter(this.#vecA);
-          const oCenter = object.collider.center;
-          const r = character.collider.radius + object.collider.radius;
-          const r2 = r * r;
+          if (collided) {
+            /// ////////////////////////
+            this.eventManager.dispatch('collision', a1.name, a1, a2);
+            this.eventManager.dispatch('collision', a2.name, a2, a1);
+          }
+        } else if (
+          a1.collider instanceof Capsule ||
+          a2.collider instanceof Capsule
+        ) {
+          const params1 = getCollisionParams(a1, this.#c1);
+          const params2 = getCollisionParams(a2, this.#c2);
 
-          const colliders = [
-            character.collider.start,
-            character.collider.end,
-            cCenter,
-          ];
+          let capsule;
+          let other;
 
-          for (let i = 0, l = colliders.length; i < l; i += 1) {
-            const point = colliders[i];
-            const d2 = point.distanceToSquared(oCenter);
+          if (a1.collider instanceof Capsule) {
+            capsule = {
+              object: a1,
+              velocity: a1.velocity,
+              data: a1.data,
+              center: params1.center,
+              radius: params1.radius,
+              colliders: [a1.collider.start, params1.center, a1.collider.end],
+            };
+            other = {
+              object: a2,
+              velocity: a2.velocity,
+              data: a2.data,
+              center: params2.center,
+              radius: params2.radius,
+            };
+          } else {
+            capsule = {
+              object: a2,
+              velocity: a2.velocity,
+              data: a2.data,
+              center: params2.center,
+              radius: params2.radius,
+              colliders: [a2.collider.start, params2.center, a2.collider.end],
+            };
+            other = {
+              object: a1,
+              velocity: a1.velocity,
+              data: a1.data,
+              center: params1.center,
+              radius: params1.radius,
+            };
+          }
 
-            if (d2 < r2) {
-              if (!object.isBounced()) {
-                object.setBounced(true);
+          let collided = false;
+          const r = capsule.radius + other.radius;
+          const rr = r * r;
+
+          for (let i = 0, l = capsule.colliders.length; i < l; i += 1) {
+            const point = capsule.colliders[i];
+            const d2 = point.distanceToSquared(other.center);
+
+            if (d2 < rr) {
+              collided = true;
+
+              if (a1.type === 'item' || a2.type === 'item') {
+                break;
               }
 
-              if (object.type === 'item') {
-                if (character.hasControls) {
-                  this.effect(object, character);
-                  break;
-                }
-              } else {
-                playSound?.('damage');
+              const normal = this.#vecA
+                .subVectors(point, other.center)
+                .normalize();
+              const v1 = this.#vecB
+                .copy(normal)
+                .multiplyScalar(normal.dot(capsule.velocity));
+              const v2 = this.#vecC
+                .copy(normal)
+                .multiplyScalar(normal.dot(other.velocity));
+              const vec1 = this.#vecD.subVectors(v2, v1);
+              const vec2 = this.#vecE.subVectors(v1, v2);
 
-                if (object.type === 'ammo' && !character.hasControls) {
-                  const hits = states.get('hits');
-                  states.set('hits', hits + 1);
-                }
+              capsule.velocity.addScaledVector(vec1, other.data.weight);
+              other.velocity.addScaledVector(vec2, capsule.data.weight);
 
-                character.setStunning(World.collisionShock);
+              const d = (r - sqrt(d2)) / 2;
 
-                const normal = this.#vecA
-                  .subVectors(point, oCenter)
-                  .normalize();
-                const v1 = this.#vecB
-                  .copy(normal)
-                  .multiplyScalar(normal.dot(character.velocity));
-                const v2 = this.#vecC
-                  .copy(normal)
-                  .multiplyScalar(normal.dot(object.velocity));
-                const vec1 = this.#vecD.subVectors(v2, v1);
-                const vec2 = this.#vecE.subVectors(v1, v2);
+              if (other.collider instanceof Sphere) {
+                other.center.addScaledVector(normal, -d);
+              } else if (other.collider instanceof Box3) {
+                this.#vecF.copy(normal).multiplyScalar(-d);
+                this.collider.translate(this.#vecF);
+              }
+            }
+          }
 
-                character.velocity.addScaledVector(vec1, object.data.weight);
-                object.velocity.addScaledVector(vec2, character.data.weight);
+          if (collided) {
+            if (!other.object.isBounced()) {
+              other.object.setBounced(true);
+            }
 
-                const d = (r - sqrt(d2)) / 2;
-                oCenter.addScaledVector(normal, -d);
+            if (other.object.type === 'item') {
+              if (capsule.object.hasControls) {
+                this.effect(other.object, capsule.object);
+              }
+            } else {
+              playSound?.('damage');
+              capsule.object.setStunning(World.collisionShock);
+
+              if (other.object.type === 'ammo' && !capsule.object.hasControls) {
+                const hits = states.get('hits');
+                states.set('hits', hits + 1);
               }
             }
           }
         } else {
+          const { center: c1, radius: r1 } = getCollisionParams(a1, this.#c1);
+          const { center: c2, radius: r2 } = getCollisionParams(a2, this.#c2);
+
           if (a1.type === 'item' || a2.type === 'item') {
             continue;
           }
 
-          const d2 = a1.collider.center.distanceToSquared(a2.collider.center);
-          const r = a1.data.radius + a2.data.radius;
-          const r2 = r * r;
+          const d2 = c1.distanceToSquared(c2);
+          const r = r1 + r2;
+          const rr = r * r;
 
-          if (d2 < r2) {
-            if (!a1.isBounced()) {
-              a1.setBounced(true);
-            }
-
-            if (!a2.isBounced()) {
-              a2.setBounced(true);
-            }
-
+          if (d2 < rr) {
             const normal = this.#vecA
-              .subVectors(a1.collider.center, a2.collider.center)
+              .subVectors(c1, c2)
               .normalize();
             const v1 = this.#vecB
               .copy(normal)
@@ -450,6 +503,28 @@ class CollidableManager extends Publisher {
 
             a1.collider.center.addScaledVector(normal, d);
             a2.collider.center.addScaledVector(normal, -d);
+
+            if (a1.collider instanceof Sphere) {
+              a1.collider.center.addScaledVector(normal, d);
+            } else if (a1.collider instanceof Box3) {
+              this.#vecF.copy(normal).multiplyScalar(d);
+              a1.collider.translate(this.#vecF);
+            }
+
+            if (a2.collider instanceof Sphere) {
+              a2.collider.center.addScaledVector(normal, -d);
+            } else if (a2.collider instanceof Box3) {
+              this.#vecF.copy(normal).multiplyScalar(-d);
+              a2.collider.translate(this.#vecF);
+            }
+
+            if (!a1.isBounced()) {
+              a1.setBounced(true);
+            }
+
+            if (!a2.isBounced()) {
+              a2.setBounced(true);
+            }
           }
         }
       }
@@ -502,6 +577,9 @@ class CollidableManager extends Publisher {
           }
         } else if (collidable.collider instanceof Sphere) {
           collidable.object.position.copy(collidable.collider.center);
+        } else if (collidable.collider instanceof Box3) {
+          collidable.collider.getCenter(this.#boxCenter);
+          collidable.object.position.copy(this.#boxCenter);
         }
       }
     }

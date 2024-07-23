@@ -368,12 +368,7 @@ class GamepadControls extends Publisher {
     }
 
     // 自機の視点制御
-    const {
-      lookSpeed,
-      momentum,
-      restoreMinAngle,
-      restoreSpeed,
-    } = Controls;
+    const { lookSpeed, momentum, restoreMinAngle, restoreSpeed } = Controls;
     const { vertical: pitchIndicator, horizontal: yawIndicator } =
       this.povIndicator;
 
@@ -390,8 +385,8 @@ class GamepadControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      let dx = floor(this.#x0 - this.#x1) / momentum;
-      let dy = floor(this.#y0 - this.#y1) / momentum;
+      const dx = floor(this.#x0 - this.#x1) / momentum;
+      const dy = floor(this.#y0 - this.#y1) / momentum;
 
       this.#x1 += dx;
       this.#y1 += dy;
@@ -400,8 +395,9 @@ class GamepadControls extends Publisher {
       const radX = degX * degToRadCoef;
       this.#rotation.theta -= radX * lookSpeed;
 
+      const coefY = 1.5;
       const degY = (135 * dx) / this.viewHalfX;
-      const radY = degY * degToRadCoef * 1.5;
+      const radY = degY * degToRadCoef * coefY;
       this.#rotation.phi -= radY * lookSpeed;
 
       this.#rotation.theta = max(

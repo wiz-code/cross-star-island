@@ -1,5 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+import { Meta } from '../common';
+
+const meta = new Map(Meta);
+const stages = new Map(meta.get('stages'));
+const [firstStage] = Array.from(stages.keys());
+
 const { floor } = Math;
 
 const gameSlice = createSlice({
@@ -7,7 +13,7 @@ const gameSlice = createSlice({
 
   initialState: {
     mode: 'unstarted',
-    stageName: '',
+    stageName: firstStage,
     elapsedTime: 0,
     score: null,
     fps: true,

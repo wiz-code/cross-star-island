@@ -1,4 +1,4 @@
-import { Vector3 } from 'three';
+import { Vector3, BackSide } from 'three';
 
 const { sin, PI } = Math;
 
@@ -121,6 +121,8 @@ export const Obstacles = [
   [
     'round-stone',
     {
+      collider: 'sphere',
+
       radius: 18,
       detail: 1,
       pointsDetail: 1,
@@ -135,6 +137,8 @@ export const Obstacles = [
   [
     'small-round-stone',
     {
+      collider: 'sphere',
+
       radius: 10,
       detail: 1,
       pointsDetail: 0,
@@ -171,6 +175,8 @@ export const Ammos = [
   [
     'small-bullet',
     {
+      collider: 'sphere',
+
       color: 0xffffe0,
       wireColor: 0xf7ca79,
       pointColor: 0xf45c41,
@@ -201,6 +207,8 @@ export const Ammos = [
   [
     'hop-bullet',
     {
+      collider: 'sphere',
+
       color: 0x75c6c3,
       wireColor: 0x424a76,
       pointColor: 0xf45c41,
@@ -322,6 +330,7 @@ export const Items = [
     'checkpoint',
     {
       method: 'createRing',
+      collider: 'sphere',
 
       radius: 5, // 20
       tube: 0.8, // 3
@@ -349,11 +358,13 @@ export const Items = [
     'weapon-upgrade',
     {
       method: 'createRing',
+      collider: 'sphere',
 
       radius: 5, // 20
       tube: 0.8, // 3
       radialSegments: 6,
       tubularSegments: 12,
+      weight: 1,
 
       color: 0xadd8e6,
       wireColor: 0xa9a9a9,
@@ -375,8 +386,38 @@ export const Items = [
     'hyper-dash',
     {
       method: 'createTetra',
+      collider: 'box3',
 
       radius: 5,
+      weight: 1,
+      position: { x: 0, y: -4, z: 2 },
+
+      color: 0x7fffd4,
+      wireColor: 0xa9a9a9,
+      pointColor: 0xffc0cb,
+
+      rotateSpeed: 2,
+
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            //
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'hyper-jump',
+    {
+      method: 'createTetra',
+      collider: 'box3',
+
+      radius: 5,
+      weight: 1,
+      position: { x: 0, y: 4.5, z: -2 },
+      rotation: { x: 0, y: 0, z: 0 },
 
       color: 0x7fffd4,
       wireColor: 0xa9a9a9,
@@ -1017,11 +1058,45 @@ export const Stages = [
     {
       checkpoints: [
         {
-          position: { sx: 0, sy: 5, sz: 0 },
-          phi: PI,
+          position: { sx: 3, sy: 3, sz: -5.5 },
+          //position: { sx: 4.5, sy: 20, sz: 4.2 },
+          phi: PI * 0.5,
         },
       ],
-      movables: [
+      items: [
+        {
+          name: 'hyper-jump',
+          consumable: false,
+          disableTime: 3,
+          params: {
+            section: 0,
+            position: { sx: 1.6, sy: 6, sz: 5.8 },
+            phi: PI * 0.5,
+            velocity: new Vector3(-5, 10, -7),
+          },
+          schedule: {
+            spawnTime: 3,
+          },
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+        {
+          name: 'hyper-jump',
+          consumable: false,
+          disableTime: 1,
+          params: {
+            section: 0,
+            //position: { sx: -5.7, sy: 13, sz: 1.6 },
+            position: { sx: 4.3, sy: 20, sz: 4.2 },
+            phi: PI * 0.6,
+            velocity: new Vector3(-7, 10, -5),
+          },
+          schedule: {
+            spawnTime: 5,
+          },
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+      ],
+      /*movables: [
         {
           name: 'moving-platform-1',
           params: {},
@@ -1033,24 +1108,24 @@ export const Stages = [
             },
           ],
         },
-      ],
+      ],*/
       sections: [
         {
-          offset: { sx: 0, sy: 0, sz: 0 },
+          offset: { sx: 0, sy: 0, sz: -4 },
           grid: {
             widthSegments: 20,
-            heightSegments: 10,
-            depthSegments: 10,
-            position: { sx: 0.25, sy: 0.25, sz: 0.25 },
+            heightSegments: 40,
+            depthSegments: 20,
+            position: { sx: 0.25, sy: 20.25, sz: 0.25 },
           },
           ground: {
-            widthSegments: 2,
-            depthSegments: 8,
+            widthSegments: 15,
+            depthSegments: 15,
             bumpHeight: 0,
-            position: { sx: 0, sy: 0, sz: 0 },
+            position: { sx: 0, sy: 0.01, sz: 0 },
             rotation: { x: 0, y: 0, z: 0 },
           },
-          cylinder: [
+          /*cylinder: [
             {
               name: 'moving-platform-1',
               movable: true,
@@ -1062,19 +1137,62 @@ export const Stages = [
               heightSegments: 1,
               position: { sx: 0, sy: -1, sz: 5 },
             },
-          ],
+          ],*/
+          tower: {
+            radius: 16 * 7 + 1,
+            height: 16 * 22,
+            radialSegments: 12,
+            heightSegments: 11,
+            inside: true,
+            position: { sx: 0, sy: 0, sz: 0 },
+            rotation: { x: 0, y: 0, z: 0 },
+          },
+          towerStairs: {
+            radialSegments: 12,//6,
+            innerRadius: 16 * 5,
+            outerRadius: 16 * 7,
+
+            incline: (15 / 360) * PI * 2,
+            height: 16 * 20,
+            heightSegments: 20,
+
+            position: { sx: 0, sy: 0, sz: 0 },
+          },
+          ringTower: {
+            radius: 16 * 7 + 3,
+            width: 16 * 1,
+            height: 16 * 20,
+            depth: 16 * 1,
+            radialSegments: 12,
+            widthSegments: 2,
+            heightSegments: 11,
+            depthSegments: 2,
+            position: { sx: 0, sy: 20, sz: 0 },
+          },
           column: [
-            /* {
-              radiusShaft: 12,
-              radiusEnd: 18,
-              heightShaft: 74,
-              heightEnd: 6,
-              radialSegments: 8,
-              heightSegments: 8,
-              openEnded: true,
-              position: { sx: 0, sy: 0, sz: 0 },
-            }, */
             {
+              radiusShaft: 16 * 1,
+              radiusEnd: 16 * 1.4,
+              heightShaft: 16 * 10,
+              heightEnd: 16 * 0.5,
+              radialSegments: 12,
+              heightSegments: 16,
+              openEnded: false,
+              position: { sx: 0, sy: 0, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+            /*{
+              radiusShaft: 16 * 0.5,
+              radiusEnd: 16 * 0.7,
+              heightShaft: 16 * 10,
+              heightEnd: 16 * 0.5,
+              radialSegments: 6,
+              heightSegments: 16,
+              openEnded: false,
+              position: { sx: 0, sy: 11, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },*/
+            /*{
               radiusShaft: 12,
               radiusEnd: 18,
               heightShaft: 74,
@@ -1083,7 +1201,7 @@ export const Stages = [
               heightSegments: 8,
               openEnded: false,
               position: { sx: 0, sy: -8, sz: 8 },
-            },
+            },*/
           ],
         },
       ],

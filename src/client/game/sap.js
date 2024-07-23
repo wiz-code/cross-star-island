@@ -69,7 +69,11 @@ class SweepAndPrune {
   }
 
   updateObject(object) {
-    object.collider.getBoundingBox(this.#bb);
+    if (object.collider instanceof Box3) {
+      this.#bb.copy(object.collider);
+    } else {
+      object.collider.getBoundingBox(this.#bb);
+    }
 
     const box = this.boxes.get(object.id);
 

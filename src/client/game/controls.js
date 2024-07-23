@@ -4,7 +4,7 @@ import Publisher from './publisher';
 import { Game, Controls, Screen, GameColor } from './settings';
 import { Keys, Pointers, Actions } from './data';
 
-const { floor,abs, sin, cos, sign, max, min, PI } = Math;
+const { floor, abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
@@ -18,9 +18,6 @@ const {
 const onContextmenu = (event) => {
   event.preventDefault();
 };
-
-const easeOutQuad = (x) => 1 - (1 - x) ** 2;
-const easeOutExpo = (x) => x === 1 ? 1 : 1 - 2 ** (-10 * x);
 
 const MashKeys = new Set([
   'KeyW',
@@ -480,16 +477,11 @@ class FirstPersonControls extends Publisher {
       return;
     }
 
-    const {
-      lookSpeed,
-      momentum,
-      restoreMinAngle,
-      restoreSpeed,
-    } = Controls;
+    const { lookSpeed, momentum, restoreMinAngle, restoreSpeed } = Controls;
 
     // 自機の視点制御
-    let dx = floor(this.#x0 - this.#x1) / momentum;
-    let dy = floor(this.#y0 - this.#y1) / momentum;
+    const dx = floor(this.#x0 - this.#x1) / momentum;
+    const dy = floor(this.#y0 - this.#y1) / momentum;
 
     this.#x1 += dx;
     this.#y1 += dy;

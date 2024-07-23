@@ -22,7 +22,7 @@ const fluctuation = (...tList) => {
 
     for (let j = 0; j < len; j += 1) {
       const f = frequencies[j];
-      const amplitude = 1 / f * sin(f * t);
+      const amplitude = (1 / f) * sin(f * t);
       sum += amplitude;
     }
 
@@ -57,13 +57,9 @@ class GridProcessor extends Publisher {
     const [fx, fy] = fluctuation(elapsedTime * coefX, elapsedTime * coefY);
 
     for (const grid of this.set) {
-      const position = grid.position;
+      const { position } = grid;
       const diff = fx * offsetX;
-      this.#vec.set(
-        diff,
-        fy * offsetY,
-        diff * 0.5
-      );
+      this.#vec.set(diff, fy * offsetY, diff * 0.5);
       position.add(this.#vec);
     }
   }

@@ -16,6 +16,12 @@ import {
   TableRow,
   TableCell,
   Checkbox,
+  FormGroup,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
 
@@ -28,6 +34,7 @@ const meta = new Map(Meta);
 const title = meta.get('title');
 const subtitle = meta.get('subtitle');
 const description = meta.get('description');
+const stages = new Map(meta.get('stages'));
 const { actions: gameActions } = gameSlice;
 
 const ColumnGrid = styled(Grid)(({ theme }) => ({
@@ -41,7 +48,7 @@ const Row = styled(Grid)(({ theme }) => ({
 
 function TitlePage({ gameLink, toggleFullScreen }) {
   const { isFullscreen } = useSelector((state) => state.system);
-  const { vrm } = useSelector((state) => state.game);
+  const { stageName, vrm } = useSelector((state) => state.game);
   const [gameStarted, setGameStarted] = useState(false);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -66,6 +73,11 @@ function TitlePage({ gameLink, toggleFullScreen }) {
     dispatch(gameActions.toggleVRM(!vrm));
   }, [vrm]);
 
+  const setStage = useCallback((e) => {
+    const { value } = e.target;
+    dispatch(gameActions.setStage(value));
+  }, []);
+
   return (
     <Layout>
       <ColumnGrid container>
@@ -85,17 +97,36 @@ function TitlePage({ gameLink, toggleFullScreen }) {
         <Row item sx={{ display: 'flex', gap: theme.spacing(1) }}>
           <Typography variant="body1">{description}</Typography>
         </Row>
+        <Row item sx={{ display: 'flex', justifyContent: 'center' }} />
         <Row
           container
           item
           sx={{ gap: theme.spacing(2), justifyContent: 'center' }}
         >
-          <Box sx={{ mb: theme.spacing(-1) }}>
-            <Checkbox {...label} checked={vrm} onChange={toggleVRM} />
-            <Typography variant="body1" component="span">
-              VRMファイルを読み込む
-            </Typography>
-          </Box>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox {...label} checked={vrm} onChange={toggleVRM} />
+              }
+              label="VRMファイルを読み込む"
+            />
+          </FormGroup>
+          <FormControl sx={{ minWidth: 120 }} size="small">
+            <InputLabel id="stage-select-label">ステージ選択</InputLabel>
+            <Select
+              labelId="stage-select-label"
+              id="stage-select"
+              value={stageName}
+              label="ステージ選択"
+              onChange={setStage}
+            >
+              {Array.from(stages.entries()).map(([name, label], index) => (
+                <MenuItem key={`stage-${index}`} value={name}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <Button
             variant="contained"
             component={Link}
