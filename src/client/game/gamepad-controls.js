@@ -1,7 +1,7 @@
 import { Spherical, Vector3 } from 'three';
 
 import Publisher from './publisher';
-import { Controls, Screen, GameColor } from './settings';
+import { Game, Controls, Screen, GameColor } from './settings';
 import { Actions } from './data';
 
 const {
@@ -14,7 +14,8 @@ const { floor, abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
-const EPS = 1e-4;
+const { EPS } = Game;
+//const EPS = 1e-4;
 
 const buttonList = [
   'a',
@@ -121,6 +122,7 @@ class GamepadControls extends Publisher {
 
     this.yawIndicatorRadius = 0;
     this.gaugeHalfY = 0;
+    this.multiplier = 1;
 
     this.setCharacterRot = this.setCharacterRot.bind(this);
     this.onRotate = this.onRotate.bind(this);
@@ -167,7 +169,8 @@ class GamepadControls extends Publisher {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-    this.gaugeHalfY = Screen.gaugeHeight;
+    this.gaugeHalfY = Screen.gaugeHeight / 2;
+    this.multiplier = this.gaugeHalfY / this.viewHalfX;
 
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
@@ -333,18 +336,18 @@ class GamepadControls extends Publisher {
         }
       } else if (axis === 'rsy') {
         if (value > EPS) {
-          this.#y0 = this.#py + value * Controls.stickSpeed;
+          this.#y0 = this.#py + value;
           this.#py = this.#y0;
         } else if (value < -EPS) {
-          this.#y0 = this.#py + value * Controls.stickSpeed;
+          this.#y0 = this.#py + value;
           this.#py = this.#y0;
         }
       } else if (axis === 'rsx') {
         if (value > EPS) {
-          this.#x0 = this.#px + value * Controls.stickSpeed;
+          this.#x0 = this.#px + value;
           this.#px = this.#x0;
         } else if (value < -EPS) {
-          this.#x0 = this.#px + value * Controls.stickSpeed;
+          this.#x0 = this.#px + value;
           this.#px = this.#x0;
         }
       } else if (axis === 'rt2' && value > 0) {
@@ -385,20 +388,38 @@ class GamepadControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      const dx = floor(this.#x0 - this.#x1) / momentum;
-      const dy = floor(this.#y0 - this.#y1) / momentum;
+      let dx = this.#x0 - this.#x1;
+      let dy = this.#y0 - this.#y1;
+
+      if (
+        dx > 0 && dx < EPS ||
+        dx < 0 && dx > -EPS
+      ) {
+        dx = 0;
+      }
+
+      if (
+        dy > 0 && dy < EPS ||
+        dy < 0 && dy > -EPS
+      ) {
+        dy = 0;
+      }
+
+      dx /= momentum;
+      dy /= momentum;
 
       this.#x1 += dx;
       this.#y1 += dy;
 
-      const degX = (90 * dy) / this.gaugeHalfY;
-      const radX = degX * degToRadCoef;
-      this.#rotation.theta -= radX * lookSpeed;
+      const multiplier = Controls.stickSpeed * lookSpeed;
 
-      const coefY = 1.5;
-      const degY = (135 * dx) / this.viewHalfX;
-      const radY = degY * degToRadCoef * coefY;
-      this.#rotation.phi -= radY * lookSpeed;
+      const degX = (dy * multiplier) / this.gaugeHalfY;
+      const radX = degX * degToRadCoef * this.multiplier;
+      this.#rotation.theta -= radX;
+
+      const degY = (dx * multiplier) / this.viewHalfX;
+      const radY = degY * degToRadCoef;
+      this.#rotation.phi -= radY;
 
       this.#rotation.theta = max(
         this.verticalAngle.min,
