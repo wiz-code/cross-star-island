@@ -8,6 +8,7 @@ const { floor, abs, sin, cos, sign, max, min, PI } = Math;
 const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
+const { EPS } = Game;
 
 const {
   SightColor: sightColor,
@@ -119,6 +120,7 @@ class FirstPersonControls extends Publisher {
 
     this.yawIndicatorRadius = 0;
     this.gaugeHalfY = 0;
+    this.multiplier = 1;
 
     this.onWheel = this.onWheel.bind(this);
     this.onPointerMove = this.onPointerMove.bind(this);
@@ -181,7 +183,8 @@ class FirstPersonControls extends Publisher {
   handleResize() {
     this.viewHalfX = this.domElement.offsetWidth / 2;
     this.viewHalfY = this.domElement.offsetHeight / 2;
-    this.gaugeHalfY = Screen.gaugeHeight;
+    this.gaugeHalfY = Screen.gaugeHeight / 2;
+    this.multiplier = this.gaugeHalfY / this.viewHalfX;
 
     this.yawIndicatorRadius = Screen.horizontalIndicatorSize;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
@@ -480,8 +483,25 @@ class FirstPersonControls extends Publisher {
     const { lookSpeed, momentum, restoreMinAngle, restoreSpeed } = Controls;
 
     // 自機の視点制御
-    const dx = floor(this.#x0 - this.#x1) / momentum;
-    const dy = floor(this.#y0 - this.#y1) / momentum;
+    let dx = this.#x0 - this.#x1;
+    let dy = this.#y0 - this.#y1;
+
+    if (
+      dx > 0 && dx < EPS ||
+      dx < 0 && dx > -EPS
+    ) {
+      dx = 0;
+    }
+
+    if (
+      dy > 0 && dy < EPS ||
+      dy < 0 && dy > -EPS
+    ) {
+      dy = 0;
+    }
+
+    dx /= momentum;
+    dy /= momentum;
 
     this.#x1 += dx;
     this.#y1 += dy;
@@ -502,13 +522,13 @@ class FirstPersonControls extends Publisher {
         pitchIndicator.visible = true;
       }
 
-      const degX = (90 * dy) / this.gaugeHalfY;
-      const radX = degX * degToRadCoef;
-      this.#rotation.theta -= radX * lookSpeed;
+      const degX = (dy * lookSpeed) / this.gaugeHalfY;
+      const radX = degX * degToRadCoef * this.multiplier;
+      this.#rotation.theta -= radX;
 
-      const degY = (135 * dx) / this.viewHalfX;
+      const degY = (dx * lookSpeed) / this.viewHalfX;
       const radY = degY * degToRadCoef;
-      this.#rotation.phi -= radY * lookSpeed;
+      this.#rotation.phi -= radY;
 
       this.#rotation.theta = max(
         this.verticalAngle.min,

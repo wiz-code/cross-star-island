@@ -1072,7 +1072,7 @@ export const Stages = [
             section: 0,
             position: { sx: 1.6, sy: 6, sz: 5.8 },
             phi: PI * 0.5,
-            velocity: new Vector3(-5, 10, -7),
+            velocity: new Vector3(-3, 10, -7),
           },
           schedule: {
             spawnTime: 3,
@@ -1118,13 +1118,22 @@ export const Stages = [
             depthSegments: 20,
             position: { sx: 0.25, sy: 20.25, sz: 0.25 },
           },
-          ground: {
-            widthSegments: 15,
-            depthSegments: 15,
-            bumpHeight: 0,
-            position: { sx: 0, sy: 0.01, sz: 0 },
-            rotation: { x: 0, y: 0, z: 0 },
-          },
+          ground: [
+            {
+              widthSegments: 15,
+              depthSegments: 15,
+              bumpHeight: 0,
+              position: { sx: 0, sy: 0.01, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+            {
+              widthSegments: 1,
+              depthSegments: 10,
+              bumpHeight: 0,
+              position: { sx: 0, sy: 20, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+          ],
           /* cylinder: [
             {
               name: 'moving-platform-1',
@@ -1153,16 +1162,16 @@ export const Stages = [
             outerRadius: 16 * 7,
 
             incline: (15 / 360) * PI * 2,
-            height: 16 * 20,
+            height: 16 * 22,
             heightSegments: 20,
 
             position: { sx: 0, sy: 0, sz: 0 },
           },
           ringTower: {
             radius: 16 * 7 + 3,
-            width: 16 * 1,
+            width: 16 * 1.5,
             height: 16 * 20,
-            depth: 16 * 1,
+            depth: 16 * 1.5,
             radialSegments: 12,
             widthSegments: 2,
             heightSegments: 11,
@@ -1173,12 +1182,23 @@ export const Stages = [
             {
               radiusShaft: 16 * 1,
               radiusEnd: 16 * 1.4,
-              heightShaft: 16 * 10,
+              heightShaft: 16 * 8.5,
               heightEnd: 16 * 0.5,
               radialSegments: 12,
-              heightSegments: 16,
+              heightSegments: 9,
               openEnded: false,
               position: { sx: 0, sy: 0, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+            {
+              radiusShaft: 16 * 1,
+              radiusEnd: 16 * 1.4,
+              heightShaft: 16 * 5.5,
+              heightEnd: 16 * 0.5,
+              radialSegments: 12,
+              heightSegments: 6,
+              openEnded: false,
+              position: { sx: 0, sy: 12, sz: 0 },
               rotation: { x: 0, y: 0, z: 0 },
             },
             /* {
