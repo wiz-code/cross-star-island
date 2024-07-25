@@ -71,7 +71,7 @@ export const States = {
 
 export const GameStates = [
   ['stageName', ''],
-  ['checkpointIndex', 0],
+  ['checkpointIndex', 2],
   ['gamepad', false],
   ['mode', 'loading'], // 'loading', 'play', 'clear'
   // score state
@@ -1064,7 +1064,12 @@ export const Stages = [
           phi: PI * 0.5,
         },
         {
-          position: { sx: -1, sy: 0, sz: 0 },
+          position: { sx: -1, sy: 2, sz: 0 },
+          // position: { sx: 4.5, sy: 20, sz: 4.2 },
+          phi: 0,
+        },
+        {
+          position: { sx: 2, sy: 19, sz: -8 },
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
           phi: 0,
         },
@@ -1167,17 +1172,6 @@ export const Stages = [
 
             position: { sx: 0, sy: 0, sz: 0 },
           },
-          ringTower: {
-            radius: 16 * 7 + 3,
-            width: 16 * 1.5,
-            height: 16 * 20,
-            depth: 16 * 1.5,
-            radialSegments: 12,
-            widthSegments: 2,
-            heightSegments: 11,
-            depthSegments: 2,
-            position: { sx: 0, sy: 20, sz: 0 },
-          },
           column: [
             {
               radiusShaft: 16 * 1,
@@ -1240,18 +1234,68 @@ export const Stages = [
               rotation: { x: 0, y: (30 / 360) * PI * 2, z: 0 },
             },
           ],
+          ringTower: {
+            radius: 16 * 7 + 3,
+            width: 16 * 1.5,
+            height: 16 * 18,
+            depth: 16 * 1.5,
+            radialSegments: 12,
+            widthSegments: 2,
+            heightSegments: 11,
+            depthSegments: 2,
+            position: { sx: 0, sy: 0, sz: 0 },
+          },
           towerStairs: {
             radialSegments: 12,
             innerRadius: 16 * 5,
             outerRadius: 16 * 7,
 
             incline: (15 / 360) * PI * 2,
-            height: 16 * 15,
+            height: 16 * 18,
             heightSegments: 20,
 
             position: { sx: 0, sy: 0, sz: 0 },
             rotation: { x: 0, y: (18.4 / 360) * PI * 2, z: 0 },
           },
+          column: [
+            {
+              radiusShaft: 16 * 1,
+              radiusEnd: 16 * 1.4,
+              heightShaft: 16 * 8.5,
+              heightEnd: 16 * 0.5,
+              radialSegments: 12,
+              heightSegments: 9,
+              openEnded: false,
+              position: { sx: 0, sy: 3, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+          ],
+        },
+        {
+          offset: { sx: 0, sy: 40, sz: -4 },
+          cylinder: [
+            {
+              radiusTop: 8,
+              radiusBottom: 6,
+              height: 2,
+              radialSegments: 7,
+              heightSegments: 1,
+              position: { sx: 2, sy: -1, sz: -8 },
+            },
+          ],
+          column: [
+            {
+              radiusShaft: 16 * 1,
+              radiusEnd: 16 * 1.4,
+              heightShaft: 16 * 8.5,
+              heightEnd: 16 * 0.5,
+              radialSegments: 12,
+              heightSegments: 9,
+              openEnded: false,
+              position: { sx: 0, sy: 5, sz: 0 },
+              rotation: { x: 0, y: 0, z: 0 },
+            },
+          ],
         },
       ],
     },

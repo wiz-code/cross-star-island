@@ -15,7 +15,7 @@ const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
 const { EPS } = Game;
-// const EPS = 1e-4;
+const StickEPS = 1e-4;
 
 const buttonList = [
   'a',
@@ -236,7 +236,7 @@ class GamepadControls extends Publisher {
       const index = axisMap.get(axis);
       const value = axes[index];
 
-      if (value < -1 + EPS) {
+      if (value < -1 + StickEPS) {
         this.#pendings.delete(axis);
       }
     });
@@ -297,7 +297,7 @@ class GamepadControls extends Publisher {
       const mashed = this.buttons.get('x');
 
       if (axis === 'lsy') {
-        if (value < -EPS) {
+        if (value < -StickEPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveForward;
             this.#inputs.set(Actions.quickMoveForward, 1);
@@ -310,7 +310,7 @@ class GamepadControls extends Publisher {
           } else {
             this.#inputs.set(Actions.moveForward, -value);
           }
-        } else if (value > EPS) {
+        } else if (value > StickEPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickMoveBackward;
             this.#inputs.set(Actions.quickMoveBackward, 1);
@@ -319,14 +319,14 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'lsx') {
-        if (value > EPS) {
+        if (value > StickEPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnRight;
             this.#inputs.set(Actions.quickTurnRight, 1);
           } else {
             this.#inputs.set(Actions.rotateRight, value);
           }
-        } else if (value < -EPS) {
+        } else if (value < -StickEPS) {
           if (mashed === 1) {
             urgencyAction = Actions.quickTurnLeft;
             this.#inputs.set(Actions.quickTurnLeft, 1);
@@ -335,18 +335,18 @@ class GamepadControls extends Publisher {
           }
         }
       } else if (axis === 'rsy') {
-        if (value > EPS) {
+        if (value > StickEPS) {
           this.#y0 = this.#py + value;
           this.#py = this.#y0;
-        } else if (value < -EPS) {
+        } else if (value < -StickEPS) {
           this.#y0 = this.#py + value;
           this.#py = this.#y0;
         }
       } else if (axis === 'rsx') {
-        if (value > EPS) {
+        if (value > StickEPS) {
           this.#x0 = this.#px + value;
           this.#px = this.#x0;
-        } else if (value < -EPS) {
+        } else if (value < -StickEPS) {
           this.#x0 = this.#px + value;
           this.#px = this.#x0;
         }
@@ -496,6 +496,13 @@ class GamepadControls extends Publisher {
     if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
       if (this.#resetPointer) {
         this.#resetPointer = false;
+
+        this.#px = 0;
+        this.#py = 0;
+        this.#x0 = 0;
+        this.#y0 = 0;
+        this.#x1 = 0;
+        this.#y1 = 0;
       }
 
       if (this.povSight.material.color !== sightColor.front) {

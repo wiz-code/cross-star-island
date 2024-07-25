@@ -290,7 +290,7 @@ class FirstPersonControls extends Publisher {
     }
 
     this.#pointers.add(event.button);
-    // this.lock(); // 開発中はコメントアウト
+    this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }
@@ -605,6 +605,13 @@ class FirstPersonControls extends Publisher {
     if (this.#rotation.theta === 0 && this.#rotation.phi === 0) {
       if (this.#resetPointer) {
         this.#resetPointer = false;
+
+        this.#px = 0;
+        this.#py = 0;
+        this.#x0 = 0;
+        this.#y0 = 0;
+        this.#x1 = 0;
+        this.#y1 = 0;
       }
 
       if (this.povSight.material.color !== sightColor.front) {
