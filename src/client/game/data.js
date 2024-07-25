@@ -1,4 +1,5 @@
 import { Vector3, BackSide } from 'three';
+import { Tower } from './settings';
 
 const { sin, PI } = Math;
 
@@ -1062,6 +1063,11 @@ export const Stages = [
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
           phi: PI * 0.5,
         },
+        {
+          position: { sx: -1, sy: 0, sz: 0 },
+          // position: { sx: 4.5, sy: 20, sz: 4.2 },
+          phi: 0,
+        },
       ],
       items: [
         {
@@ -1123,14 +1129,7 @@ export const Stages = [
               widthSegments: 15,
               depthSegments: 15,
               bumpHeight: 0,
-              position: { sx: 0, sy: 0.01, sz: 0 },
-              rotation: { x: 0, y: 0, z: 0 },
-            },
-            {
-              widthSegments: 1,
-              depthSegments: 10,
-              bumpHeight: 0,
-              position: { sx: 0, sy: 20, sz: 0 },
+              position: { sx: 0, sy: 0.0, sz: 0 },
               rotation: { x: 0, y: 0, z: 0 },
             },
           ],
@@ -1149,7 +1148,7 @@ export const Stages = [
           ], */
           tower: {
             radius: 16 * 7 + 1,
-            height: 16 * 22,
+            height: 16 * 24,
             radialSegments: 12,
             heightSegments: 11,
             inside: true,
@@ -1157,13 +1156,14 @@ export const Stages = [
             rotation: { x: 0, y: 0, z: 0 },
           },
           towerStairs: {
-            radialSegments: 12, // 6,
+            radialSegments: 12,
             innerRadius: 16 * 5,
             outerRadius: 16 * 7,
 
             incline: (15 / 360) * PI * 2,
             height: 16 * 22,
             heightSegments: 20,
+            reverse: true,
 
             position: { sx: 0, sy: 0, sz: 0 },
           },
@@ -1223,6 +1223,35 @@ export const Stages = [
               position: { sx: 0, sy: -8, sz: 8 },
             }, */
           ],
+        },
+        {
+          offset: { sx: 0, sy: 21.5, sz: -4 },
+          ground: [
+            {
+              widthSegments: 1,
+              depthSegments: 16,
+              bumpHeight: 0,
+              color: {
+                surface: Tower.stairColor,
+                wireframe: Tower.wireColor,
+                points: Tower.pointColor,
+              },
+              position: { sx: -0.92, sy: 0, sz: 0 },
+              rotation: { x: 0, y: (30 / 360) * PI * 2, z: 0 },
+            },
+          ],
+          towerStairs: {
+            radialSegments: 12,
+            innerRadius: 16 * 5,
+            outerRadius: 16 * 7,
+
+            incline: (15 / 360) * PI * 2,
+            height: 16 * 15,
+            heightSegments: 20,
+
+            position: { sx: 0, sy: 0, sz: 0 },
+            rotation: { x: 0, y: (18.4 / 360) * PI * 2, z: 0 },
+          },
         },
       ],
     },

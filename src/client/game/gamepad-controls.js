@@ -15,7 +15,7 @@ const halfPI = PI / 2;
 const degToRadCoef = PI / 180;
 const Rad_1 = (1 / 360) * PI * 2;
 const { EPS } = Game;
-//const EPS = 1e-4;
+// const EPS = 1e-4;
 
 const buttonList = [
   'a',
@@ -391,22 +391,16 @@ class GamepadControls extends Publisher {
       let dx = this.#x0 - this.#x1;
       let dy = this.#y0 - this.#y1;
 
-      if (
-        dx > 0 && dx < EPS ||
-        dx < 0 && dx > -EPS
-      ) {
+      if ((dx > 0 && dx < EPS) || (dx < 0 && dx > -EPS)) {
         dx = 0;
       }
 
-      if (
-        dy > 0 && dy < EPS ||
-        dy < 0 && dy > -EPS
-      ) {
+      if ((dy > 0 && dy < EPS) || (dy < 0 && dy > -EPS)) {
         dy = 0;
       }
 
-      dx /= momentum;
-      dy /= momentum;
+      dx /= momentum * 2;
+      dy /= momentum * 2;
 
       this.#x1 += dx;
       this.#y1 += dy;
