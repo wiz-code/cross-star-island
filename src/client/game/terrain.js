@@ -85,13 +85,14 @@ export const createTower = (
   const width = radius * sin(PI / radialSegments) * 2;
   const widthSegments = ceil(width / spacing);
 
-  const offsetX = -radius * cos(phi * 0.5);
-  const radialPoint = new Vector2(offsetX, 0);
+  const offsetX = -width / 2;
+  const offsetY = radius * cos(phi * 0.5);
+  const radialPoint = new Vector2(0, offsetY);
   const center = new Vector2(0, 0);
   const geomList = [];
 
   geom.wall = new PlaneGeometry(width, height, widthSegments, heightSegments);
-  geom.wall.rotateY((PI / 2) * (inside ? 1 : -1));
+  geom.wall.rotateY(inside ? PI : 0);
   geom.wall = geom.wall.toNonIndexed();
   geom.wall.deleteAttribute('uv');
   geom.wall.setIndex(null);
@@ -108,6 +109,7 @@ export const createTower = (
 
   mat.surface = new MeshBasicMaterial({
     color: Tower.color,
+    side: DoubleSide,
   });
   mat.wireframe = new LineBasicMaterial({
     color: Tower.wireColor,
@@ -121,10 +123,10 @@ export const createTower = (
   });
 
   const merged = mergeGeometries(geomList);
+  merged.computeVertexNormals();
   mesh.surface = new Mesh(merged, mat.surface);
 
   geom.bvh = mesh.surface.geometry.clone();
-  geom.bvh = geom.bvh.toNonIndexed();
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
 
@@ -228,7 +230,7 @@ export const createRingTower = (
     heightSegments,
     depthSegments,
   );
-  // geom.wall.rotateY(PI / 2);
+
   geom.wall = geom.wall.toNonIndexed();
   geom.wall.deleteAttribute('uv');
   geom.wall.setIndex(null);
@@ -261,7 +263,6 @@ export const createRingTower = (
   mesh.surface = new Mesh(merged, mat.surface);
 
   geom.bvh = mesh.surface.geometry.clone();
-  geom.bvh = geom.bvh.toNonIndexed();
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
 
@@ -331,10 +332,11 @@ export const createTowerStairs = (
     radialSegments,
     innerRadius,
     outerRadius,
-    incline,
+    incline, // 0 <= theta <= PI / 2
     height,
     heightSegments,
     spacing = World.spacing,
+    reverse = false,
     movable = false,
 
     position = { x: 0, y: 0, z: 0 },
@@ -346,86 +348,112 @@ export const createTowerStairs = (
   const mat = {};
   const mesh = {};
 
+  const dir = reverse ? -1 : 1;
   const interiorAngle = (180 * (radialSegments - 2)) / radialSegments;
   const phi = ((180 - interiorAngle) / 360) * PI * 2;
+  const halfPhi = phi * 0.5;
 
-  const horizontalDepth = innerRadius * sin(PI / radialSegments) * 2;
+  const horizontalDepth = innerRadius * sin(halfPhi) * 2;
   const depth = horizontalDepth / cos(incline);
-  const width = (outerRadius - innerRadius) * cos(phi * 0.5);
+  const width = (outerRadius - innerRadius) * cos(halfPhi);
   const depthSegments = ceil(depth / spacing);
 
   const inclineHeight = depth * sin(incline);
+
   const steps = floor(height / inclineHeight);
 
-  const radialPoint = new Vector2(
+  /*const radialPoint = new Vector2(
     0,
-    -outerRadius * cos(phi * 0.5) - depth * 0.25,
-  );
+    //-outerRadius * cos(phi * 0.5) - depth * 0.25,
+    -(innerRadius * cos(halfPhi) + width * 0.5),
+  );*/
 
-  const lp = new Vector2(
-    outerRadius * sin(phi * 0.5),
-    -outerRadius * cos(phi * 0.5),
-  );
-  const rp = new Vector2(
-    -outerRadius * sin(phi * 0.5),
-    -outerRadius * cos(phi * 0.5),
-  );
+  const px = outerRadius * sin(halfPhi);
+  const py = outerRadius * cos(halfPhi);
 
-  const x1 = innerRadius * sin(PI / radialSegments);
-  const z1 = -innerRadius * cos(PI / radialSegments);
+  const p1 = new Vector2(-dir * px, -py);
+  const p2 = new Vector2(dir * px, -py);
+
+  const x1 = -innerRadius * sin(halfPhi);
+  const y1 = -innerRadius * cos(halfPhi);
   const x2 = x1;
-  const z2 = z1 - width;
-  const x3 = x1 - horizontalDepth;
-  const z3 = z2;
+  const y2 = y1 - width;
+  const x3 = x1 + horizontalDepth;
+  const y3 = y2;
   const x4 = x3;
-  const z4 = z1;
+  const y4 = y1;
 
-  const v1 = new Vector2(x1, z1);
-  const v2 = new Vector2(x2, z2);
-  const v3 = new Vector2(x3, z3);
-  const v4 = new Vector2(x4, z4);
+  const v = new Vector2();
+  const v1 = new Vector2(x1, y1);
+  const v2 = new Vector2(x2, y2);
+  const v3 = new Vector2(x3, y3);
+  const v4 = new Vector2(x4, y4);
 
   geom.slope = new PlaneGeometry(width, depth, 1, depthSegments);
   geom.slope.rotateY(PI / 2);
-  geom.slope.rotateZ(PI / 2 - incline);
+
+  geom.slope.rotateZ(PI / 2 + dir * incline);
   geom.slope.translate(0, inclineHeight / 2, 0);
 
   geom.slope = geom.slope.toNonIndexed();
   geom.slope.deleteAttribute('uv');
   geom.slope.setIndex(null);
 
-  geom.wall = new BoxGeometry(
-    depth * 0.5,
-    height,
-    depth * 0.5,
-    2,
-    heightSegments,
-    2,
-  );
-  geom.wall = geom.wall.toNonIndexed();
-  geom.wall.deleteAttribute('uv');
-  geom.wall.setIndex(null);
-
   const landing = new BufferGeometry();
 
   const center = new Vector2(0, 0);
-  const vec = new Vector2(0, z1 - width / 2);
+  const vec = new Vector2(0, y1 - width / 2);
 
   const geomList = [];
 
-  for (let i = 0; i < radialSegments; i += 1) {
-    const rotate = phi * i;
-    const wall = geom.wall.clone();
-    wall.rotateY(rotate);
-    wall.translate(radialPoint.x, height * 0.5, radialPoint.y);
+  // 踊り場の最初と最後を作成
+  const setRestLanding = (a, b, h, inFront) => {
+    const p = inFront ? p1 : p2;
+    let rad;
 
-    radialPoint.rotateAround(center, -phi);
-    // geomList.push(wall);
-  }
+    if (inFront) {
+      rad = reverse ? dir * -phi : dir * -phi;
+    } else {
+      rad = reverse ? dir * phi : dir * phi;
+    }
+
+
+    v.copy(a).rotateAround(center, rad);
+    const l = landing.clone();
+
+    let positions;
+
+    if (inFront) {
+      positions =
+       reverse
+         ? [b.x, h, b.y, v.x, h, v.y, p.x, h, p.y]
+         : [b.x, h, b.y, p.x, h, p.y, v.x, h, v.y];
+    } else {
+      positions =
+       reverse
+         ? [b.x, h, b.y, p.x, h, p.y, v.x, h, v.y]
+         : [b.x, h, b.y, v.x, h, v.y, p.x, h, p.y];
+    }
+
+    l.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    l.computeVertexNormals();
+    l.deleteAttribute('uv');
+    geomList.push(l);
+  };
+
+  let h;
 
   for (let i = 0; i < steps; i += 1) {
+    if (i === 0) {
+      if (reverse) {
+        setRestLanding(v2, v4, 0, true);
+      } else {
+        setRestLanding(v3, v1, 0, true);
+      }
+    }
+
     const step = steps[i];
-    const rotate = phi * i;
+    const rotate = -dir * phi * i;
     const slope = geom.slope.clone();
 
     slope.rotateY(rotate);
@@ -434,49 +462,55 @@ export const createTowerStairs = (
     const l1 = landing.clone();
     const l2 = landing.clone();
 
-    const leftVertices = [
-      v1.x,
-      inclineHeight * i,
-      v1.y,
-      lp.x,
-      inclineHeight * i,
-      lp.y,
-      v2.x,
-      inclineHeight * i,
-      v2.y,
-    ];
-    const rightVertices = [
-      v3.x,
-      inclineHeight * (i + 1),
-      v3.y,
-      rp.x,
-      inclineHeight * (i + 1),
-      rp.y,
-      v4.x,
-      inclineHeight * (i + 1),
-      v4.y,
-    ];
+    let leftVertices;
+    let rightVertices;
+    let lv;
+    let rv;
 
-    l1.setAttribute('position', new Float32BufferAttribute(leftVertices, 3));
-    l2.setAttribute('position', new Float32BufferAttribute(rightVertices, 3));
+    if (reverse) {
+      h = inclineHeight * (i + 1);
+      lv = [v1.x, h, v1.y, v2.x, h, v2.y, p2.x, h, p2.y];
+      h = inclineHeight * i;
+      rv = [v3.x, h, v3.y, v4.x, h, v4.y, p1.x, h, p1.y];
+    } else {
+      h = inclineHeight * i;
+      rv = [v1.x, h, v1.y, v2.x, h, v2.y, p1.x, h, p1.y];
+      h = inclineHeight * (i + 1);
+      lv = [v3.x, h, v3.y, v4.x, h, v4.y, p2.x, h, p2.y];
+    }
+
+    l1.setAttribute('position', new Float32BufferAttribute(lv, 3));
+    l2.setAttribute('position', new Float32BufferAttribute(rv, 3));
     l1.computeVertexNormals();
     l2.computeVertexNormals();
 
     l1.deleteAttribute('uv');
     l2.deleteAttribute('uv');
 
-    // l1.rotateY(PI / 2);
-    // l2.rotateY(PI / 2);
-
-    vec.rotateAround(center, -phi);
-    v1.rotateAround(center, -phi);
-    v2.rotateAround(center, -phi);
-    v3.rotateAround(center, -phi);
-    v4.rotateAround(center, -phi);
-    lp.rotateAround(center, -phi);
-    rp.rotateAround(center, -phi);
-
     geomList.push(l1, l2, slope);
+
+    if (i === steps - 1) {
+      h = inclineHeight * (i + 1);
+
+      if (reverse) {
+        setRestLanding(v3, v1, h, false);
+      } else {
+        setRestLanding(v2, v4, h, false);
+      }
+
+      break;
+    }
+
+    const rad = dir * phi;
+    vec.rotateAround(center, rad);
+    v1.rotateAround(center, rad);
+    v2.rotateAround(center, rad);
+    v3.rotateAround(center, rad);
+    v4.rotateAround(center, rad);
+    p1.rotateAround(center, rad);
+    p2.rotateAround(center, rad);
+
+
   }
 
   geom.surface = mergeGeometries(geomList);
@@ -487,7 +521,6 @@ export const createTowerStairs = (
   const pointsVertices = getPointsVertices(vertices, normals);
 
   geom.bvh = geom.surface.clone();
-  geom.bvh = geom.bvh.toNonIndexed();
   geom.bvh.deleteAttribute('uv'); // mergeGeometries()でattributesの数を揃える必要があるため
   geom.bvh.setIndex(null); // mergeGeometries()でindexの有無をどちらかに揃える必要があるため
 
@@ -572,6 +605,11 @@ export const createGround = (
     depthSegments = 10,
     spacing = World.spacing,
     bumpHeight = 1,
+    color = {
+      surface: Ground.color,
+      wireframe: Ground.wireColor,
+      points: Ground.pointColor,
+    },
     position = { x: 0, y: 0, z: 0 },
     rotation = { x: 0, y: 0, z: 0 },
   },
@@ -620,17 +658,17 @@ export const createGround = (
     'position',
     new Float32BufferAttribute(pointsVertices, 3),
   );
-  // geom.points.computeBoundingSphere();
 
   mat.surface = new MeshBasicMaterial({
-    color: Ground.color,
+    color: color.surface,
+    side: DoubleSide,
   });
   mat.wireframe = new LineBasicMaterial({
-    color: Ground.wireColor,
+    color: color.wireframe,
   });
 
   mat.points = new PointsMaterial({
-    color: Ground.pointColor,
+    color: color.points,
     size: World.pointSize,
     map: texture.point,
     blending: NormalBlending,
@@ -893,81 +931,6 @@ export const createMaze = (list, texture) => {
     .array.slice(0);
   const normals = mesh.surface.geometry.getAttribute('normal').array.slice(0);
 
-  /* const newVertices = [];
-  const vertexMap = new Map();
-
-  for (let i = 0, l = vertices.length; i < l; i += 3) {
-    const vx1 = vertices[i];
-    const vy1 = vertices[i + 1];
-    const vz1 = vertices[i + 2];
-
-    const key = `${vx1}:${vy1}:${vz1}`;
-
-    if (!vertexMap.has(key)) {
-      vertexMap.set(key, new Set());
-    }
-
-    const set = vertexMap.get(key);
-    set.add(i);
-  }
-
-  const vertexList = Array.from(vertexMap.entries());
-  const normalMap = new Map();
-
-  for (let i = 0, l = vertexList.length; i < l; i += 1) {
-    const [key, vertexSet] = vertexList[i];
-    const indices = Array.from(vertexSet.keys());
-
-    if (!normalMap.has(key)) {
-      normalMap.set(key, []);
-    }
-
-    const list = normalMap.get(key);
-
-    let x = 0, y = 0, z = 0;
-
-    for (let j = 0, m = indices.length; j < m; j += 1) {
-      const index = indices[j];
-
-      const nx = normals[index];
-      const ny = normals[index + 1];
-      const nz = normals[index + 2];
-
-      x += nx;
-      y += ny;
-      z += nz;
-    }
-
-    x /= indices.length;
-    y /= indices.length;
-    z /= indices.length;
-
-    list.push(x, y, z);
-  }
-
-  for (let i = 0, l = vertices.length; i < l; i += 3) {
-    const vx1 = vertices[i];
-    const vy1 = vertices[i + 1];
-    const vz1 = vertices[i + 2];
-
-    const vertex = new Vector3(
-      vx1,
-      vy1,
-      vz1
-    );
-
-    const key = `${vx1}:${vy1}:${vz1}`;
-    const list = normalMap.get(key);
-
-    const normal = new Vector3(
-      list[0],
-      list[1],
-      list[2]
-    );
-
-    vertex.add(normal.normalize().multiplyScalar(1));
-    newVertices.push(vertex.x, vertex.y, vertex.z);
-  } */
   const newVertices = getPointsVertices(vertices, normals);
 
   geom.points = new BufferGeometry();

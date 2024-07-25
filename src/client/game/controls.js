@@ -290,7 +290,7 @@ class FirstPersonControls extends Publisher {
     }
 
     this.#pointers.add(event.button);
-    this.lock(); // 開発中はコメントアウト
+    // this.lock(); // 開発中はコメントアウト
 
     this.dispatchAction(event.type, event.button);
   }
@@ -486,17 +486,11 @@ class FirstPersonControls extends Publisher {
     let dx = this.#x0 - this.#x1;
     let dy = this.#y0 - this.#y1;
 
-    if (
-      dx > 0 && dx < EPS ||
-      dx < 0 && dx > -EPS
-    ) {
+    if ((dx > 0 && dx < EPS) || (dx < 0 && dx > -EPS)) {
       dx = 0;
     }
 
-    if (
-      dy > 0 && dy < EPS ||
-      dy < 0 && dy > -EPS
-    ) {
+    if ((dy > 0 && dy < EPS) || (dy < 0 && dy > -EPS)) {
       dy = 0;
     }
 

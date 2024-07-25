@@ -87,11 +87,11 @@ export const Column = {
 
 export const Controls = {
   idleTime: 0.3,
-  restoreSpeed: 6, // 3,
+  restoreSpeed: 8, // 4,
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 100,
-  stickSpeed: 4,
+  stickSpeed: 6,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.3,
@@ -108,8 +108,8 @@ export const Controls = {
   horizontalAngleLimit: 160,
   verticalAngleLimit: 80,
 
-  lookSpeed: 120, //250,
-  momentum: 10,
+  lookSpeed: 120, // 250,
+  momentum: 5, // 10,
 };
 
 export const World = {
@@ -141,7 +141,7 @@ const Screen = {
   sightLinesSize: 128 * 0.75,
   horizontalIndicatorSize: 128 * 0.75,
   verticalFrameSize: 384, // 512,
-  gaugeHeight: 384 * 0.75 - 14, //384 * 0.75 * 0.5 - 6,
+  gaugeHeight: 384 * 0.75 - 14, // 384 * 0.75 * 0.5 - 6,
 };
 
 export const GameColor = {
