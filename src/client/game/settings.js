@@ -108,8 +108,8 @@ export const Controls = {
   horizontalAngleLimit: 160,
   verticalAngleLimit: 80,
 
-  lookSpeed: 120, // 250,
-  momentum: 7, // 10,
+  lookSpeed: 135, //120, // 250,
+  momentum: 10, //7, // 10,
 };
 
 export const World = {
