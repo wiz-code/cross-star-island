@@ -134,7 +134,7 @@ export const handlers = [
 
 export const Tweeners = [
   [
-    'rolling-stone-1',
+    'spawn-stone-1',
     (game, target, arg) => {
       const time = arg ?? 0;
       const range = 1.8;
@@ -162,10 +162,9 @@ export const Tweeners = [
     },
   ],
   [
-    'rolling-stone-2',
-    (game, target, arg) => {
-      const time = arg ?? 0;
-      const range = 1.8;
+    'spawn-stone-2',
+    (game, target, ...args) => {
+      const [time = 0, duration = 10000] = args ?? [];
 
       const stageName = game.states.get('stageName');
       const stageData = game.methods.get('getStageData')?.(stageName);
@@ -175,14 +174,11 @@ export const Tweeners = [
       const tween = new Tween(target.collider.center, group);
       tween
         .onEveryStart(() => {
-          const randomNum = getRandomInclusive(-range, range);
-          const initPos = { ...target.params.position };
-          initPos.sx += randomNum;
-          const position = addOffsetToPosition(initPos, offset);
+          const position = addOffsetToPosition(target.params.position, offset);
           target.setPosition(position);
           target.velocity.copy(new Vector3(0, 0, 0));
         })
-        .delay(8000)
+        .delay(duration)
         .repeat(Infinity)
         .start(time);
 
@@ -290,12 +286,6 @@ export const Tweeners = [
 export const Updaters = [
   [
     'rolling-stone-1',
-    (game, target, deltaTime) => {
-      target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
-    },
-  ],
-  [
-    'rolling-stone-2',
     (game, target, deltaTime, elapsedTime) => {
       const { params: { sideDir } } = target;
       sideDir.crossVectors(target.velocity, yawAxis).normalize();

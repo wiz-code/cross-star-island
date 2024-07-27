@@ -9,7 +9,7 @@ class Collidable extends Entity {
 
   #center = new Vector3();
 
-  #bounced = false;
+  #bounceCount = 0;
 
   constructor(name, type) {
     super(name, type);
@@ -47,21 +47,26 @@ class Collidable extends Entity {
     this.object = object;
   }
 
-  isBounced() {
-    return this.#bounced;
+  getBounceCount() {
+    return this.#bounceCount;
   }
 
-  setBounced(bool) {
-    this.#bounced = bool;
+  addBounceCount() {
+    this.#bounceCount += 1;
+  }
+
+  resetBounceCount() {
+    this.#bounceCount = 0;
   }
 
   setAlive(bool = true) {
     super.setAlive(bool);
 
     if (bool) {
-      this.#bounced = false;
+      this.#bounceCount = 0;
     }
 
+    this.colliderEnabled = bool;
     super.visible(bool);
   }
 

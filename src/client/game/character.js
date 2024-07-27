@@ -51,10 +51,6 @@ const addDamping = (component, damping, minValue) => {
   return value;
 };
 
-const quickTurnDamping = (rotateComponent, elapsedTime) => {
-  elapsedTime / Controls.stunningDuration;
-};
-
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
 const easeInQuad = (x) => x * x;
 
@@ -345,9 +341,11 @@ class Character extends Entity {
   }
 
   setStunning(duration) {
-    this.#states.add(States.stunning);
-    this.#stunningElapsedTime = 0;
-    this.#stunningDuration = duration;
+    if (!this.#states.has(States.stunning)) {
+      this.#states.add(States.stunning);
+      this.#stunningElapsedTime = 0;
+      this.#stunningDuration = duration;
+    }
   }
 
   hasState(state) {
