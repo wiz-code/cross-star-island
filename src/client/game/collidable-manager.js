@@ -16,6 +16,7 @@ const { sqrt, cos, PI } = Math;
 const RAD_45 = (45 / 360) * PI * 2;
 const COS_45 = cos(RAD_45);
 const PASSING_SCORE = 100;
+const fallingSpeedToSquared = World.fallingDeathSpeed ** 2;
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();
@@ -301,9 +302,7 @@ class CollidableManager extends Publisher {
         }
 
         if (result !== false) {
-          if (!collidable.isBounced()) {
-            collidable.setBounced(true);
-          }
+          collidable.addBounceCount();
 
           velocity.addScaledVector(
             result.normal,
@@ -324,7 +323,10 @@ class CollidableManager extends Publisher {
     this.sap.update();
 
     for (const [a1, a2] of this.sap.pairs) {
-      if (a1.isAlive() && a2.isAlive()) {
+      if (
+        (a1.isAlive() && a1.colliderEnabled) &&
+        (a2.isAlive() && a2.colliderEnabled)
+      ) {
         if (a1.collider instanceof Capsule && a2.collider instanceof Capsule) {
           const { center: c1, radius: r1 } = getCollisionParams(a1, this.#c1);
           const { center: c2, radius: r2 } = getCollisionParams(a2, this.#c2);
@@ -452,9 +454,7 @@ class CollidableManager extends Publisher {
           }
 
           if (collided) {
-            if (!other.object.isBounced()) {
-              other.object.setBounced(true);
-            }
+            other.object.addBounceCount();
 
             if (other.object.type === 'item') {
               if (capsule.object.hasControls) {
@@ -464,9 +464,13 @@ class CollidableManager extends Publisher {
               playSound?.('damage');
               capsule.object.setStunning(World.collisionShock);
 
-              if (other.object.type === 'ammo' && !capsule.object.hasControls) {
-                const hits = states.get('hits');
-                states.set('hits', hits + 1);
+              if (other.object.type === 'ammo') {
+                other.object.colliderEnabled = false;
+
+                if (!capsule.object.hasControls) {
+                  const hits = states.get('hits');
+                  states.set('hits', hits + 1);
+                }
               }
             }
           }
@@ -516,13 +520,8 @@ class CollidableManager extends Publisher {
               a2.collider.translate(this.#vecF);
             }
 
-            if (!a1.isBounced()) {
-              a1.setBounced(true);
-            }
-
-            if (!a2.isBounced()) {
-              a2.setBounced(true);
-            }
+            a1.addBounceCount();
+            a2.addBounceCount();
           }
         }
       }
@@ -539,15 +538,18 @@ class CollidableManager extends Publisher {
       if (collidable.isAlive()) {
         collidable.update(deltaTime, elapsedTime, damping);
 
-        if (
-          collidable.type === 'character' &&
-          collidable.collider.start.y < World.oob
-        ) {
-          if (!collidable.hasControls) {
-            collidable.setAlive(false);
-          }
+        if (collidable.type === 'character') {
+          const velocityToSquared = collidable.velocity.y < 0 ? collidable.velocity.y ** 2 : 0;
+//collidable.hasControls && console.log(velocityToSquared, fallingSpeedToSquared)
+          if (collidable.collider.start.y < World.oob ||
+            velocityToSquared >= fallingSpeedToSquared
+          ) {
+            if (!collidable.hasControls) {
+              collidable.setAlive(false);
+            }
 
-          this.eventManager.dispatch('oob', 'teleport-character', collidable);
+            this.eventManager.dispatch('oob', 'teleport-character', collidable);
+          }
         }
       }
     }

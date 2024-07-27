@@ -151,22 +151,6 @@ export const Obstacles = [
       rotateSpeed: 3,
     },
   ],
-  [
-    'tiny-round-stone',
-    {
-      collider: 'sphere',
-
-      radius: 3,
-      detail: 1,
-      pointsDetail: 0,
-      weight: 0.2,
-
-      color: 0x203b33,
-      wireColor: 0x4c625b,
-      pointColor: 0xf4e511,
-      rotateSpeed: 5,
-    },
-  ],
 ];
 
 export const Compositions = [
@@ -222,7 +206,7 @@ export const Ammos = [
         {
           state: States.alive,
           update(game, target, deltaTime) {
-            const rotateSpeed = !target.isBounced()
+            const rotateSpeed = target.getBounceCount() > 0
               ? target.data.rotateSpeed
               : target.data.rotateSpeed * 0.5;
 
@@ -259,7 +243,7 @@ export const Ammos = [
           update(game, target, deltaTime) {
             target.object.rotation.z -= deltaTime * target.data.rotateSpeed;
 
-            if (!target.isBounced()) {
+            if (target.getBounceCount() > 0) {
               if (target.elapsedTime <= target.data.hopDuration) {
                 const ratio = easeOutCubic(target.elapsedTime);
                 target.collider.center.y +=
@@ -295,7 +279,7 @@ export const Ammos = [
       weight: 0.04,
       lifetime: 10,
 
-      rotateSpeed: 4,
+      rotateSpeed: 8,
 
       updaters: [
         {
@@ -658,13 +642,6 @@ export const Stages = [
             elapsedTime: 0,
             fireInterval: 1,
           },
-          /* tweeners: [
-            {
-              name: 'avoidance-1',
-              state: States.alive,
-              args: [5000, 'z-axis', 10, 2000],
-            },
-          ], */
           updaters: [
             { name: 'bullet-fire-1', state: States.alive },
             { name: 'satellite-points', state: States.alive },
@@ -677,13 +654,6 @@ export const Stages = [
           schedule: {
             spawnTime: 5,
           },
-          /* tweeners: [
-            {
-              name: 'avoidance-1',
-              state: States.alive,
-              args: [5000, 'x-axis', 10, 2000],
-            },
-          ], */
           params: {
             position: { sx: -9.9, sy: 2.5, sz: 13.9 },
             phi: (-6 * PI * 2) / 360,
@@ -701,10 +671,11 @@ export const Stages = [
       obstacles: [
         {
           name: 'round-stone',
-          tweeners: [{ name: 'rolling-stone-1', state: States.alive }],
+          tweeners: [{ name: 'spawn-stone-1', state: States.alive }],
           params: {
             position: { sx: 0, sy: 5, sz: 6 },
             section: 1,
+            sideDir: new Vector3(),
           },
           schedule: {
             spawnTime: 5,
@@ -714,11 +685,12 @@ export const Stages = [
         {
           name: 'round-stone',
           tweeners: [
-            { name: 'rolling-stone-1', state: States.alive, args: [4000] },
+            { name: 'spawn-stone-1', state: States.alive, args: [4000] },
           ],
           params: {
             position: { sx: 0, sy: 5, sz: 6 },
             section: 1,
+            sideDir: new Vector3(),
           },
           schedule: {
             spawnTime: 5,
@@ -728,11 +700,12 @@ export const Stages = [
         {
           name: 'small-round-stone',
           tweeners: [
-            { name: 'rolling-stone-1', state: States.alive, args: [2000] },
+            { name: 'spawn-stone-1', state: States.alive, args: [2000] },
           ],
           params: {
             position: { sx: 0, sy: 4, sz: 6 },
             section: 1,
+            sideDir: new Vector3(),
           },
           schedule: {
             spawnTime: 5,
@@ -742,11 +715,12 @@ export const Stages = [
         {
           name: 'small-round-stone',
           tweeners: [
-            { name: 'rolling-stone-1', state: States.alive, args: [6000] },
+            { name: 'spawn-stone-1', state: States.alive, args: [6000] },
           ],
           params: {
             position: { sx: 0, sy: 4, sz: 6 },
             section: 1,
+            sideDir: new Vector3(),
           },
           schedule: {
             spawnTime: 5,
@@ -1151,7 +1125,7 @@ export const Stages = [
         {
           position: { sx: 0, sy: 1, sz: 0 },
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
-          phi: 0,
+          phi: (20.7 / 360) * PI * 2,
         },
         {
           position: { sx: 2, sy: 19, sz: -8 },
@@ -1209,17 +1183,21 @@ export const Stages = [
       ],
       obstacles: [
         {
-          name: 'tiny-round-stone',
-          tweeners: [{ name: 'rolling-stone-2', state: States.alive }],
+          name: 'small-round-stone',
+          tweeners: [{
+            name: 'spawn-stone-2',
+            state: States.alive,
+            args: [0, 14000],
+          }],
           params: {
-            position: { sx: 3, sy: 5, sz: 3 },
+            position: { sx: 0, sy: 23, sz: 5.5 },
             section: 0,
             sideDir: new Vector3(),
           },
           schedule: {
             spawnTime: 5,
           },
-          updaters: [{ name: 'rolling-stone-2', state: States.alive }],
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
       ],
       items: [
@@ -1227,10 +1205,10 @@ export const Stages = [
           name: 'checkpoint',
           params: {
             section: 0,
-            position: { sx: 0, sy: 22, sz: 0 },
+            position: { sx: 0, sy: 24, sz: 0 },
           },
           schedule: {
-            spawnTime: 3,
+            spawnTime: 10,
           },
           updaters: [{ name: 'item-ring-1', state: States.alive }],
         },

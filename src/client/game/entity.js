@@ -14,6 +14,7 @@ class Entity extends Publisher {
     this.type = type;
 
     this.params = null;
+    this.colliderEnabled = true;
 
     this.object = null;
     this.collider = null;
