@@ -371,7 +371,7 @@ class GamepadControls extends Publisher {
     }
 
     // 自機の視点制御
-    const { lookSpeed, momentum, restoreMinAngle, restoreSpeed } = Controls;
+    const { lookSpeed, stickMomentum: momentum, restoreMinAngle, restoreSpeed } = Controls;
     const { vertical: pitchIndicator, horizontal: yawIndicator } =
       this.povIndicator;
 
@@ -399,8 +399,8 @@ class GamepadControls extends Publisher {
         dy = 0;
       }
 
-      dx /= momentum * 2;
-      dy /= momentum * 2;
+      dx /= momentum;
+      dy /= momentum;
 
       this.#x1 += dx;
       this.#y1 += dy;

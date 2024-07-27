@@ -91,7 +91,7 @@ export const Controls = {
   restoreMinAngle: PI * 2 * (0.2 / 360),
 
   pointerMaxMove: 100,
-  stickSpeed: 5,
+  stickSpeed: 3.5,//5,
 
   urgencyDuration: 0.2,
   stunningDuration: 0.3,
@@ -109,6 +109,7 @@ export const Controls = {
   verticalAngleLimit: 80,
 
   lookSpeed: 135, //120, // 250,
+  stickMomentum: 18,
   momentum: 10, //7, // 10,
 };
 
