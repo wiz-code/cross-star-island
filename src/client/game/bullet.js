@@ -10,6 +10,7 @@ class Bullet extends Collidable {
     super(name, 'ammo');
 
     this.data = ammos.get(name);
+    this.sideDir = new Vector3();
     this.setObject(object);
 
     this.index = index;

@@ -4,8 +4,8 @@ import { Tower } from './settings';
 const { sin, PI } = Math;
 
 const easeInQuad = (x) => x * x;
-
 const easeOutCubic = (x) => 1 - (1 - x) * (1 - x) * (1 - x);
+const yawAxis = new Vector3(0, 1, 0);
 
 export const Keys = {
   // event.codeで取得する
@@ -71,7 +71,7 @@ export const States = {
 
 export const GameStates = [
   ['stageName', ''],
-  ['checkpointIndex', 2],
+  ['checkpointIndex', 0],
   ['gamepad', false],
   ['mode', 'loading'], // 'loading', 'play', 'clear'
   // score state
@@ -151,6 +151,22 @@ export const Obstacles = [
       rotateSpeed: 3,
     },
   ],
+  [
+    'tiny-round-stone',
+    {
+      collider: 'sphere',
+
+      radius: 3,
+      detail: 1,
+      pointsDetail: 0,
+      weight: 0.2,
+
+      color: 0x203b33,
+      wireColor: 0x4c625b,
+      pointColor: 0xf4e511,
+      rotateSpeed: 5,
+    },
+  ],
 ];
 
 export const Compositions = [
@@ -168,6 +184,17 @@ export const Guns = [
       recoil: 1, /// /////
 
       ammoTypes: ['small-bullet', 'hop-bullet'],
+    },
+  ],
+  [
+    'peashooter',
+    {
+      speed: 200, // 2000
+      fireInterval: 100,
+      accuracy: 5,
+      recoil: 1, /////////未実装
+
+      ammoTypes: ['tiny-bullet'],
     },
   ],
 ];
@@ -252,6 +279,36 @@ export const Ammos = [
       ],
     },
   ],
+  [
+    'tiny-bullet',
+    {
+      collider: 'sphere',
+
+      color: 0xffffe0,
+      wireColor: 0xf7ca79,
+      pointColor: 0xf45c41,
+
+      radius: 1, // 6
+      detail: 1,
+      numAmmo: 100,
+
+      weight: 0.04,
+      lifetime: 10,
+
+      rotateSpeed: 4,
+
+      updaters: [
+        {
+          state: States.alive,
+          update(game, target, deltaTime, elapsedTime) {
+            const { sideDir } = target;
+            sideDir.crossVectors(target.velocity, yawAxis).normalize();
+            target.object.setRotationFromAxisAngle(sideDir, -elapsedTime * target.data.rotateSpeed);
+          },
+        },
+      ],
+    },
+  ],
 ];
 
 export const Characters = [
@@ -279,7 +336,8 @@ export const Characters = [
       airSpeed: 50, // 100
       jumpPower: 120, // 350
 
-      gunTypes: ['normal-gun'],
+      //gunTypes: ['normal-gun'],
+      gunTypes: ['peashooter'],
     },
   ],
   [
@@ -311,6 +369,33 @@ export const Characters = [
       jumpPower: 150, // 350,
 
       gunTypes: ['normal-gun'],
+    },
+  ],
+  [
+    'enemy-1',
+    {
+      color: 0x007399,
+      wireColor: 0x004d66,
+      pointColor: 0xeb4b2f,
+      faceColor: 0xdc143c,
+      faceWireColor: 0xdb6e84,
+
+      height: 4, // 20
+      radius: 2, // 10
+      weight: 1, //
+
+      speed: 120, // 300,
+      rotateSpeed: 2,
+
+      // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+      turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
+      sprint: 2.5,
+      urgencyMove: 8,
+
+      airSpeed: 50, // 100
+      jumpPower: 120, // 350
+
+      gunTypes: ['peashooter'],
     },
   ],
 ];
@@ -1064,7 +1149,7 @@ export const Stages = [
           phi: PI * 0.5,
         },
         {
-          position: { sx: -1, sy: 2, sz: 0 },
+          position: { sx: 0, sy: 1, sz: 0 },
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
           phi: 0,
         },
@@ -1074,7 +1159,81 @@ export const Stages = [
           phi: 0,
         },
       ],
+      characters: [
+        {
+          name: 'enemy-1',
+          ctype: 'enemy-1',
+          ammoType: 'tiny-bullet',
+          schedule: {
+            spawnTime: 5,
+          },
+          params: {
+            position: { sx: 0, sy: 11, sz: 0 },
+            phi: (140 / 360) * PI * 2,
+            theta: (45 / 360) * PI * 2,
+            section: 0,
+
+            canFire: false,
+            currentTime: 0,
+            burstDuration: 1,
+            burstInterval: 2,
+          },
+          updaters: [
+            { name: 'bullet-fire-2', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
+        },
+        {
+          name: 'enemy-2',
+          ctype: 'enemy-1',
+          ammoType: 'tiny-bullet',
+          schedule: {
+            spawnTime: 5,
+          },
+          params: {
+            position: { sx: 0, sy: 20, sz: 0 },
+            phi: (180 / 360) * PI * 2,
+            theta: (45 / 360) * PI * 2,
+            section: 0,
+
+            canFire: false,
+            currentTime: 0,
+            burstDuration: 1,
+            burstInterval: 2,
+          },
+          updaters: [
+            { name: 'bullet-fire-2', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
+        },
+      ],
+      obstacles: [
+        {
+          name: 'tiny-round-stone',
+          tweeners: [{ name: 'rolling-stone-2', state: States.alive }],
+          params: {
+            position: { sx: 3, sy: 5, sz: 3 },
+            section: 0,
+            sideDir: new Vector3(),
+          },
+          schedule: {
+            spawnTime: 5,
+          },
+          updaters: [{ name: 'rolling-stone-2', state: States.alive }],
+        },
+      ],
       items: [
+        {
+          name: 'checkpoint',
+          params: {
+            section: 0,
+            position: { sx: 0, sy: 22, sz: 0 },
+          },
+          schedule: {
+            spawnTime: 3,
+          },
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
+        },
         {
           name: 'hyper-jump',
           consumable: false,
@@ -1134,7 +1293,7 @@ export const Stages = [
               widthSegments: 15,
               depthSegments: 15,
               bumpHeight: 0,
-              position: { sx: 0, sy: 0.0, sz: 0 },
+              position: { sx: 0, sy: 0.01, sz: 0 },
               rotation: { x: 0, y: 0, z: 0 },
             },
           ],
@@ -1230,8 +1389,8 @@ export const Stages = [
                 wireframe: Tower.wireColor,
                 points: Tower.pointColor,
               },
-              position: { sx: -0.92, sy: 0, sz: 0 },
-              rotation: { x: 0, y: (30 / 360) * PI * 2, z: 0 },
+              position: { sx: 0, sy: 0, sz: 0 },
+              rotation: { x: 0, y: (20.7 / 360) * PI * 2, z: 0 },
             },
           ],
           ringTower: {
@@ -1255,7 +1414,7 @@ export const Stages = [
             heightSegments: 20,
 
             position: { sx: 0, sy: 0, sz: 0 },
-            rotation: { x: 0, y: (18.4 / 360) * PI * 2, z: 0 },
+            rotation: { x: 0, y: (0 / 360) * PI * 2/*(18.4 / 360) * PI * 2*/, z: 0 },
           },
           column: [
             {

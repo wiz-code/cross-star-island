@@ -11,6 +11,7 @@ const getRandomInclusive = (min, max) => random() * (max - min) + min;
 const compositions = new Map(Compositions);
 const vec = new Vector3();
 const vec2 = new Vector3();
+const yawAxis = new Vector3(0, 1, 0);
 
 const clearStage = ({ states, methods }, c1, c2, punishment = false) => {
   const playSound = methods.get('play-sound');
@@ -161,6 +162,34 @@ export const Tweeners = [
     },
   ],
   [
+    'rolling-stone-2',
+    (game, target, arg) => {
+      const time = arg ?? 0;
+      const range = 1.8;
+
+      const stageName = game.states.get('stageName');
+      const stageData = game.methods.get('getStageData')?.(stageName);
+      const { offset } = stageData.sections[target.params.section];
+
+      const group = new Group();
+      const tween = new Tween(target.collider.center, group);
+      tween
+        .onEveryStart(() => {
+          const randomNum = getRandomInclusive(-range, range);
+          const initPos = { ...target.params.position };
+          initPos.sx += randomNum;
+          const position = addOffsetToPosition(initPos, offset);
+          target.setPosition(position);
+          target.velocity.copy(new Vector3(0, 0, 0));
+        })
+        .delay(8000)
+        .repeat(Infinity)
+        .start(time);
+
+      return group;
+    },
+  ],
+  [
     'avoidance-1',
     (game, target, ...args) => {
       const [time = 0, direction = 'x-axis', to = -20, duration = 2000] = args;
@@ -264,12 +293,14 @@ export const Updaters = [
     (game, target, deltaTime) => {
       target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
     },
-    /* {
-      state: States.alive,
-      update(game, target, deltaTime) {
-        target.object.rotation.x -= deltaTime * target.data.rotateSpeed;
-      },
-    }, */
+  ],
+  [
+    'rolling-stone-2',
+    (game, target, deltaTime, elapsedTime) => {
+      const { params: { sideDir } } = target;
+      sideDir.crossVectors(target.velocity, yawAxis).normalize();
+      target.object.setRotationFromAxisAngle(sideDir, -elapsedTime * target.data.rotateSpeed);
+    },
   ],
   [
     'item-ring-1',
@@ -321,17 +352,32 @@ export const Updaters = [
         target.fire();
       }
     },
-    /* {
-      state: States.alive,
-      update(game, target, deltaTime) {
-        target.params.elapsedTime += deltaTime;
+  ],
+  [
+    'bullet-fire-2',
+    (game, target, deltaTime, elapsedTime) => {
+      const { params } = target;
+      const { canFire, currentTime, burstDuration, burstInterval } = params;
+      //target.params.elapsedTime += deltaTime;
 
-        if (target.params.elapsedTime > target.params.fireInterval) {
-          target.params.elapsedTime = 0;
+      if (canFire) {
+        const interval = elapsedTime - currentTime;
+
+        if (burstDuration > interval) {
           target.fire();
+        } else {
+          params.canFire = false;
+          params.currentTime = elapsedTime;
         }
-      },
-    }, */
+      } else {
+        const interval = elapsedTime - currentTime;
+
+        if (interval > burstInterval) {
+          params.canFire = true;
+          params.currentTime = elapsedTime;
+        }
+      }
+    },
   ],
   [
     'satellite-points',
