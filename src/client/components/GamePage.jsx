@@ -177,8 +177,8 @@ function DisplayScore() {
 }
 
 function Controls({ indexPath, toggleFullScreen, clearRecords }) {
-  const { mode, fps } = useSelector((state) => state.game);
-  const { isFullscreen } = useSelector((state) => state.system);
+  const { mode, visibleFps } = useSelector((state) => state.game);
+  const { isFullscreen, fps } = useSelector((state) => state.system);
   const dispatch = useDispatch();
   const navicate = useNavigate();
   const theme = useTheme();
@@ -187,8 +187,13 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
     navicate(indexPath);
   }, []);
 
-  const visibleFPS = useCallback(() => {
-    dispatch(gameActions.visibleFPS(!fps));
+  const setVisibleFps = useCallback(() => {
+    dispatch(gameActions.visibleFps(!visibleFps));
+  }, [visibleFps]);
+
+  const setFps = useCallback((e) => {
+    const value = fps === 60 ? 30 : 60;
+    dispatch(systemActions.setFps(value));
   }, [fps]);
 
   return (
@@ -221,8 +226,11 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
           記録を全削除
         </Button>
       ) : null}
-      <Button variant="outlined" size="small" onClick={visibleFPS}>
-        {!fps ? 'FPSを表示' : 'FPSを非表示'}
+      <Button variant="outlined" size="small" onClick={setFps}>
+        {fps === 60 ? 'フレームレートを下げる' : 'フレームレートを上げる'}
+      </Button>
+      <Button variant="outlined" size="small" onClick={setVisibleFps}>
+        {!visibleFps ? 'FPSを表示' : 'FPSを非表示'}
       </Button>
       <Button variant="outlined" size="small" onClick={toggleFullScreen}>
         {!isFullscreen ? '全画面にする' : '全画面を解除'}
@@ -232,7 +240,8 @@ function Controls({ indexPath, toggleFullScreen, clearRecords }) {
 }
 
 function GamePage({ indexPath, toggleFullScreen }) {
-  const { mode, fps, stageName, vrm } = useSelector((state) => state.game);
+  const { mode, visibleFps, stageName, vrm } = useSelector((state) => state.game);
+  const { fps } = useSelector((state) => state.system);
   const [game, setGame] = useState(null);
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -251,7 +260,15 @@ function GamePage({ indexPath, toggleFullScreen }) {
       return;
     }
 
-    game.sceneManager.enableStats(fps);
+    game.sceneManager.enableStats(visibleFps);
+  }, [game, visibleFps]);
+
+  useEffect(() => {
+    if (game == null) {
+      return;
+    }
+
+    game.setParams('fps', fps);
   }, [game, fps]);
 
   const setElapsedTime = useCallback((time) => {

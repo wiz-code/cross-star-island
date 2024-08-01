@@ -56,7 +56,12 @@ import {
 } from './utils';
 
 const { floor, exp } = Math;
-const FPS30 = 1 / 30;
+const FPS60 = 60;
+const FPS30 = 30;
+const fpsInterval = new Map([
+  [FPS60, 1 / FPS60 - 0.0001],
+  [FPS30, 1 / FPS30 - 0.0001],
+]);
 
 const resistances = Object.entries(World.Resistance);
 const dampingData = {};
@@ -74,8 +79,6 @@ const canvas = document.createElement('canvas');
 globalThis.gamepadIndex = -1;
 
 class Game {
-  #count = 0;
-
   #elapsedTime = 0;
 
   #accumulatedTime = 0;
@@ -83,7 +86,7 @@ class Game {
   constructor(width, height, callbacks, params) {
     this.clock = new Clock();
     this.callbacks = callbacks;
-    this.params = params;
+    this.params = { fps: 60, ...params };
 
     this.data = {};
     this.data.stages = new Map(Stages);
@@ -715,24 +718,26 @@ class Game {
 
   clear() {}
 
+  setParams(name, value) {
+    this.params[name] = value;
+  }
+
   update() {
     const deltaTime = this.clock.getDelta();
+
     this.#accumulatedTime += deltaTime;
+    const interval = fpsInterval.get(this.params.fps);
 
-    if (deltaTime > FPS30) {
-      this.#count += 1;
-
-      if (this.#count % 2 === 0) {
-        return;
-      }
+    if (this.#accumulatedTime < interval) {
+      return;
     }
 
     let elapsedTime = this.#elapsedTime;
     this.#elapsedTime += this.#accumulatedTime;
-
     const delta = this.#accumulatedTime / GameSettings.stepsPerFrame;
-    this.#accumulatedTime = 0;
     const damping = getDamping(delta);
+
+    this.#accumulatedTime = this.#accumulatedTime % interval; // 0
 
     this.controls.input();
 

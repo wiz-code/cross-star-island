@@ -1,5 +1,12 @@
+const genId = (() => {
+  let id = 0;
+
+  return () => id += 1;
+})();
+
 class Box {
   constructor(minX, minY, minZ, maxX, maxY, maxZ) {
+    this.id = genId();
     this.min = [minX, minY, minZ];
     this.max = [maxX, maxY, maxZ];
     this.object = null;

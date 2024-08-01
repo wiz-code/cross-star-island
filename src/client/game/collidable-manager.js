@@ -163,8 +163,10 @@ class CollidableManager extends Publisher {
       this.#intersected = null;
       this.#triangleIndexSet.clear();
 
+      let result = false;
+
       if (collider instanceof Capsule) {
-        let result = false;
+        collidable.setGrounded(false);
 
         this.#capsule.copy(collider);
         this.#capsule.getCenter(this.#center);
@@ -216,62 +218,20 @@ class CollidableManager extends Publisher {
             }
           },
         });
-
-        if (result) {
-          this.#capsule.getCenter(this.#v1).sub(collider.getCenter(this.#v2));
-          const depth = this.#v1.length();
-          result = { normal: this.#v1.clone().normalize(), depth };
-        }
-
-        collidable.setGrounded(false);
-
-        if (result !== false) {
-          const onGround = result.normal.y > COS_45;
-          collidable.setGrounded(onGround);
-
-          if (!onGround) {
-            velocity.addScaledVector(
-              result.normal,
-              -result.normal.dot(velocity),
-            );
-          }
-
-          if (this.#triangleIndexSet.size > 0) {
-            for (const index of this.#triangleIndexSet) {
-              const vindex = geometry.index.getX(index * 3);
-
-              if (
-                this.#intersected.offset <= vindex &&
-                vindex <= this.#intersected.offset + this.#intersected.count
-              ) {
-                this.#parent = this.#intersected;
-                collider.translate(this.#parent.velocity);
-                break;
-              }
-            }
-          }
-
-          if (result.depth >= Game.EPS) {
-            collider.translate(result.normal.multiplyScalar(result.depth));
-          }
-        }
       } else {
-        let result = false;
-        let center;
-
         if (collider instanceof Sphere) {
-          center = collider.center;
+          this.#center.copy(collider.center);
           this.#sphere.copy(collider);
           this.#sphere.getBoundingBox(this.#box);
         } else if (collider instanceof Box3) {
           this.#box.copy(collider);
-          center = collider.getCenter(this.#v2);
-          this.#sphere.set(center, collidable.data.radius);
+          collider.getCenter(this.#center);
+          this.#sphere.set(this.#center, collidable.data.radius);
         }
 
         boundsTree.shapecast({
           boundsTraverseOrder: (box) => {
-            return box.clampPoint(center, this.#vec).distanceToSquared(center);
+            return box.clampPoint(this.#center, this.#vec).distanceToSquared(this.#center);
             // return box.distanceToPoint(center);
           },
           intersectsBounds: (box, isLeaf, score) => {
@@ -294,14 +254,56 @@ class CollidableManager extends Publisher {
             return false;
           },
         });
+      }
 
-        if (result) {
-          this.#v1.copy(this.#sphere.center).sub(center);
-          const depth = this.#v1.length();
-          result = { normal: this.#v1.clone().normalize(), depth };
+      if (result) {
+        if (collider instanceof Capsule) {
+          this.#capsule.getCenter(this.#v1).sub(this.#center);
+        } else {
+          this.#v1.copy(this.#sphere.center).sub(this.#center);
         }
 
-        if (result !== false) {
+        const depth = this.#v1.length();
+        result = { normal: this.#v1.clone().normalize(), depth };
+      }
+
+      if (result !== false) {
+        if (collider instanceof Capsule) {
+          const velocitySq = velocity.y < 0 ? velocity.y ** 2 : 0;
+
+          if (velocitySq >= fallingSpeedToSquared) {
+            this.eventManager.dispatch('oob', 'teleport-character', collidable);
+          } else {
+            const onGround = result.normal.y > COS_45;
+            collidable.setGrounded(onGround);
+
+            if (!onGround) {
+              velocity.addScaledVector(
+                result.normal,
+                -result.normal.dot(velocity),
+              );
+            }
+
+            if (this.#triangleIndexSet.size > 0) {
+              for (const index of this.#triangleIndexSet) {
+                const vindex = geometry.index.getX(index * 3);
+
+                if (
+                  this.#intersected.offset <= vindex &&
+                  vindex <= this.#intersected.offset + this.#intersected.count
+                ) {
+                  this.#parent = this.#intersected;
+                  collider.translate(this.#parent.velocity);
+                  break;
+                }
+              }
+            }
+
+            if (result.depth >= Game.EPS) {
+              collider.translate(result.normal.multiplyScalar(result.depth));
+            }
+          }
+        } else {
           collidable.addBounceCount();
 
           velocity.addScaledVector(
@@ -539,11 +541,11 @@ class CollidableManager extends Publisher {
         collidable.update(deltaTime, elapsedTime, damping);
 
         if (collidable.type === 'character') {
-          const velocityToSquared = collidable.velocity.y < 0 ? collidable.velocity.y ** 2 : 0;
+          //const velocityToSquared = collidable.velocity.y < 0 ? collidable.velocity.y ** 2 : 0;
 //collidable.hasControls && console.log(velocityToSquared, fallingSpeedToSquared)
-          if (collidable.collider.start.y < World.oob ||
+          if (collidable.collider.start.y < World.oob/* ||
             velocityToSquared >= fallingSpeedToSquared
-          ) {
+          */) {
             if (!collidable.hasControls) {
               collidable.setAlive(false);
             }
