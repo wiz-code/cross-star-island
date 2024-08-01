@@ -320,8 +320,7 @@ export const Characters = [
       airSpeed: 50, // 100
       jumpPower: 120, // 350
 
-      //gunTypes: ['normal-gun'],
-      gunTypes: ['peashooter'],
+      gunTypes: ['normal-gun'],
     },
   ],
   [

@@ -16,7 +16,7 @@ const gameSlice = createSlice({
     stageName: firstStage,
     elapsedTime: 0,
     score: null,
-    fps: true,
+    visibleFps: true,
     vrm: true,
   },
   reducers: {
@@ -33,8 +33,8 @@ const gameSlice = createSlice({
     setStage: (state, action) => {
       state.stageName = action.payload;
     },
-    visibleFPS: (state, action) => {
-      state.fps = action.payload;
+    visibleFps: (state, action) => {
+      state.visibleFps = action.payload;
     },
     toggleVRM: (state, action) => {
       state.vrm = action.payload;
