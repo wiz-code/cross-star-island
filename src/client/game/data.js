@@ -1,7 +1,7 @@
 import { Vector3, BackSide } from 'three';
 import { Tower } from './settings';
 
-const { sin, PI } = Math;
+const { sin, cos, PI } = Math;
 
 const easeInQuad = (x) => x * x;
 const easeOutCubic = (x) => 1 - (1 - x) * (1 - x) * (1 - x);
@@ -118,6 +118,17 @@ export const GameMethods = [
   ],
 ];
 
+export const Compositions = [
+  ['stage', ['firstStage', 'secondStage']],
+  [
+    'player',
+    [
+      { name: 'player-1', ctype: 'hero-1', ammoType: 'small-bullet', gunType: 'normal-gun' },
+      { name: 'player-1', ctype: 'hero-1', ammoType: 'small-bullet', gunType: 'spread-gun' },
+    ],
+  ],
+];
+
 export const Obstacles = [
   [
     'round-stone',
@@ -153,11 +164,6 @@ export const Obstacles = [
   ],
 ];
 
-export const Compositions = [
-  ['stage', ['firstStage', 'secondStage']],
-  ['player', { name: 'player-1', ctype: 'hero-1' }],
-];
-
 export const Guns = [
   [
     'normal-gun',
@@ -165,6 +171,17 @@ export const Guns = [
       speed: 600, // 2000
       fireInterval: 300,
       accuracy: 3,
+      recoil: 1, /// /////
+
+      ammoTypes: ['small-bullet', 'hop-bullet'],
+    },
+  ],
+  [
+    'spread-gun',
+    {
+      speed: 500, // 2000
+      fireInterval: 30,
+      accuracy: 10,
       recoil: 1, /// /////
 
       ammoTypes: ['small-bullet', 'hop-bullet'],
@@ -195,7 +212,7 @@ export const Ammos = [
 
       radius: 1.5, // 6
       detail: 1,
-      numAmmo: 100,
+      numAmmo: 200,
 
       weight: 0.08,
       lifetime: 3,
@@ -243,7 +260,7 @@ export const Ammos = [
           update(game, target, deltaTime) {
             target.object.rotation.z -= deltaTime * target.data.rotateSpeed;
 
-            if (target.getBounceCount() > 0) {
+            if (target.getBounceCount() === 0) {
               if (target.elapsedTime <= target.data.hopDuration) {
                 const ratio = easeOutCubic(target.elapsedTime);
                 target.collider.center.y +=
@@ -320,7 +337,7 @@ export const Characters = [
       airSpeed: 50, // 100
       jumpPower: 120, // 350
 
-      gunTypes: ['normal-gun'],
+      gunTypes: ['normal-gun', 'spread-gun'],
     },
   ],
   [
@@ -534,6 +551,8 @@ export const Stages = [
         {
           name: 'girl-1',
           ctype: 'heroine-1',
+          gunType: 'normal-gun',
+          ammoType: 'small-bullet',
           pose: 'pose-1',
           params: {
             position: { sx: -13, sy: -0.4, sz: 0 },
@@ -548,6 +567,7 @@ export const Stages = [
         {
           name: 'enemy-1',
           ctype: 'hero-1',
+          gunType: 'normal-gun',
           ammoType: 'small-bullet',
           tweeners: [
             {
@@ -575,6 +595,7 @@ export const Stages = [
         {
           name: 'enemy-2',
           ctype: 'hero-1',
+          gunType: 'normal-gun',
           ammoType: 'small-bullet',
           tweeners: [
             {
@@ -602,6 +623,7 @@ export const Stages = [
         {
           name: 'enemy-3',
           ctype: 'hero-1',
+          gunType: 'normal-gun',
           ammoType: 'small-bullet',
           tweeners: [
             {
@@ -629,6 +651,7 @@ export const Stages = [
         {
           name: 'enemy-4',
           ctype: 'hero-1',
+          gunType: 'normal-gun',
           ammoType: 'hop-bullet',
           schedule: {
             spawnTime: 5,
@@ -649,6 +672,7 @@ export const Stages = [
         {
           name: 'enemy-5',
           ctype: 'hero-1',
+          gunType: 'normal-gun',
           ammoType: 'hop-bullet',
           schedule: {
             spawnTime: 5,
@@ -1131,7 +1155,7 @@ export const Stages = [
         },
         {
           position: { sx: 0, sy: 2, sz: 0 },
-          // position: { sx: 4.5, sy: 20, sz: 4.2 },
+          //position: { sx: -5.5 * cos((165 / 360) * 2 * PI), sy: 18, sz: 5.5 * sin((165 / 360) * 2 * PI) },
           phi: (20.7 / 360) * PI * 2,
         },
         {
@@ -1144,6 +1168,7 @@ export const Stages = [
         {
           name: 'enemy-1',
           ctype: 'enemy-1',
+          gunType: 'peashooter',
           ammoType: 'tiny-bullet',
           schedule: {
             spawnTime: 5,
@@ -1167,6 +1192,7 @@ export const Stages = [
         {
           name: 'enemy-2',
           ctype: 'enemy-1',
+          gunType: 'peashooter',
           ammoType: 'tiny-bullet',
           schedule: {
             spawnTime: 5,
@@ -1190,6 +1216,7 @@ export const Stages = [
         {
           name: 'enemy-3',
           ctype: 'enemy-1',
+          gunType: 'peashooter',
           ammoType: 'tiny-bullet',
           schedule: {
             spawnTime: 5,
@@ -1207,6 +1234,31 @@ export const Stages = [
           },
           updaters: [
             { name: 'bullet-fire-2', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
+        },
+        {
+          name: 'enemy-4',
+          ctype: 'enemy-1',
+          gunType: 'peashooter',
+          ammoType: 'tiny-bullet',
+          schedule: {
+            spawnTime: 5,
+          },
+          params: {
+            position: { sx: 0, sy: 15, sz: 0 },
+            phi: (0 / 360) * PI * 2,
+            theta: (45 / 360) * PI * 2,
+            section: 1,
+
+            canFire: false,
+            currentTime: 0,
+            burstDuration: 1,
+            burstInterval: 0,
+          },
+          updaters: [
+            { name: 'bullet-fire-2', state: States.alive },
+            { name: 'rotation-1', state: States.alive },
             { name: 'satellite-points', state: States.alive },
           ],
         },
@@ -1234,7 +1286,7 @@ export const Stages = [
           tweeners: [{
             name: 'spawn-stone-2',
             state: States.alive,
-            args: [7000, 6000],
+            args: [5000, 6000, 5000],
           }],
           params: {
             position: { sx: 0, sy: 11, sz: -5.5 },
@@ -1242,7 +1294,7 @@ export const Stages = [
             sideDir: new Vector3(),
           },
           schedule: {
-            spawnTime: 7,
+            spawnTime: 5,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -1251,7 +1303,7 @@ export const Stages = [
           tweeners: [{
             name: 'spawn-stone-2',
             state: States.alive,
-            args: [14000, 10000],
+            args: [10000, 10000, 5000],
           }],
           params: {
             position: { sx: -5.5, sy: 18, sz: 0 },
@@ -1259,7 +1311,7 @@ export const Stages = [
             sideDir: new Vector3(),
           },
           schedule: {
-            spawnTime: 14,
+            spawnTime: 10,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },
@@ -1306,6 +1358,55 @@ export const Stages = [
             spawnTime: 5,
           },
           updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+        {
+          name: 'hyper-jump',
+          consumable: false,
+          disableTime: 1,
+          params: {
+            section: 1,
+            position: { sx: -6 * cos((165 / 360) * 2 * PI), sy: 5, sz: 6 * sin((165 / 360) * 2 * PI) },
+            phi: PI * 0,
+            velocity: new Vector3(
+              -6.5 * cos((-40 / 360) * 2 * PI),
+              12,
+              6.5 * sin((-40 / 360) * 2 * PI)
+            ),
+          },
+          schedule: {
+            spawnTime: 5,
+          },
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+        {
+          name: 'hyper-jump',
+          consumable: false,
+          disableTime: 1,
+          params: {
+            section: 1,
+            position: { sx: -6 * cos((165 / 360) * 2 * PI), sy: 18, sz: 6 * sin((165 / 360) * 2 * PI) },
+            phi: PI * 0,
+            velocity: new Vector3(
+              -6.5 * cos((-40 / 360) * 2 * PI),
+              12,
+              6.5 * sin((-40 / 360) * 2 * PI)
+            ),
+          },
+          schedule: {
+            spawnTime: 5,
+          },
+          updaters: [{ name: 'item-ring-2', state: States.alive }],
+        },
+        {
+          name: 'weapon-upgrade',
+          params: {
+            section: 0,
+            position: { sx: 0.5, sy: 20, sz: 0.5 },
+          },
+          schedule: {
+            spawnTime: 5,
+          },
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
       ],
       /* movables: [

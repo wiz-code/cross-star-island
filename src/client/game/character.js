@@ -359,6 +359,7 @@ class Character extends Entity {
       return;
     }
 
+    super.enableCollider(bool);
     super.visible(bool);
   }
 

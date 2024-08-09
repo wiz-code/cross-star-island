@@ -83,6 +83,8 @@ class Game {
 
   #accumulatedTime = 0;
 
+  #framecount = 0;
+
   constructor(width, height, callbacks, params) {
     this.clock = new Clock();
     this.callbacks = callbacks;
@@ -346,7 +348,7 @@ class Game {
     return player;
   }
 
-  setCharacterWeapon(character, atype = '', gtype = '') {
+  setCharacterWeapon(character, atype, gtype) {
     const { gunTypes } = character.data;
 
     gunTypes.forEach((gunType, gunIndex) => {
@@ -354,24 +356,16 @@ class Game {
       gun.data.ammoTypes.forEach((ammoType, ammoIndex) => {
         const ammo = this.game.ammos.get(ammoType);
         gun.ammos.set(ammoType, ammo);
+
+        if (ammoType === atype) {
+          gun.setAmmoType(atype);
+        }
       });
-
-      if (atype !== '') {
-        gun.setAmmoType(atype);
-      } else {
-        const [ammoType] = gun.data.ammoTypes;
-        gun.setAmmoType(ammoType);
-      }
-
+      
       character.addGun(gun);
     });
 
-    if (gtype !== '') {
-      character.setGunType(gtype);
-    } else {
-      const [gunType] = gunTypes;
-      character.setGunType(gunType);
-    }
+    character.setGunType(gtype);
   }
 
   setMode(mode) {
@@ -403,8 +397,24 @@ class Game {
   setStage(sname) {
     this.clearStage();
 
-    const { name: playerName, ctype: characterType } =
-      this.data.compositions.get('player');
+    const stageName = sname ?? this.game.states.get('stageName');
+    const stageData = this.game.methods.get('getStageData')?.(stageName);
+
+    const stageIndex = this.data.compositions.get('stage').indexOf(stageName);
+
+    if (stageIndex === -1) {
+      return;
+    }
+
+    const playerData = this.data.compositions.get('player');
+
+    const {
+      name: playerName,
+      ctype: characterType,
+      ammoType,
+      gunType,
+    } = playerData[stageIndex];
+
     this.game.states.set('playerName', playerName);
     this.game.states.set('characterType', characterType);
 
@@ -413,8 +423,7 @@ class Game {
     this.objectManager.add(this.player);
     this.eventManager.addSchedule(this.player, { spawnTime: 0 });
 
-    const stageName = sname ?? this.game.states.get('stageName');
-    const stageData = this.game.methods.get('getStageData')?.(stageName);
+
 
     this.game.stage = {};
     const { terrain, bvh, movableBVH, helper } = createStage(
@@ -514,7 +523,7 @@ class Game {
         this.objectManager.add(character);
       }
 
-      this.setCharacterWeapon(character, data.ammoType);
+      this.setCharacterWeapon(character, data.ammoType, data.gunType);
 
       if (data.params != null) {
         character.setParams(data.params);
@@ -636,7 +645,7 @@ class Game {
 
     const position = addOffsetToPosition(checkpoint.position, offset);
     this.player.setPosition(position, checkpoint.phi, checkpoint.theta);
-    this.setCharacterWeapon(this.player);
+    this.setCharacterWeapon(this.player, ammoType, gunType);
   }
 
   clearStage() {
@@ -723,17 +732,20 @@ class Game {
   }
 
   update() {
+    this.#framecount += 1;
+
+    if (this.params.fps === FPS30 && this.#framecount % 2 === 0) {
+      return;
+    }
+
     const deltaTime = this.clock.getDelta();
 
-    //////
-    /*
     let elapsedTime = this.#elapsedTime;
     this.#elapsedTime += deltaTime;
     const delta = deltaTime / GameSettings.stepsPerFrame;
     const damping = getDamping(delta);
-    */
-    //////
-    this.#accumulatedTime += deltaTime;
+
+    /*this.#accumulatedTime += deltaTime;
     const interval = fpsInterval.get(this.params.fps);
 
     if (this.#accumulatedTime < interval) {
@@ -745,8 +757,8 @@ class Game {
     const delta = this.#accumulatedTime / GameSettings.stepsPerFrame;
 
     const damping = getDamping(delta);
-    this.#accumulatedTime = 0;
-    
+    this.#accumulatedTime = 0;*/
+
     this.controls.input();
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {

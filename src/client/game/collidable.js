@@ -66,7 +66,7 @@ class Collidable extends Entity {
       this.#bounceCount = 0;
     }
 
-    this.colliderEnabled = bool;
+    this.enableCollider(bool);
     super.visible(bool);
   }
 
