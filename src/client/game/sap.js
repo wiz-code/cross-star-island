@@ -39,14 +39,7 @@ const getKey = (ep1, ep2) => {
 class SweepAndPrune {
   #bb = new Box3();
 
-  #overlappings1 = new Map();/////
-  #overlappings2 = new Map();////
-  #overlappings3 = new Map();/////
   #overlaps = Array(Dimensions).fill().map(() => new Map());
-
-  #overlappings = new Set();
-
-  #intersections = [new Set(), new Set()];
 
   #order = Array(Dimensions).fill().map((value, index) => index);
 
@@ -153,24 +146,7 @@ class SweepAndPrune {
     }
 
     this.#tickCount += 1;
-
     this.pairs.clear();
-    /*const endPoints1 = this.endPoints[this.#order[0]];
-    const endPoints2 = this.endPoints[this.#order[1]];
-    const endPoints3 = this.endPoints[this.#order[2]];
-    const [intersection1, intersection2] = this.#intersections;
-
-    //insertionSort(endPoints1);
-    //insertionSort(endPoints2);
-    //insertionSort(endPoints3);
-
-    intersection1.clear();
-    intersection2.clear();
-
-    this.#overlappings1.clear();
-    this.#overlappings2.clear();
-    this.#overlappings3.clear();*/
-
     let leastSize, leastSizeIndex;
 
     for (let i = 0, l = this.#order.length; i < l; i += 1) {
@@ -204,66 +180,6 @@ class SweepAndPrune {
       }
     }
 
-    /*for (let i = 1, l = endPoints1.length; i < l; i += 1) {
-      for (let j = i - 1; j >= 0; j -= 1) {
-        if (endPoints1[j].value < endPoints1[j + 1].value) {
-          break;
-        }
-
-        const ep2 = endPoints1[j];
-        const ep1 = endPoints1[j + 1];
-
-        endPoints1[j] = ep1;
-        endPoints1[j + 1] = ep2;
-
-        if (ep1.isMin && !ep2.isMin) {
-          this.#overlappings1.set(getKey(ep1, ep2), [ep1, ep2]);
-        } else if (!ep1.isMin && ep2.isMin) {
-          this.#overlappings1.delete(getKey(ep1, ep2));
-        }
-      }
-    }
-//console.log('1', this.#overlappings1.size)
-    for (let i = 1, l = endPoints2.length; i < l; i += 1) {
-      for (let j = i - 1; j >= 0; j -= 1) {
-        if (endPoints2[j].value < endPoints2[j + 1].value) {
-          break;
-        }
-
-        const ep2 = endPoints2[j];
-        const ep1 = endPoints2[j + 1];
-
-        endPoints2[j] = ep1;
-        endPoints2[j + 1] = ep2;
-
-        if (ep1.isMin && !ep2.isMin) {
-          this.#overlappings2.set(getKey(ep1, ep2), [ep1, ep2]);
-        } else if (!ep1.isMin && ep2.isMin) {
-          this.#overlappings2.delete(getKey(ep1, ep2));
-        }
-      }
-    }
-//console.log('2', this.#overlappings2.size)
-    for (let i = 1, l = endPoints3.length; i < l; i += 1) {
-      for (let j = i - 1; j >= 0; j -= 1) {
-        if (endPoints3[j].value < endPoints3[j + 1].value) {
-          break;
-        }
-
-        const ep2 = endPoints3[j];
-        const ep1 = endPoints3[j + 1];
-
-        endPoints3[j] = ep1;
-        endPoints3[j + 1] = ep2;
-
-        if (ep1.isMin && !ep2.isMin) {
-          this.#overlappings3.set(getKey(ep1, ep2), [ep1, ep2]);
-        } else if (!ep1.isMin && ep2.isMin) {
-          this.#overlappings3.delete(getKey(ep1, ep2));
-        }
-      }
-    }
-//console.log('3', this.#overlappings3.size)*/
     const leastSizeOverlaps = this.#overlaps[leastSizeIndex];
     const restOverlaps = [];
 
@@ -274,155 +190,11 @@ class SweepAndPrune {
     }
 
     for (const [key, [ep1, ep2]] of leastSizeOverlaps.entries()) {
-      const [overlaps1, overlaps2] = restOverlaps;
-
       if (restOverlaps.every((overlaps) => overlaps.has(key))) {
         this.pairs.add([ep1.box.object, ep2.box.object]);
       }
-      /*if (overlaps1.has(key) && overlaps2.has(key)) {
-        this.pairs.add([ep1.box.object, ep2.box.object]);
-      }*/
     }
-
-
-    /*for (let i = 0, l = endPoints1.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPoints1[i];
-
-      if (isMin) {
-        for (const box of this.#overlappings) {
-          if (epBox.overlapX(box)) {
-            intersection1.add(epBox).add(box);
-          }
-        }
-
-        this.#overlappings.add(epBox);
-      } else {
-        this.#overlappings.delete(epBox);
-      }
-    }
-
-    if (intersection1.size === 0) {
-      return;
-    }
-
-    for (let i = 0, l = endPoints2.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPoints2[i];
-
-      if (intersection1.has(epBox)) {
-        // X軸で交差していないBoxは除外
-        if (isMin) {
-          for (const box of this.#overlappings) {
-            if (epBox.overlapY(box)) {
-              intersection2.add(epBox).add(box);
-            }
-          }
-
-          this.#overlappings.add(epBox);
-        } else {
-          this.#overlappings.delete(epBox);
-        }
-      }
-    }
-
-    if (intersection2.size === 0) {
-      return;
-    }
-
-    for (let i = 0, l = endPoints3.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPoints3[i];
-
-      if (intersection2.has(epBox)) {
-        // X, Y軸で交差していないBoxは除外
-        if (isMin) {
-          for (const box of this.#overlappings) {
-            if (epBox.overlapZ(box)) {
-              this.pairs.add([epBox.object, box.object]);
-            }
-          }
-
-          this.#overlappings.add(epBox);
-        } else {
-          this.#overlappings.delete(epBox);
-        }
-      }
-    }*/
   }
-
-  /*update() {
-    this.pairs.clear();
-    const [endPointsX, endPointsY, endPointsZ] = this.endPoints;
-    const [intersectionX, intersectionY, intersectionZ] = this.#intersections;
-
-    insertionSort(endPointsX);
-    insertionSort(endPointsY);
-    insertionSort(endPointsZ);
-
-    intersectionX.clear();
-    intersectionY.clear();
-    intersectionZ.clear();
-
-    for (let i = 0, l = endPointsX.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPointsX[i];
-
-      if (isMin) {
-        for (const box of this.#overlappings) {
-          if (epBox.overlapX(box)) {
-            intersectionX.add(epBox).add(box);
-          }
-        }
-
-        this.#overlappings.add(epBox);
-      } else {
-        this.#overlappings.delete(epBox);
-      }
-    }
-
-    if (intersectionX.size === 0) {
-      return;
-    }
-
-    for (let i = 0, l = endPointsY.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPointsY[i];
-
-      if (intersectionX.has(epBox)) {
-        // X軸で交差していないBoxは除外
-        if (isMin) {
-          for (const box of this.#overlappings) {
-            if (epBox.overlapY(box)) {
-              intersectionY.add(epBox).add(box);
-            }
-          }
-
-          this.#overlappings.add(epBox);
-        } else {
-          this.#overlappings.delete(epBox);
-        }
-      }
-    }
-
-    if (intersectionY.size === 0) {
-      return;
-    }
-
-    for (let i = 0, l = endPointsZ.length; i < l; i += 1) {
-      const { isMin, box: epBox } = endPointsZ[i];
-
-      if (intersectionY.has(epBox)) {
-        // X, Y軸で交差していないBoxは除外
-        if (isMin) {
-          for (const box of this.#overlappings) {
-            if (epBox.overlapZ(box)) {
-              this.pairs.add([epBox.object, box.object]);
-            }
-          }
-
-          this.#overlappings.add(epBox);
-        } else {
-          this.#overlappings.delete(epBox);
-        }
-      }
-    }
-  }*/
 
   removeObject(object) {
     const box = this.boxes.get(object.id);

@@ -2,7 +2,8 @@ import { Box3, Vector3, Plane, Line3, Ray, Sphere, Quaternion } from 'three';
 import { Game, World } from './settings';
 import Capsule from './capsule';
 
-const { abs, sqrt } = Math;
+const { abs, sqrt, min, max } = Math;
+const EPS = 1e-10;
 
 export const genId = (() => {
   const id = {};
@@ -76,6 +77,52 @@ export const disposeObject = (object) => {
     object.material.dispose();
   }
 };
+
+export const lineToLineClosestPoints = (() => {
+  const l1 = new Line3();
+  const l2 = new Line3();
+  const p1 = new Vector3();
+  const p2 = new Vector3();
+  const p3 = new Vector3();
+
+  return (line1, line2, target1, target2) => {
+  	const r = p1.copy(line1.end).sub(line1.start);
+  	const s = p2.copy(line2.end).sub(line2.start);
+  	const w = p3.copy(line2.start ).sub(line1.start);
+
+  	const a = r.dot(s), b = r.dot(r), c = s.dot(s), d = s.dot(w), e = r.dot(w);
+
+  	let t1, t2;
+  	const divisor = b * c - a * a;
+
+  	if (abs(divisor) < EPS) {
+  		const d1 = -d / c;
+  		const d2 = (a - d) / c;
+
+  		if (abs(d1 - 0.5) < abs(d2 - 0.5)) {
+  			t1 = 0;
+  			t2 = d1;
+  		} else {
+  			t1 = 1;
+  			t2 = d2;
+  		}
+  	} else {
+  		t1 = (d * a + e * c) / divisor;
+  		t2 = (t1 * a - d) / c;
+  	}
+
+  	t2 = max(0, min(1, t2));
+  	t1 = max(0, min( 1, t1));
+
+  	if (target1) {
+  		target1.copy(r).multiplyScalar(t1).add(line1.start);
+  	}
+
+  	if (target2) {
+  		target2.copy(s).multiplyScalar(t2).add(line2.start);
+  	}
+  };
+})();
 
 export const triangleSphereIntersect = (() => {
   const plane = new Plane();

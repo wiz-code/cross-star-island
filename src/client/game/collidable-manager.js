@@ -1,4 +1,4 @@
-import { Box3, Vector3, Sphere, Matrix4 } from 'three';
+import { Box3, Vector3, Sphere, Matrix4, Line3 } from 'three';
 import { NOT_INTERSECTED, INTERSECTED, CONTAINED } from 'three-mesh-bvh';
 
 import Capsule from './capsule';
@@ -9,6 +9,7 @@ import {
   triangleCapsuleIntersect,
   triangleSphereIntersect,
   getCollisionParams,
+  lineToLineClosestPoints,
 } from './utils';
 
 const { sqrt, cos, PI } = Math;
@@ -60,6 +61,14 @@ class CollidableManager extends Publisher {
   #intersected = null;
 
   #triangleIndexSet = new Set();
+
+  #l1 = new Line3();
+
+  #l2 = new Line3();
+
+  #t1 = new Vector3();
+
+  #t2 = new Vector3();
 
   constructor(game, scene, camera, eventManager, movableManager) {
     super();
@@ -268,12 +277,16 @@ class CollidableManager extends Publisher {
       }
 
       if (result !== false) {
-        if (collider instanceof Capsule) {
-          const velocitySq = velocity.y < 0 ? velocity.y ** 2 : 0;
+        let velocitySq = 0;
 
-          if (velocitySq >= fallingSpeedToSquared) {
-            this.eventManager.dispatch('oob', 'teleport-character', collidable);
-          } else {
+        if (type === 'character') {
+          velocitySq = velocity.y < 0 ? velocity.y ** 2 : 0;
+        }
+
+        if (velocitySq >= fallingSpeedToSquared) {
+          this.eventManager.dispatch('oob', 'teleport-character', collidable);
+        } else {
+          if (collider instanceof Capsule) {
             const onGround = result.normal.y > COS_45;
             collidable.setGrounded(onGround);
 
@@ -302,19 +315,19 @@ class CollidableManager extends Publisher {
             if (result.depth >= Game.EPS) {
               collider.translate(result.normal.multiplyScalar(result.depth));
             }
-          }
-        } else {
-          collidable.addBounceCount();
+          } else {
+            collidable.addBounceCount();
 
-          velocity.addScaledVector(
-            result.normal,
-            -result.normal.dot(velocity) * 1.5,
-          );
+            velocity.addScaledVector(
+              result.normal,
+              -result.normal.dot(velocity) * 1.5,
+            );
 
-          if (collider instanceof Sphere) {
-            collider.center.add(result.normal.multiplyScalar(result.depth));
-          } else if (collider instanceof Box3) {
-            collider.translate(result.normal.multiplyScalar(result.depth));
+            if (collider instanceof Sphere) {
+              collider.center.add(result.normal.multiplyScalar(result.depth));
+            } else if (collider instanceof Box3) {
+              collider.translate(result.normal.multiplyScalar(result.depth));
+            }
           }
         }
       }
@@ -330,16 +343,45 @@ class CollidableManager extends Publisher {
         (a2.isAlive() && a2.colliderEnabled)
       ) {
         if (a1.collider instanceof Capsule && a2.collider instanceof Capsule) {
-          const { center: c1, radius: r1 } = getCollisionParams(a1, this.#c1);
-          const { center: c2, radius: r2 } = getCollisionParams(a2, this.#c2);
+          //const { center: c1, radius: r1 } = getCollisionParams(a1, this.#c1);
+          //const { center: c2, radius: r2 } = getCollisionParams(a2, this.#c2);
 
-          const r = r1 + r2;
-          const rr = r * r;
+          //const r = r1 + r2;
+          //const rr = r * r;
 
           let collided = false;
-          const colliders = [a2.collider.start, a2.collider.end, c2];
+          //const colliders = [a2.collider.start, a2.collider.end, c2];
 
-          for (let i = 0, l = colliders.length; i < l; i += 1) {
+          ////////////
+          const la1 = this.#l1.set(a1.collider.start, a1.collider.end);
+          const la2 = this.#l2.set(a2.collider.start, a2.collider.end);
+          lineToLineClosestPoints(la1, la2, this.#t1, this.#t2);
+          this.#vecA.subVectors(this.#t1, this.#t2);
+          const len = this.#vecA.length();
+          const normal = this.#vecA.normalize();
+          const depth = a1.collider.radius + a2.collider.radius - len;
+
+          if (depth > 0) {
+            collided = true;
+
+            const v1 = this.#vecB
+              .copy(normal)
+              .multiplyScalar(normal.dot(a2.velocity));
+            const v2 = this.#vecC
+              .copy(normal)
+              .multiplyScalar(normal.dot(a1.velocity));
+            const vec1 = this.#vecD.subVectors(v2, v1);
+            const vec2 = this.#vecE.subVectors(v1, v2);
+
+            a2.velocity.addScaledVector(vec1, a1.data.weight);
+            a1.velocity.addScaledVector(vec2, a2.data.weight);
+
+            a1.collider.translate(normal.multiplyScalar(depth));
+            a2.collider.translate(normal.multiplyScalar(-depth));
+          }
+          ///////////
+
+          /*for (let i = 0, l = colliders.length; i < l; i += 1) {
             const point = colliders[i];
             const d2 = point.distanceToSquared(c1);
 
@@ -363,10 +405,12 @@ class CollidableManager extends Publisher {
               a1.collider.translate(normal.multiplyScalar(-d));
               a2.collider.translate(normal.multiplyScalar(d));
             }
-          }
+          }*/
 
-          if (collided) {
-            /// ////////////////////////
+          if (
+            collided &&
+            a1.type === 'character' && a2.type === 'character'
+          ) {
             this.eventManager.dispatch('collision', a1.name, a1, a2);
             this.eventManager.dispatch('collision', a2.name, a2, a1);
           }
@@ -387,7 +431,8 @@ class CollidableManager extends Publisher {
               data: a1.data,
               center: params1.center,
               radius: params1.radius,
-              colliders: [a1.collider.start, params1.center, a1.collider.end],
+              //colliders: [a1.collider.start, params1.center, a1.collider.end],//////
+              segment: this.#l1.set(a1.collider.start, a1.collider.end),
             };
             other = {
               object: a2,
@@ -403,7 +448,8 @@ class CollidableManager extends Publisher {
               data: a2.data,
               center: params2.center,
               radius: params2.radius,
-              colliders: [a2.collider.start, params2.center, a2.collider.end],
+              //colliders: [a2.collider.start, params2.center, a2.collider.end],//////////
+              segment: this.#l1.set(a2.collider.start, a2.collider.end),
             };
             other = {
               object: a1,
@@ -415,10 +461,46 @@ class CollidableManager extends Publisher {
           }
 
           let collided = false;
-          const r = capsule.radius + other.radius;
-          const rr = r * r;
+          //const r = capsule.radius + other.radius;
+          //const rr = r * r;
 
-          for (let i = 0, l = capsule.colliders.length; i < l; i += 1) {
+          ///////////////
+          capsule.segment.closestPointToPoint(other.center, true, this.#t1);
+          this.#vecA.subVectors(this.#t1, other.center);
+          const len = this.#vecA.length();
+          const normal = this.#vecA.normalize();
+          const depth = capsule.radius + other.radius - len;
+
+          if (depth > 0) {
+            collided = true;
+
+            if (a1.type !== 'item' && a2.type !== 'item') {
+              const v1 = this.#vecB
+                .copy(normal)
+                .multiplyScalar(normal.dot(capsule.velocity));
+              const v2 = this.#vecC
+                .copy(normal)
+                .multiplyScalar(normal.dot(other.velocity));
+              const vec1 = this.#vecD.subVectors(v2, v1);
+              const vec2 = this.#vecE.subVectors(v1, v2);
+
+              capsule.velocity.addScaledVector(vec1, other.data.weight);
+              other.velocity.addScaledVector(vec2, capsule.data.weight);
+
+              const diff = this.#vecF.copy(normal).multiplyScalar(depth);
+
+              capsule.object.collider.translate(diff);
+
+              if (other.collider instanceof Sphere) {
+                other.center.addScaledVector(normal, -depth);
+              } else if (other.collider instanceof Box3) {
+                this.collider.translate(diff.negate());
+              }
+            }
+          }
+          ////////////////
+
+          /*for (let i = 0, l = capsule.colliders.length; i < l; i += 1) {
             const point = capsule.colliders[i];
             const d2 = point.distanceToSquared(other.center);
 
@@ -453,20 +535,26 @@ class CollidableManager extends Publisher {
                 this.collider.translate(this.#vecF);
               }
             }
-          }
+          }*/
 
           if (collided) {
             other.object.addBounceCount();
-
-            if (other.object.type === 'item') {
+console.log(111111111111)
+            if (
+              other.object.type === 'item' &&
+              capsule.object.type === 'character'
+            ) {
               if (capsule.object.hasControls) {
                 this.effect(other.object, capsule.object);
               }
             } else {
-              playSound?.('damage');
-              capsule.object.setStunning(World.collisionShock);
+              if (
+                capsule.object.type === 'character' &&
+                other.object.type === 'ammo'
+              ) {
+                playSound?.('damage');
+                capsule.object.setStunning(World.collisionShock);
 
-              if (other.object.type === 'ammo') {
                 other.object.colliderEnabled = false;
 
                 if (!capsule.object.hasControls) {
@@ -572,7 +660,7 @@ class CollidableManager extends Publisher {
 
           object.position.copy(collidable.collider.start);
           object.position.y += collidable.halfHeight;
-          object.rotation.y = collidable.rotation.phi; /// //////
+          object.rotation.y = collidable.rotation.phi;
 
           if (collidable.hasControls) {
             this.camera.position.copy(collidable.collider.end);
