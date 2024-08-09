@@ -37,6 +37,10 @@ class Entity extends Publisher {
     }
   }
 
+  enableCollider(bool) {
+    this.colliderEnabled = bool;
+  }
+
   visible(bool) {
     if (this.object != null) {
       visibleChildren(this.object, bool);

@@ -165,21 +165,33 @@ export const Tweeners = [
   [
     'spawn-stone-2',
     (game, target, ...args) => {
-      const [time = 0, duration = 10000] = args ?? [];
+      const [time = 0, duration = 10000, delay = 0] = args ?? [];
 
       const stageName = game.states.get('stageName');
       const stageData = game.methods.get('getStageData')?.(stageName);
       const { offset } = stageData.sections[target.params.section];
 
+      const param = { progress: 0 };
+
       const group = new Group();
-      const tween = new Tween(target.collider.center, group);
+      const tween = new Tween(param, group);
       tween
+        .to({ progress: 1 }, duration)
         .onEveryStart(() => {
+          target.enableCollider(true);
+          target.visible(true);
+
           const position = addOffsetToPosition(target.params.position, offset);
           target.setPosition(position);
           target.velocity.copy(new Vector3(0, 0, 0));
         })
-        .delay(duration)
+        .onRepeat(({ progress }) => {
+          if (progress === 1) {
+            target.enableCollider(false);
+            target.visible(false);
+          }
+        })
+        .delay(delay)
         .repeat(Infinity)
         .start(time);
 
@@ -367,6 +379,14 @@ export const Updaters = [
           params.canFire = true;
           params.currentTime = elapsedTime;
         }
+      }
+    },
+  ],
+  [
+    'rotation-1',
+    (game, target, deltaTime) => {
+      if (target.object != null) {
+        target.rotation.phi += deltaTime * target.data.rotateSpeed * 0.5;
       }
     },
   ],
