@@ -129,7 +129,8 @@ export const World = {
   collisionShock: 0.8,
   pointSize: 2, // 10
   spacing: 16, // 80
-  fallingDeathSpeed: 250,
+  //fallingDeathSpeed: 230,//250,
+  fallingDeathDistance: 320,//250,
 };
 
 const Screen = {

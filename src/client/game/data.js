@@ -954,6 +954,14 @@ export const Stages = [
               position: { sx: 28, sy: -10, sz: 28 },
             },
           ],
+          cylinder: {
+            radiusTop: 15,
+            radiusBottom: 12,
+            height: 4,
+            radialSegments: 9,
+            heightSegments: 1,
+            position: { sx: 28, sy: -5, sz: 14 },
+          },
         },
         {
           offset: { sx: 28, sy: -4, sz: 48 },
@@ -1118,16 +1126,16 @@ export const Stages = [
       checkpoints: [
         {
           position: { sx: 3, sy: 3, sz: -5.5 },
-          // position: { sx: 4.5, sy: 20, sz: 4.2 },
+          //position: { sx: 0, sy: 11, sz: 0 },
           phi: PI * 0.5,
         },
         {
-          position: { sx: 0, sy: 1, sz: 0 },
+          position: { sx: 0, sy: 2, sz: 0 },
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
           phi: (20.7 / 360) * PI * 2,
         },
         {
-          position: { sx: 2, sy: 19, sz: -8 },
+          position: { sx: 2, sy: 1, sz: -8 },
           // position: { sx: 4.5, sy: 20, sz: 4.2 },
           phi: 0,
         },
@@ -1179,6 +1187,29 @@ export const Stages = [
             { name: 'satellite-points', state: States.alive },
           ],
         },
+        {
+          name: 'enemy-3',
+          ctype: 'enemy-1',
+          ammoType: 'tiny-bullet',
+          schedule: {
+            spawnTime: 5,
+          },
+          params: {
+            position: { sx: 0.5, sy: 1, sz: 1 },
+            phi: (150 / 360) * PI * 2,
+            theta: (45 / 360) * PI * 2,
+            section: 1,
+
+            canFire: false,
+            currentTime: 0,
+            burstDuration: 1,
+            burstInterval: 2,
+          },
+          updaters: [
+            { name: 'bullet-fire-2', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
+        },
       ],
       obstacles: [
         {
@@ -1195,6 +1226,40 @@ export const Stages = [
           },
           schedule: {
             spawnTime: 5,
+          },
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
+        },
+        {
+          name: 'small-round-stone',
+          tweeners: [{
+            name: 'spawn-stone-2',
+            state: States.alive,
+            args: [7000, 6000],
+          }],
+          params: {
+            position: { sx: 0, sy: 11, sz: -5.5 },
+            section: 1,
+            sideDir: new Vector3(),
+          },
+          schedule: {
+            spawnTime: 7,
+          },
+          updaters: [{ name: 'rolling-stone-1', state: States.alive }],
+        },
+        {
+          name: 'small-round-stone',
+          tweeners: [{
+            name: 'spawn-stone-2',
+            state: States.alive,
+            args: [14000, 10000],
+          }],
+          params: {
+            position: { sx: -5.5, sy: 18, sz: 0 },
+            section: 1,
+            sideDir: new Vector3(),
+          },
+          schedule: {
+            spawnTime: 14,
           },
           updaters: [{ name: 'rolling-stone-1', state: States.alive }],
         },

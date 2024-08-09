@@ -17,7 +17,7 @@ const { sqrt, cos, PI } = Math;
 const RAD_45 = (45 / 360) * PI * 2;
 const COS_45 = cos(RAD_45);
 const PASSING_SCORE = 100;
-const fallingSpeedToSquared = World.fallingDeathSpeed ** 2;
+//const fallingSpeedToSquared = World.fallingDeathSpeed ** 2;
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();
@@ -175,7 +175,7 @@ class CollidableManager extends Publisher {
       let result = false;
 
       if (collider instanceof Capsule) {
-        collidable.setGrounded(false);
+        //collidable.setGrounded(false);
 
         this.#capsule.copy(collider);
         this.#capsule.getCenter(this.#center);
@@ -277,13 +277,13 @@ class CollidableManager extends Publisher {
       }
 
       if (result !== false) {
-        let velocitySq = 0;
+        let fallingDistance = 0;
 
         if (type === 'character') {
-          velocitySq = velocity.y < 0 ? velocity.y ** 2 : 0;
+          fallingDistance = collidable.getFallingDistance();
         }
 
-        if (velocitySq >= fallingSpeedToSquared) {
+        if (fallingDistance >= World.fallingDeathDistance) {
           this.eventManager.dispatch('oob', 'teleport-character', collidable);
         } else {
           if (collider instanceof Capsule) {
@@ -329,6 +329,10 @@ class CollidableManager extends Publisher {
               collider.translate(result.normal.multiplyScalar(result.depth));
             }
           }
+        }
+      } else {
+        if (type === 'character') {
+          collidable.setGrounded(false);
         }
       }
 
@@ -539,7 +543,7 @@ class CollidableManager extends Publisher {
 
           if (collided) {
             other.object.addBounceCount();
-console.log(111111111111)
+
             if (
               other.object.type === 'item' &&
               capsule.object.type === 'character'

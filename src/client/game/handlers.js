@@ -45,9 +45,10 @@ export const handlers = [
         const checkpointIndex = states.get('checkpointIndex');
         const checkpoint = stageData.checkpoints[checkpointIndex];
         const { offset } = stageData.sections[checkpointIndex];
-        const position = addOffsetToPosition(checkpoint.position, offset);
 
-        character.velocity.set(0, 0, 0);
+        character.resetCoords();
+
+        const position = addOffsetToPosition(checkpoint.position, offset);
         character.setPosition(position, checkpoint.phi, checkpoint.theta);
 
         return;
