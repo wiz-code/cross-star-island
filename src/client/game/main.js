@@ -730,7 +730,6 @@ class Game {
     let elapsedTime = this.#elapsedTime;
     this.#elapsedTime += deltaTime;
     const delta = deltaTime / GameSettings.stepsPerFrame;
-    console.log(delta)
     const damping = getDamping(delta);
     */
     //////
@@ -746,8 +745,8 @@ class Game {
     const delta = this.#accumulatedTime / GameSettings.stepsPerFrame;
 
     const damping = getDamping(delta);
-    this.#accumulatedTime = -this.#accumulatedTime % interval;
-
+    this.#accumulatedTime = 0;
+    
     this.controls.input();
 
     for (let i = 0; i < GameSettings.stepsPerFrame; i += 1) {

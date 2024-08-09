@@ -54,11 +54,7 @@ const addDamping = (component, damping, minValue) => {
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
 const easeInQuad = (x) => x * x;
 
-const initDir = new Vector3(0, 0, -1);
-
 class Character extends Entity {
-  #dir = new Vector3();
-
   #vel = new Vector3(0, 0, 0);
 
   #forward = new Vector3();
@@ -104,6 +100,10 @@ class Character extends Entity {
   #turnElapsedTime = 0;
 
   #rotateComponent = 0;
+
+  #fallingDistance = 0;
+
+  #initDir = new Vector3(0, 0, -1);
 
   static createObject(data, texture) {
     const geometry = {};
@@ -242,7 +242,7 @@ class Character extends Entity {
     this.rotation = new Spherical(); // phi and theta
     this.povRotation = new Spherical();
     this.velocity = new Vector3();
-    this.direction = new Vector3(0, 0, -1);
+    this.direction = new Vector3().copy(this.#initDir);
 
     this.gunType = '';
     this.guns = new Map();
@@ -388,9 +388,7 @@ class Character extends Entity {
     this.rotation.phi = phi;
     this.rotation.theta = theta;
 
-    this.direction.copy(
-      this.#dir.copy(initDir).applyAxisAngle(this.#yawAxis, phi),
-    );
+    this.direction.copy(this.#initDir).applyAxisAngle(this.#yawAxis, phi);
     this.publish('setCharacterRot', this.rotation);
 
     this.collider.start.copy(pos);
@@ -410,6 +408,18 @@ class Character extends Entity {
 
   setGrounded(bool) {
     this.#isGrounded = bool;
+  }
+
+  resetCoords() {
+    this.rotation.phi = 0;
+    this.rotation.theta = 0;
+    this.velocity.set(0, 0, 0);
+    this.direction.copy(this.#initDir);
+    this.#fallingDistance = 0;
+  }
+
+  getFallingDistance() {
+    return this.#fallingDistance;
   }
 
   jump(value = 1) {
@@ -661,7 +671,14 @@ class Character extends Entity {
     const deltaDamping = this.#isGrounded ? damping.ground : damping.air;
 
     if (!this.#isGrounded) {
-      this.velocity.y -= World.gravity * deltaTime;
+      const falling = World.gravity * deltaTime;
+      this.velocity.y -= falling;
+
+      if (this.velocity.y < 0) {
+        this.#fallingDistance += falling;
+      }
+    } else {
+      this.#fallingDistance = 0;
     }
 
     if (this.#rotateComponent !== 0) {
