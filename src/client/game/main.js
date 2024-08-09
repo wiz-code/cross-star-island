@@ -725,6 +725,15 @@ class Game {
   update() {
     const deltaTime = this.clock.getDelta();
 
+    //////
+    /*
+    let elapsedTime = this.#elapsedTime;
+    this.#elapsedTime += deltaTime;
+    const delta = deltaTime / GameSettings.stepsPerFrame;
+    console.log(delta)
+    const damping = getDamping(delta);
+    */
+    //////
     this.#accumulatedTime += deltaTime;
     const interval = fpsInterval.get(this.params.fps);
 
@@ -735,9 +744,9 @@ class Game {
     let elapsedTime = this.#elapsedTime;
     this.#elapsedTime += this.#accumulatedTime;
     const delta = this.#accumulatedTime / GameSettings.stepsPerFrame;
-    const damping = getDamping(delta);
 
-    this.#accumulatedTime = this.#accumulatedTime % interval; // 0
+    const damping = getDamping(delta);
+    this.#accumulatedTime = -this.#accumulatedTime % interval;
 
     this.controls.input();
 
