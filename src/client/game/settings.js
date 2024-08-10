@@ -59,7 +59,7 @@ export const Entity = {
 };
 
 export const Cylinder = {
-  color: 0x4d4136,
+  color: 0x5A4C3F, //0x4d4136,
   wireColor: 0x332000,
   pointColor: 0xf4e511, // 0xffff00,
 };

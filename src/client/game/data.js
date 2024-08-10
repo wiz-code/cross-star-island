@@ -180,7 +180,7 @@ export const Guns = [
     'spread-gun',
     {
       speed: 500, // 2000
-      fireInterval: 30,
+      fireInterval: 100,
       accuracy: 10,
       recoil: 1, /// /////
 
@@ -244,7 +244,7 @@ export const Ammos = [
 
       radius: 1.5, // 6
       detail: 1,
-      numAmmo: 50,
+      numAmmo: 100,
 
       weight: 0.08,
       lifetime: 3,
@@ -496,6 +496,33 @@ export const Items = [
   ],
   [
     'hyper-jump',
+    {
+      method: 'createTetra',
+      collider: 'box3',
+
+      radius: 5,
+      weight: 1,
+      position: { x: 0, y: 4.5, z: -2 },
+      rotation: { x: 0, y: 0, z: 0 },
+
+      color: 0x7fffd4,
+      wireColor: 0xa9a9a9,
+      pointColor: 0xffc0cb,
+
+      rotateSpeed: 2,
+
+      updaters: [
+        {
+          state: States.alive,
+          update(deltaTime) {
+            //
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'constant-hyper-jump',
     {
       method: 'createTetra',
       collider: 'box3',
@@ -850,7 +877,7 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [0, 'y-axis', -32, 3000],
+              args: [0, [{ direction: 'y-axis', to: -32 }], 3000],
             },
           ],
         },
@@ -861,7 +888,7 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [5000, 'z-axis', 10, 2000],
+              args: [5000, [{ direction: 'z-axis', to: 10 }], 2000],
             },
           ],
         },
@@ -872,7 +899,7 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [5000, 'x-axis', 10, 2000],
+              args: [5000, [{ direction: 'x-axis', to: 10 }], 2000],
             },
           ],
         },
@@ -883,7 +910,7 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [5000, 'z-axis', 15, 1500],
+              args: [5000, [{ direction: 'z-axis', to: 15 }], 1500],
             },
           ],
         },
@@ -979,12 +1006,12 @@ export const Stages = [
             },
           ],
           cylinder: {
-            radiusTop: 15,
-            radiusBottom: 12,
-            height: 4,
-            radialSegments: 9,
+            radiusTop: 12,
+            radiusBottom: 9,
+            height: 3,
+            radialSegments: 8,
             heightSegments: 1,
-            position: { sx: 28, sy: -5, sz: 14 },
+            position: { sx: 27.5, sy: -5, sz: 13.5 },
           },
         },
         {
@@ -1150,21 +1177,34 @@ export const Stages = [
       checkpoints: [
         {
           position: { sx: 3, sy: 3, sz: -5.5 },
-          //position: { sx: 0, sy: 11, sz: 0 },
           phi: PI * 0.5,
         },
         {
           position: { sx: 0, sy: 2, sz: 0 },
-          //position: { sx: -5.5 * cos((165 / 360) * 2 * PI), sy: 18, sz: 5.5 * sin((165 / 360) * 2 * PI) },
-          phi: (20.7 / 360) * PI * 2,
+          phi: (18.5 / 360) * PI * 2,
         },
         {
-          position: { sx: 2, sy: 1, sz: -8 },
-          // position: { sx: 4.5, sy: 20, sz: 4.2 },
-          phi: 0,
+          position: { sx: 1.8, sy: 1, sz: -7.3 },
+          phi: (-90 / 360) * PI * 2,
         },
       ],
       characters: [
+        {
+          name: 'girl-1',
+          ctype: 'heroine-1',
+          gunType: 'normal-gun',
+          ammoType: 'small-bullet',
+          pose: 'pose-1',
+          params: {
+            position: { sx: 0.05, sy: 10, sz: 0.05 },
+            phi: (-58 / 360) * PI * 2,
+            section: 2,
+          },
+          schedule: {
+            spawnTime: 1,
+          },
+          updaters: [{ name: 'satellite-points', state: States.alive }],
+        },
         {
           name: 'enemy-1',
           ctype: 'enemy-1',
@@ -1262,6 +1302,29 @@ export const Stages = [
             { name: 'satellite-points', state: States.alive },
           ],
         },
+        {
+          name: 'enemy-5',
+          ctype: 'hero-1',
+          gunType: 'spread-gun',
+          ammoType: 'hop-bullet',
+          schedule: {
+            spawnTime: 5,
+          },
+          params: {
+            position: { sx: 0, sy: 1, sz: 0 },
+            phi: (0 / 360) * PI * 2,
+            theta: (-5 / 360) * PI * 2,
+            section: 2,
+            elapsedTime: 0,
+            fireInterval: 0.15,
+            rotateMultiplier: 0.2
+          },
+          updaters: [
+            { name: 'bullet-fire-1', state: States.alive },
+            { name: 'rotation-1', state: States.alive },
+            { name: 'satellite-points', state: States.alive },
+          ],
+        },
       ],
       obstacles: [
         {
@@ -1320,8 +1383,19 @@ export const Stages = [
         {
           name: 'checkpoint',
           params: {
-            section: 0,
-            position: { sx: 0, sy: 24, sz: 0 },
+            section: 1,
+            position: { sx: 0, sy: 2, sz: 0 },
+          },
+          schedule: {
+            spawnTime: 10,
+          },
+          updaters: [{ name: 'item-ring-1', state: States.alive }],
+        },
+        {
+          name: 'checkpoint',
+          params: {
+            section: 2,
+            position: { sx: 1.6, sy: 1, sz: -6 },
           },
           schedule: {
             spawnTime: 10,
@@ -1360,7 +1434,7 @@ export const Stages = [
           updaters: [{ name: 'item-ring-2', state: States.alive }],
         },
         {
-          name: 'hyper-jump',
+          name: 'constant-hyper-jump',
           consumable: false,
           disableTime: 1,
           params: {
@@ -1368,9 +1442,9 @@ export const Stages = [
             position: { sx: -6 * cos((165 / 360) * 2 * PI), sy: 5, sz: 6 * sin((165 / 360) * 2 * PI) },
             phi: PI * 0,
             velocity: new Vector3(
-              -6.5 * cos((-40 / 360) * 2 * PI),
-              12,
-              6.5 * sin((-40 / 360) * 2 * PI)
+              -6.5 * cos((-42 / 360) * 2 * PI),
+              11,
+              6.5 * sin((-42 / 360) * 2 * PI)
             ),
           },
           schedule: {
@@ -1379,7 +1453,7 @@ export const Stages = [
           updaters: [{ name: 'item-ring-2', state: States.alive }],
         },
         {
-          name: 'hyper-jump',
+          name: 'constant-hyper-jump',
           consumable: false,
           disableTime: 1,
           params: {
@@ -1387,9 +1461,9 @@ export const Stages = [
             position: { sx: -6 * cos((165 / 360) * 2 * PI), sy: 18, sz: 6 * sin((165 / 360) * 2 * PI) },
             phi: PI * 0,
             velocity: new Vector3(
-              -6.5 * cos((-40 / 360) * 2 * PI),
-              12,
-              6.5 * sin((-40 / 360) * 2 * PI)
+              -6 * cos((-40 / 360) * 2 * PI),
+              11,
+              6 * sin((-40 / 360) * 2 * PI)
             ),
           },
           schedule: {
@@ -1409,7 +1483,7 @@ export const Stages = [
           updaters: [{ name: 'item-ring-1', state: States.alive }],
         },
       ],
-      /* movables: [
+      movables: [
         {
           name: 'moving-platform-1',
           params: {},
@@ -1417,17 +1491,93 @@ export const Stages = [
             {
               name: 'swing-motion-1',
               state: States.alive,
-              args: [0, 'x-axis', -32, 5000],
+              args: [
+                0,
+                [
+                  { direction: 'x-axis', to: -20 * cos((45 / 360) * 2 * PI) },
+                  { direction: 'z-axis', to: 20 * sin((45 / 360) * 2 * PI) },
+                ],
+                2000,
+              ],
             },
           ],
         },
-      ], */
+        {
+          name: 'moving-platform-2',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [
+                0,
+                [
+                  { direction: 'x-axis', to: 20 * cos((5 / 360) * 2 * PI) },
+                  { direction: 'z-axis', to: -20 * sin((5 / 360) * 2 * PI) },
+                ],
+                2000,
+              ],
+            },
+          ],
+        },
+        {
+          name: 'moving-platform-3',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [0, [{ direction: 'y-axis', to: 20 }], 2000],
+            },
+          ],
+        },
+        {
+          name: 'moving-platform-4',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [0, [{ direction: 'y-axis', to: -20 }], 2000],
+            },
+          ],
+        },
+        {
+          name: 'moving-platform-5',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [
+                0,
+                [
+                  { direction: 'x-axis', to: -16 * 2 * cos((-85 / 360) * 2 * PI) },
+                  { direction: 'z-axis', to: 16 * 2 * sin((-85 / 360) * 2 * PI) },
+                ],
+                2000,
+              ],
+            },
+          ],
+        },
+        {
+          name: 'moving-platform-6',
+          params: {},
+          tweeners: [
+            {
+              name: 'swing-motion-1',
+              state: States.alive,
+              args: [0, [{ direction: 'y-axis', to: -24 }], 2000],
+            },
+          ],
+        },
+      ],
       sections: [
         {
           offset: { sx: 0, sy: 0, sz: -4 },
           grid: {
             widthSegments: 20,
-            heightSegments: 40,
+            heightSegments: 60,
             depthSegments: 20,
             position: { sx: 0.25, sy: 20.25, sz: 0.25 },
           },
@@ -1537,15 +1687,15 @@ export const Stages = [
             },
           ],
           ringTower: {
-            radius: 16 * 7 + 3,
+            radius: 16 * 7 + 2,
             width: 16 * 1.5,
-            height: 16 * 18,
+            height: 16 * 15.5,
             depth: 16 * 1.5,
             radialSegments: 12,
             widthSegments: 2,
             heightSegments: 11,
             depthSegments: 2,
-            position: { sx: 0, sy: 0, sz: 0 },
+            position: { sx: 0, sy: 2, sz: 0 },
           },
           towerStairs: {
             radialSegments: 12,
@@ -1582,20 +1732,157 @@ export const Stages = [
               height: 2,
               radialSegments: 7,
               heightSegments: 1,
-              position: { sx: 2, sy: -1, sz: -8 },
+              position: {
+                sx: -7.5 * cos((-104 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 7.5 * sin((-104 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-1',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -7.5 * cos((-135 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 7.5 * sin((-135 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-2',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -7.5 * cos((-165 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 7.5 * sin((-165 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-3',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -7.5 * cos((-195 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 7.5 * sin((-195 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-4',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -7.5 * cos((-225 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 7.5 * sin((-225 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-5',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -6 * cos((-255 / 360) * 2 * PI),
+                sy: -1.2,
+                sz: 6 * sin((-255 / 360) * 2 * PI)
+              },
+            },
+            {
+              name: 'moving-platform-6',
+              movable: true,
+
+              radiusTop: 10,
+              radiusBottom: 7,
+              height: 2,
+              radialSegments: 8,
+              heightSegments: 1,
+              position: {
+                sx: -2.2 * cos((-255 / 360) * 2 * PI),
+                sy: 0,
+                sz: 2.2 * sin((-255 / 360) * 2 * PI)
+              },
+            },
+            {
+              radiusTop: 8,
+              radiusBottom: 6,
+              height: 2,
+              radialSegments: 7,
+              heightSegments: 1,
+              position: {
+                sx: 0,
+                sy: -0.5,
+                sz: 0
+              },
             },
           ],
+          towerStairs: {
+            radialSegments: 12,
+            innerRadius: 16 * 1,
+            outerRadius: 16 * 1.8,
+
+            incline: (20 / 360) * PI * 2,
+            height: 16 * 5,
+            heightSegments: 5,
+            reverse: true,
+
+            position: { sx: 0, sy: 1.51, sz: 0 },
+            rotation: { x: 0, y: (240 / 360) * PI * 2, z: 0 },
+          },
           column: [
             {
               radiusShaft: 16 * 1,
-              radiusEnd: 16 * 1.4,
-              heightShaft: 16 * 8.5,
+              radiusEnd: 16 * 1.2,
+              heightShaft: 16 * 4,
               heightEnd: 16 * 0.5,
               radialSegments: 12,
-              heightSegments: 9,
+              heightSegments: 5,
               openEnded: false,
-              position: { sx: 0, sy: 5, sz: 0 },
-              rotation: { x: 0, y: 0, z: 0 },
+              position: { sx: 0, sy: 1.5, sz: 0 },
+              rotation: { x: 0, y: (15 / 360) * PI * 2, z: 0 },
+            },
+          ],
+          ground: [
+            {
+              widthSegments: 1,
+              depthSegments: 1,
+              bumpHeight: 0,
+              color: {
+                surface: Tower.stairColor,
+                wireframe: Tower.wireColor,
+                points: Tower.pointColor,
+              },
+              position: {
+                sx: -1.24 * cos((210 / 360) * 2 * PI),
+                sy: 6.4,
+                sz: 1.24 * sin((210 / 360) * 2 * PI)
+              },
+              rotation: { x: 0, y: (210 / 360) * PI * 2, z: 0 },
             },
           ],
         },

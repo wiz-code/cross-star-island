@@ -114,6 +114,19 @@ export const handlers = [
   },
   {
     eventName: 'get-item',
+    targetName: 'constant-hyper-jump',
+    handler({ states, methods }, character, object) {
+      if (character.hasControls) {
+        const playSound = methods.get('play-sound');
+        playSound?.('jump');
+      }
+
+      character.velocity.copy(object.params.velocity).multiplyScalar(30);
+      //character.velocity.addScaledVector(object.params.velocity, 30);
+    },
+  },
+  {
+    eventName: 'get-item',
     targetName: 'checkpoint',
     handler({ states, methods }, character) {
       if (character.hasControls) {
@@ -239,7 +252,66 @@ export const Tweeners = [
   [
     'swing-motion-1',
     (game, target, ...args) => {
-      const [time = 0, direction = 'x-axis', to = -20, duration = 5000] = args;
+      const [time = 0, motions = [{ direction: 'x-axis', to: -20 }], duration = 5000] = args;
+      const { object: mesh, offset, count } = target;
+      const position = target.geometry.getAttribute('position');
+      const object = { value: 0 };
+
+      let prev = 0;
+
+      const update = ({ value }) => {
+        for (let i = 0, l = motions.length; i < l; i += 1) {
+          const { direction, to } = motions[i];
+          const delta = to * (value - prev);
+
+          for (let j = 0; j < count; j += 1) {
+            const index = offset + j;
+
+            if (direction === 'x-axis') {
+              const posX = position.getX(index);
+              position.setX(index, posX + delta);
+            } else if (direction === 'y-axis') {
+              const posY = position.getY(index);
+              position.setY(index, posY + delta);
+            } else {
+              const posZ = position.getZ(index);
+              position.setZ(index, posZ + delta);
+            }
+          }
+
+          if (direction === 'y-axis') {
+            mesh.translateY(delta);
+          } else if (direction === 'x-axis') {
+            mesh.translateX(delta);
+          } else {
+            mesh.translateZ(delta);
+          }
+        }
+
+        prev = value;
+        position.needsUpdate = true;
+      };
+
+      const group = new Group();
+      const tween1 = new Tween(object, group)
+        .to({ value: 1 }, duration)
+        .onUpdate(update);
+      const tween2 = new Tween(object, group)
+        .to({ value: -1 }, duration * 2)
+        .onUpdate(update);
+      const tween3 = new Tween(object, group)
+        .to({ value: 0 }, duration)
+        .onUpdate(update);
+
+      tween1.chain(tween2).start(time);
+      tween2.chain(tween3);
+      tween3.chain(tween1);
+
+      return group;
+    },
+    /*
+    (game, target, ...args) => {
+      const [time = 0, motions: [{ direction: 'x-axis', to: -20 }], duration = 5000] = args;
       const { object: mesh, offset, count } = target;
       const position = target.geometry.getAttribute('position');
       const object = { value: 0 };
@@ -251,6 +323,10 @@ export const Tweeners = [
 
         for (let i = 0; i < count; i += 1) {
           const index = offset + i;
+
+          for (let j = 0, len = motions.length; j < len; j += 1) {
+            const { direction, to } = motions[j];
+          }
 
           if (direction === 'x-axis') {
             const posX = position.getX(index);
@@ -293,6 +369,7 @@ export const Tweeners = [
 
       return group;
     },
+    */
   ],
 ];
 
@@ -386,7 +463,8 @@ export const Updaters = [
     'rotation-1',
     (game, target, deltaTime) => {
       if (target.object != null) {
-        target.rotation.phi += deltaTime * target.data.rotateSpeed * 0.5;
+        const multiplier = target.params.rotateMultiplier ?? 0.5;
+        target.rotation.phi += deltaTime * target.data.rotateSpeed * multiplier;
       }
     },
   ],
