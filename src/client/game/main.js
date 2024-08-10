@@ -361,7 +361,7 @@ class Game {
           gun.setAmmoType(atype);
         }
       });
-      
+
       character.addGun(gun);
     });
 
@@ -436,7 +436,7 @@ class Game {
     this.scene.field.add(bvh);
     const grids = terrain.getObjectsByProperty('type', 'grid');
     this.gridProcessor.addList(grids);
-    // this.helper = helper;this.scene.field.add(helper);//////////
+    this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
     const ammoNames = Array.from(this.data.ammos.keys());
@@ -707,6 +707,7 @@ class Game {
     this.clearStage();
     this.scene.screen.clear();
     this.modelManager.clear();
+    this.movableManager.dispose();
 
     this.textureManager.disposeAll();
     this.container.removeChild(this.renderer.domElement);
@@ -774,7 +775,7 @@ class Game {
 
     this.movableManager.update();
     this.gridProcessor.update(this.#elapsedTime);
-    // this.helper.update();/////////////
+    this.helper.update();/////////////
 
     this.callbacks.setElapsedTime(this.#elapsedTime);
     this.game.states.set('time', this.#elapsedTime);

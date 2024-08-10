@@ -279,10 +279,10 @@ export const Tweeners = [
             }
           }
 
-          if (direction === 'y-axis') {
-            mesh.translateY(delta);
-          } else if (direction === 'x-axis') {
+          if (direction === 'x-axis') {
             mesh.translateX(delta);
+          } else if (direction === 'y-axis') {
+            mesh.translateY(delta);
           } else {
             mesh.translateZ(delta);
           }

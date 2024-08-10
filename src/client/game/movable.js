@@ -61,10 +61,10 @@ class Movable extends Entity {
     const [x, y, z] = positions.subarray(index, index + 3);
     this.#currentPos.set(x, y, z);
 
-    if (this.velocity == null) {
+    /*if (this.velocity == null) {
       this.velocity = new Vector3();
       return;
-    }
+    }*/
 
     this.velocity
       .subVectors(this.#currentPos, this.#prevPos)
