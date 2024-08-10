@@ -167,6 +167,11 @@ class CollidableManager extends Publisher {
 
     for (let i = 0, l = this.list.size; i < l; i += 1) {
       const collidable = list[i];
+
+      if (!collidable.isAlive()) {
+        continue;
+      }
+
       const { type, collider, velocity } = collidable;
       this.#parent = null;
       this.#intersected = null;
