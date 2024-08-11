@@ -105,6 +105,7 @@ class FirstPersonControls extends Publisher {
       horizontal: indicators.povIndicator.horizontal,
       vertical: indicators.povIndicator.vertical,
     };
+    this.centerMark = indicators.centerMark;
 
     this.verticalAngle = {
       min: (-Controls.verticalAngleLimit / 360) * PI * 2,
@@ -188,6 +189,7 @@ class FirstPersonControls extends Publisher {
 
     this.yawIndicatorRadius = Screen.horizontalIndicatorSize;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
+    this.centerMark.position.setY(this.yawIndicatorRadius);
 
     this.povSightLines.position.setX(0);
     this.povSightLines.position.setY(0);
