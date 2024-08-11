@@ -67,7 +67,7 @@ class MovableManager extends Publisher {
 
     if (this.refitSet.size > 0) {
       this.bvh.boundsTree.refit(this.refitSet);
-      this.refitSet.clear();
+      //this.refitSet.clear();
     }
   }
 }

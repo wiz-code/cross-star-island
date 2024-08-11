@@ -11,6 +11,8 @@ class Collidable extends Entity {
 
   #bounceCount = 0;
 
+  #keepVisible = false;
+
   constructor(name, type) {
     super(name, type);
 
@@ -18,6 +20,7 @@ class Collidable extends Entity {
     this.velocity = new Vector3();
 
     this.parent = null;
+    this.vi
   }
 
   setCollider(collider = new Sphere()) {
@@ -47,6 +50,10 @@ class Collidable extends Entity {
     this.object = object;
   }
 
+  keepVisible(bool) {
+    this.#keepVisible = bool;
+  }
+
   getBounceCount() {
     return this.#bounceCount;
   }
@@ -67,12 +74,13 @@ class Collidable extends Entity {
     }
 
     this.enableCollider(bool);
+
+    if (this.#keepVisible && !bool) {
+      return;
+    }
+
     super.visible(bool);
   }
-
-  /* updatePos() {
-    this.object.position.copy(this.collider.center);
-  } */
 
   update(deltaTime, elapsedTime, damping) {
     this.velocity.y -= World.gravity * deltaTime;

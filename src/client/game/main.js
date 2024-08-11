@@ -436,7 +436,7 @@ class Game {
     this.scene.field.add(bvh);
     const grids = terrain.getObjectsByProperty('type', 'grid');
     this.gridProcessor.addList(grids);
-    this.helper = helper;this.scene.field.add(helper);//////////
+    //this.helper = helper;this.scene.field.add(helper);//////////
     this.game.stage.terrain = terrain;
 
     const ammoNames = Array.from(this.data.ammos.keys());
@@ -775,9 +775,13 @@ class Game {
 
     this.movableManager.update();
     this.gridProcessor.update(this.#elapsedTime);
-    this.helper.update();/////////////
+    //this.helper.update();/////////////
 
-    this.callbacks.setElapsedTime(this.#elapsedTime);
+    if (this.#framecount % 3 === 0) {
+      this.callbacks.setElapsedTime(this.#elapsedTime);
+    }
+
+
     this.game.states.set('time', this.#elapsedTime);
   }
 }

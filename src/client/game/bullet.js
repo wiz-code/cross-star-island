@@ -3,9 +3,12 @@ import { Vector3, Sphere, Box3 } from 'three';
 import Collidable from './collidable';
 import { Ammos } from './data';
 
+const { floor, random } = Math;
 const ammos = new Map(Ammos);
 
 class Bullet extends Collidable {
+  #vec = new Vector3();
+
   constructor(index, name, object) {
     super(name, 'ammo');
 
@@ -35,11 +38,18 @@ class Bullet extends Collidable {
     }
 
     this.elapsedTime = 0;
+    this.keepVisible(true);
   }
 
   setAlive(bool) {
     super.setAlive(bool);
     this.elapsedTime = 0;
+
+    if (!bool) {
+      const y = floor(random() * -10000) - 10000;
+      this.#vec.y = y;
+      this.object.position.copy(this.#vec);
+    }
   }
 
   update(deltaTime, elapsedTime, damping) {

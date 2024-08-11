@@ -37,7 +37,7 @@ const getKey = (ep1, ep2) => {
 };
 
 class SweepAndPrune {
-  #bb = new Box3();
+  #box = new Box3();
 
   #overlaps = Array(Dimensions).fill().map(() => new Map());
 
@@ -83,27 +83,27 @@ class SweepAndPrune {
 
   updateObject(object) {
     if (object.collider instanceof Box3) {
-      this.#bb.copy(object.collider);
+      this.#box.copy(object.collider);
     } else {
-      object.collider.getBoundingBox(this.#bb);
+      object.collider.getBoundingBox(this.#box);
     }
 
     const box = this.boxes.get(object.id);
 
     const epMinX = box.min[0];
     const epMaxX = box.max[0];
-    epMinX.value = this.#bb.min.x;
-    epMaxX.value = this.#bb.max.x;
+    epMinX.value = this.#box.min.x;
+    epMaxX.value = this.#box.max.x;
 
     const epMinY = box.min[1];
     const epMaxY = box.max[1];
-    epMinY.value = this.#bb.min.y;
-    epMaxY.value = this.#bb.max.y;
+    epMinY.value = this.#box.min.y;
+    epMaxY.value = this.#box.max.y;
 
     const epMinZ = box.min[2];
     const epMaxZ = box.max[2];
-    epMinZ.value = this.#bb.min.z;
-    epMaxZ.value = this.#bb.max.z;
+    epMinZ.value = this.#box.min.z;
+    epMaxZ.value = this.#box.max.z;
   }
 
   sortByVariance() {

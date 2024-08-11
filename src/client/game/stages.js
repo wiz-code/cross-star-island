@@ -192,7 +192,7 @@ const createStage = (stageData, texture) => {
     merged,
     new MeshBasicMaterial({
       transparent: true,
-      //opacity: 0,
+      opacity: 0,
       wireframe: true,
     }),
   );
