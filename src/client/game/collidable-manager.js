@@ -289,7 +289,7 @@ class CollidableManager extends Publisher {
         }
 
         if (fallingDistance >= World.fallingDeathDistance) {
-          this.eventManager.dispatch('oob', 'teleport-character', collidable);
+          this.eventManager.dispatch('oob', 'falling-death', collidable);
         } else {
           if (collider instanceof Capsule) {
             const onGround = result.normal.y > COS_45;
@@ -643,11 +643,7 @@ class CollidableManager extends Publisher {
           if (collidable.collider.start.y < World.oob/* ||
             velocityToSquared >= fallingSpeedToSquared
           */) {
-            if (!collidable.hasControls) {
-              collidable.setAlive(false);
-            }
-
-            this.eventManager.dispatch('oob', 'teleport-character', collidable);
+            this.eventManager.dispatch('oob', 'falling-death', collidable);
           }
         }
       }
