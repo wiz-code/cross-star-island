@@ -137,12 +137,14 @@ const Screen = {
   normalColor: 0xffffff,
   sightPovColor: 0x5aff19,
   sightLinesColor: 0x9e9e9e,
-  verticalFrame: 0x9e9e9e,
+  verticalFrameColor: 0x9e9e9e,
+  centerMarkColor: 0x9e9e9e,
   warnColor: 0xffc107,
   sightSize: 36, // 48,
   sightPovSize: 384, // 512,//48,
   sightLinesSize: 128 * 0.75,
   horizontalIndicatorSize: 128 * 0.75,
+  centerMarkSize: 128 * 0.75,////
   verticalFrameSize: 384, // 512,
   gaugeHeight: 384 * 0.75 - 14, // 384 * 0.75 * 0.5 - 6,
 };

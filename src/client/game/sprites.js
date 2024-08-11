@@ -327,7 +327,6 @@ const sprites = {
 
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
-    context.lineWidth = 1;
     context.lineCap = 'butt';
     context.miterLimit = 20;
 
@@ -342,6 +341,33 @@ const sprites = {
     context.moveTo(128, 20);
     context.bezierCurveTo(84, 8, 44, 8, 0, 20);
     context.fill();
+
+    context.beginPath();
+    context.moveTo(61, 10);
+    context.lineTo(67, 10);
+    context.lineTo(64, 18);
+    context.closePath();
+    context.fill();
+
+    return context;
+  },
+
+  vShapedMark(context) {
+    const { canvas } = context;
+    canvas.width = 128;
+    canvas.height = 128;
+
+    context.fillStyle = 'rgba(0,0,0,0)';
+    context.fillRect(0, 0, 128, 128);
+    context.lineWidth = 2;
+    context.miterLimit = 20;
+
+    context.strokeStyle = '#FFF';
+    context.beginPath();
+    context.moveTo(57, 14);
+    context.lineTo(64, 28);
+    context.lineTo(71, 14);
+    context.stroke();
 
     return context;
   },

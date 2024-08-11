@@ -164,7 +164,7 @@ class Game {
     this.scene.screen.add(povSightLines);
     this.scene.screen.add(povIndicator.horizontal);
     this.scene.screen.add(povIndicator.vertical);
-    // this.scene.screen.add(centerMark);
+    this.scene.screen.add(centerMark);
     this.scene.screen.add(verticalFrame);
 
     this.modelManager = new ModelManager(this.scene.field);
