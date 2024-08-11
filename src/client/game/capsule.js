@@ -1,9 +1,12 @@
 import { Vector3 } from 'three';
 
-const vecMin = new Vector3();
-const vecMax = new Vector3();
+
 
 class Capsule {
+  //#vecMin = new Vector3();
+
+  //#vecMax = new Vector3();
+
   constructor(
     start = new Vector3(0, 0, 0),
     end = new Vector3(0, 1, 0),
@@ -27,13 +30,19 @@ class Capsule {
   }
 
   getBoundingBox(box) {
-    vecMin.x = this.start.x - this.radius;
-    vecMin.y = this.start.y - this.radius;
-    vecMin.z = this.start.z - this.radius;
-    vecMax.x = this.end.x + this.radius;
-    vecMax.y = this.end.y + this.radius;
-    vecMax.z = this.end.z + this.radius;
-    box.set(vecMin, vecMax);
+    /*this.#vecMin.x = this.start.x - this.radius;
+    this.#vecMin.y = this.start.y - this.radius;
+    this.#vecMin.z = this.start.z - this.radius;
+    this.#vecMax.x = this.end.x + this.radius;
+    this.#vecMax.y = this.end.y + this.radius;
+    this.#vecMax.z = this.end.z + this.radius;
+    box.set(this.#vecMin, this.#vecMax);*/
+    box.min.x = this.start.x - this.radius;
+    box.min.y = this.start.y - this.radius;
+    box.min.z = this.start.z - this.radius;
+    box.max.x = this.end.x + this.radius;
+    box.max.y = this.end.y + this.radius;
+    box.max.z = this.end.z + this.radius;
     return box;
   }
 

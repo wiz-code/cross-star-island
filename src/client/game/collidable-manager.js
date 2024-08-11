@@ -182,9 +182,9 @@ class CollidableManager extends Publisher {
       if (collider instanceof Capsule) {
         //collidable.setGrounded(false);
 
-        this.#capsule.copy(collider);
-        this.#capsule.getCenter(this.#center);
+        collider.getCenter(this.#center);
         collider.getBoundingBox(this.#box);
+        this.#capsule.copy(collider);
 
         boundsTree.shapecast({
           boundsTraverseOrder: (box) => {

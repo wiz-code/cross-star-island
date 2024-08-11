@@ -71,7 +71,7 @@ export const States = {
 
 export const GameStates = [
   ['stageName', ''],
-  ['checkpointIndex', 2],
+  ['checkpointIndex', 0],
   ['gamepad', false],
   ['mode', 'loading'], // 'loading', 'play', 'clear'
   // score state
