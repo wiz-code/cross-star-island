@@ -30,7 +30,7 @@ const clearStage = ({ states, methods }, c1, c2, punishment = false) => {
 export const handlers = [
   {
     eventName: 'oob',
-    targetName: 'teleport-character',
+    targetName: 'falling-death',
     /* condition(character) {
       return character.hasControls;
     }, */
@@ -59,6 +59,7 @@ export const handlers = [
         return;
       }
 
+      character.setAlive(false);
       const pushAway = states.get('push-away');
       states.set('push-away', pushAway + 1);
     },
@@ -438,21 +439,20 @@ export const Updaters = [
     (game, target, deltaTime, elapsedTime) => {
       const { params } = target;
       const { canFire, currentTime, burstDuration, burstInterval } = params;
-      //target.params.elapsedTime += deltaTime;
 
       if (canFire) {
-        const interval = elapsedTime - currentTime;
+        const delta = elapsedTime - currentTime;
 
-        if (burstDuration > interval) {
+        if (burstDuration >= delta) {
           target.fire();
         } else {
           params.canFire = false;
           params.currentTime = elapsedTime;
         }
       } else {
-        const interval = elapsedTime - currentTime;
+        const delta = elapsedTime - currentTime;
 
-        if (interval > burstInterval) {
+        if (delta > burstInterval) {
           params.canFire = true;
           params.currentTime = elapsedTime;
         }
