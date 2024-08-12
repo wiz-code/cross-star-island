@@ -173,7 +173,7 @@ class GamepadControls extends Publisher {
     this.gaugeHalfY = Screen.gaugeHeight / 2;
     this.multiplier = this.gaugeHalfY / this.viewHalfX;
 
-    this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
+    this.yawIndicatorRadius = Screen.horizontalIndicatorSize; //this.viewHalfY / 2 - 96;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
     this.centerMark.position.setY(this.yawIndicatorRadius);
 
