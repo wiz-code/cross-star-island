@@ -144,7 +144,7 @@ const Screen = {
   sightPovSize: 384, // 512,//48,
   sightLinesSize: 128 * 0.75,
   horizontalIndicatorSize: 128 * 0.75,
-  centerMarkSize: 128 * 0.75,////
+  centerMarkSize: 128 * 0.75,
   verticalFrameSize: 384, // 512,
   gaugeHeight: 384 * 0.75 - 14, // 384 * 0.75 * 0.5 - 6,
 };

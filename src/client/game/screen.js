@@ -46,6 +46,8 @@ export const createCenterMark = (texture) => {
   const material = new SpriteMaterial({
     color: Screen.centerMarkColor,
     map: texture.centerMark,
+    transparent: true,
+    opacity: 0.5,
   });
 
   const sprite = new Sprite(material);
