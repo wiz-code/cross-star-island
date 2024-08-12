@@ -8,7 +8,7 @@ const textureMap = new Map([
   ['pointThin', ['crossStarThin']],
   // ['verticalIndicator', ['isoscelesTriangle', -PI / 2]],
   ['directionIndicator', ['direction']],
-  ['centerMark', ['vShapedMark']],
+  ['centerMark', ['centerGauge']],
   //['centerMark', ['isoscelesTriangle', -PI / 2, true]], /// ///////
   ['sight', ['sight']],
   ['sightLines', ['sightLines']],

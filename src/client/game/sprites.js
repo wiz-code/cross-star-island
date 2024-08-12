@@ -1,4 +1,4 @@
-const { PI } = Math;
+const { sin, cos, floor, PI } = Math;
 
 const sprites = {
   sightLines(context) {
@@ -352,22 +352,54 @@ const sprites = {
     return context;
   },
 
-  vShapedMark(context) {
+  centerGauge(context) {
+    const len = 13;
+    const r1 = 176;//102;
+    const r2 = 166//92;
+    const range = (30 / 360) * PI * 2;
+    const rad = range / (len - 1);
+    const start = (0.75 * PI * 2) - range / 2;
+    const midIndex = floor(len / 2);
+
     const { canvas } = context;
     canvas.width = 128;
     canvas.height = 128;
 
     context.fillStyle = 'rgba(0,0,0,0)';
     context.fillRect(0, 0, 128, 128);
-    context.lineWidth = 2;
-    context.miterLimit = 20;
 
+    context.miterLimit = 20;
     context.strokeStyle = '#FFF';
-    context.beginPath();
-    context.moveTo(57, 14);
-    context.lineTo(64, 28);
-    context.lineTo(71, 14);
-    context.stroke();
+
+    const cx = 64, cy = 204;
+
+    for (let i = 0; i < len; i += 1) {
+      const theta = start + rad * i;
+      let r0 = 0;
+
+      if (i === midIndex) {
+        context.lineWidth = 3;
+        r0 = 6;
+      } else if (i === 0 || i === len - 1) {
+        context.lineWidth = 2;
+        r0 = 6;
+      } else {
+        context.lineWidth = 2;
+      }
+
+      const x1 = cx + (r1 + r0) * cos(theta);
+      const y1 = cy + (r1 + r0) * sin(theta);
+
+      const x2 = cx + r2 * cos(theta);
+      const y2 = cy + r2 * sin(theta);
+
+
+      context.beginPath();
+      context.moveTo(x1, y1);
+      context.lineTo(x2, y2);
+
+      context.stroke();
+    }
 
     return context;
   },
