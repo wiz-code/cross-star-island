@@ -107,6 +107,7 @@ class GamepadControls extends Publisher {
       horizontal: indicators.povIndicator.horizontal,
       vertical: indicators.povIndicator.vertical,
     };
+    this.centerMark = indicators.centerMark;
 
     this.verticalAngle = {
       min: (-Controls.verticalAngleLimit / 360) * PI * 2,
@@ -174,6 +175,7 @@ class GamepadControls extends Publisher {
 
     this.yawIndicatorRadius = this.viewHalfY / 2 - 96;
     this.povIndicator.horizontal.position.setY(this.yawIndicatorRadius);
+    this.centerMark.position.setY(this.yawIndicatorRadius);
 
     this.povSightLines.position.setX(0);
     this.povSightLines.position.setY(0);
