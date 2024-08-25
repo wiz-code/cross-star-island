@@ -208,7 +208,7 @@ class Character extends Entity {
     const material = {};
     const mesh = {};
 
-    const scale = 0.6;
+    const scale = 0.8;
     const arrowHeadRadius = scale * data.radius * 0.08;
     const arrowBodyRadius = scale * data.radius * 0.04;
     const arrowHeadLength = scale * data.height * 0.3;
