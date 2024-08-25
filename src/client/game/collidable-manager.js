@@ -88,6 +88,8 @@ class CollidableManager extends Publisher {
     if (collidable.type === 'character') {
       if (!collidable.hasControls) {
         this.scene.add(collidable.object);
+      } else {
+        this.scene.add(collidable.arrow);
       }
 
       collidable.collider.getBoundingBox(box);
@@ -108,6 +110,8 @@ class CollidableManager extends Publisher {
       if (collidable.type === 'character') {
         if (!collidable.hasControls) {
           this.scene.remove(collidable.object);
+        } else {
+          this.scene.remove(collidable.arrow);
         }
       } else {
         this.scene.remove(collidable.object);

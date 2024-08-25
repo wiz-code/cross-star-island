@@ -4,6 +4,7 @@ import {
   Euler,
   CapsuleGeometry,
   ConeGeometry,
+  CylinderGeometry,
   EdgesGeometry,
   SphereGeometry,
   BufferGeometry,
@@ -17,6 +18,7 @@ import {
   Points,
   Group,
 } from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import Capsule from './capsule';
 import { Keys, Actions, States, Characters } from './data';
@@ -30,6 +32,7 @@ const { floor, sign, PI } = Math;
 const RAD30 = (30 / 360) * PI * 2;
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
+const arrowColor = 0x2CBBCE;
 
 const addDamping = (component, damping, minValue) => {
   let value = component;
@@ -59,7 +62,11 @@ class Character extends Entity {
 
   #forward = new Vector3();
 
-  #side = new Vector3();
+  #sideA = new Vector3();
+
+  #sideB = new Vector3();
+
+  #sideC = new Vector3();
 
   #vecA = new Vector3();
 
@@ -104,6 +111,8 @@ class Character extends Entity {
   #fallingDistance = 0;
 
   #initDir = new Vector3(0, 0, -1);
+
+  #arrowDir = new Vector3();
 
   static createObject(data, texture) {
     const geometry = {};
@@ -194,6 +203,43 @@ class Character extends Entity {
     return object;
   }
 
+  static createArrow(data) {
+    const geometry = {};
+    const material = {};
+    const mesh = {};
+
+    const scale = 0.6;
+    const arrowHeadRadius = scale * data.radius * 0.08;
+    const arrowBodyRadius = scale * data.radius * 0.04;
+    const arrowHeadLength = scale * data.height * 0.3;
+    const arrowBodyLength = scale * data.height * 0.6;
+
+
+    geometry.arrowHead = new ConeGeometry(arrowHeadRadius, arrowHeadLength, 32);
+    geometry.arrowBody = new CylinderGeometry(
+      arrowBodyRadius,
+      arrowBodyRadius,
+      arrowBodyLength,
+      32
+    );
+    geometry.arrowHead.rotateX(PI * -0.5);
+    geometry.arrowBody.rotateX(PI * -0.5);
+    geometry.arrowHead.translate(0, 0, ((arrowHeadLength + arrowBodyLength) / -2));
+
+    geometry.arrow = mergeGeometries([geometry.arrowHead, geometry.arrowBody]);
+    geometry.arrow.center();
+
+    material.arrow = new MeshBasicMaterial({
+      color: arrowColor,
+      transparent: true,
+      opacity: 0.5,
+    });
+    mesh.arrow = new Mesh(geometry.arrow, material.arrow);
+    mesh.arrow.name = 'arrow';
+
+    return mesh.arrow;
+  }
+
   static createPoints(data, texture) {
     const geomSize = data.radius + 0.5;
 
@@ -242,13 +288,14 @@ class Character extends Entity {
     this.rotation = new Spherical(); // phi and theta
     this.povRotation = new Spherical();
     this.velocity = new Vector3();
-    this.direction = new Vector3().copy(this.#initDir);
+    this.direction = this.#initDir.clone();
 
     this.gunType = '';
     this.guns = new Map();
     this.elapsedTime = 0;
 
     this.hasControls = false;
+    this.arrow = Character.createArrow(this.data);
 
     this.model = null; // promise
     this.pose = null; // promise
@@ -447,11 +494,10 @@ class Character extends Entity {
       multiplier *= this.data.airSpeed * value;
     }
 
-    const direction = this.#forward
-      .copy(this.direction)
-      .multiplyScalar(multiplier);
-    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * RAD30);
-    this.velocity.add(direction);
+    this.#forward.copy(this.direction);
+    const side = this.#sideA.crossVectors(this.direction, this.#yawAxis);
+    this.#forward.applyAxisAngle(side, sign(-deltaTime) * RAD30);
+    this.velocity.add(this.#forward.multiplyScalar(multiplier));
   }
 
   rotate(deltaTime, direction, value = 1) {
@@ -496,8 +542,8 @@ class Character extends Entity {
       multiplier *= this.data.airSpeed;
     }
 
-    const direction = this.#side.crossVectors(this.direction, this.#yawAxis);
-    direction.applyAxisAngle(this.#pitchAxis, sign(deltaTime) * RAD30);
+    const direction = this.#sideB.crossVectors(this.direction, this.#yawAxis);
+    direction.applyAxisAngle(this.direction, sign(deltaTime) * RAD30);
     direction.normalize();
     this.velocity.add(direction.multiplyScalar(multiplier));
   }
@@ -705,6 +751,32 @@ class Character extends Entity {
       .copy(this.velocity)
       .multiplyScalar(deltaTime);
     this.collider.translate(deltaPosition);
+
+    if (this.hasControls) {
+      if (this.povRotation.phi === 0 && this.povRotation.theta === 0) {
+        if (this.arrow.visible) {
+          this.arrow.visible = false;
+        }
+      } else {
+        if (!this.arrow.visible) {
+          this.arrow.visible = true;
+        }
+
+        if (this.povRotation.phi !== 0 && this.povRotation.theta !== 0) {}
+
+        this.arrow.position.copy(this.collider.end);
+
+        this.#arrowDir.copy(this.direction)
+          .applyAxisAngle(this.#yawAxis, this.povRotation.phi);
+
+        const side = this.#sideC.crossVectors(this.#arrowDir, this.#yawAxis);
+        this.#arrowDir.applyAxisAngle(side, this.povRotation.theta);
+
+        this.arrow.position.addScaledVector(this.#arrowDir, this.data.height + 1);
+        this.arrow.position.y -= 1;
+        this.arrow.rotation.y = this.rotation.phi;
+      }
+    }
   }
 }
 
