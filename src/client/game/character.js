@@ -23,16 +23,18 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import Capsule from './capsule';
 import { Keys, Actions, States, Characters } from './data';
 import Entity from './entity';
-import { World, Controls } from './settings';
+import { Game, World, Controls } from './settings';
 import { getVectorPos, visibleChildren } from './utils';
 import ModelLoader from './model-loader';
 
-const { floor, sign, PI } = Math;
+const { min, max, floor, sign, PI } = Math;
+const { EPS } = Game;
 
 const RAD30 = (30 / 360) * PI * 2;
 const dampingCoef = PI / 180;
 const minRotateAngle = PI / 720;
-const arrowColor = 0x2CBBCE;
+const arrowColor = 0x2cbbce;
+const arrowPitch = (-12.5 / 360) * 2 * PI;
 
 const addDamping = (component, damping, minValue) => {
   let value = component;
@@ -56,6 +58,8 @@ const addDamping = (component, damping, minValue) => {
 
 const easeOutQuad = (x) => 1 - (1 - x) * (1 - x);
 const easeInQuad = (x) => x * x;
+
+const rotAcceleration = 20;
 
 class Character extends Entity {
   #vel = new Vector3(0, 0, 0);
@@ -114,6 +118,10 @@ class Character extends Entity {
 
   #arrowDir = new Vector3();
 
+  #prevY = 0;
+
+  #rotVelocity = 0;
+
   static createObject(data, texture) {
     const geometry = {};
     const material = {};
@@ -136,6 +144,36 @@ class Character extends Entity {
     geometry.faceWire = new EdgesGeometry(geometry.face);
     geometry.face.rotateX(-PI / 2);
     geometry.faceWire.rotateX(-PI / 2);
+    ///////////////
+    const arrowHeadRadius = data.radius * 0.08;
+    const arrowBodyRadius = data.radius * 0.04;
+    const arrowHeadLength = data.height * 0.3;
+    const arrowBodyLength = data.height * 0.6;
+    geometry.arrowHead = new ConeGeometry(arrowHeadRadius, arrowHeadLength, 32);
+    geometry.arrowBody = new CylinderGeometry(
+      arrowBodyRadius,
+      arrowBodyRadius,
+      arrowBodyLength,
+      32,
+    );
+    geometry.arrowHead.rotateX(PI * -0.5);
+    geometry.arrowBody.rotateX(PI * -0.5);
+    geometry.arrowHead.translate(
+      0,
+      0,
+      (arrowHeadLength + arrowBodyLength) / -2,
+    );
+
+    geometry.arrow = mergeGeometries([geometry.arrowHead, geometry.arrowBody]);
+    geometry.arrow.center();
+
+    material.arrow = new MeshBasicMaterial({
+      color: arrowColor,
+      transparent: true,
+      opacity: 0.5,
+    });
+    mesh.arrow = new Mesh(geometry.arrow, material.arrow);
+    ///////////////
 
     const geomSize = data.radius + floor(World.pointSize / 2);
 
@@ -214,17 +252,20 @@ class Character extends Entity {
     const arrowHeadLength = scale * data.height * 0.3;
     const arrowBodyLength = scale * data.height * 0.6;
 
-
     geometry.arrowHead = new ConeGeometry(arrowHeadRadius, arrowHeadLength, 32);
     geometry.arrowBody = new CylinderGeometry(
       arrowBodyRadius,
       arrowBodyRadius,
       arrowBodyLength,
-      32
+      32,
     );
     geometry.arrowHead.rotateX(PI * -0.5);
     geometry.arrowBody.rotateX(PI * -0.5);
-    geometry.arrowHead.translate(0, 0, ((arrowHeadLength + arrowBodyLength) / -2));
+    geometry.arrowHead.translate(
+      0,
+      0,
+      (arrowHeadLength + arrowBodyLength) / -2,
+    );
 
     geometry.arrow = mergeGeometries([geometry.arrowHead, geometry.arrowBody]);
     geometry.arrow.center();
@@ -505,6 +546,8 @@ class Character extends Entity {
     const { turnSpeed } = this.data;
 
     if (this.#states.has(States.urgency)) {
+      this.#rotVelocity = 0;
+
       const t0 = (this.#urgencyElapsedTime - deltaTime) / this.#urgencyDuration;
       const t1 = this.#urgencyElapsedTime / this.#urgencyDuration;
       const r0 = direction * urgencyTurn * easeOutQuad(t0);
@@ -512,20 +555,11 @@ class Character extends Entity {
 
       this.#rotateComponent = r1 - r0;
     } else {
-      if (this.#momentum === direction) {
-        this.#turnElapsedTime += deltaTime;
-      } else {
-        this.#turnElapsedTime = deltaTime;
-        this.#momentum = direction;
-      }
-
-      if (this.#turnElapsedTime > turnLagTime) {
-        this.#turnElapsedTime = turnLagTime;
-      }
-
-      const progress = this.#turnElapsedTime / turnLagTime;
-      const speed = this.#momentum * turnSpeed * value;
-      this.#rotateComponent = speed * deltaTime * easeOutQuad(progress);
+      this.#rotVelocity += rotAcceleration * deltaTime * direction;
+      this.#rotVelocity = min(
+        max(this.#rotVelocity, -turnSpeed),
+        turnSpeed,
+      );
     }
   }
 
@@ -609,22 +643,6 @@ class Character extends Entity {
       }
     }
   }
-
-  /* addTweener(tweener, arg) {
-    const tween = tweener(this, arg);
-    const updater = tween.update.bind(tween);
-    this.subscribe('tween', updater);
-  } */
-
-  /* updatePos() {
-    this.object.position.copy(this.collider.start);
-    this.object.position.y += this.halfHeight;
-    this.object.rotation.y = this.rotation.phi;
-
-    if (this.hasControls) {
-      this.camera.position.copy(this.collider.end);
-    }
-  } */
 
   update(deltaTime, elapsedTime, damping) {
     // 自機の動き制御
@@ -722,10 +740,32 @@ class Character extends Entity {
       this.velocity.y -= falling;
 
       if (this.velocity.y < 0) {
-        this.#fallingDistance += falling;
+        const fallDelta = this.#prevY - this.collider.end.y;
+        this.#fallingDistance += fallDelta;
       }
     } else {
       this.#fallingDistance = 0;
+    }
+
+    this.#prevY = this.collider.end.y;
+
+    if (this.#rotVelocity !== 0) {
+      this.#rotateComponent = this.#rotVelocity * deltaTime;
+
+      if (
+        !this.#states.has(States.urgency) &&
+        !this.#inputs.has(Actions.rotateLeft) &&
+        !this.#inputs.has(Actions.rotateRight)
+      ) {
+        this.#rotVelocity += this.#rotVelocity * damping.spin;
+      }
+
+      if (
+        (this.#rotVelocity > 0 && this.#rotVelocity < EPS) ||
+        (this.#rotVelocity < 0 && this.#rotVelocity > -EPS)
+      ) {
+        this.#rotVelocity = 0;
+      }
     }
 
     if (this.#rotateComponent !== 0) {
@@ -736,15 +776,9 @@ class Character extends Entity {
       if (this.hasControls) {
         this.publish('onRotate', this.rotation.phi, this.#rotateComponent);
       }
-
-      if (!this.#states.has(States.urgency)) {
-        this.#rotateComponent = addDamping(
-          this.#rotateComponent,
-          dampingCoef * damping.spin,
-          minRotateAngle,
-        );
-      }
     }
+
+    this.#rotateComponent = 0;
 
     this.velocity.addScaledVector(this.velocity, deltaDamping);
     const deltaPosition = this.#vel
@@ -762,18 +796,25 @@ class Character extends Entity {
           this.arrow.visible = true;
         }
 
-        if (this.povRotation.phi !== 0 && this.povRotation.theta !== 0) {}
+        if (this.povRotation.phi !== 0 && this.povRotation.theta !== 0) {
+        }
 
         this.arrow.position.copy(this.collider.end);
 
-        this.#arrowDir.copy(this.direction)
+        this.#arrowDir
+          .copy(this.direction)
           .applyAxisAngle(this.#yawAxis, this.povRotation.phi);
 
         const side = this.#sideC.crossVectors(this.#arrowDir, this.#yawAxis);
-        this.#arrowDir.applyAxisAngle(side, this.povRotation.theta);
+        this.#arrowDir.applyAxisAngle(
+          side,
+          this.povRotation.theta + arrowPitch,
+        );
 
-        this.arrow.position.addScaledVector(this.#arrowDir, this.data.height + 1);
-        this.arrow.position.y -= 1;
+        this.arrow.position.addScaledVector(
+          this.#arrowDir,
+          this.data.radius * 2 + 1,
+        );
         this.arrow.rotation.y = this.rotation.phi;
       }
     }

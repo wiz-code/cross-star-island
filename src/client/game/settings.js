@@ -116,21 +116,19 @@ export const Controls = {
 export const World = {
   oob: -240,
   gravity: 300,
-  resistance: 4,
-  airResistance: 1,
+  baseResistance: -6,
   Resistance: {
-    ground: -6, // 6//4
-    air: -0.6, // 0.6, //0.4
-    spin: 6,
-    ammo: -1.2,
-    obstacle: -0.1,
-    item: -2, // -0.1,
+    ground: 1,
+    air: 0.1,
+    spin: 5,
+    ammo: 0.2,
+    obstacle: 1 / 60,
+    item: 2 / 3,
   },
   collisionShock: 0.8,
   pointSize: 2, // 10
   spacing: 16, // 80
-  //fallingDeathSpeed: 230,//250,
-  fallingDeathDistance: 320,//250,
+  fallingDeathDistance: 145,
 };
 
 const Screen = {

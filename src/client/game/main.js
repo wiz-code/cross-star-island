@@ -63,13 +63,15 @@ const fpsInterval = new Map([
   [FPS30, 1 / FPS30 - 0.0001],
 ]);
 
+const baseResistance = World.baseResistance;
 const resistances = Object.entries(World.Resistance);
 const dampingData = {};
 const getDamping = (delta) => {
+  const base = exp(baseResistance * delta) - 1;
+
   for (let i = 0, l = resistances.length; i < l; i += 1) {
     const [key, value] = resistances[i];
-    // const result = exp(-value * delta) - 1;
-    const result = value * delta;
+    const result = base * value;
     dampingData[key] = result;
   }
 

@@ -329,8 +329,7 @@ export const Characters = [
       speed: 120, // 300,
       rotateSpeed: 2,
 
-      // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
-      turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
+      turnSpeed: 1.1,
       sprint: 2.5,
       urgencyMove: 8,
 
@@ -361,7 +360,7 @@ export const Characters = [
       weight: 1,
 
       speed: 150, // 300,
-      turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
+      turnSpeed: 1.1,
       sprint: 2.5,
       urgencyMove: 8,
 
@@ -387,8 +386,7 @@ export const Characters = [
       speed: 120, // 300,
       rotateSpeed: 2,
 
-      // turnSpeed: PI * 2 * (1 / 6), // 1秒間に1/6周する
-      turnSpeed: PI * 2 * (1 / 3), // 1秒間に1/3周する
+      turnSpeed: 1.1,
       sprint: 2.5,
       urgencyMove: 8,
 

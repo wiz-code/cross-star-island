@@ -12,12 +12,11 @@ import {
   lineToLineClosestPoints,
 } from './utils';
 
-const { sqrt, cos, PI } = Math;
+const { abs, sqrt, cos, PI } = Math;
 
 const RAD_45 = (45 / 360) * PI * 2;
 const COS_45 = cos(RAD_45);
 const PASSING_SCORE = 100;
-//const fallingSpeedToSquared = World.fallingDeathSpeed ** 2;
 
 class CollidableManager extends Publisher {
   #vecA = new Vector3();
@@ -642,11 +641,7 @@ class CollidableManager extends Publisher {
         collidable.update(deltaTime, elapsedTime, damping);
 
         if (collidable.type === 'character') {
-          //const velocityToSquared = collidable.velocity.y < 0 ? collidable.velocity.y ** 2 : 0;
-//collidable.hasControls && console.log(velocityToSquared, fallingSpeedToSquared)
-          if (collidable.collider.start.y < World.oob/* ||
-            velocityToSquared >= fallingSpeedToSquared
-          */) {
+          if (collidable.collider.start.y < World.oob) {
             this.eventManager.dispatch('oob', 'falling-death', collidable);
           }
         }
